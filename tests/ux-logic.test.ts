@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   canAccessRoute,
+  resolveDemoPersona,
   resolveCapabilities,
   difficultySegments,
   isFocusedStudyRoute,
@@ -534,4 +535,12 @@ test('Garde de route : Studio et Gouvernance inaccessibles par URL sans le rôle
   // Gouvernance : tout
   assert.equal(canAccessRoute('admin-audit', nadege), true);
   assert.equal(canAccessRoute('studio', nadege), true);
+});
+
+test('Personnage de démo : ?as= prioritaire, puis mémoire de l’onglet, sinon Afi', () => {
+  assert.equal(resolveDemoPersona('?as=kossi', null), 'kossi');
+  assert.equal(resolveDemoPersona('?as=kossi', 'nadege'), 'kossi');
+  assert.equal(resolveDemoPersona('', 'nadege'), 'nadege');
+  assert.equal(resolveDemoPersona('?as=pirate', 'inconnu'), 'afi');
+  assert.equal(resolveDemoPersona('', null), 'afi');
 });

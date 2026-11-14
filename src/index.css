@@ -6846,3 +6846,166 @@ label.htb-completed-switch,
   }
 }
 
+
+/* ==========================================================================
+   UX semaine 1 — correctifs d'affichage (revue du 14/11/2026)
+   ========================================================================== */
+
+/* Le preflight Tailwind passe tous les svg en display:block : les icônes lucide placées dans
+   du texte tombaient sur leur propre ligne (objectifs, correction du quiz, en-têtes…).
+   Sans effet sur les icônes déjà dans un conteneur flex. */
+svg.lucide { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+
+/* Objectifs pédagogiques : icône et texte sur la même ligne, espacement avant la section suivante */
+ul.lesson-points { list-style: none; margin-bottom: 8px; }
+ul.lesson-points li { display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+ul.lesson-points li svg { color: var(--accent-brand); margin-top: 3px; }
+ul.lesson-points + h3, .wf-muted-text + h3 { margin-top: 16px; }
+
+/* Quiz : consigne + compteur, numéro de question, sélection visible, charte des boutons radio */
+.quiz-label { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.quiz-label .quiz-count {
+  margin-left: auto;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent-brand-soft);
+  white-space: nowrap;
+}
+.question legend {
+  float: left; /* sort la légende de la bordure du fieldset */
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 4px;
+  padding: 0;
+  line-height: 1.4;
+}
+.question legend > span:first-child {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--accent-brand);
+  flex-shrink: 0;
+}
+.question input[type="radio"] { accent-color: var(--accent-brand); }
+.question label.chosen { border-color: var(--accent-brand); background: var(--accent-brand-soft); }
+
+/* Récapitulatif avant envoi : neutre, orange seulement s'il manque des réponses */
+.quiz-confirm-box {
+  background: var(--accent-brand-soft);
+  border-color: color-mix(in srgb, var(--accent-brand) 35%, transparent);
+}
+.quiz-confirm-box.has-missing { background: var(--accent-warm-soft); border-color: var(--accent-warm); }
+
+/* Résultat : score, récompense, correction lisible sans dépendre de la couleur */
+.score-display span { font-size: 1.25rem; color: var(--fg-muted); font-weight: 700; }
+.result-reward {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--accent-brand-soft);
+  border: 1px solid color-mix(in srgb, var(--accent-brand) 30%, transparent);
+}
+.result-reward-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.result-xp-gain { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--accent-brand); }
+.result-level { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.result-reward.is-levelup { animation: savoir-reward-pop 520ms ease-out both; }
+@keyframes savoir-reward-pop {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.result-review > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 10px;
+  background: var(--bg-surface);
+}
+.result-review > div > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.result-review .correct, .result-review .incorrect {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  min-width: 92px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.result-review .correct { color: var(--accent-ok); background: color-mix(in srgb, var(--accent-ok) 12%, transparent); }
+.result-review .incorrect { color: var(--accent-warm); background: var(--accent-warm-soft); }
+.result-review p { margin: 0; }
+.result-answer-line { font-size: 0.8125rem; color: var(--fg-muted); }
+.result-review .text-link { align-self: flex-start; }
+
+/* Messagerie : avatar, nom et sous-titre alignés dans l'en-tête de conversation */
+.chat-header .identity-link { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
+.chat-header .identity-link > div { display: flex; flex-direction: column; min-width: 0; }
+.chat-header .identity-link > div b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-header .identity-link > div span { font-size: 0.75rem; color: var(--fg-muted); }
+
+/* Invitations : nom et rôle sur deux lignes au lieu d'être collés */
+.relation-row > div:first-child:not(.connect-card-head) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Lecteur sur mobile : la barre d'étude ne déborde plus (bouton Sommaire toujours visible) */
+@media (max-width: 768px) {
+  .study-topbar-left { flex: 1 1 auto; }
+  .study-topbar-right { flex-shrink: 0; }
+  .study-exit-btn span { display: none; }
+  .study-breadcrumb .study-module-name,
+  .study-breadcrumb > span[aria-hidden="true"] { display: none; }
+  .study-breadcrumb b { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .result-review > div { flex-direction: column; gap: 8px; }
+}
+
+/* Bandeau de présentation de la démo (accueil, mode local) */
+.demo-banner {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding: 16px 48px 16px 18px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: var(--accent-brand-soft);
+  border: 1px solid color-mix(in srgb, var(--accent-brand) 30%, transparent);
+}
+.demo-banner-text { display: flex; flex-direction: column; gap: 4px; flex: 1 1 320px; min-width: 0; }
+.demo-banner-pitch { margin: 0; font-size: 0.9375rem; line-height: 1.45; color: var(--fg-primary); }
+.demo-banner-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.demo-persona-switch {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+}
+.demo-persona-switch button {
+  min-height: 32px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+  background: transparent;
+  border: 0;
+}
+.demo-persona-switch button.active { background: var(--accent-brand); color: var(--bg-surface); }
+.demo-banner-close { position: absolute; top: 8px; right: 8px; }
+@media (max-width: 768px) {
+  .demo-banner { padding: 14px 44px 14px 14px; }
+  .demo-banner-actions { width: 100%; }
+}

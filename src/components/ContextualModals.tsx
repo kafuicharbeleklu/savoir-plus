@@ -383,7 +383,7 @@ export function DemoAuthModal({
         <span className="eyebrow">CHANGER DE RÔLE OU DE SESSION</span>
         <h2>Comptes & Connexion</h2>
         <p>
-          Explorez SAVOIR+ selon trois rôles réels pour tester l’intégration contextuelle des espaces Apprenant,
+          Explorez SAVOIR+ avec trois personnages de démonstration fictifs pour tester l’intégration contextuelle des espaces Apprenant,
           Studio Créateur et Console Gouvernance.
         </p>
 

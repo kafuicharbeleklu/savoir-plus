@@ -23,8 +23,8 @@ import {
   type ReviewLevel
 } from '../wireframeData';
 import type { Profile, Progress, Relation } from '../data';
-import { MODULES_CONTENT } from '../content';
-import { moduleProgressPercent } from '../domain.mjs';
+import { MODULES_CONTENT, builtInAnswerKey } from '../content';
+import { isQuizPassed, moduleProgressPercent } from '../domain.mjs';
 import { computeCatalogCardSteps } from '../personas';
 import { DifficultyMeter, ProgressBar } from '../components/ProfileIdentityCard';
 import { CatalogContentCard, ContentTypeMark, XpBadgeInline } from '../components/CatalogVisuals';
@@ -129,14 +129,14 @@ export function CatalogExtraView({
       const total = item.pathModules.reduce((acc, pm) => {
         const p = resolveModProg(pm.id, progress, ext, userId, getModuleProgress);
         const count = MODULES_CONTENT[pm.id]?.lessons.length || 3;
-        return acc + moduleProgressPercent(p, count);
+        return acc + moduleProgressPercent(p, count, builtInAnswerKey(pm.id));
       }, 0);
       return Math.round(total / item.pathModules.length);
     }
     if (item.type === 'module') {
       const p = resolveModProg(item.id, progress, ext, userId, getModuleProgress);
       const count = MODULES_CONTENT[item.id]?.lessons.length || 3;
-      return moduleProgressPercent(p, count);
+      return moduleProgressPercent(p, count, builtInAnswerKey(item.id));
     }
     return 0;
   };
@@ -579,7 +579,7 @@ export function ModuleDetailView({
   const isInteractive = !!item.interactive;
   const modProg = resolveModProg(item.id, progress, ext, userId, getModuleProgress);
   const studyLessons = MODULES_CONTENT[item.id]?.lessons.length || Math.max(1, (item.sections?.length || 4) - 1);
-  const pct = isInteractive ? moduleProgressPercent(modProg, studyLessons) : 0;
+  const pct = isInteractive ? moduleProgressPercent(modProg, studyLessons, builtInAnswerKey(item.id)) : 0;
   const isPlanned = ext.plannedIds.includes(item.id);
   const authorId = resolveAuthorMemberId(item.author);
 
@@ -650,7 +650,7 @@ export function ModuleDetailView({
               const isQuizRow = idx === (item.sections?.length || 0) - 1 && sec.title.toLowerCase().includes('acquis');
               const done = isInteractive
                 ? isQuizRow
-                  ? modProg.submitted
+                  ? isQuizPassed(modProg, builtInAnswerKey(item.id))
                   : modProg.lessons.includes(idx)
                 : sec.status === 'Terminé';
               return (

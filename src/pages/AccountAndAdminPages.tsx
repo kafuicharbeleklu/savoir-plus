@@ -16,7 +16,7 @@ import {
   User,
   UserCheck
 } from 'lucide-react';
-import { appendAuditLog, formatNotificationTimestamp, type ExtendedDemoState, type NotificationItem } from '../wireframeData';
+import { appendAuditLog, formatNotificationTimestamp, notificationsFor, type ExtendedDemoState, type NotificationItem } from '../wireframeData';
 import type { Profile, Relation } from '../data';
 import { resolveCommunityDirectory, resolveProfileVerified, type RoleCapabilities } from '../personas';
 import { GovernanceShell } from './AdminPages';
@@ -38,7 +38,7 @@ interface AccountAdminProps {
   setToast: (msg: string) => void;
 }
 
-export function NotificationsView({ ext, updateExt, nav, people, setToast }: AccountAdminProps) {
+export function NotificationsView({ ext, updateExt, nav, people, user, setToast }: AccountAdminProps) {
   const [showPrefs, setShowPrefs] = useState(false);
 
   const resolveActor = (n: NotificationItem): Profile => {
@@ -54,7 +54,7 @@ export function NotificationsView({ ext, updateExt, nav, people, setToast }: Acc
     };
   };
 
-  const items = ext.notifications;
+  const items = notificationsFor(ext.notifications, user.id);
 
   const markAllRead = () => {
     updateExt((prev) => ({
@@ -72,7 +72,7 @@ export function NotificationsView({ ext, updateExt, nav, people, setToast }: Acc
     nav(targetPage, targetId);
   };
 
-  const unreadCount = ext.notifications.filter((n) => !n.read).length;
+  const unreadCount = items.filter((n) => !n.read).length;
 
   return (
     <div className="dashboard-grid">

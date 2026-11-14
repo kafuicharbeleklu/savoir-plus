@@ -10,7 +10,8 @@ import type {
   StudioMedia
 } from './wireframeData';
 import type { Profile, Progress } from './data';
-import { moduleProgressPercent } from './domain.mjs';
+import { isQuizPassed, moduleProgressPercent } from './domain.mjs';
+import { builtInAnswerKey } from './content';
 
 export interface RoleCapabilities {
   roleLabel: string;
@@ -169,6 +170,21 @@ export function isStudioRoute(page: string): boolean {
 
 export function isGovernanceRoute(page: string): boolean {
   return page.startsWith('admin') || page === 'moderation';
+}
+
+export const DEMO_PERSONA_IDS = ['afi', 'kossi', 'nadege'] as const;
+
+/**
+ * Personnage de démo au chargement : `?as=kossi` dans l'URL, sinon celui mémorisé pour cet onglet
+ * (sessionStorage), sinon Afi. Deux fenêtres peuvent ainsi incarner deux personnages différents.
+ * Ce choix de personnage n'est jamais présenté comme une authentification (R:4401).
+ */
+export function resolveDemoPersona(search: string, stored: string | null): string {
+  const isDemo = (v: string | null): v is string => !!v && (DEMO_PERSONA_IDS as readonly string[]).includes(v);
+  const fromUrl = new URLSearchParams(search).get('as');
+  if (isDemo(fromUrl)) return fromUrl;
+  if (isDemo(stored)) return stored;
+  return 'afi';
 }
 
 /**
@@ -347,7 +363,7 @@ export function computeCatalogCardSteps(
     const totalPercent = item.pathModules.reduce((acc, pm) => {
       const p = getModProg(pm.id);
       const count = lessonCountsById[pm.id] || 3;
-      const mp = moduleProgressPercent(p, count);
+      const mp = moduleProgressPercent(p, count, builtInAnswerKey(pm.id));
       if (mp === 100) completedModules += 1;
       return acc + mp;
     }, 0);
@@ -360,9 +376,10 @@ export function computeCatalogCardSteps(
   const modProg = getModProg(item.id);
   const lessonCount = lessonCountsById[item.id] || Math.max(1, (item.sections?.length || 4) - 1);
   const totalSteps = lessonCount + 1; // sections + quiz final
-  const doneSteps = Math.min(lessonCount, modProg.lessons.length) + (modProg.submitted ? 1 : 0);
+  const answerKey = builtInAnswerKey(item.id);
+  const doneSteps = Math.min(lessonCount, modProg.lessons.length) + (isQuizPassed(modProg, answerKey) ? 1 : 0);
   return {
-    pct: moduleProgressPercent(modProg, lessonCount),
+    pct: moduleProgressPercent(modProg, lessonCount, answerKey),
     doneSteps,
     totalSteps
   };
@@ -564,7 +581,7 @@ export function resolveActiveLab(
   catalog: CatalogItem[],
   getProgress: (modId: string) => Progress,
   lessonCounts: Record<string, number>,
-  preferredOrder: string[] = ['reseaux', 'phishing', 'comptes']
+  preferredOrder: string[] = ['phishing', 'reseaux', 'comptes']
 ): { item: CatalogItem; pct: number } | null {
   const modules = catalog.filter((c) => c.type === 'module');
   if (modules.length === 0) return null;
@@ -575,7 +592,7 @@ export function resolveActiveLab(
     const item = modules.find((m) => m.id === id);
     if (!item) continue;
     const total = lessonCounts[id] || item.sections?.length || 3;
-    const pct = moduleProgressPercent(getProgress(id), total);
+    const pct = moduleProgressPercent(getProgress(id), total, builtInAnswerKey(id));
     if (pct > 0 && pct < 100) {
       return { item, pct };
     }
@@ -585,7 +602,7 @@ export function resolveActiveLab(
     const item = modules.find((m) => m.id === id);
     if (!item) continue;
     const total = lessonCounts[id] || item.sections?.length || 3;
-    const pct = moduleProgressPercent(getProgress(id), total);
+    const pct = moduleProgressPercent(getProgress(id), total, builtInAnswerKey(id));
     if (pct > 0) {
       return { item, pct };
     }
@@ -595,7 +612,7 @@ export function resolveActiveLab(
   const fallbackTotal = lessonCounts[fallback.id] || fallback.sections?.length || 3;
   return {
     item: fallback,
-    pct: moduleProgressPercent(getProgress(fallback.id), fallbackTotal)
+    pct: moduleProgressPercent(getProgress(fallback.id), fallbackTotal, builtInAnswerKey(fallback.id))
   };
 }
 

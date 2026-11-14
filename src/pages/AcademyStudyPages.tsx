@@ -17,9 +17,10 @@ import {
 } from 'lucide-react';
 import type { Progress } from '../data';
 import { MODULES_CONTENT, type ModuleStudyContent } from '../content';
-import { moduleProgressPercent, moduleXp, scoreAnswers } from '../domain.mjs';
+import { isQuizPassed, moduleProgressPercent, moduleXp, quizPassThreshold, scoreAnswers } from '../domain.mjs';
 import { ModuleInteractiveLab } from '../components/PhishingInspectorLab';
 import { ProgressBar } from '../components/ProfileIdentityCard';
+import { computeGlobalLevel } from '../personas';
 
 function StudyTopBar({
   title,
@@ -27,7 +28,8 @@ function StudyTopBar({
   pct,
   onExit,
   showTocBtn,
-  onToggleToc
+  onToggleToc,
+  tocOpen = false
 }: {
   title: string;
   sectionLabel: string;
@@ -35,11 +37,12 @@ function StudyTopBar({
   onExit: () => void;
   showTocBtn?: boolean;
   onToggleToc?: () => void;
+  tocOpen?: boolean;
 }) {
   return (
     <header className="study-topbar">
       <div className="study-topbar-left">
-        <button className="secondary study-exit-btn" onClick={onExit}>
+        <button className="secondary study-exit-btn" onClick={onExit} aria-label="Quitter l’étude">
           <ArrowLeft size={15} />
           <span>Quitter l’étude</span>
         </button>
@@ -58,7 +61,7 @@ function StudyTopBar({
         </div>
 
         {showTocBtn && onToggleToc && (
-          <button className="secondary study-toc-mobile-btn" onClick={onToggleToc} aria-expanded={false}>
+          <button className="secondary study-toc-mobile-btn" onClick={onToggleToc} aria-expanded={tocOpen}>
             <List size={15} /> Sommaire
           </button>
         )}
@@ -100,8 +103,9 @@ export function AcademyReaderView({
   const lessonList = moduleContent.lessons;
   const safeIndex = Math.max(0, Math.min(lessonIndex, lessonList.length - 1));
   const current = lessonList[safeIndex] || lessonList[0];
-  const pct = moduleProgressPercent(progress, lessonList.length);
-  const points = moduleXp(progress, lessonList.length);
+  const answerKey = moduleContent.questions.map((q) => q.correctIndex);
+  const pct = moduleProgressPercent(progress, lessonList.length, answerKey);
+  const points = moduleXp(progress, lessonList.length, answerKey);
   const maxXp = lessonList.length * 25 + 75;
   const alreadyDone = progress.lessons.includes(safeIndex);
 
@@ -113,6 +117,7 @@ export function AcademyReaderView({
         pct={pct}
         onExit={onExit}
         showTocBtn
+        tocOpen={tocOpen}
         onToggleToc={() => setTocOpen(!tocOpen)}
       />
 
@@ -165,7 +170,7 @@ export function AcademyReaderView({
               }}
             >
               <span className="toc-index tabular-nums">
-                {progress.submitted ? <Check size={13} /> : `0${lessonList.length + 1}`}
+                {isQuizPassed(progress, answerKey) ? <Check size={13} /> : `0${lessonList.length + 1}`}
               </span>
               <div className="toc-text">
                 <b>Évaluation finale (Quiz)</b>
@@ -263,9 +268,13 @@ export function AcademyQuizIntroView({
   onBackToReader: () => void;
   onExit: () => void;
 }) {
-  const pct = moduleProgressPercent(progress, moduleContent.lessons.length);
+  const pct = moduleProgressPercent(
+    progress,
+    moduleContent.lessons.length,
+    moduleContent.questions.map((q) => q.correctIndex)
+  );
   const qLen = moduleContent.questions.length;
-  const passThreshold = Math.max(1, Math.ceil(qLen * 0.66));
+  const passThreshold = quizPassThreshold(qLen);
 
   return (
     <div className="study-shell">
@@ -342,7 +351,11 @@ export function AcademyQuizView({
   const qList = moduleContent.questions;
   const qLen = qList.length;
   const answeredCount = answers.slice(0, qLen).filter((a) => a !== undefined && a !== null).length;
-  const pct = moduleProgressPercent(progress, moduleContent.lessons.length);
+  const pct = moduleProgressPercent(
+    progress,
+    moduleContent.lessons.length,
+    qList.map((q) => q.correctIndex)
+  );
 
   return (
     <div className="study-shell">
@@ -359,7 +372,7 @@ export function AcademyQuizView({
           <div className="quiz-label">
             <HelpCircle size={16} />
             <b>Répondez aux {qLen} questions puis vérifiez votre récapitulatif avant envoi.</b>
-            <span className="tabular-nums">
+            <span className="quiz-count tabular-nums" aria-live="polite">
               {answeredCount} / {qLen} réponses sélectionnées
             </span>
           </div>
@@ -368,7 +381,7 @@ export function AcademyQuizView({
             <fieldset key={q.text} className="question">
               <legend>
                 <span className="tabular-nums">0{qi + 1}</span>
-                {q.text}
+                <span>{q.text}</span>
               </legend>
               {q.answers.map((opt, oi) => {
                 const chosen = answers[qi] === oi;
@@ -385,7 +398,6 @@ export function AcademyQuizView({
                       }}
                     />
                     <span>{opt}</span>
-                    {chosen && <CheckCircle2 size={15} />}
                   </label>
                 );
               })}
@@ -395,14 +407,18 @@ export function AcademyQuizView({
           {!reviewOpen ? (
             <div className="quiz-submit-row">
               <button className="secondary" onClick={onExit}>
-                Enregistrer et quitter
+                Quitter et garder mes réponses
               </button>
               <button className="primary" onClick={() => setReviewOpen(true)}>
                 Vérifier et envoyer mes réponses <ArrowRight size={15} />
               </button>
             </div>
           ) : (
-            <div className="quiz-confirm-box" role="region" aria-label="Récapitulatif avant envoi">
+            <div
+              className={`quiz-confirm-box ${answeredCount < qLen ? 'has-missing' : ''}`}
+              role="region"
+              aria-label="Récapitulatif avant envoi"
+            >
               <h3>Récapitulatif avant soumission définitive</h3>
               <p className="tabular-nums">
                 Vous avez répondu à{' '}
@@ -437,7 +453,10 @@ export function AcademyResultView({
   onRetryQuiz,
   onReviewLessons,
   onOpenLearning,
-  onExit
+  onExit,
+  totalXP,
+  nextModule,
+  onOpenNextModule
 }: {
   moduleContent?: ModuleStudyContent;
   progress: Progress;
@@ -445,14 +464,34 @@ export function AcademyResultView({
   onReviewLessons: (sectionIdx: number) => void;
   onOpenLearning: () => void;
   onExit: () => void;
+  totalXP: number;
+  nextModule?: { id: string; title: string };
+  onOpenNextModule?: (moduleId: string) => void;
 }) {
   const qList = moduleContent.questions;
   const qLen = qList.length;
   const correctIndices = qList.map((q) => q.correctIndex);
   const s = scoreAnswers(progress.answers || [], correctIndices);
-  const passThreshold = Math.max(1, Math.ceil(qLen * 0.66));
-  const passed = s >= passThreshold;
-  const pct = moduleProgressPercent(progress, moduleContent.lessons.length);
+  const passThreshold = quizPassThreshold(qLen);
+  const passed = isQuizPassed(progress, correctIndices);
+  const lessonCount = moduleContent.lessons.length;
+  const pct = moduleProgressPercent(progress, lessonCount, correctIndices);
+  const missingLessons = moduleContent.lessons.map((_, i) => i).filter((i) => !progress.lessons.includes(i));
+  const moduleValidated = passed && missingLessons.length === 0;
+
+  // Récompense : les 75 XP du quiz ne sont acquis qu'au-dessus du seuil ; on signale la montée de niveau
+  // lorsque ces XP font franchir un palier.
+  const quizXp = passed ? 75 : 0;
+  const lvl = computeGlobalLevel(totalXP);
+  const levelUp = passed && computeGlobalLevel(Math.max(0, totalXP - quizXp)).level < lvl.level;
+
+  const eyebrow = moduleValidated ? 'MODULE VALIDÉ' : passed ? 'QUIZ RÉUSSI' : 'RÉVISION CONSEILLÉE';
+  const headline = passed ? 'Bravo, vos réflexes sont solides.' : 'Prenez le temps de revoir les points clés.';
+  const lead = moduleValidated
+    ? 'Résultat enregistré. Les explications ci-dessous vous aident à consolider chaque situation.'
+    : passed
+      ? `Quiz réussi. Terminez ${missingLessons.length > 1 ? 'les sections restantes' : 'la section restante'} pour valider le module.`
+      : `Seuil de réussite : ${passThreshold} / ${qLen}. Revoyez les sections indiquées puis retentez le quiz, sans pénalité.`;
 
   return (
     <div className="study-shell">
@@ -469,35 +508,65 @@ export function AcademyResultView({
           <div className="result-icon">
             <Award size={40} />
           </div>
-          <span className="eyebrow">{passed ? 'MODULE VALIDÉ' : 'RÉVISION CONSEILLÉE'}</span>
-          <h1>{passed ? 'Bravo, vos réflexes sont solides.' : 'Prenez le temps de revoir les points clés.'}</h1>
-          <p>
-            Résultat enregistré pour ce module. Vos explications détaillées ci-dessous vous aident à consolider chaque
-            situation.
-          </p>
+          <span className="eyebrow">{eyebrow}</span>
+          <h1>{headline}</h1>
+          <p>{lead}</p>
 
-          <div className="score-display tabular-nums">
+          <div className="score-display tabular-nums" aria-label={`Score : ${s} sur ${qLen}`}>
             {s}
-            <span>/ {qLen}</span>
+            <span> / {qLen}</span>
           </div>
+
+          {passed && (
+            <div className={`result-reward ${levelUp ? 'is-levelup' : ''}`} role="status">
+              <div className="result-reward-head">
+                <span className="result-xp-gain tabular-nums">+{quizXp} XP</span>
+                <span className="result-level tabular-nums">
+                  {levelUp ? (
+                    <>
+                      <Award size={16} /> Niveau {lvl.level} atteint !
+                    </>
+                  ) : (
+                    <>Niveau {lvl.level}</>
+                  )}
+                </span>
+              </div>
+              <ProgressBar value={lvl.percent} label="Progression vers le niveau suivant" tone="htb" />
+              <small className="tiny muted tabular-nums">
+                {lvl.currentXp} / {lvl.targetXp} XP vers le niveau {lvl.level + 1} · {totalXP} XP au total · XP
+                illustratifs (démo)
+              </small>
+            </div>
+          )}
 
           <div className="result-review">
             {qList.map((q, qi) => {
               const userAns = (progress.answers || [])[qi];
               const ok = userAns === q.correctIndex;
+              const chosenLabel = userAns !== undefined && userAns >= 0 ? q.answers[userAns] : undefined;
               return (
                 <div key={q.text}>
                   <span className={ok ? 'correct' : 'incorrect'}>
-                    {ok ? <Check size={16} /> : <XCircle size={16} />}
+                    {ok ? <Check size={14} /> : <XCircle size={14} />}
+                    {ok ? 'Correct' : 'Incorrect'}
                   </span>
                   <div>
                     <b>
                       Question 0{qi + 1} · {q.text}
                     </b>
+                    <p className="result-answer-line">
+                      Votre réponse : {chosenLabel ?? 'aucune réponse'}
+                      {!ok && (
+                        <>
+                          <br />
+                          Bonne réponse : <b>{q.answers[q.correctIndex]}</b>
+                        </>
+                      )}
+                    </p>
                     <p>{q.explanation}</p>
                     <button
                       className="text-link"
-                      onClick={() => onReviewLessons(Math.min(moduleContent.lessons.length - 1, qi))}
+                      onClick={() => onReviewLessons(Math.min(lessonCount - 1, qi))}
                     >
                       <FileText size={13} /> Revoir la section associée
                     </button>
@@ -508,12 +577,24 @@ export function AcademyResultView({
           </div>
 
           <div className="result-buttons">
-            <button className="secondary" onClick={onRetryQuiz}>
-              <RotateCcw size={15} /> Nouvelle tentative
-            </button>
-            <button className="primary" onClick={onOpenLearning}>
-              Retour à Mes apprentissages <ArrowRight size={15} />
-            </button>
+            {passed && missingLessons.length > 0 ? (
+              <button className="secondary" onClick={() => onReviewLessons(missingLessons[0])}>
+                <BookOpen size={15} /> Terminer la section 0{missingLessons[0] + 1}
+              </button>
+            ) : (
+              <button className={passed ? 'secondary' : 'primary'} onClick={onRetryQuiz}>
+                <RotateCcw size={15} /> Nouvelle tentative
+              </button>
+            )}
+            {passed && nextModule && onOpenNextModule ? (
+              <button className="primary" onClick={() => onOpenNextModule(nextModule.id)}>
+                Module suivant : {nextModule.title} <ArrowRight size={15} />
+              </button>
+            ) : (
+              <button className={passed ? 'primary' : 'secondary'} onClick={onOpenLearning}>
+                Retour à Mes apprentissages <ArrowRight size={15} />
+              </button>
+            )}
           </div>
         </div>
         </div>

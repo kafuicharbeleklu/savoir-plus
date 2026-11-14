@@ -62,6 +62,7 @@ import {
 import {
   canSend,
   emptyProgress,
+  isQuizPassed,
   moduleProgressPercent,
   moduleXp,
   pairId
@@ -72,6 +73,7 @@ import {
   appendCommunityReply,
   canAccessRoute,
   computeGlobalLevel,
+  resolveDemoPersona,
   isFocusedStudyRoute,
   computeCatalogCardSteps,
   filterHomeFeed,
@@ -93,6 +95,7 @@ import {
   ADMIN_ROLES,
   buildDynamicCatalog,
   initialExtendedState,
+  notificationsFor,
   readExtended,
   writeExtended,
   type AdminRoleName,
@@ -118,6 +121,9 @@ import {
   PostComposerModal,
   ReportDialog
 } from './components/ContextualModals';
+
+const DEMO_PERSONA_KEY = 'savoir-demo-persona';
+const DEMO_BANNER_KEY = 'savoir-demo-banner-hidden';
 
 const LESSON_COUNTS: Record<string, number> = Object.fromEntries(
   Object.entries(MODULES_CONTENT).map(([id, mod]) => [id, mod.lessons.length])
@@ -231,7 +237,22 @@ export default function App() {
   const initialRoute = parseHash();
 
   const [mode, setMode] = useState<'local' | 'cloud'>('local');
-  const [uid, setUid] = useState<string>('afi');
+  const [uid, setUid] = useState<string>(() => {
+    let stored: string | null = null;
+    try {
+      stored = window.sessionStorage.getItem(DEMO_PERSONA_KEY);
+    } catch {
+      // stockage indisponible (navigation privée) : on retombe sur l'URL ou Afi
+    }
+    return resolveDemoPersona(window.location.search, stored);
+  });
+  const [demoBannerHidden, setDemoBannerHidden] = useState<boolean>(() => {
+    try {
+      return window.sessionStorage.getItem(DEMO_BANNER_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
   const [cloudPreviewRole, setCloudPreviewRole] = useState<'learner' | 'creator' | 'admin'>('learner');
 
   const [page, setPage] = useState<RoutePage>(initialRoute.page);
@@ -248,6 +269,8 @@ export default function App() {
   const [activeStudyModuleId, setActiveStudyModuleId] = useState<string>('phishing');
   const [lessonIndex, setLessonIndex] = useState<number>(0);
   const [answers, setAnswers] = useState<number[]>([]);
+  // Brouillons de quiz non envoyés, par module (conservés pendant la session).
+  const quizDraftsRef = useRef<Record<string, number[]>>({});
   const [studyReturnTarget, setStudyReturnTarget] = useState<{ page: RoutePage; id?: string }>({ page: 'home' });
 
   const [topQuery, setTopQuery] = useState<string>('');
@@ -479,9 +502,28 @@ export default function App() {
     ])
   );
 
+  // Corrigé du quiz d'un module : sert à ne valider le module / donner les 75 XP qu'au-dessus du seuil.
+  const answerKey = (modId: string) =>
+    resolveStudyContent(modId, ext.studioContents, ext.studioQuiz).questions.map((q) => q.correctIndex);
+  const isModuleValidated = (modId: string) => isQuizPassed(getModuleProgress(modId), answerKey(modId));
+  const modulePct = (modId: string) =>
+    moduleProgressPercent(
+      getModuleProgress(modId),
+      resolveStudyContent(modId, ext.studioContents, ext.studioQuiz).lessons.length,
+      answerKey(modId)
+    );
+
+  // Prochain module jouable non validé (ordre du catalogue), proposé en fin de quiz.
+  const nextModuleAfter = (currentId: string) => {
+    const nextId = playableModuleIds.find((id) => id !== currentId && !isModuleValidated(id));
+    if (!nextId) return undefined;
+    const item = dynamicCatalog.find((c) => c.id === nextId);
+    return { id: nextId, title: item?.title || resolveStudyContent(nextId, ext.studioContents, ext.studioQuiz).title };
+  };
+
   const totalXP = playableModuleIds.reduce((sum, modId) => {
     const study = resolveStudyContent(modId, ext.studioContents, ext.studioQuiz);
-    return sum + moduleXp(getModuleProgress(modId), study.lessons.length);
+    return sum + moduleXp(getModuleProgress(modId), study.lessons.length, answerKey(modId));
   }, 0);
 
   const syncPopularScroll = () => {
@@ -530,6 +572,25 @@ export default function App() {
     nav('home');
   }, [page, routeAllowed]);
 
+  // Mémorise le personnage de démo pour cet onglet (un rechargement ne ramène plus à Afi).
+  useEffect(() => {
+    if (mode !== 'local') return;
+    try {
+      window.sessionStorage.setItem(DEMO_PERSONA_KEY, uid);
+    } catch {
+      // stockage indisponible : sans conséquence
+    }
+  }, [uid, mode]);
+
+  const hideDemoBanner = () => {
+    setDemoBannerHidden(true);
+    try {
+      window.sessionStorage.setItem(DEMO_BANNER_KEY, '1');
+    } catch {
+      // stockage indisponible : le bandeau réapparaîtra au rechargement
+    }
+  };
+
   // Messages: desktop opens the quick-chat drawer; at ≤768px the drawer is hidden, so open the full page.
   const openConversation = (relId: string) => {
     setSelectedRelId(relId);
@@ -544,7 +605,8 @@ export default function App() {
   // Sync quiz draft answers when opening study module
   useEffect(() => {
     if (page === 'quiz') {
-      setAnswers(activeStudyProgress.answers || []);
+      const draft = quizDraftsRef.current[activeStudyModuleId];
+      setAnswers(draft ?? (activeStudyProgress.answers || []));
     }
   }, [page, activeStudyModuleId]);
 
@@ -610,6 +672,7 @@ export default function App() {
         answers: normalized,
         submitted: true
       });
+      delete quizDraftsRef.current[activeStudyModuleId];
       nav('result', activeStudyModuleId);
       setToast('Quiz enregistré — consultez votre correction ci-dessous');
     } catch (e: any) {
@@ -619,13 +682,11 @@ export default function App() {
     }
   };
 
-  const handleRetryQuiz = async () => {
+  // « Nouvelle tentative » ne retire rien : le résultat enregistré (et ses XP) reste acquis jusqu'au
+  // prochain envoi ; seules les réponses du brouillon repartent à zéro (R:763).
+  const handleRetryQuiz = () => {
+    quizDraftsRef.current[activeStudyModuleId] = [];
     setAnswers([]);
-    await saveModuleProgress(activeStudyModuleId, {
-      ...activeStudyProgress,
-      answers: [],
-      submitted: false
-    });
     nav('quiz-intro', activeStudyModuleId);
   };
 
@@ -862,7 +923,7 @@ export default function App() {
     setSelectedRelId('');
     setAuthModalOpen(false);
     const name = people.find((p) => p.id === id)?.name || id;
-    setToast(`Session active : ${name}`);
+    setToast(`Personnage de démo : ${name}`);
     if (page === 'visitor') nav('home');
   };
 
@@ -933,7 +994,7 @@ export default function App() {
   const pendingIncoming = relations.filter((r) => r.recipient === uid && r.status === 'pending' && r.blockedBy.length === 0);
   const pendingOutgoing = relations.filter((r) => r.requester === uid && r.status === 'pending');
   const acceptedRelations = relations.filter((r) => r.status === 'accepted');
-  const unreadNotifs = ext.notifications.filter((n) => !n.read).length;
+  const unreadNotifs = notificationsFor(ext.notifications, uid).filter((n) => !n.read).length;
 
   const renderActiveScreen = () => {
   // Visitor portal
@@ -1031,7 +1092,10 @@ export default function App() {
           setAnswers={setAnswers}
           busy={busy}
           onSubmit={handleSubmitQuiz}
-          onExit={() => nav('quiz-intro', activeStudyModuleId)}
+          onExit={() => {
+            quizDraftsRef.current[activeStudyModuleId] = answers;
+            nav('quiz-intro', activeStudyModuleId);
+          }}
         />
         {toast && (
           <div className="toast" role="status" aria-live="polite">
@@ -1049,12 +1113,15 @@ export default function App() {
           moduleContent={activeStudyContent}
           progress={activeStudyProgress}
           onRetryQuiz={handleRetryQuiz}
-          onReviewLessons={() => {
-            setLessonIndex(0);
+          onReviewLessons={(sectionIdx) => {
+            setLessonIndex(sectionIdx);
             nav('reader', activeStudyModuleId);
           }}
           onOpenLearning={() => nav('learning')}
           onExit={() => nav('home')}
+          totalXP={totalXP}
+          nextModule={nextModuleAfter(activeStudyModuleId)}
+          onOpenNextModule={(id) => nav('module-detail', id)}
         />
         {toast && (
           <div className="toast" role="status" aria-live="polite">
@@ -1189,15 +1256,15 @@ export default function App() {
 
   // Determine active module to resume on Home hero
   const resumeModuleId =
-    ['reseaux', 'phishing', 'comptes'].find((id) => {
-      const p = getModuleProgress(id);
-      const len = MODULES_CONTENT[id].lessons.length;
-      const pct = moduleProgressPercent(p, len);
+    // Le module phishing (cœur du pitch) est proposé en premier tant qu'il n'est pas validé.
+    ['phishing', 'reseaux', 'comptes'].find((id) => {
+      const pct = modulePct(id);
       return pct > 0 && pct < 100;
     }) || 'phishing';
   const resumeCatalog = dynamicCatalog.find((c) => c.id === resumeModuleId) || dynamicCatalog[0];
   const resumeProg = getModuleProgress(resumeModuleId);
-  const resumePct = moduleProgressPercent(resumeProg, MODULES_CONTENT[resumeModuleId]?.lessons.length || 3);
+  const resumePct = modulePct(resumeModuleId);
+  const resumeValidated = isModuleValidated(resumeModuleId);
   const resumeNextIdx = [0, 1, 2].find((i) => !resumeProg.lessons.includes(i));
 
   const renderMainContent = () => {
@@ -1216,6 +1283,60 @@ export default function App() {
       return (
         <div className="dashboard-grid">
           <div className="dashboard-main">
+            {mode === 'local' && !demoBannerHidden && page === 'home' && (() => {
+              const phishingPct = modulePct('phishing');
+              const startLabel = isModuleValidated('phishing')
+                ? 'Revoir le module phishing'
+                : phishingPct > 0
+                  ? 'Reprendre le module phishing'
+                  : 'Démarrer le module phishing (12 min)';
+              const otherId = uid === 'kossi' ? 'afi' : 'kossi';
+              const otherName = people.find((p) => p.id === otherId)?.name.split(' ')[0] || otherId;
+              return (
+                <section className="demo-banner" aria-label="Présentation de la démonstration">
+                  <div className="demo-banner-text">
+                    <span className="eyebrow">DÉMONSTRATION · HACKATHON CREATE WITH AI</span>
+                    <p className="demo-banner-pitch">
+                      <b>SAVOIR+</b> : apprendre par défis courts, progresser avec des XP et s’entraider entre membres.
+                    </p>
+                    <small className="tiny muted">
+                      Vous explorez en tant que <b>{user.name}</b> ({caps.roleLabel}). Démo locale — non synchronisée :
+                      personnages, publications et XP sont fictifs.
+                    </small>
+                  </div>
+                  <div className="demo-banner-actions">
+                    <button className="primary" onClick={() => openReader('phishing')}>
+                      {startLabel} <ArrowRight size={15} />
+                    </button>
+                    <div className="demo-persona-switch" role="group" aria-label="Changer de personnage de démo">
+                      {(['afi', 'kossi'] as const).map((id) => (
+                        <button
+                          key={id}
+                          type="button"
+                          aria-pressed={uid === id}
+                          className={uid === id ? 'active' : ''}
+                          onClick={() => uid !== id && handleSwitchPersona(id)}
+                        >
+                          {people.find((p) => p.id === id)?.name.split(' ')[0] || id}
+                        </button>
+                      ))}
+                    </div>
+                    <a
+                      className="text-link tiny"
+                      href={`${window.location.pathname}?as=${otherId}#relations`}
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      Ouvrir {otherName} dans une 2ᵉ fenêtre
+                    </a>
+                  </div>
+                  <button className="icon-btn demo-banner-close" aria-label="Masquer la présentation" onClick={hideDemoBanner}>
+                    <X size={16} />
+                  </button>
+                </section>
+              );
+            })()}
+
             {/* Inline LinkedIn-style Composer */}
             <section className="home-composer-inline" aria-label="Créer une contribution">
               <div className="home-composer-trigger-row">
@@ -1290,9 +1411,11 @@ export default function App() {
                       <span>
                         {resumeNextIdx !== undefined
                           ? `Prochaine section : 0${resumeNextIdx + 1} · ${MODULES_CONTENT[resumeModuleId]?.lessons[resumeNextIdx]?.title}`
-                          : resumeProg.submitted
-                            ? 'Module terminé — Révision libre disponible'
-                            : 'Sections lues — Prêt pour le quiz final'}
+                          : resumeValidated
+                            ? 'Module validé — Révision libre disponible'
+                            : resumeProg.submitted
+                              ? 'Quiz à retenter pour valider le module'
+                              : 'Sections lues — Prêt pour le quiz final'}
                       </span>
                       <b>{resumePct}%</b>
                     </div>
@@ -1309,7 +1432,7 @@ export default function App() {
                     <button
                       className="primary"
                       onClick={() =>
-                        resumeProg.lessons.length >= (MODULES_CONTENT[resumeModuleId]?.lessons.length || 3) && !resumeProg.submitted
+                        resumeProg.lessons.length >= (MODULES_CONTENT[resumeModuleId]?.lessons.length || 3) && !resumeValidated
                           ? (setActiveStudyModuleId(resumeModuleId), nav('quiz-intro', resumeModuleId))
                           : openReader(resumeModuleId)
                       }
@@ -1432,7 +1555,7 @@ export default function App() {
               <div className="rail-stat-list tabular-nums">
                 <div className="rail-stat-row">
                   <span>Modules validés</span>
-                  <b>{playableModuleIds.filter((id) => getModuleProgress(id).submitted).length} / {playableModuleIds.length}</b>
+                  <b>{playableModuleIds.filter((id) => isModuleValidated(id)).length} / {playableModuleIds.length}</b>
                 </div>
                 <div className="rail-stat-row">
                   <span>Contacts acceptés</span>
@@ -1512,10 +1635,10 @@ export default function App() {
       const enriched = moduleItems.map((item) => {
         const study = resolveStudyContent(item.id, ext.studioContents, ext.studioQuiz);
         const modProg = getModuleProgress(item.id);
-        const pct = moduleProgressPercent(modProg, study.lessons.length);
+        const pct = moduleProgressPercent(modProg, study.lessons.length, answerKey(item.id));
         const isPlanned = ext.plannedIds.includes(item.id);
         const bucket: 'En cours' | 'À commencer' | 'Terminés' =
-          modProg.submitted && pct === 100
+          isModuleValidated(item.id) && pct === 100
             ? 'Terminés'
             : modProg.lessons.length > 0 || (modProg.answers && modProg.answers.length > 0)
               ? 'En cours'

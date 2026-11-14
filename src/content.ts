@@ -51,11 +51,11 @@ export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
         intro: 'Le nom affiché peut être familier. L’adresse réelle et la destination du lien racontent parfois une autre histoire.',
         body: 'Inspectez l’adresse complète. Sur ordinateur, survolez le lien pour voir sa destination ; sur mobile, évitez de l’ouvrir si vous avez un doute.',
         points: [
-          'Lisez le domaine complet : assistance@banque-exemple.test n’est pas votre banque.',
+          'Un nom affiché comme « Service Sécurité » ne prouve rien : lisez l’adresse complète et la vraie destination du lien.',
           'Un cadenas HTTPS ne prouve pas qu’un site est honnête.',
           'Retrouvez le service en ouvrant son application ou son adresse habituelle.'
         ],
-        tip: 'Vérifiez une demande par un canal que vous connaissez déjà, pas le numéro contenu dans le message.'
+        tip: 'Vérifiez une demande par un canal que vous connaissez déjà, jamais par le lien ou le numéro fournis dans le message.'
       },
       {
         title: 'Adopter les bons réflexes',
@@ -309,4 +309,9 @@ export function resolveStudyContent(moduleId: string, studioContents?: { id: str
     };
   }
   return MODULES_CONTENT.phishing;
+}
+
+/** Corrigé du quiz d'un module intégré (les contenus du Studio passent par resolveStudyContent). */
+export function builtInAnswerKey(moduleId: string): number[] | undefined {
+  return MODULES_CONTENT[moduleId]?.questions.map((q) => q.correctIndex);
 }

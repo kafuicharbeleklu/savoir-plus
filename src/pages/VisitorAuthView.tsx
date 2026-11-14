@@ -363,7 +363,7 @@ export function VisitorAuthView({
 
           <div className="visitor-security-note">
             <ShieldCheck size={15} />
-            <span>Les droits réels et la confidentialité sont contrôlés côté serveur à chaque action.</span>
+            <span>En mode connecté, les droits et la confidentialité sont contrôlés côté serveur (Supabase). La démo locale reste dans votre navigateur.</span>
           </div>
         </section>
       </main>

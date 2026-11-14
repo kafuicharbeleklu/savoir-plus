@@ -214,8 +214,9 @@ export function PedagogicalProfileView({
         const study = MODULES_CONTENT[mod.id];
         const lessonCount = study ? study.lessons.length : 3;
         const correctIndices = study ? study.questions.map((q) => q.correctIndex) : [0, 0];
-        const pctVal = moduleProgressPercent(modProg, lessonCount);
-        const xpVal = moduleXp(modProg, lessonCount);
+        const key = study ? correctIndices : undefined;
+        const pctVal = moduleProgressPercent(modProg, lessonCount, key);
+        const xpVal = moduleXp(modProg, lessonCount, key);
         const qLen = correctIndices.length;
         const passThreshold = Math.max(1, Math.ceil(qLen * 0.66));
         const qScore = scoreAnswers(modProg.answers || [], correctIndices);
@@ -308,13 +309,17 @@ export function PedagogicalProfileView({
     return [...earned, ...locked].slice(0, 3);
   }, [badges]);
 
-  const profileSlug = target.name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-  const profileUrl = `savoir.edu/in/${profileSlug || target.id}`;
+  // Lien réel vers ce profil sur le site déployé (et non un domaine fictif).
+  const profileHref = `${window.location.origin}${window.location.pathname}#member/${target.id}`;
+  const profileUrl = profileHref.replace(/^https?:\/\//, '');
+  const copyProfileLink = () => {
+    const fail = () => setToast(`Copie impossible — lien du profil : ${profileHref}`);
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(profileHref).then(() => setToast('Lien du profil copié'), fail);
+    } else {
+      fail();
+    }
+  };
 
   const handleToggleVisibility = () => {
     if (!isOwnProfile || !updateExt) return;
@@ -495,10 +500,7 @@ export function PedagogicalProfileView({
                     role="menuitem"
                     onClick={() => {
                       setMoreMenuOpen(false);
-                      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-                        navigator.clipboard.writeText(`https://${profileUrl}`).catch(() => {});
-                      }
-                      setToast('Lien du profil copié');
+                      copyProfileLink();
                     }}
                   >
                     Copier le lien du profil
@@ -655,8 +657,12 @@ export function PedagogicalProfileView({
             <section className="htb-card htb-activity-card" aria-label="Activité annuelle">
               <div className="htb-activity-headline">
                 <strong className="htb-accent-val tabular-nums">{activity.yearXp} XP</strong>
-                <span>acquis sur SAVOIR+ cette année</span>
+                <span>acquis sur SAVOIR+</span>
+                <span className="status-tag warn">Illustration (démo)</span>
               </div>
+              <p className="tiny muted">
+                Répartition mensuelle illustrative : l’historique daté de l’activité n’est pas encore enregistré.
+              </p>
 
               <div className="htb-heatmap-grid" role="img" aria-label={`Activité annuelle sur 12 mois : ${activity.yearXp} XP`}>
                 {activity.months.map((m) => (
@@ -784,12 +790,7 @@ export function PedagogicalProfileView({
                   <button
                     type="button"
                     className="htb-inline-cta"
-                    onClick={() => {
-                      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-                        navigator.clipboard.writeText(`https://${profileUrl}`).catch(() => {});
-                      }
-                      setToast('URL du profil copiée');
-                    }}
+                    onClick={copyProfileLink}
                   >
                     <Copy size={13} /> Copier le lien du profil
                   </button>
@@ -799,7 +800,9 @@ export function PedagogicalProfileView({
 
             {/* Weekly Streak */}
             <section className="htb-section-block">
-              <h2 className="htb-block-heading">Série hebdomadaire</h2>
+              <h2 className="htb-block-heading">
+                Série hebdomadaire <span className="status-tag warn">Illustration (démo)</span>
+              </h2>
               <div className="htb-card htb-streak-card">
                 <div className="htb-streak-flame-row">
                   <span className="htb-flame-badge" aria-hidden="true">
@@ -868,14 +871,14 @@ export function PedagogicalProfileView({
                   <AlertTriangle size={14} aria-hidden="true" />
                   <span>
                     {activity.weeklyXp >= activity.weeklyTarget ? (
-                      'Objectif hebdomadaire atteint pour cette semaine.'
+                      'Objectif hebdomadaire illustratif atteint.'
                     ) : (
                       <>
-                        Gagnez{' '}
+                        Objectif hebdomadaire illustratif : encore{' '}
                         <strong className="htb-streak-alert-em tabular-nums">
                           {activity.weeklyTarget - activity.weeklyXp} XP
-                        </strong>{' '}
-                        d’ici dimanche pour la conserver.
+                        </strong>
+                        . La série réelle, fondée sur les dates, arrive avec le calendrier.
                       </>
                     )}
                   </span>

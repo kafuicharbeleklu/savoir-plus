@@ -20,7 +20,8 @@ import {
   Users
 } from 'lucide-react';
 import type { Profile, Progress, Relation } from '../data';
-import { moduleProgressPercent } from '../domain.mjs';
+import { isQuizPassed, moduleProgressPercent } from '../domain.mjs';
+import { builtInAnswerKey } from '../content';
 import {
   computeGlobalLevel,
   resolveAlgorithmicDiscoverProfiles,
@@ -159,29 +160,32 @@ export function ProfilePage({
   );
 
   const completedModulesCount = ['phishing', 'reseaux', 'comptes'].filter(
-    (id) => getModuleProgress(id).submitted
+    (id) => isQuizPassed(getModuleProgress(id), builtInAnswerKey(id))
   ).length;
 
   const activeModule =
     dynamicCatalog.find((c) => c.id === 'reseaux') || dynamicCatalog[0];
   const activePct = activeModule
-    ? moduleProgressPercent(getModuleProgress(activeModule.id), lessonCounts[activeModule.id] || 3)
+    ? moduleProgressPercent(
+        getModuleProgress(activeModule.id),
+        lessonCounts[activeModule.id] || 3,
+        builtInAnswerKey(activeModule.id)
+      )
     : 0;
 
-  const profileSlug = target.name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
-  const profileUrl = `savoir.edu/in/${profileSlug || target.id}`;
-
-  const handleCopyUrl = () => {
+  // Lien réel vers ce profil sur le site déployé (et non un domaine fictif).
+  const profileHref = `${window.location.origin}${window.location.pathname}#member/${target.id}`;
+  const profileUrl = profileHref.replace(/^https?:\/\//, '');
+  const copyProfileLink = () => {
+    const fail = () => setToast(`Copie impossible — lien du profil : ${profileHref}`);
     if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(`https://${profileUrl}`).catch(() => {});
+      navigator.clipboard.writeText(profileHref).then(() => setToast('Lien du profil copié'), fail);
+    } else {
+      fail();
     }
-    setToast('URL du profil copiée');
   };
+
+  const handleCopyUrl = copyProfileLink;
 
   const handleSaveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

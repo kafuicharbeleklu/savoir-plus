@@ -348,6 +348,8 @@ export interface NotificationItem {
   read: boolean;
   targetPage: string;
   targetId?: string;
+  /** Destinataire (personnage de démo). Absent : visible par tous. */
+  recipientId?: string;
 }
 
 export function formatNotificationTimestamp(d: Date = new Date()): string {
@@ -790,31 +792,33 @@ export const initialExtendedState = (): ExtendedDemoState => ({
   },
   notifications: [
     {
-      id: 'n1',
-      category: 'Relations',
-      actorId: 'kossi',
-      actorName: 'Kossi Agbo',
-      actorInitials: 'KA',
-      actorColor: 'lavender',
-      title: 'Une demande de discussion vous attend',
-      detail: 'Consultez les invitations reçues avant de décider.',
-      date: '14 nov. 2026 · 10 h 18',
+      id: 'n0-bienvenue',
+      category: 'Apprentissage',
+      actorId: 'nadege',
+      actorName: 'Nadège Koffi',
+      actorInitials: 'NK',
+      actorColor: 'mint',
+      title: 'Bienvenue sur SAVOIR+',
+      detail: 'Commencez par le module « Ne tombez plus dans le piège » : 3 sections, un atelier et un quiz.',
+      date: '14 nov. 2026 · 08 h 30',
       read: false,
-      targetPage: 'relations'
+      targetPage: 'module-detail',
+      targetId: 'phishing'
     },
     {
       id: 'n2',
       category: 'Communauté',
-      actorId: 'maya',
-      actorName: 'Maya',
-      actorInitials: 'MY',
-      actorColor: 'peach',
-      title: 'Une nouvelle réponse à votre question',
-      detail: 'Question : À quoi sert la passerelle par défaut ?',
-      date: '14 nov. 2026 · 09 h 42',
+      actorId: 'kossi',
+      actorName: 'Kossi Agbo',
+      actorInitials: 'KA',
+      actorColor: 'lavender',
+      title: 'Nouvelle réponse dans une question d’entraide',
+      detail: 'Question de Maya : À quoi sert la passerelle par défaut ?',
+      date: '14 nov. 2026 · 11 h 05',
       read: false,
       targetPage: 'community-thread',
-      targetId: 'post-1'
+      targetId: 'post-1',
+      recipientId: 'afi'
     },
     {
       id: 'n3',
@@ -827,7 +831,8 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       detail: 'Dossier SIG-2026-001 · Consultez les informations qui vous sont destinées.',
       date: '13 nov. 2026 · 17 h 30',
       read: true,
-      targetPage: 'report'
+      targetPage: 'report',
+      recipientId: 'afi'
     }
   ],
   notifPrefs: {
@@ -922,7 +927,8 @@ export const initialExtendedState = (): ExtendedDemoState => ({
   },
   moduleProgress: {
     afi: {
-      reseaux: { lessons: [0], answers: [], submitted: false },
+      // Sections lues mais quiz non passé : terminer le module phishing fait franchir le niveau 2 en démo.
+      reseaux: { lessons: [0, 1, 2], answers: [], submitted: false },
       comptes: { lessons: [], answers: [], submitted: false }
     },
     kossi: {
@@ -1389,4 +1395,9 @@ export function buildDynamicCatalog(ext: ExtendedDemoState): CatalogItem[] {
   }
 
   return base;
+}
+
+/** Notifications visibles par un personnage : les siennes et celles sans destinataire. */
+export function notificationsFor(list: NotificationItem[], uid: string): NotificationItem[] {
+  return list.filter((n) => !n.recipientId || n.recipientId === uid);
 }
