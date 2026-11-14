@@ -113,11 +113,7 @@ export function CommunityFeedView({
     <div className="dashboard-grid">
       <div className="dashboard-main">
         <div className="between wf-mb-sm">
-          <div className="page-heading wf-no-mb">
-            <span className="eyebrow">COMMUNAUTÉ & ENTRAIDE</span>
-            <h1>Partager des astuces et poser vos questions.</h1>
-            <p>Les échanges communautaires sont distincts des modules validés pédagogiquement.</p>
-          </div>
+          <h1>Entraide</h1>
           <button className="primary" onClick={() => nav('community-compose')}>
             <Plus size={16} /> Publier ou poser une question
           </button>

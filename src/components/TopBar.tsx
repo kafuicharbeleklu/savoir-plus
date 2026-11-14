@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Award,
   Bell,
   BookOpen,
   ChevronDown,
@@ -241,9 +240,6 @@ export function TopBar({
             </span>
             <span>Relations</span>
           </button>
-        </nav>
-
-        <div className="topbar-right">
           <button
             className={`topbar-action-btn ${page === 'messages' ? 'active' : ''}`}
             onClick={onOpenMessaging}
@@ -263,6 +259,9 @@ export function TopBar({
             </span>
             <span>Alertes</span>
           </button>
+        </nav>
+
+        <div className="topbar-right">
 
           <button
             className="mobile-search-trigger"
@@ -324,15 +323,6 @@ export function TopBar({
                 >
                   <User size={15} /> Mon profil
                 </button>
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    setVousOpen(false);
-                    nav('progression');
-                  }}
-                >
-                  <Award size={15} /> Ma progression & Badges
-                </button>
 
                 {caps.canCreate && (
                   <button
@@ -388,7 +378,7 @@ export function TopBar({
                     onEnterVisitor();
                   }}
                 >
-                  <LogOut size={15} /> Se déconnecter (Accueil visiteur)
+                  <LogOut size={15} /> Se déconnecter
                 </button>
               </div>
             )}

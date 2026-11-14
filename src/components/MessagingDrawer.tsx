@@ -184,12 +184,6 @@ export function MessagingDrawer({
             </div>
           ) : (
             <div className="conversation-list">
-              <div className="conversation-title">
-                <h3>Discussions récentes</h3>
-                <button className="text-link" onClick={onOpenFullMessaging}>
-                  Tout voir
-                </button>
-              </div>
               {acceptedRelations.length === 0 ? (
                 <div className="conversation-empty">
                   <p>Aucune discussion active pour le moment.</p>

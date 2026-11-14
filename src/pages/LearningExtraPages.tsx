@@ -2,38 +2,33 @@ import React, { useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
-  Award,
   BookOpen,
   CheckCircle2,
   ChevronDown,
-  ChevronRight,
   Clock,
   Compass,
   Filter,
   Flag,
-  GraduationCap,
-  History,
-  Lock,
-  Plus,
   Search,
-  ShieldCheck,
   Target
 } from 'lucide-react';
 import {
   buildDynamicCatalog,
   CATALOG_ITEMS,
+  initialExtendedState,
   type CatalogItem,
   type CatalogType,
   type DifficultyLevel,
   type ExtendedDemoState,
   type ReviewLevel
 } from '../wireframeData';
-import type { Progress } from '../data';
+import type { Profile, Progress, Relation } from '../data';
 import { MODULES_CONTENT } from '../content';
-import { moduleProgressPercent, moduleXp, scoreAnswers } from '../domain.mjs';
-import { computeCatalogCardSteps, computeGlobalLevel } from '../personas';
+import { moduleProgressPercent } from '../domain.mjs';
+import { computeCatalogCardSteps } from '../personas';
 import { DifficultyMeter, ProgressBar } from '../components/ProfileIdentityCard';
 import { CatalogContentCard, ContentTypeMark, XpBadgeInline } from '../components/CatalogVisuals';
+import { PedagogicalProfileView } from '../components/PedagogicalProfileView';
 
 const LESSON_COUNTS: Record<string, number> = Object.fromEntries(
   Object.entries(MODULES_CONTENT).map(([id, mod]) => [id, mod.lessons.length])
@@ -171,63 +166,7 @@ export function CatalogExtraView({
   return (
     <div className="dashboard-grid">
       <div className="dashboard-main">
-        <section className="catalog-hero" aria-label="Présentation de la bibliothèque">
-          <div className="catalog-hero-copy">
-            <span className="eyebrow">BIBLIOTHÈQUE PÉDAGOGIQUE</span>
-            <h1>Votre prochaine découverte.</h1>
-            <p>
-              Des ressources autonomes, des modules structurés et des parcours complets à votre rythme.
-            </p>
-            <div className="catalog-hero-links">
-              <button type="button" className="catalog-hero-link" onClick={() => openDetail(recommendedItem)}>
-                <span>Découvrir « {recommendedItem.title} »</span>
-                <ChevronRight size={15} aria-hidden="true" />
-              </button>
-              <button type="button" className="catalog-hero-link" onClick={() => nav('studio')}>
-                <span>Proposer un contenu</span>
-                <ChevronRight size={15} aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-
-          <div className="catalog-hero-visual" aria-hidden="true">
-            <svg viewBox="0 0 280 200" className="catalog-hero-svg" fill="none">
-              <defs>
-                <radialGradient id="catalogHeroGlow" cx="55%" cy="50%" r="52%">
-                  <stop offset="0%" stopColor="var(--accent-brand)" stopOpacity="0.34" />
-                  <stop offset="55%" stopColor="var(--accent-warm)" stopOpacity="0.14" />
-                  <stop offset="100%" stopColor="var(--accent-brand)" stopOpacity="0" />
-                </radialGradient>
-                <linearGradient id="catalogPortalRing" x1="40" y1="26" x2="240" y2="174" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="var(--accent-brand)" stopOpacity="0.9" />
-                  <stop offset="100%" stopColor="var(--accent-warm)" stopOpacity="0.75" />
-                </linearGradient>
-              </defs>
-              <circle cx="150" cy="100" r="96" fill="url(#catalogHeroGlow)" />
-              <polygon
-                points="150,24 218,62 218,138 150,176 82,138 82,62"
-                stroke="url(#catalogPortalRing)"
-                strokeWidth="2"
-                fill="var(--bg-surface)"
-                fillOpacity="0.35"
-              />
-              <polygon
-                points="150,42 200,71 200,129 150,158 100,129 100,71"
-                stroke="var(--accent-brand)"
-                strokeOpacity="0.5"
-                strokeWidth="1.25"
-                strokeDasharray="4 4"
-              />
-              <rect x="116" y="72" width="68" height="52" rx="8" fill="var(--bg-surface)" fillOpacity="0.9" stroke="var(--accent-brand)" strokeWidth="1.5" />
-              <path d="M132 88H168M132 98H160M132 108H150" stroke="var(--accent-brand)" strokeWidth="2.2" strokeLinecap="round" />
-              <circle cx="82" cy="62" r="5" fill="var(--accent-brand)" />
-              <circle cx="218" cy="62" r="4" fill="var(--accent-warm)" />
-              <circle cx="218" cy="138" r="5" fill="var(--accent-brand)" />
-              <circle cx="82" cy="138" r="4" fill="var(--accent-warm)" />
-              <path d="M44 46L78 60M222 140L252 154M52 154L78 140M222 60L248 44" stroke="var(--fg-muted)" strokeOpacity="0.35" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
-          </div>
-        </section>
+        <h1 className="sr-only">Bibliothèque pédagogique</h1>
 
         <div className="catalog-tabs-underline" role="tablist" aria-label="Type de contenu">
           {[
@@ -854,384 +793,52 @@ export function ProgressionPage({
   progress,
   nav,
   ext,
+  updateExt,
   userId = 'afi',
+  currentUser,
+  relations = [],
+  myFollowing = [],
   getModuleProgress,
-  openReader
-}: Pick<LearningExtraProps, 'progress' | 'nav'> & {
+  openReader,
+  setToast
+}: Pick<LearningExtraProps, 'progress' | 'nav' | 'setToast'> & {
   ext?: ExtendedDemoState;
+  updateExt?: (fn: (prev: ExtendedDemoState) => ExtendedDemoState) => void;
   userId?: string;
+  currentUser?: Profile;
+  relations?: Relation[];
+  myFollowing?: string[];
   getModuleProgress?: (modId: string) => Progress;
   openReader?: (moduleId?: string, sectionIdx?: number) => void;
 }) {
-  const [tab, setTab] = useState<'overview' | 'history' | 'badges'>('overview');
-  const catalog = ext ? buildDynamicCatalog(ext) : CATALOG_ITEMS;
-  const playableModules = catalog.filter((c) => c.type === 'module' && c.interactive);
-
-  const moduleMetrics = playableModules.map((mod) => {
-    const modProg = resolveModProg(mod.id, progress, ext, userId, getModuleProgress);
-    const study = MODULES_CONTENT[mod.id];
-    const lessonCount = study ? study.lessons.length : 3;
-    const correctIndices = study ? study.questions.map((q) => q.correctIndex) : [0, 0];
-    const pctVal = moduleProgressPercent(modProg, lessonCount);
-    const xpVal = moduleXp(modProg, lessonCount);
-    const qLen = correctIndices.length;
-    const passThreshold = Math.max(1, Math.ceil(qLen * 0.66));
-    const qScore = scoreAnswers(modProg.answers || [], correctIndices);
-    const passed = modProg.submitted && qScore >= passThreshold;
-    return { mod, modProg, lessonCount, pctVal, xpVal, qScore, qLen, passed };
-  });
-
-  const points = moduleMetrics.reduce((acc, m) => acc + m.xpVal, 0);
-  const lvl = computeGlobalLevel(points);
-  const completedModules = moduleMetrics.filter((m) => m.pctVal === 100).length;
-  const passedQuizzes = moduleMetrics.filter((m) => m.passed).length;
-  const phishingMetric = moduleMetrics.find((m) => m.mod.id === 'phishing') || moduleMetrics[0];
-
-  const userHelpedInCommunity = (ext?.posts || []).some(
-    (p) => p.authorId === userId || p.replies.some((r) => r.authorId === userId)
-  );
-  const earnedBadgesCount =
-    (completedModules > 0 ? 1 : 0) + (phishingMetric?.passed ? 1 : 0) + (userHelpedInCommunity ? 1 : 0);
-
-  const domainPcts = (['Numérique', 'Communication', 'Gestion'] as const).map((dom) => {
-    const domMods = moduleMetrics.filter((m) => m.mod.domain === dom);
-    if (domMods.length === 0) return { label: dom, pctValue: 0 };
-    const avg = Math.round(domMods.reduce((acc, m) => acc + m.pctVal, 0) / domMods.length);
-    return { label: dom, pctValue: avg };
-  });
-
-  const resumeCandidate =
-    moduleMetrics.find((m) => m.pctVal > 0 && m.pctVal < 100) ||
-    moduleMetrics.find((m) => m.pctVal === 0) ||
-    moduleMetrics[0];
-  const nextLessonIdx = resumeCandidate
-    ? Array.from({ length: resumeCandidate.lessonCount }, (_, i) => i).find(
-        (i) => !resumeCandidate.modProg.lessons.includes(i)
-      )
-    : undefined;
-
-  const historyRows: { key: string; title: string; subtitle: string; xpLabel: string }[] = [];
-  for (const m of moduleMetrics) {
-    for (const idx of m.modProg.lessons) {
-      historyRows.push({
-        key: `${m.mod.id}-l-${idx}`,
-        title: `Leçon 0${idx + 1} terminée — ${m.mod.title}`,
-        subtitle: 'Attribution unique par section complétée',
-        xpLabel: '+25 XP de démo'
-      });
-    }
-    if (m.modProg.submitted) {
-      historyRows.push({
-        key: `${m.mod.id}-quiz`,
-        title: `Quiz soumis — ${m.mod.title} (${m.qScore} / ${m.qLen})`,
-        subtitle: 'Évaluation indicative sans double attribution sur réessai',
-        xpLabel: '+75 XP de démo'
-      });
-    }
-  }
-
-  const nextBadge = !phishingMetric?.passed
-    ? {
-        title: 'Vigilance phishing',
-        hint: 'Obtenir au moins 2/3 au quiz cybersécurité.',
-        cta: phishingMetric?.modProg.submitted ? 'Retenter le quiz' : 'Passer le quiz',
-        onClick: () => (openReader ? openReader('phishing', 0) : nav('quiz-intro'))
-      }
-    : completedModules === 0
-      ? {
-          title: 'Premier module terminé',
-          hint: 'Compléter toutes les leçons et le quiz d’un module.',
-          cta: 'Terminer un module',
-          onClick: () =>
-            openReader && resumeCandidate ? openReader(resumeCandidate.mod.id, nextLessonIdx ?? 0) : nav('learning')
-        }
-      : {
-          title: 'Esprit d’entraide',
-          hint: 'Publier ou répondre depuis le fil d’accueil.',
-          cta: 'Aller à l’accueil',
-          onClick: () => nav('home')
-        };
+  const safeExt = ext || initialExtendedState();
+  const resolvedTarget: Profile = currentUser || {
+    id: userId,
+    name: userId === 'kossi' ? 'Kossi Mensah' : userId === 'nadege' ? 'Nadège Kpadonou' : 'Afi T.',
+    role: safeExt.profileDetails[userId]?.tagline || 'Membre SAVOIR+',
+    bio: safeExt.profileDetails[userId]?.bio || '',
+    color: '#1D4D3B',
+    initials: userId.slice(0, 2).toUpperCase()
+  };
 
   return (
-    <div className="dashboard-grid">
-      <div className="dashboard-main">
-        <div className="page-heading">
-          <span className="eyebrow">PROGRESSION & RECONNAISSANCE</span>
-          <h1>Ma progression</h1>
-          <p>
-            Les XP illustrent votre activité de démonstration. Ils restent distincts de la validation pédagogique et de
-            votre rôle.
-          </p>
-        </div>
-
-        <div className="catalog-tabs-underline" role="tablist" aria-label="Sections de progression">
-          <button type="button" role="tab" aria-selected={tab === 'overview'} className={tab === 'overview' ? 'selected' : ''} onClick={() => setTab('overview')}>
-            Vue d’ensemble
-          </button>
-          <button type="button" role="tab" aria-selected={tab === 'history'} className={tab === 'history' ? 'selected' : ''} onClick={() => setTab('history')}>
-            Historique ({historyRows.length})
-          </button>
-          <button type="button" role="tab" aria-selected={tab === 'badges'} className={tab === 'badges' ? 'selected' : ''} onClick={() => setTab('badges')}>
-            Badges ({earnedBadgesCount}/3)
-          </button>
-        </div>
-
-        {tab === 'overview' && (
-          <>
-            <section className="wf-card wf-mb">
-              <div className="between">
-                <div>
-                  <span className="eyebrow">NIVEAU DE DÉMONSTRATION</span>
-                  <h2>Niveau {lvl.level} · Apprenant actif</h2>
-                </div>
-                <span className="inline-meta tabular-nums">
-                  <b>{lvl.currentXp} / {lvl.targetXp} XP</b>
-                  <span aria-hidden="true">·</span>
-                  <span>{points} XP cumulés</span>
-                </span>
-              </div>
-              <div className="wf-my">
-                <ProgressBar value={lvl.percent} label={`Expérience niveau ${lvl.level}`} tone="htb" />
-              </div>
-              <p className="tiny muted">
-                Encore {Math.max(0, lvl.targetXp - lvl.currentXp)} XP avant le niveau {lvl.level + 1} (barème indicatif
-                de démonstration).
-              </p>
-            </section>
-
-            <div className="stats-grid">
-              <div>
-                <BookOpen />
-                <b className="tabular">{completedModules}</b>
-                <span>Module(s) terminé(s)</span>
-              </div>
-              <div>
-                <GraduationCap />
-                <b className="tabular">{passedQuizzes}</b>
-                <span>Quiz réussi(s)</span>
-              </div>
-              <div>
-                <Award />
-                <b className="tabular">{earnedBadgesCount}</b>
-                <span>Badge(s) obtenu(s)</span>
-              </div>
-            </div>
-
-            <section className="wf-card wf-mb">
-              <div className="between wf-mb-sm">
-                <h3>Avancement par domaine</h3>
-                <span className="tiny muted">Inspiré Academy · Calculé sur vos modules actifs</span>
-              </div>
-              <div className="htb-domain-bars">
-                {domainPcts.map((d) => (
-                  <div className="htb-domain-row" key={d.label}>
-                    <div className="between tiny">
-                      <b>{d.label}</b>
-                      <span className="tabular">{d.pctValue}%</span>
-                    </div>
-                    <ProgressBar value={d.pctValue} label={`Avancement ${d.label}`} tone="htb" />
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="wf-card">
-              <div className="between wf-mb-sm">
-                <div>
-                  <span className="eyebrow">PARCOURS ACTIF</span>
-                  <h3>Fondamentaux IT</h3>
-                </div>
-                <button className="text-link" onClick={() => nav('path-detail', 'fondamentaux-it')}>
-                  Voir le parcours <ArrowRight size={15} />
-                </button>
-              </div>
-              <div className="wf-program-list">
-                {(catalog.find((c) => c.id === 'fondamentaux-it')?.pathModules || []).map((pm) => {
-                  const mProg = resolveModProg(pm.id, progress, ext, userId, getModuleProgress);
-                  const mPct = moduleProgressPercent(mProg, MODULES_CONTENT[pm.id]?.lessons.length || 3);
-                  const modStatus = mPct === 100 ? 'Terminé' : mPct > 0 ? 'En cours' : 'À commencer';
-                  return (
-                    <div
-                      className="wf-program-item is-clickable"
-                      key={pm.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => nav('module-detail', pm.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          nav('module-detail', pm.id);
-                        }
-                      }}
-                    >
-                      <div>
-                        <b>{pm.title}</b>
-                        <small>
-                          {pm.note} · {mPct}%
-                        </small>
-                      </div>
-                      <div className="wf-inline-actions">
-                        <span className={`status-tag ${modStatus === 'Terminé' ? 'ok' : modStatus === 'En cours' ? 'warn' : ''}`}>{modStatus}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="tiny muted wf-mt-sm">
-                La progression dans un module et les XP restent séparés. Refaire un quiz déjà validé n’ajoute pas de
-                nouveaux XP.
-              </p>
-            </section>
-          </>
-        )}
-
-        {tab === 'history' && (
-          <section className="wf-card">
-            <div className="between wf-mb">
-              <h3>
-                <History size={17} /> Journal des activités et mouvements XP
-              </h3>
-              <span className="tiny muted">Source confirmée</span>
-            </div>
-            {historyRows.length === 0 ? (
-              <div className="empty">
-                <History size={34} />
-                <h3>Aucun mouvement enregistré</h3>
-                <p>Terminez une leçon ou un quiz pour voir apparaître votre historique.</p>
-                <button className="primary" onClick={() => nav('learning')}>
-                  Commencer un module
-                </button>
-              </div>
-            ) : (
-              <div className="wf-program-list">
-                {historyRows.map((row) => (
-                  <div className="wf-program-item" key={row.key}>
-                    <div>
-                      <b>{row.title}</b>
-                      <small>{row.subtitle}</small>
-                    </div>
-                    <span className="inline-meta tabular-nums"><b>{row.xpLabel}</b></span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        {tab === 'badges' && (
-          <section className="wf-card">
-            <div className="between wf-mb">
-              <h3>
-                <Award size={17} /> Mes réalisations
-              </h3>
-              <span className="tiny muted">
-                <Lock size={13} /> Privés par défaut
-              </span>
-            </div>
-            <div className="wf-badge-grid">
-              <div className={`wf-achievement ${completedModules > 0 ? 'earned' : ''}`}>
-                <Award size={26} />
-                <h4>Premier module terminé</h4>
-                <p>Terminer l’ensemble des leçons et le quiz d’un module.</p>
-                <span>{completedModules > 0 ? 'Obtenu' : 'Verrouillé'}</span>
-              </div>
-              <div className={`wf-achievement ${phishingMetric?.passed ? 'earned' : ''}`}>
-                <ShieldCheck size={26} />
-                <h4>Vigilance phishing</h4>
-                <p>Obtenir au moins 2/3 au quiz de cybersécurité.</p>
-                <span>{phishingMetric?.passed ? 'Obtenu' : 'Verrouillé'}</span>
-              </div>
-              <div className={`wf-achievement ${userHelpedInCommunity ? 'earned' : ''}`}>
-                <Plus size={26} />
-                <h4>Esprit d’entraide</h4>
-                <p>Contribuer dans l’espace Communauté par une question ou une réponse.</p>
-                <span>{userHelpedInCommunity ? 'Obtenu' : 'Verrouillé'}</span>
-              </div>
-            </div>
-            <p className="tiny muted wf-mt">
-              Un badge reflète une étape accomplie dans la plateforme ; il ne constitue pas un diplôme ni une
-              certification officielle.
-            </p>
-          </section>
-        )}
-      </div>
-
-      <aside className="right-rail" aria-label="Repères progression">
-        <section className="rail-card">
-          <span className="eyebrow">PROCHAIN PALIER</span>
-          <h3>Niveau {lvl.level + 1}</h3>
-          <p className="tiny muted">
-            Il vous reste <b className="tabular">{Math.max(0, lvl.targetXp - lvl.currentXp)} XP</b> pour atteindre ce
-            palier de démonstration.
-          </p>
-          {resumeCandidate && (
-            <div className="rail-stat-list">
-              <div className="rail-stat-row">
-                <span>
-                  {nextLessonIdx !== undefined
-                    ? `${resumeCandidate.mod.title} · Ch. 0${nextLessonIdx + 1}`
-                    : `${resumeCandidate.mod.title} · Leçons`}
-                </span>
-                <b className="tabular">{nextLessonIdx !== undefined ? '+25 XP' : 'Acquis'}</b>
-              </div>
-              <div className="rail-stat-row">
-                <span>{resumeCandidate.modProg.submitted ? 'Quiz validé' : 'Quiz final'}</span>
-                <b className="tabular">{resumeCandidate.modProg.submitted ? 'Acquis' : '+75 XP'}</b>
-              </div>
-            </div>
-          )}
-          <button
-            className="primary wf-full-btn"
-            onClick={() => {
-              if (resumeCandidate && openReader) {
-                openReader(resumeCandidate.mod.id, nextLessonIdx ?? 0);
-              } else {
-                nav('catalog');
-              }
-            }}
-          >
-            {resumeCandidate && nextLessonIdx !== undefined
-              ? `Reprendre chapitre 0${nextLessonIdx + 1}`
-              : 'Explorer un autre module'}
-            <ArrowRight size={15} />
-          </button>
-        </section>
-
-        <section className="rail-card">
-          <span className="eyebrow">PROCHAIN BADGE À DÉBLOQUER</span>
-          <h3>{nextBadge.title}</h3>
-          <p className="tiny muted">{nextBadge.hint}</p>
-          <div className="rail-quick-list">
-            <button type="button" className="secondary wf-full-btn" onClick={nextBadge.onClick}>
-              {nextBadge.cta} <ArrowRight size={15} />
-            </button>
-            <button type="button" className="text-link" onClick={() => setTab('badges')}>
-              Voir les réalisations ({earnedBadgesCount} / 3)
-              <ArrowRight size={14} />
-            </button>
-          </div>
-        </section>
-
-        <section className="rail-card">
-          <span className="eyebrow">DERNIÈRES ÉTAPES VALIDÉES</span>
-          <h3>Journal récent</h3>
-          {historyRows.length === 0 ? (
-            <p className="tiny muted">Aucune étape validée pour l’instant.</p>
-          ) : (
-            <div className="rail-stat-list">
-              {historyRows.slice(-3).map((row) => (
-                <div className="rail-stat-row" key={row.key}>
-                  <span>{row.title}</span>
-                  <b className="tabular">{row.xpLabel}</b>
-                </div>
-              ))}
-            </div>
-          )}
-          <button type="button" className="text-link" onClick={() => setTab('history')}>
-            Historique complet <ArrowRight size={14} />
-          </button>
-        </section>
-      </aside>
+    <div className="htb-page-shell">
+      <h1 className="sr-only">Progression et badges</h1>
+      <PedagogicalProfileView
+        target={resolvedTarget}
+        isOwnProfile={true}
+        ext={safeExt}
+        updateExt={updateExt}
+        relations={relations}
+        myFollowing={myFollowing}
+        progress={progress}
+        getModuleProgress={getModuleProgress}
+        openReader={openReader}
+        nav={nav}
+        setToast={setToast}
+        initialTab="about"
+      />
     </div>
   );
 }
+

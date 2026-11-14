@@ -354,7 +354,7 @@ test('LinkedIn-style community helpers resolve author avatars, toggle helpful, r
   assert.equal(ignoreBlank.find((p) => p.id === 'post-1')!.replies.length, withSubReply.find((p) => p.id === 'post-1')!.replies.length);
 });
 
-import { resolveActiveLab, resolveDefaultCommentPreview } from '../src/personas';
+import { resolveActiveLab, resolveDefaultCommentPreview, resolveDiscoverSuggestions } from '../src/personas';
 
 test('resolveActiveLab prioritizes in-progress module for TopBar avatar', () => {
   const counts = { phishing: 3, reseaux: 3, comptes: 3 };
@@ -393,4 +393,126 @@ test('resolveDefaultCommentPreview retracts comments unless latest top-level com
   assert.equal(preview!.authorId, 'kossi');
 });
 
+test('resolveDiscoverSuggestions excludes current user and already-followed accounts', () => {
+  const allPeople: Profile[] = [
+    ...demoProfiles,
+    {
+      id: 'nadege',
+      name: 'Nadège Koffi',
+      role: 'Modération & Gouvernance · SAVOIR+',
+      initials: 'NK',
+      color: 'mint',
+      bio: ''
+    }
+  ];
+
+  const suggestionsForAfi = resolveDiscoverSuggestions(allPeople, 'afi', ['kossi', 'maya'], 3);
+  assert.deepEqual(
+    suggestionsForAfi.map((p) => p.id),
+    ['nadege']
+  );
+
+  const suggestionsAfterFollow = resolveDiscoverSuggestions(allPeople, 'afi', ['kossi', 'maya', 'nadege'], 3);
+  assert.equal(suggestionsAfterFollow.length, 0);
+});
+import {
+  resolveCommunityDirectory,
+  resolveAlgorithmicDiscoverProfiles,
+  resolveFollowedAndConnectedProfiles
+} from '../src/personas';
+
+test('Relations Discover shows only unfollowed algorithmic suggestions and Mes relations lists all followed and connected accounts', () => {
+  const ext = initialExtendedState();
+  const baseProfiles: Profile[] = [
+    ...demoProfiles,
+    {
+      id: 'nadege',
+      name: 'Nadège Koffi',
+      role: 'Modération & Gouvernance · SAVOIR+',
+      initials: 'NK',
+      color: 'mint',
+      bio: 'Gouvernance et sécurité numérique.'
+    }
+  ];
+
+  const directory = resolveCommunityDirectory(baseProfiles, ext);
+  assert.ok(directory.some((p) => p.id === 'maya'));
+  assert.ok(directory.some((p) => p.id === 'sam'));
+
+  const discover = resolveAlgorithmicDiscoverProfiles(directory, 'afi', ext.followingIds.afi, ext);
+  const discoverIds = discover.map((d) => d.profile.id);
+  assert.ok(!discoverIds.includes('afi'));
+  assert.ok(!discoverIds.includes('kossi'));
+  assert.ok(!discoverIds.includes('maya'));
+  assert.ok(discoverIds.includes('nadege'));
+  assert.ok(discoverIds.includes('sam'));
+  assert.ok(discover.every((d) => !d.isFollowed && d.suggestionReason.startsWith('Suggéré')));
+
+  const relations = [
+    {
+      id: 'afi__nadege',
+      members: ['afi', 'nadege'],
+      status: 'accepted' as const,
+      blockedBy: []
+    }
+  ];
+  const network = resolveFollowedAndConnectedProfiles(directory, 'afi', ext.followingIds.afi, relations, ext);
+  const networkIds = network.map((n) => n.profile.id);
+  assert.deepEqual(networkIds, ['kossi', 'maya', 'nadege']);
+  assert.equal(network.find((n) => n.profile.id === 'kossi')?.isFollowed, true);
+  assert.equal(network.find((n) => n.profile.id === 'maya')?.isFollowed, true);
+  assert.equal(network.find((n) => n.profile.id === 'nadege')?.relationStatus, 'accepted');
+});
+
+import {
+  computeSavoirRank,
+  formatMemberHandle,
+  computeAnnualActivitySummary,
+  computeSavoirBadges
+} from '../src/personas';
+
+test('Savoir rank, member handle, annual activity heatmap, and badges compute deterministically', () => {
+  assert.equal(computeSavoirRank(0, 0).title, 'Débutant');
+  assert.equal(computeSavoirRank(150, 1).title, 'Explorateur');
+  assert.equal(computeSavoirRank(320, 2).title, 'Confirmé');
+  assert.equal(computeSavoirRank(500, 3).title, 'Mentor SAVOIR+');
+
+  assert.equal(formatMemberHandle('Afi Mensah', 'afi'), '@afimensah');
+  assert.equal(formatMemberHandle('Nadège Koffi', 'nadege'), '@nadegekoffi');
+
+  const activity = computeAnnualActivitySummary({
+    totalXp: 150,
+    completedLessonsCount: 3,
+    passedQuizzesCount: 1,
+    postsCount: 1,
+    repliesCount: 2
+  });
+  assert.equal(activity.yearXp, 185);
+  assert.equal(activity.months.length, 12);
+  assert.ok(activity.activeWeeks >= 1);
+  assert.ok(activity.streakWeeks >= 1);
+  assert.equal(activity.weeklyTarget, 200);
+
+  const badges = computeSavoirBadges({
+    totalXp: 150,
+    level: 1,
+    completedModules: ['phishing'],
+    passedQuizzes: ['phishing'],
+    perfectQuizzes: ['phishing'],
+    completedLessonsCount: 3,
+    postsCount: 1,
+    repliesCount: 1,
+    solutionsCount: 0,
+    helpfulGivenCount: 2,
+    followingCount: 2,
+    acceptedRelationsCount: 1,
+    streakWeeks: 2
+  });
+  assert.equal(badges.length, 20);
+  assert.equal(badges.find((b) => b.id === 'mod-phishing')?.earned, true);
+  assert.equal(badges.find((b) => b.id === 'mod-perfect')?.earned, true);
+  assert.equal(badges.find((b) => b.id === 'mod-reseaux')?.earned, false);
+  assert.equal(badges.find((b) => b.id === 'com-helpful')?.earned, true);
+  assert.equal(badges.find((b) => b.id === 'str-two-weeks')?.earned, true);
+});
 

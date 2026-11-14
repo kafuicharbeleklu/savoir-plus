@@ -6,17 +6,19 @@ import {
   Bell,
   Check,
   CheckCircle2,
+  Eye,
   Flag,
   Lock,
   Monitor,
   Scale,
   ShieldAlert,
   ShieldCheck,
+  User,
   UserCheck
 } from 'lucide-react';
 import { appendAuditLog, formatNotificationTimestamp, type ExtendedDemoState, type NotificationItem } from '../wireframeData';
 import type { Profile, Relation } from '../data';
-import type { RoleCapabilities } from '../personas';
+import { resolveCommunityDirectory, resolveProfileVerified, type RoleCapabilities } from '../personas';
 import { GovernanceShell } from './AdminPages';
 import { Avatar } from '../components/ProfileIdentityCard';
 
@@ -37,9 +39,7 @@ interface AccountAdminProps {
 }
 
 export function NotificationsView({ ext, updateExt, nav, people, setToast }: AccountAdminProps) {
-  const [cat, setCat] = useState<'Toutes' | 'Non lues' | 'Relations' | 'Communauté' | 'Compte' | 'Signalements'>('Toutes');
   const [showPrefs, setShowPrefs] = useState(false);
-  const [extraReply, setExtraReply] = useState('');
 
   const resolveActor = (n: NotificationItem): Profile => {
     const matched = n.actorId ? people.find((p) => p.id === n.actorId) : undefined;
@@ -54,23 +54,7 @@ export function NotificationsView({ ext, updateExt, nav, people, setToast }: Acc
     };
   };
 
-  const sendPrecision = (id: string) => {
-    if (!extraReply.trim()) return;
-    updateExt((prev) => ({
-      ...prev,
-      reports: prev.reports.map((r) =>
-        r.id === id ? { ...r, status: 'En cours d’examen', extraNote: extraReply.trim() } : r
-      )
-    }));
-    setExtraReply('');
-    setToast('Précisions transmises au dossier');
-  };
-
-  const items = ext.notifications.filter((n) => {
-    if (cat === 'Non lues') return !n.read;
-    if (cat !== 'Toutes' && n.category !== cat) return false;
-    return true;
-  });
+  const items = ext.notifications;
 
   const markAllRead = () => {
     updateExt((prev) => ({
@@ -95,146 +79,80 @@ export function NotificationsView({ ext, updateExt, nav, people, setToast }: Acc
       <div className="dashboard-main">
         <div className="between wf-mb-sm">
           <div className="page-heading wf-no-mb">
-            <span className="eyebrow">CENTRE DE NOTIFICATIONS & SUIVI</span>
             <h1>Alertes</h1>
-            <p>Lire une notification n’accepte aucune demande et ne clôt aucun signalement.</p>
           </div>
-        <div className="wf-inline-actions">
-          <button className="secondary" onClick={() => setShowPrefs(!showPrefs)}>
-            Préférences
-          </button>
-          <button className="primary" onClick={markAllRead}>
-            <Check size={15} /> Tout marquer comme lu
-          </button>
-        </div>
-      </div>
-
-      {showPrefs && (
-        <section className="wf-card wf-mb">
-          <h3>Préférences de notifications</h3>
-          <p className="tiny muted wf-mb-sm">
-            Les alertes essentielles de sécurité et décisions de compte restent toujours consultables.
-          </p>
-          <div className="wf-stack-sm">
-            {[
-              { key: 'learning', label: 'Activité pédagogique et reprises' },
-              { key: 'social', label: 'Demandes de relation et messages' },
-              { key: 'community', label: 'Réponses et solutions de la communauté' }
-            ].map((pref) => (
-              <label className="wf-check-row" key={pref.key}>
-                <input
-                  type="checkbox"
-                  checked={(ext.notifPrefs as any)[pref.key]}
-                  onChange={(e) =>
-                    updateExt((prev) => ({
-                      ...prev,
-                      notifPrefs: { ...prev.notifPrefs, [pref.key]: e.target.checked }
-                    }))
-                  }
-                />
-                <span>{pref.label}</span>
-              </label>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <div className="catalog-tabs-underline" role="tablist" aria-label="Filtrer les notifications">
-        {['Toutes', 'Non lues', 'Relations', 'Communauté', 'Compte', 'Signalements'].map((c) => (
-          <button
-            key={c}
-            type="button"
-            role="tab"
-            aria-selected={cat === c}
-            className={cat === c ? 'selected' : ''}
-            onClick={() => setCat(c as any)}
-          >
-            {c === 'Signalements' ? `Mes signalements (${ext.reports.length})` : c}
-          </button>
-        ))}
-      </div>
-
-      {cat === 'Signalements' ? (
-        <section className="wf-card">
-          <div className="between wf-mb-sm">
-            <h3>Mes signalements (Suivi privé)</h3>
-            <button className="secondary" onClick={() => nav('report')}>
-              <Flag size={14} /> Nouveau signalement
+          <div className="wf-inline-actions">
+            <button className="secondary" onClick={() => setShowPrefs(!showPrefs)}>
+              Préférences
+            </button>
+            <button className="primary" onClick={markAllRead}>
+              <Check size={15} /> Tout marquer comme lu
             </button>
           </div>
-          {ext.reports.length === 0 ? (
-            <div className="empty">
-              <Flag size={34} />
-              <h3>Aucun signalement déposé</h3>
-              <p>Vos démarches confidentielles apparaîtront ici avec leur état de traitement.</p>
-            </div>
-          ) : (
+        </div>
+
+        {showPrefs && (
+          <section className="wf-card wf-mb">
+            <h3>Préférences de notifications</h3>
+            <p className="tiny muted wf-mb-sm">
+              Les alertes essentielles de sécurité et décisions de compte restent toujours consultables.
+            </p>
             <div className="wf-stack-sm">
-              {ext.reports.map((rep) => (
-                <div className="wf-report-item" key={rep.id}>
-                  <div className="between">
-                    <b>{rep.id}</b>
-                    <span className="status-tag">{rep.status}</span>
-                  </div>
-                  <p className="tiny">{rep.targetLabel}</p>
-                  <small className="muted">Motif : {rep.reason} · {rep.date}</small>
-                  {rep.status === 'Précisions demandées' && (
-                    <div className="wf-form-stack wf-mt-sm">
-                      <input
-                        placeholder="Répondre à la demande de précisions…"
-                        value={extraReply}
-                        onChange={(e) => setExtraReply(e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        className="secondary"
-                        disabled={!extraReply.trim()}
-                        onClick={() => sendPrecision(rep.id)}
-                      >
-                        Envoyer les précisions
-                      </button>
-                    </div>
-                  )}
-                  {rep.extraNote && (
-                    <small className="muted">Votre complément : « {rep.extraNote} »</small>
-                  )}
-                </div>
+              {[
+                { key: 'learning', label: 'Activité pédagogique et reprises' },
+                { key: 'social', label: 'Demandes de relation et messages' },
+                { key: 'community', label: 'Réponses et solutions de la communauté' }
+              ].map((pref) => (
+                <label className="wf-check-row" key={pref.key}>
+                  <input
+                    type="checkbox"
+                    checked={(ext.notifPrefs as any)[pref.key]}
+                    onChange={(e) =>
+                      updateExt((prev) => ({
+                        ...prev,
+                        notifPrefs: { ...prev.notifPrefs, [pref.key]: e.target.checked }
+                      }))
+                    }
+                  />
+                  <span>{pref.label}</span>
+                </label>
               ))}
             </div>
-          )}
-        </section>
-      ) : items.length === 0 ? (
-        <div className="empty">
-          <Bell size={34} />
-          <h3>Aucune notification dans cette catégorie.</h3>
-          <p>Vos événements récents apparaîtront ici.</p>
-        </div>
-      ) : (
-        <div className="wf-notif-list" role="list">
-          {items.map((n) => {
-            const actor = resolveActor(n);
-            return (
-              <button
-                type="button"
-                role="listitem"
-                className={`wf-notif-row ${n.read ? 'read' : 'unread'}`}
-                key={n.id}
-                onClick={() => openNotif(n.id, n.targetPage, n.targetId)}
-              >
-                <Avatar person={actor} />
-                <div className="wf-notif-body">
-                  <div className="wf-notif-head">
-                    <h3>{n.title}</h3>
-                    <span className="tiny muted wf-notif-time">{n.date}</span>
+          </section>
+        )}
+
+        {items.length === 0 ? (
+          <div className="empty">
+            <Bell size={34} />
+            <h3>Aucune alerte pour le moment.</h3>
+            <p>Vos événements récents apparaîtront ici.</p>
+          </div>
+        ) : (
+          <div className="wf-notif-list" role="list">
+            {items.map((n) => {
+              const actor = resolveActor(n);
+              return (
+                <button
+                  type="button"
+                  role="listitem"
+                  className={`wf-notif-row ${n.read ? 'read' : 'unread'}`}
+                  key={n.id}
+                  onClick={() => openNotif(n.id, n.targetPage, n.targetId)}
+                >
+                  <Avatar person={actor} />
+                  <div className="wf-notif-body">
+                    <div className="wf-notif-head">
+                      <h3>{n.title}</h3>
+                      <span className="tiny muted wf-notif-time">{n.date}</span>
+                    </div>
+                    <p className="tiny muted">{n.detail}</p>
+                    <span className="tiny muted wf-notif-actor">{actor.name}</span>
                   </div>
-                  <p className="tiny muted">{n.detail}</p>
-                  <span className="tiny muted wf-notif-actor">{actor.name}</span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <aside className="right-rail" aria-label="Repères notifications">
@@ -273,16 +191,8 @@ export function NotificationsView({ ext, updateExt, nav, people, setToast }: Acc
           <span className="eyebrow">À TRAITER EN PRIORITÉ</span>
           <h3>{unreadCount > 0 ? `${unreadCount} alerte(s) non lue(s)` : 'Tout est à jour'}</h3>
           <div className="rail-quick-list">
-            {unreadCount > 0 && (
-              <button type="button" className="rail-quick-item" onClick={() => setCat('Non lues')}>
-                <b>Afficher uniquement les non lues</b>
-                <small>Consulter sans valider automatiquement les demandes</small>
-              </button>
-            )}
             <button type="button" className="rail-quick-item" onClick={() => nav('report')}>
-              <b>
-                Suivi des signalements ({ext.reports.length})
-              </b>
+              <b>Suivi des signalements ({ext.reports.length})</b>
               <small>
                 {ext.reports.some((r) => r.status === 'Précisions demandées')
                   ? 'Précisions demandées sur un dossier'
@@ -430,6 +340,8 @@ export function ReportView({ ext, updateExt, nav, reportTarget, setToast }: Acco
   );
 }
 
+type SettingsSection = 'account' | 'security' | 'visibility' | 'data' | 'notifications';
+
 export function SettingsView({
   ext,
   updateExt,
@@ -444,12 +356,38 @@ export function SettingsView({
   setSettingsTab,
   setToast
 }: AccountAdminProps) {
-  const [localTab, setLocalTab] = useState<'prefs' | 'privacy' | 'security'>('prefs');
-  const tab = settingsTab ?? localTab;
-  const setTab = setSettingsTab ?? setLocalTab;
+  const [section, setSection] = useState<SettingsSection>(() => {
+    if (settingsTab === 'security') return 'security';
+    if (settingsTab === 'privacy') return 'visibility';
+    return 'account';
+  });
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [dataRequested, setDataRequested] = useState(false);
+
+  React.useEffect(() => {
+    if (settingsTab === 'security') setSection('security');
+    else if (settingsTab === 'privacy' && section !== 'data') setSection('visibility');
+    else if (settingsTab === 'prefs' && section !== 'notifications') setSection('account');
+  }, [settingsTab]);
+
+  const selectSection = (next: SettingsSection) => {
+    setSection(next);
+    setExpandedRow(null);
+    if (setSettingsTab) {
+      if (next === 'security') setSettingsTab('security');
+      else if (next === 'visibility' || next === 'data') setSettingsTab('privacy');
+      else setSettingsTab('prefs');
+    }
+  };
+
   const details = ext.profileDetails[user.id] || ext.profileDetails.afi;
   const blockedRelations = relations.filter((r) => r.blockedBy.includes(user.id));
+  const isVerified = resolveProfileVerified(user.id, ext.adminUsers, details?.verified);
+  const myFollowing = ext.followingIds[user.id] || [];
+  const directory = resolveCommunityDirectory(people, ext);
+  const unfollowedMembers = directory.filter(
+    (p) => p.id !== user.id && !myFollowing.includes(p.id)
+  );
 
   const patchProfileDetails = (patch: Partial<typeof details>) => {
     updateExt((prev) => ({
@@ -461,239 +399,635 @@ export function SettingsView({
     }));
   };
 
+  const patchAppPrefs = (patch: Partial<ExtendedDemoState['appPrefs']>) => {
+    updateExt((prev) => ({
+      ...prev,
+      appPrefs: { ...prev.appPrefs, ...patch }
+    }));
+  };
+
+  const toggleRow = (id: string) => {
+    setExpandedRow((prev) => (prev === id ? null : id));
+  };
+
+  const navItems: { id: SettingsSection; label: string; icon: React.ReactNode }[] = [
+    { id: 'account', label: 'Préférences du compte', icon: <User size={18} /> },
+    { id: 'security', label: 'Identification et sécurité', icon: <Lock size={18} /> },
+    { id: 'visibility', label: 'Visibilité', icon: <Eye size={18} /> },
+    { id: 'data', label: 'Confidentialité des données', icon: <ShieldCheck size={18} /> },
+    { id: 'notifications', label: 'Notifications', icon: <Bell size={18} /> }
+  ];
+
+  const autoplay = ext.appPrefs.autoplayVideos ?? true;
+  const soundOn = ext.appPrefs.soundEffects ?? true;
+  const contentLang = ext.appPrefs.contentLanguage || 'Français';
+  const photoVis = ext.appPrefs.photoVisibility || 'Tous les membres';
+  const feedPref = ext.appPrefs.preferredFeedView || 'Contributions les plus pertinentes';
+
   return (
-    <div className="wf-detail-wrap">
-      <div className="workspace-mobile-nav" role="navigation" aria-label="Navigation compte et paramètres mobile">
-        <button type="button" onClick={() => nav('profile')}>
-          Mon profil
-        </button>
-        <button
-          type="button"
-          className={tab === 'prefs' ? 'active' : ''}
-          onClick={() => setTab('prefs')}
-        >
-          Préférences
-        </button>
-        <button
-          type="button"
-          className={tab === 'privacy' ? 'active' : ''}
-          onClick={() => setTab('privacy')}
-        >
-          Confidentialité & Contacts
-        </button>
-        <button
-          type="button"
-          className={tab === 'security' ? 'active' : ''}
-          onClick={() => setTab('security')}
-        >
-          Sécurité & Sessions
-        </button>
+    <div className="settings-layout-wrap">
+      <div className="workspace-mobile-nav" role="navigation" aria-label="Sections des préférences mobile">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={section === item.id ? 'active' : ''}
+            onClick={() => selectSection(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
 
-      <div className="page-heading">
-        <span className="eyebrow">PARAMÈTRES, CONFIDENTIALITÉ & SÉCURITÉ</span>
-        <h1>Paramètres du compte</h1>
-        <p>Gérez vos préférences d’affichage, votre visibilité, vos règles de contact et vos sessions.</p>
-      </div>
-
-      {tab === 'prefs' && (
-        <section className="wf-card wf-form-stack">
-          <h3>Apparence et langue</h3>
-          <label>
-            Thème d’affichage
-            <select
-              value={ext.appPrefs.theme}
-              onChange={(e) => {
-                updateExt((prev) => ({
-                  ...prev,
-                  appPrefs: { ...prev.appPrefs, theme: e.target.value as any }
-                }));
-                setToast(`Thème « ${e.target.value} » appliqué`);
-              }}
-            >
-              <option value="Clair">Clair (SAVOIR+)</option>
-              <option value="Sombre">Sombre (Claude / ChatGPT)</option>
-              <option value="Système">Suivre le système</option>
-            </select>
-          </label>
-          <label>
-            Langue disponible
-            <select value={ext.appPrefs.language} onChange={() => {}}>
-              <option value="Français">Français</option>
-            </select>
-          </label>
-          <label className="wf-check-row">
-            <input
-              type="checkbox"
-              checked={ext.appPrefs.reducedMotion}
-              onChange={(e) => {
-                updateExt((prev) => ({
-                  ...prev,
-                  appPrefs: { ...prev.appPrefs, reducedMotion: e.target.checked }
-                }));
-                setToast('Préférence d’animation enregistrée');
-              }}
-            />
-            <span>Réduire les animations</span>
-          </label>
-        </section>
-      )}
-
-      {tab === 'privacy' && (
-        <div className="wf-stack">
-          <section className="wf-card wf-form-stack">
-            <h3>Visibilité et règles de contact</h3>
-            <label>
-              Qui peut voir votre profil ?
-              <select
-                value={details.profileVisibility}
-                onChange={(e) => patchProfileDetails({ profileVisibility: e.target.value as any })}
+      <div className="settings-layout">
+        {/* Left LinkedIn-style Settings Sidebar */}
+        <aside className="settings-sidebar" aria-label="Menu des préférences">
+          <div className="settings-sidebar-header">
+            <Avatar person={user} small />
+            <h1>Préférences</h1>
+          </div>
+          <nav className="settings-sidebar-nav">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`settings-nav-item ${section === item.id ? 'active' : ''}`}
+                aria-current={section === item.id ? 'page' : undefined}
+                onClick={() => selectSection(item.id)}
               >
-                <option value="Membres">Membres connectés</option>
-                <option value="Moi uniquement">Moi uniquement</option>
-                <option value="Public">Public</option>
-              </select>
-            </label>
-            <label>
-              Visibilité du niveau et des XP
-              <select
-                value={details.xpVisibility}
-                onChange={(e) => patchProfileDetails({ xpVisibility: e.target.value as any })}
-              >
-                <option value="Moi uniquement">Moi uniquement</option>
-                <option value="Membres">Membres connectés</option>
-              </select>
-            </label>
-            <label>
-              Qui peut vous envoyer une demande de discussion ?
-              <select
-                value={details.contactPolicy}
-                onChange={(e) => {
-                  patchProfileDetails({ contactPolicy: e.target.value as any });
-                  setToast('Préférence de contact mise à jour');
-                }}
-              >
-                <option value="Personnes que je suis">Personnes que je suis (recommandé)</option>
-                <option value="Membres autorisés">Membres autorisés</option>
-                <option value="Personne">Personne</option>
-              </select>
-            </label>
-          </section>
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        </aside>
 
-          <section className="wf-card">
-            <h3>Personnes bloquées</h3>
-            {blockedRelations.length === 0 ? (
-              <p className="tiny muted wf-mt-sm">Aucun membre bloqué actuellement.</p>
-            ) : (
-              <div className="wf-stack-sm wf-mt-sm">
-                {blockedRelations.map((r) => {
-                  const other = people.find((p) => p.id === r.members.find((m) => m !== user.id));
-                  return (
-                    <div className="wf-program-item" key={r.id}>
-                      <span>{other?.name || 'Membre'}</span>
-                      <button className="secondary" onClick={() => onUnblock(r)}>
-                        Débloquer (sans réactiver l’accord)
+        {/* Right Grouped Settings Cards */}
+        <div className="settings-cards-col">
+          {section === 'account' && (
+            <>
+              <section className="settings-group-card">
+                <h2>Informations du profil</h2>
+                <div className="settings-row-group">
+                  <button
+                    type="button"
+                    className="settings-row"
+                    aria-expanded={expandedRow === 'profile-info'}
+                    onClick={() => toggleRow('profile-info')}
+                  >
+                    <span className="settings-row-label">Nom, lieu et secteur</span>
+                    <span className="settings-row-right">
+                      <span className="settings-row-val">{details.location || 'Lomé, Région Maritime'}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                  {expandedRow === 'profile-info' && (
+                    <div className="settings-row-body">
+                      <p className="tiny muted">
+                        {user.name} · {details.tagline}
+                      </p>
+                      <button type="button" className="secondary" onClick={() => nav('profile')}>
+                        Modifier sur Mon profil
                       </button>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+                  )}
+                </div>
 
-          <section className="wf-card wf-form-stack">
-            <h3>Démarches sur mes données personnelles</h3>
-            <p className="tiny muted">
-              Demander un export exclut les secrets et les notes internes de modération.
-            </p>
-            <div className="wf-inline-actions">
-              <button
-                className="secondary"
-                onClick={() => {
-                  setDataRequested(true);
-                  setToast('Demande d’export enregistrée (démonstration)');
-                }}
-              >
-                {dataRequested ? 'Demande d’export reçue' : 'Demander mes données'}
-              </button>
-              {onEnterVisitor && (
-                <button className="text-link" onClick={onEnterVisitor}>
-                  Tester la session visiteur (inscription / récupération)
-                </button>
-              )}
-            </div>
-          </section>
-        </div>
-      )}
-
-      {tab === 'security' && (
-        <div className="wf-stack">
-          <section className="wf-card">
-            <div className="between wf-mb-sm">
-              <h3>Sessions actives</h3>
-              <button
-                className="secondary"
-                onClick={() => {
-                  updateExt((prev) => ({
-                    ...prev,
-                    sessions: prev.sessions.filter((s) => s.current)
-                  }));
-                  setToast('Autres sessions révoquées');
-                }}
-              >
-                Déconnecter les autres sessions
-              </button>
-            </div>
-            <div className="wf-stack-sm">
-              {ext.sessions.map((s) => (
-                <div className="wf-program-item" key={s.id}>
-                  <div className="wf-inline-actions">
-                    <Monitor size={17} />
-                    <div>
-                      <b>{s.label}</b>
-                      <small>{s.lastSeen}</small>
+                <div className="settings-row-group">
+                  <button
+                    type="button"
+                    className="settings-row"
+                    aria-expanded={expandedRow === 'demographics'}
+                    onClick={() => toggleRow('demographics')}
+                  >
+                    <span className="settings-row-label">Parcours & centres d’intérêt</span>
+                    <span className="settings-row-right">
+                      <span className="settings-row-val">{details.interests}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                  {expandedRow === 'demographics' && (
+                    <div className="settings-row-body">
+                      <p className="tiny muted">
+                        Ces thèmes servent uniquement à personnaliser les suggestions d’entraide dans votre fil.
+                      </p>
+                      <button type="button" className="secondary" onClick={() => nav('profile')}>
+                        Éditer les centres d’intérêt
+                      </button>
                     </div>
+                  )}
+                </div>
+
+                <div className="settings-row-group">
+                  <button
+                    type="button"
+                    className="settings-row"
+                    aria-expanded={expandedRow === 'verifications'}
+                    onClick={() => toggleRow('verifications')}
+                  >
+                    <span className="settings-row-label">Vérifications</span>
+                    <span className="settings-row-right">
+                      <span className="settings-row-val">
+                        {isVerified ? 'Compte vérifié' : 'En attente'}
+                      </span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                  {expandedRow === 'verifications' && (
+                    <div className="settings-row-body">
+                      <p className="tiny muted">
+                        Statut du compte : {caps?.roleLabel || 'Membre'} · {isVerified ? 'Identité de démonstration vérifiée.' : 'Vérification non activée.'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section className="settings-group-card">
+                <h2>Afficher</h2>
+                <div className="settings-row-group">
+                  <button
+                    type="button"
+                    className="settings-row"
+                    aria-expanded={expandedRow === 'theme'}
+                    onClick={() => toggleRow('theme')}
+                  >
+                    <span className="settings-row-label">Mode sombre</span>
+                    <span className="settings-row-right">
+                      <span className="settings-row-val">{ext.appPrefs.theme}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                  {expandedRow === 'theme' && (
+                    <div className="settings-row-body">
+                      <select
+                        aria-label="Choisir le mode d'affichage"
+                        value={ext.appPrefs.theme}
+                        onChange={(e) => {
+                          patchAppPrefs({ theme: e.target.value as any });
+                          setToast(`Thème « ${e.target.value} » appliqué`);
+                        }}
+                      >
+                        <option value="Clair">Clair (SAVOIR+)</option>
+                        <option value="Sombre">Sombre</option>
+                        <option value="Système">Suivre le système</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <div className="settings-row-group">
+                  <button
+                    type="button"
+                    className="settings-row"
+                    aria-expanded={expandedRow === 'motion'}
+                    onClick={() => toggleRow('motion')}
+                  >
+                    <span className="settings-row-label">Réduire les animations</span>
+                    <span className="settings-row-right">
+                      <span className="settings-row-val">
+                        {ext.appPrefs.reducedMotion ? 'Activé' : 'Désactivé'}
+                      </span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                  {expandedRow === 'motion' && (
+                    <div className="settings-row-body">
+                      <label className="wf-check-row">
+                        <input
+                          type="checkbox"
+                          checked={ext.appPrefs.reducedMotion}
+                          onChange={(e) => {
+                            patchAppPrefs({ reducedMotion: e.target.checked });
+                            setToast('Préférence d’animation enregistrée');
+                          }}
+                        />
+                        <span>Limiter les transitions visuelles sur l’interface</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section className="settings-group-card">
+                <h2>Préférences générales</h2>
+                <div className="settings-row-group">
+                  <button
+                    type="button"
+                    className="settings-row"
+                    aria-expanded={expandedRow === 'lang'}
+                    onClick={() => toggleRow('lang')}
+                  >
+                    <span className="settings-row-label">Langue</span>
+                    <span className="settings-row-right">
+                      <span className="settings-row-val">{ext.appPrefs.language}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                  {expandedRow === 'lang' && (
+                    <div className="settings-row-body">
+                      <select aria-label="Langue de l'interface" value={ext.appPrefs.language} onChange={() => {}}>
+                        <option value="Français">Français</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <div className="settings-row-group">
+                  <button
+                    type="button"
+                    className="settings-row"
+                    aria-expanded={expandedRow === 'content-lang'}
+                    onClick={() => toggleRow('content-lang')}
+                  >
+                    <span className="settings-row-label">Langue du contenu</span>
+                    <span className="settings-row-right">
+                      <span className="settings-row-val">{contentLang}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                  {expandedRow === 'content-lang' && (
+                    <div className="settings-row-body">
+                      <select
+                        aria-label="Langue du contenu pédagogique"
+                        value={contentLang}
+                        onChange={(e) => {
+                          patchAppPrefs({ contentLanguage: e.target.value as any });
+                          setToast('Langue de contenu enregistrée');
+                        }}
+                      >
+                        <option value="Français">Français</option>
+                        <option value="Français & Anglais">Français &amp; Anglais</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <div className="settings-row-group">
+                  <button
+                    type="button"
+                    className="settings-row"
+                    onClick={() => {
+                      const next = !autoplay;
+                      patchAppPrefs({ autoplayVideos: next });
+                      setToast(`Lecture automatique ${next ? 'activée' : 'désactivée'}`);
+                    }}
+                  >
+                    <span className="settings-row-label">Lancer les médias automatiquement</span>
+                    <span className="settings-row-right">
+                      <span className="settings-row-val">{autoplay ? 'Activé' : 'Désactivé'}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                </div>
+
+                <div className="settings-row-group">
+                  <button
+                    type="button"
+                    className="settings-row"
+                    onClick={() => {
+                      const next = !soundOn;
+                      patchAppPrefs({ soundEffects: next });
+                      setToast(`Effets sonores ${next ? 'activés' : 'désactivés'}`);
+                    }}
+                  >
+                    <span className="settings-row-label">Effets sonores</span>
+                    <span className="settings-row-right">
+                      <span className="settings-row-val">{soundOn ? 'Activé' : 'Désactivé'}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                </div>
+
+                <div className="settings-row-group">
+                  <button
+                    type="button"
+                    className="settings-row"
+                    aria-expanded={expandedRow === 'photo-vis'}
+                    onClick={() => toggleRow('photo-vis')}
+                  >
+                    <span className="settings-row-label">Affichage des photos de profil</span>
+                    <span className="settings-row-right">
+                      <span className="settings-row-val">{photoVis}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                  {expandedRow === 'photo-vis' && (
+                    <div className="settings-row-body">
+                      <select
+                        aria-label="Affichage des photos de profil"
+                        value={photoVis}
+                        onChange={(e) => {
+                          patchAppPrefs({ photoVisibility: e.target.value as any });
+                          setToast('Préférence d’affichage des avatars enregistrée');
+                        }}
+                      >
+                        <option value="Tous les membres">Tous les membres</option>
+                        <option value="Mes relations">Mes relations</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <div className="settings-row-group">
+                  <button
+                    type="button"
+                    className="settings-row"
+                    aria-expanded={expandedRow === 'feed-view'}
+                    onClick={() => toggleRow('feed-view')}
+                  >
+                    <span className="settings-row-label">Vue du fil d’actualité préférée</span>
+                    <span className="settings-row-right">
+                      <span className="settings-row-val">{feedPref}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                  {expandedRow === 'feed-view' && (
+                    <div className="settings-row-body">
+                      <select
+                        aria-label="Vue du fil d'actualité"
+                        value={feedPref}
+                        onChange={(e) => {
+                          patchAppPrefs({ preferredFeedView: e.target.value as any });
+                          setToast('Tri du fil mis à jour');
+                        }}
+                      >
+                        <option value="Contributions les plus pertinentes">
+                          Contributions les plus pertinentes
+                        </option>
+                        <option value="Plus récentes">Plus récentes</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <div className="settings-row-group">
+                  <button
+                    type="button"
+                    className="settings-row"
+                    aria-expanded={expandedRow === 'unfollowed'}
+                    onClick={() => toggleRow('unfollowed')}
+                  >
+                    <span className="settings-row-label">Personnes que vous ne suivez plus</span>
+                    <span className="settings-row-right">
+                      <span className="settings-row-val tabular-nums">{unfollowedMembers.length}</span>
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </span>
+                  </button>
+                  {expandedRow === 'unfollowed' && (
+                    <div className="settings-row-body">
+                      {unfollowedMembers.length === 0 ? (
+                        <p className="tiny muted">Vous suivez tous les membres suggérés actuellement.</p>
+                      ) : (
+                        <div className="wf-stack-sm">
+                          {unfollowedMembers.map((m) => (
+                            <div className="between" key={m.id}>
+                              <span className="tiny">
+                                <b>{m.name}</b> · {m.role}
+                              </span>
+                              <button
+                                type="button"
+                                className="secondary"
+                                onClick={() => {
+                                  updateExt((prev) => ({
+                                    ...prev,
+                                    followingIds: {
+                                      ...prev.followingIds,
+                                      [user.id]: Array.from(
+                                        new Set([...(prev.followingIds[user.id] || []), m.id])
+                                      )
+                                    }
+                                  }));
+                                  setToast(`Vous suivez désormais ${m.name}`);
+                                }}
+                              >
+                                + Suivre
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
+
+          {section === 'security' && (
+            <>
+              <section className="settings-group-card">
+                <div className="between settings-group-head-pad">
+                  <h2>Sessions actives</h2>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => {
+                      updateExt((prev) => ({
+                        ...prev,
+                        sessions: prev.sessions.filter((s) => s.current)
+                      }));
+                      setToast('Autres sessions révoquées');
+                    }}
+                  >
+                    Déconnecter les autres sessions
+                  </button>
+                </div>
+                <div className="wf-stack-sm settings-pad-body">
+                  {ext.sessions.map((s) => (
+                    <div className="wf-program-item" key={s.id}>
+                      <div className="wf-inline-actions">
+                        <Monitor size={17} />
+                        <div>
+                          <b>{s.label}</b>
+                          <small>{s.lastSeen}</small>
+                        </div>
+                      </div>
+                      {s.current ? (
+                        <span className="status-tag ok">Session actuelle</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="text-link danger"
+                          onClick={() => {
+                            updateExt((prev) => ({
+                              ...prev,
+                              sessions: prev.sessions.filter((x) => x.id !== s.id)
+                            }));
+                            setToast('Session révoquée');
+                          }}
+                        >
+                          Révoquer
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="settings-group-card">
+                <h2>Protection du compte & droit au recours</h2>
+                <div className="settings-pad-body wf-stack-sm">
+                  <p className="tiny muted">
+                    Même en cas de suspension administrative, un portail dédié reste automatiquement accessible pour consulter
+                    la décision motivée et déposer un recours indépendant.
+                  </p>
+                  <div className="wf-inline-actions">
+                    <button type="button" className="secondary" onClick={() => nav('report')}>
+                      <Flag size={15} /> Suivre mes signalements
+                    </button>
+                    {(caps?.canModerate || caps?.canAdmin) && (
+                      <button type="button" className="secondary" onClick={() => nav('moderation')}>
+                        <ShieldAlert size={15} /> Console de modération
+                      </button>
+                    )}
                   </div>
-                  {s.current ? (
-                    <span className="status-tag ok">Session actuelle</span>
-                  ) : (
-                    <button
-                      className="text-link danger"
-                      onClick={() => {
-                        updateExt((prev) => ({
-                          ...prev,
-                          sessions: prev.sessions.filter((x) => x.id !== s.id)
-                        }));
-                        setToast('Session révoquée');
+                </div>
+              </section>
+            </>
+          )}
+
+          {section === 'visibility' && (
+            <>
+              <section className="settings-group-card">
+                <h2>Visibilité de votre profil et de votre activité</h2>
+                <div className="settings-pad-body wf-form-stack">
+                  <label>
+                    Qui peut voir votre profil ?
+                    <select
+                      value={details.profileVisibility}
+                      onChange={(e) => {
+                        patchProfileDetails({ profileVisibility: e.target.value as any });
+                        setToast('Visibilité du profil mise à jour');
                       }}
                     >
-                      Révoquer
+                      <option value="Membres">Membres connectés</option>
+                      <option value="Moi uniquement">Moi uniquement</option>
+                      <option value="Public">Public</option>
+                    </select>
+                  </label>
+                  <label>
+                    Visibilité du niveau et des XP
+                    <select
+                      value={details.xpVisibility}
+                      onChange={(e) => {
+                        patchProfileDetails({ xpVisibility: e.target.value as any });
+                        setToast('Visibilité XP mise à jour');
+                      }}
+                    >
+                      <option value="Moi uniquement">Moi uniquement</option>
+                      <option value="Membres">Membres connectés</option>
+                    </select>
+                  </label>
+                  <label>
+                    Qui peut vous envoyer une demande de discussion ?
+                    <select
+                      value={details.contactPolicy}
+                      onChange={(e) => {
+                        patchProfileDetails({ contactPolicy: e.target.value as any });
+                        setToast('Préférence de contact mise à jour');
+                      }}
+                    >
+                      <option value="Personnes que je suis">Personnes que je suis (recommandé)</option>
+                      <option value="Membres autorisés">Membres autorisés</option>
+                      <option value="Personne">Personne</option>
+                    </select>
+                  </label>
+                </div>
+              </section>
+
+              <section className="settings-group-card">
+                <h2>Personnes bloquées</h2>
+                <div className="settings-pad-body">
+                  {blockedRelations.length === 0 ? (
+                    <p className="tiny muted">Aucun membre bloqué actuellement.</p>
+                  ) : (
+                    <div className="wf-stack-sm">
+                      {blockedRelations.map((r) => {
+                        const other = people.find((p) => p.id === r.members.find((m) => m !== user.id));
+                        return (
+                          <div className="wf-program-item" key={r.id}>
+                            <span>{other?.name || 'Membre'}</span>
+                            <button type="button" className="secondary" onClick={() => onUnblock(r)}>
+                              Débloquer (sans réactiver l’accord)
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
+
+          {section === 'data' && (
+            <section className="settings-group-card">
+              <h2>Confidentialité des données</h2>
+              <div className="settings-pad-body wf-stack-sm">
+                <p className="tiny muted">
+                  Demander un export exclut les secrets et les notes internes de modération. Aucune donnée personnelle
+                  n’est utilisée à des fins publicitaires.
+                </p>
+                <div className="wf-inline-actions">
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => {
+                      setDataRequested(true);
+                      setToast('Demande d’export enregistrée (démonstration)');
+                    }}
+                  >
+                    {dataRequested ? 'Demande d’export reçue' : 'Demander mes données'}
+                  </button>
+                  {onEnterVisitor && (
+                    <button type="button" className="text-link" onClick={onEnterVisitor}>
+                      Tester la session visiteur (inscription / récupération)
                     </button>
                   )}
                 </div>
-              ))}
-            </div>
-          </section>
+              </div>
+            </section>
+          )}
 
-          <section className="wf-card wf-form-stack">
-            <h3>Protection du compte & droit au recours</h3>
-            <p className="tiny muted">
-              Même en cas de suspension administrative, un portail dédié reste automatiquement accessible pour consulter
-              la décision motivée et déposer un recours indépendant.
-            </p>
-            <div className="wf-inline-actions">
-              <button className="secondary" onClick={() => nav('notifications')}>
-                <Flag size={15} /> Suivre mes signalements
-              </button>
-              {(caps?.canModerate || caps?.canAdmin) && (
-                <button className="secondary" onClick={() => nav('moderation')}>
-                  <ShieldAlert size={15} /> Ouvrir la console de modération
-                </button>
-              )}
-            </div>
-          </section>
+          {section === 'notifications' && (
+            <section className="settings-group-card">
+              <h2>Notifications que vous recevez</h2>
+              <div className="settings-pad-body wf-stack-sm">
+                <p className="tiny muted">
+                  Choisissez les catégories d’alertes facultatives affichées dans votre centre d’alertes.
+                </p>
+                {[
+                  { key: 'learning', label: 'Activité pédagogique et reprises' },
+                  { key: 'social', label: 'Demandes de relation et messages' },
+                  { key: 'community', label: 'Réponses et solutions de la communauté' }
+                ].map((pref) => (
+                  <label className="wf-check-row" key={pref.key}>
+                    <input
+                      type="checkbox"
+                      checked={(ext.notifPrefs as any)[pref.key]}
+                      onChange={(e) => {
+                        const nextVal = e.target.checked;
+                        updateExt((prev) => ({
+                          ...prev,
+                          notifPrefs: { ...prev.notifPrefs, [pref.key]: nextVal }
+                        }));
+                        setToast('Préférence d’alerte mise à jour');
+                      }}
+                    />
+                    <span>{pref.label}</span>
+                  </label>
+                ))}
+                <div>
+                  <button type="button" className="secondary" onClick={() => nav('notifications')}>
+                    Ouvrir mes alertes <ArrowRight size={14} />
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

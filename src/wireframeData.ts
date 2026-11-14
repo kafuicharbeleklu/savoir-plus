@@ -564,6 +564,11 @@ export interface ExtendedDemoState {
     theme: 'Clair' | 'Sombre' | 'Système';
     language: 'Français';
     reducedMotion: boolean;
+    contentLanguage?: 'Français' | 'Français & Anglais';
+    autoplayVideos?: boolean;
+    soundEffects?: boolean;
+    preferredFeedView?: 'Contributions les plus pertinentes' | 'Plus récentes';
+    photoVisibility?: 'Tous les membres' | 'Mes relations';
   };
   sessions: { id: string; label: string; current: boolean; lastSeen: string }[];
   sentRequests: { id: string; recipientName: string; firstMessage: string; status: 'En attente' | 'Annulée' }[];
@@ -933,7 +938,12 @@ export const initialExtendedState = (): ExtendedDemoState => ({
   appPrefs: {
     theme: 'Clair',
     language: 'Français',
-    reducedMotion: false
+    reducedMotion: false,
+    contentLanguage: 'Français',
+    autoplayVideos: true,
+    soundEffects: true,
+    preferredFeedView: 'Contributions les plus pertinentes',
+    photoVisibility: 'Tous les membres'
   },
   sessions: [
     { id: 'sess-1', label: 'Navigateur sur cet appareil', current: true, lastSeen: 'Session actuelle' },

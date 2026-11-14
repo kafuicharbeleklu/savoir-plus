@@ -12,3 +12,5 @@ coverage/
 supabase/.temp/
 # Archived source snapshot (nested zips, ~33 MB) — not part of the source tree
 public/assets/aistudio/*.zip
+# Update archives dropped at the project root
+/*.zip

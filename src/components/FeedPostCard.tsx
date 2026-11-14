@@ -418,38 +418,30 @@ export function FeedPostCard({
         )}
       </div>
 
-      {/* Summary Counts Bar */}
-      <div className="li-engagement-summary">
-        <div className="li-eng-left">
-          <span className="li-eng-icon-pill" aria-hidden="true">
-            <ThumbsUp size={11} />
-          </span>
-          <span>
-            {postHelpfulBy.length > 0
-              ? `${postHelpfulBy.length} membre${postHelpfulBy.length > 1 ? 's' : ''} trouvent utile`
-              : 'Soyez le premier à trouver utile'}
-          </span>
-        </div>
-        <div className="li-eng-right">
-          <button
-            type="button"
-            className="li-eng-stat-btn"
-            aria-expanded={threadExpanded}
-            onClick={() => setThreadExpanded((v) => !v)}
-          >
-            {post.replies.length} {post.kind === 'question' ? 'réponse' : 'commentaire'}
-            {post.replies.length > 1 ? 's' : ''}
-          </button>
-          {repostedBy.length > 0 && (
-            <>
-              <span aria-hidden="true">·</span>
+      {/* Summary Counts Bar (replies & reposts only when present) */}
+      {(post.replies.length > 0 || repostedBy.length > 0) && (
+        <div className="li-engagement-summary">
+          <div className="li-eng-right">
+            {post.replies.length > 0 && (
+              <button
+                type="button"
+                className="li-eng-stat-btn"
+                aria-expanded={threadExpanded}
+                onClick={() => setThreadExpanded((v) => !v)}
+              >
+                {post.replies.length} {post.kind === 'question' ? 'réponse' : 'commentaire'}
+                {post.replies.length > 1 ? 's' : ''}
+              </button>
+            )}
+            {post.replies.length > 0 && repostedBy.length > 0 && <span aria-hidden="true">·</span>}
+            {repostedBy.length > 0 && (
               <span>
                 {repostedBy.length} repartage{repostedBy.length > 1 ? 's' : ''}
               </span>
-            </>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 4-Button Icon + Count Action Bar */}
       <div className="li-action-bar" role="group" aria-label="Actions sur la contribution">
@@ -725,7 +717,7 @@ export function FeedPostCard({
                   onClick={() => setShowAllComments(true)}
                 >
                   <span className="li-more-icon" aria-hidden="true">⤢</span>
-                  <span>
+                  <span className="li-more-label">
                     Voir {hiddenTopCount} autre{hiddenTopCount > 1 ? 's' : ''}{' '}
                     {post.kind === 'question' ? 'réponse' : 'commentaire'}
                     {hiddenTopCount > 1 ? 's' : ''}
@@ -749,7 +741,7 @@ export function FeedPostCard({
                   }}
                 >
                   <span className="li-more-icon" aria-hidden="true">⤢</span>
-                  <span>
+                  <span className="li-more-label">
                     {topReplies.length > 1
                       ? `Voir toute la discussion (${post.replies.length})`
                       : 'Ouvrir les commentaires'}

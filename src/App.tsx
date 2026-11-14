@@ -25,7 +25,6 @@ import {
   Image as ImageIcon,
   Layers,
   Lock,
-  MapPin,
   MessageCircle,
   MessageSquare,
   Plus,
@@ -49,6 +48,7 @@ import {
   profiles,
   decideContact,
   cancelContact,
+  requestContact,
   resetDemo,
   saveName,
   saveProgress,
@@ -78,7 +78,10 @@ import {
   isStudioRoute,
   resolveActiveLab,
   resolveActiveSpace,
+  resolveAlgorithmicDiscoverProfiles,
   resolveCapabilities,
+  resolveCommunityDirectory,
+  resolveFollowedAndConnectedProfiles,
   resolveProfileVerified,
   resolveSplashDurations,
   shouldBypassSplash,
@@ -144,6 +147,7 @@ import {
   SettingsView,
   AppealView
 } from './pages/AccountAndAdminPages';
+import { ProfilePage } from './pages/ProfilePage';
 import {
   StudioCreatorProfileView,
   StudioEditorView,
@@ -579,11 +583,12 @@ export default function App() {
   };
 
   // Social helpers
+  const networkDirectory = resolveCommunityDirectory(people, ext);
   const myFollowing = ext.followingIds?.[uid] || [];
   const toggleFollowPerson = (targetId: string) => {
     if (targetId === uid) return;
     const already = myFollowing.includes(targetId);
-    const targetName = people.find((p) => p.id === targetId)?.name || 'ce membre';
+    const targetName = networkDirectory.find((p) => p.id === targetId)?.name || 'ce membre';
     updateExt((prev) => ({
       ...prev,
       followingIds: {
@@ -594,6 +599,34 @@ export default function App() {
       }
     }));
     setToast(already ? `Vous ne suivez plus ${targetName}` : `Vous suivez désormais ${targetName}`);
+  };
+
+  const handleRequestContact = async (targetProfile: Profile) => {
+    if (targetProfile.id === uid) return;
+    setBusy(true);
+    try {
+      await requestContact(mode, uid, targetProfile.id);
+      const id = pairId(uid, targetProfile.id);
+      const firstMessage = `Bonjour ${targetProfile.name.split(' ')[0]}, j’aimerais échanger avec vous sur SAVOIR+.`;
+      updateExt((prev) => ({
+        ...prev,
+        requestMessages: { ...prev.requestMessages, [id]: firstMessage },
+        sentRequests: [
+          {
+            id,
+            recipientName: targetProfile.name,
+            firstMessage,
+            status: 'En attente'
+          },
+          ...prev.sentRequests.filter((s) => s.id !== id)
+        ]
+      }));
+      setToast(`Demande de discussion envoyée à ${targetProfile.name}`);
+    } catch (e: any) {
+      setToast(e?.message || 'Impossible d’envoyer la demande');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleDecideContact = async (r: Relation, decision: 'accepted' | 'declined') => {
@@ -1020,7 +1053,13 @@ export default function App() {
   const studioNav = isStudioRoute(page);
   const govNav = isGovernanceRoute(page);
   const activeSpace = resolveActiveSpace(page, caps.canModerate || caps.canAdmin);
-  const isFullWidth = page === 'messages' || page === 'auth-flows';
+  const isFullWidth =
+    page === 'messages' ||
+    page === 'auth-flows' ||
+    page === 'profile' ||
+    page === 'settings' ||
+    page === 'member' ||
+    page === 'progression';
 
   // Common props passed to subpages
   const extraProps = {
@@ -1119,7 +1158,13 @@ export default function App() {
       const lvl = computeGlobalLevel(totalXP);
       const visibleFeedPosts = filterHomeFeed(ext.posts, homeFeedTab, myFollowing);
       const openHelpPosts = ext.posts.filter((p) => p.kind === 'question' && !p.solutionReplyId);
-      const discoverMembers = people.filter((p) => p.id !== uid).slice(0, 3);
+      const discoverMembers = resolveAlgorithmicDiscoverProfiles(
+        networkDirectory,
+        uid,
+        myFollowing,
+        ext,
+        3
+      ).map((entry) => entry.profile);
       return (
         <div className="dashboard-grid">
           <div className="dashboard-main">
@@ -1358,48 +1403,50 @@ export default function App() {
             <section className="rail-card">
               <h2 className="discover-feed-title">Ajouter à votre fil d’actualité</h2>
               <div className="discover-feed-list">
-                {discoverMembers.map((m) => {
-                  const isFol = myFollowing.includes(m.id);
-                  const headline = ext.profileDetails[m.id]?.tagline || m.role;
-                  const isVerifiedMember = resolveProfileVerified(
-                    m.id,
-                    ext.adminUsers,
-                    ext.profileDetails[m.id]?.verified
-                  );
-                  return (
-                    <div key={m.id} className="discover-feed-row">
-                      <button
-                        type="button"
-                        className="li-avatar-btn"
-                        aria-label={`Voir le profil de ${m.name}`}
-                        onClick={() => nav('member', m.id)}
-                      >
-                        <Avatar person={m} />
-                      </button>
-                      <div className="discover-feed-info">
-                        <div className="discover-feed-name-row">
-                          <button
-                            type="button"
-                            className="discover-feed-name"
-                            onClick={() => nav('member', m.id)}
-                          >
-                            {m.name}
-                          </button>
-                          {isVerifiedMember && <VerifiedBadge />}
-                        </div>
-                        <p className="discover-feed-headline" title={headline}>{headline}</p>
+                {discoverMembers.length === 0 ? (
+                  <p className="tiny muted">Aucune nouvelle suggestion pour le moment.</p>
+                ) : (
+                  discoverMembers.map((m) => {
+                    const headline = ext.profileDetails[m.id]?.tagline || m.role;
+                    const isVerifiedMember = resolveProfileVerified(
+                      m.id,
+                      ext.adminUsers,
+                      ext.profileDetails[m.id]?.verified
+                    );
+                    return (
+                      <div key={m.id} className="discover-feed-row">
                         <button
                           type="button"
-                          className={`discover-follow-pill ${isFol ? 'is-following' : ''}`}
-                          onClick={() => toggleFollowPerson(m.id)}
-                          aria-pressed={isFol}
+                          className="li-avatar-btn"
+                          aria-label={`Voir le profil de ${m.name}`}
+                          onClick={() => nav('member', m.id)}
                         >
-                          {isFol ? 'Suivi' : '+ Suivre'}
+                          <Avatar person={m} />
                         </button>
+                        <div className="discover-feed-info">
+                          <div className="discover-feed-name-row">
+                            <button
+                              type="button"
+                              className="discover-feed-name"
+                              onClick={() => nav('member', m.id)}
+                            >
+                              {m.name}
+                            </button>
+                            {isVerifiedMember && <VerifiedBadge />}
+                          </div>
+                          <p className="discover-feed-headline" title={headline}>{headline}</p>
+                          <button
+                            type="button"
+                            className="discover-follow-pill"
+                            onClick={() => toggleFollowPerson(m.id)}
+                          >
+                            + Suivre
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
               <button type="button" className="text-link discover-see-all" onClick={() => nav('relations')}>
                 Voir toutes les suggestions <ArrowRight size={14} />
@@ -1446,13 +1493,7 @@ export default function App() {
               />
             </div>
 
-            <header className="page-heading">
-              <span className="eyebrow">MES APPRENTISSAGES</span>
-              <h1>Votre suivi pédagogique</h1>
-              <p className="tabular-nums">
-                Retrouvez vos modules en cours, planifiés ou achevés. Niveau {lvl.level} ({totalXP} XP acquis).
-              </p>
-            </header>
+            <h1 className="sr-only">Mes apprentissages</h1>
 
           <div className="catalog-tabs-underline" role="tablist" aria-label="Filtrer mes apprentissages">
             {(['En cours', 'À commencer', 'Terminés'] as const).map((tab) => {
@@ -1558,231 +1599,287 @@ export default function App() {
     }
 
     if (page === 'relations') {
-      const others = people.filter((p) => p.id !== uid);
+      const discoverEntries = resolveAlgorithmicDiscoverProfiles(
+        networkDirectory,
+        uid,
+        myFollowing,
+        ext,
+        12
+      );
+      const myNetworkEntries = resolveFollowedAndConnectedProfiles(
+        networkDirectory,
+        uid,
+        myFollowing,
+        relations,
+        ext
+      );
+
       return (
         <div className="dashboard-grid">
           <div className="dashboard-main">
-            <header className="page-heading">
-              <span className="eyebrow">RELATIONS & CONTACTS</span>
-              <h1>Votre réseau d’entraide</h1>
-              <p>
-                Suivez les contributions des membres et gérez vos discussions privées acceptées.
-              </p>
-            </header>
+            <h1 className="sr-only">Relations</h1>
 
-          <div className="catalog-tabs-underline" role="tablist" aria-label="Sections du réseau">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={relationsTab === 'discover'}
-              className={relationsTab === 'discover' ? 'selected' : ''}
-              onClick={() => setRelationsTab('discover')}
-            >
-              Découvrir ({others.length})
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={relationsTab === 'requests'}
-              className={relationsTab === 'requests' ? 'selected' : ''}
-              onClick={() => setRelationsTab('requests')}
-            >
-              Invitations ({pendingIncoming.length + pendingOutgoing.length})
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={relationsTab === 'network'}
-              className={relationsTab === 'network' ? 'selected' : ''}
-              onClick={() => setRelationsTab('network')}
-            >
-              Mes relations ({acceptedRelations.length})
-            </button>
-          </div>
-
-          {relationsTab === 'discover' && (
-            <div className="connect-grid">
-              {others.map((p) => {
-                const rel = relations.find((r) => r.id === pairId(uid, p.id));
-                const isFollowed = myFollowing.includes(p.id);
-                return (
-                  <article
-                    key={p.id}
-                    className="connect-card"
-                    onClick={() => nav('member', p.id)}
-                  >
-                    <div className="connect-card-top">
-                      <div className="connect-card-head">
-                        <Avatar person={p} />
-                        <div>
-                          <div className="mini-profile-name-row">
-                            <button
-                              type="button"
-                              className="identity-link"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                nav('member', p.id);
-                              }}
-                            >
-                              <b>{p.name}</b>
-                            </button>
-                            {resolveProfileVerified(p.id, ext.adminUsers, ext.profileDetails[p.id]?.verified) && (
-                              <VerifiedBadge />
-                            )}
-                          </div>
-                          <small className="tiny muted">
-                            {ext.profileDetails[p.id]?.tagline || p.role}
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="tiny muted">{p.bio}</p>
-                    <div className="connect-card-footer">
-                      <button
-                        type="button"
-                        className={`follow-btn follow-btn-sm ${isFollowed ? 'is-following' : 'is-idle'}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFollowPerson(p.id);
-                        }}
-                        aria-pressed={isFollowed}
-                      >
-                        {isFollowed ? <Check size={13} /> : <UserPlus size={13} />} {isFollowed ? 'Suivi' : 'Suivre'}
-                      </button>
-                      {rel?.status === 'accepted' ? (
-                        <button
-                          type="button"
-                          className="secondary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedRelId(rel.id);
-                            setDrawerOpen(true);
-                          }}
-                        >
-                          <MessageCircle size={14} /> Message
-                        </button>
-                      ) : rel?.status === 'pending' ? (
-                        <span className="status-tag warn">Demande en attente</span>
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })}
+            <div className="catalog-tabs-underline" role="tablist" aria-label="Sections du réseau">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={relationsTab === 'discover'}
+                className={relationsTab === 'discover' ? 'selected' : ''}
+                onClick={() => setRelationsTab('discover')}
+              >
+                Découvrir ({discoverEntries.length})
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={relationsTab === 'requests'}
+                className={relationsTab === 'requests' ? 'selected' : ''}
+                onClick={() => setRelationsTab('requests')}
+              >
+                Invitations ({pendingIncoming.length + pendingOutgoing.length})
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={relationsTab === 'network'}
+                className={relationsTab === 'network' ? 'selected' : ''}
+                onClick={() => setRelationsTab('network')}
+              >
+                Mes relations ({myNetworkEntries.length})
+              </button>
             </div>
-          )}
 
-          {relationsTab === 'requests' && (
-            <div className="wf-stack">
-              <section className="wf-card">
-                <h2 className="wf-mb-sm">Invitations reçues ({pendingIncoming.length})</h2>
-                {pendingIncoming.length === 0 ? (
-                  <p className="tiny muted">Aucune invitation en attente.</p>
-                ) : (
-                  <div className="wf-stack-sm">
-                    {pendingIncoming.map((r) => {
-                      const sender = people.find((p) => p.id === r.requester);
-                      if (!sender) return null;
-                      const firstMsg = ext.requestMessages?.[r.id];
-                      return (
-                        <div key={r.id} className="relation-row">
-                          <div>
-                            <button className="identity-link" onClick={() => nav('member', sender.id)}>
-                              <b>{sender.name}</b>
-                            </button>
-                            <small className="tiny muted">{sender.role}</small>
-                            {firstMsg && <p className="tiny wf-mt-sm">Premier message : « {firstMsg} »</p>}
-                          </div>
-                          <div className="wf-inline-actions">
-                            <button className="primary" disabled={busy} onClick={() => handleDecideContact(r, 'accepted')}>
-                              <Check size={14} /> Accepter
-                            </button>
-                            <button className="secondary" disabled={busy} onClick={() => handleDecideContact(r, 'declined')}>
-                              Refuser
-                            </button>
-                            <button className="text-link danger" onClick={() => setReportTarget(`Demande de ${sender.name}`)}>
-                              <Flag size={13} /> Signaler
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-
-              <section className="wf-card">
-                <h2 className="wf-mb-sm">Demandes envoyées ({pendingOutgoing.length})</h2>
-                {pendingOutgoing.length === 0 ? (
-                  <p className="tiny muted">Aucune demande envoyée en attente.</p>
-                ) : (
-                  <div className="wf-stack-sm">
-                    {pendingOutgoing.map((r) => {
-                      const target = people.find((p) => p.id === r.recipient);
-                      if (!target) return null;
-                      return (
-                        <div key={r.id} className="relation-row">
-                          <div>
-                            <b>{target.name}</b>
-                            <small className="tiny muted">En attente d’acceptation — aucun second message autorisé.</small>
-                            {ext.requestMessages?.[r.id] && <p className="tiny">« {ext.requestMessages[r.id]} »</p>}
-                          </div>
-                          <button className="secondary" disabled={busy} onClick={() => handleCancelContact(r)}>
-                            Annuler la demande
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-            </div>
-          )}
-
-          {relationsTab === 'network' && (
-            <div className="wf-stack-sm">
-              {acceptedRelations.length === 0 ? (
+            {relationsTab === 'discover' && (
+              discoverEntries.length === 0 ? (
                 <div className="empty">
-                  <p>Vous n’avez pas encore de discussion acceptée.</p>
-                  <button className="primary" onClick={() => setRelationsTab('discover')}>
-                    Découvrir des membres
+                  <Users size={34} />
+                  <h3>Aucune nouvelle suggestion pour le moment</h3>
+                  <p>Tous les profils suggérés selon vos intérêts figurent déjà dans Mes relations.</p>
+                  <button type="button" className="secondary" onClick={() => setRelationsTab('network')}>
+                    Voir Mes relations ({myNetworkEntries.length})
                   </button>
                 </div>
               ) : (
-                acceptedRelations.map((r) => {
-                  const other = people.find((p) => p.id === r.members.find((id) => id !== uid));
-                  if (!other) return null;
-                  const blocked = r.blockedBy.length > 0;
-                  return (
-                    <div key={r.id} className="relation-row">
-                      <div className="connect-card-head">
-                        <Avatar person={other} small />
-                        <div>
-                          <button className="identity-link" onClick={() => nav('member', other.id)}>
-                            <b>{other.name}</b>
+                <div className="connect-grid">
+                  {discoverEntries.map((entry) => {
+                    const p = entry.profile;
+                    const rel = relations.find((r) => r.id === pairId(uid, p.id));
+                    return (
+                      <article
+                        key={p.id}
+                        className="connect-card"
+                        onClick={() => nav('member', p.id)}
+                      >
+                        <div className="connect-card-top">
+                          <div className="connect-card-head">
+                            <Avatar person={p} />
+                            <div>
+                              <div className="mini-profile-name-row">
+                                <button
+                                  type="button"
+                                  className="identity-link"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    nav('member', p.id);
+                                  }}
+                                >
+                                  <b>{p.name}</b>
+                                </button>
+                                {entry.verified && <VerifiedBadge />}
+                              </div>
+                              <small className="tiny muted">{entry.headline}</small>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="tiny muted">{p.bio}</p>
+                        <small className="tiny muted">{entry.suggestionReason}</small>
+                        <div className="connect-card-footer">
+                          <button
+                            type="button"
+                            className="follow-btn follow-btn-sm is-idle"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFollowPerson(p.id);
+                            }}
+                            aria-pressed={false}
+                          >
+                            <UserPlus size={13} /> Suivre
                           </button>
-                          <small className="tiny muted">{blocked ? 'Échange bloqué' : other.role}</small>
+                          {rel?.status === 'accepted' ? (
+                            <button
+                              type="button"
+                              className="secondary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedRelId(rel.id);
+                                setDrawerOpen(true);
+                              }}
+                            >
+                              <MessageCircle size={14} /> Message
+                            </button>
+                          ) : rel?.status === 'pending' ? (
+                            <span className="status-tag warn">Demande en attente</span>
+                          ) : null}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )
+            )}
+
+            {relationsTab === 'requests' && (
+              <div className="wf-stack">
+                <section className="wf-card">
+                  <h2 className="wf-mb-sm">Invitations reçues ({pendingIncoming.length})</h2>
+                  {pendingIncoming.length === 0 ? (
+                    <p className="tiny muted">Aucune invitation en attente.</p>
+                  ) : (
+                    <div className="wf-stack-sm">
+                      {pendingIncoming.map((r) => {
+                        const sender = networkDirectory.find((p) => p.id === r.requester);
+                        if (!sender) return null;
+                        const firstMsg = ext.requestMessages?.[r.id];
+                        return (
+                          <div key={r.id} className="relation-row">
+                            <div>
+                              <button className="identity-link" onClick={() => nav('member', sender.id)}>
+                                <b>{sender.name}</b>
+                              </button>
+                              <small className="tiny muted">{sender.role}</small>
+                              {firstMsg && <p className="tiny wf-mt-sm">Premier message : « {firstMsg} »</p>}
+                            </div>
+                            <div className="wf-inline-actions">
+                              <button className="primary" disabled={busy} onClick={() => handleDecideContact(r, 'accepted')}>
+                                <Check size={14} /> Accepter
+                              </button>
+                              <button className="secondary" disabled={busy} onClick={() => handleDecideContact(r, 'declined')}>
+                                Refuser
+                              </button>
+                              <button className="text-link danger" onClick={() => setReportTarget(`Demande de ${sender.name}`)}>
+                                <Flag size={13} /> Signaler
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+
+                <section className="wf-card">
+                  <h2 className="wf-mb-sm">Demandes envoyées ({pendingOutgoing.length})</h2>
+                  {pendingOutgoing.length === 0 ? (
+                    <p className="tiny muted">Aucune demande envoyée en attente.</p>
+                  ) : (
+                    <div className="wf-stack-sm">
+                      {pendingOutgoing.map((r) => {
+                        const target = networkDirectory.find((p) => p.id === r.recipient);
+                        if (!target) return null;
+                        return (
+                          <div key={r.id} className="relation-row">
+                            <div>
+                              <b>{target.name}</b>
+                              <small className="tiny muted">En attente d’acceptation — aucun second message autorisé.</small>
+                              {ext.requestMessages?.[r.id] && <p className="tiny">« {ext.requestMessages[r.id]} »</p>}
+                            </div>
+                            <button className="secondary" disabled={busy} onClick={() => handleCancelContact(r)}>
+                              Annuler la demande
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              </div>
+            )}
+
+            {relationsTab === 'network' && (
+              <div className="wf-stack-sm">
+                {myNetworkEntries.length === 0 ? (
+                  <div className="empty">
+                    <p>Vous ne suivez encore aucun compte et n’avez aucune relation active.</p>
+                    <button className="primary" onClick={() => setRelationsTab('discover')}>
+                      Découvrir des membres
+                    </button>
+                  </div>
+                ) : (
+                  myNetworkEntries.map((entry) => {
+                    const other = entry.profile;
+                    const rel = entry.relation
+                      ? relations.find((r) => r.id === entry.relation!.id)
+                      : undefined;
+                    const blocked = Boolean(rel && rel.blockedBy.length > 0);
+                    return (
+                      <div key={other.id} className="relation-row">
+                        <div className="connect-card-head">
+                          <Avatar person={other} small />
+                          <div>
+                            <div className="mini-profile-name-row">
+                              <button type="button" className="identity-link" onClick={() => nav('member', other.id)}>
+                                <b>{other.name}</b>
+                              </button>
+                              {entry.verified && <VerifiedBadge />}
+                            </div>
+                            <small className="tiny muted">
+                              {blocked
+                                ? 'Échange bloqué'
+                                : `${entry.headline} · ${entry.relationStatus === 'accepted' ? 'Suivi & discussion active' : 'Compte suivi'}`}
+                            </small>
+                          </div>
+                        </div>
+                        <div className="wf-inline-actions">
+                          {entry.isFollowed && (
+                            <button
+                              type="button"
+                              className="follow-btn follow-btn-sm is-following"
+                              onClick={() => toggleFollowPerson(other.id)}
+                              aria-pressed={true}
+                            >
+                              <Check size={13} /> Suivi
+                            </button>
+                          )}
+                          {rel?.status === 'accepted' ? (
+                            <>
+                              <button
+                                type="button"
+                                className="primary"
+                                onClick={() => {
+                                  setSelectedRelId(rel.id);
+                                  setDrawerOpen(true);
+                                }}
+                              >
+                                <MessageCircle size={14} /> Message
+                              </button>
+                              <button
+                                type="button"
+                                className="secondary danger"
+                                disabled={busy}
+                                onClick={() => handleToggleBlock(rel)}
+                              >
+                                {rel.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer'}
+                              </button>
+                            </>
+                          ) : rel?.status === 'pending' ? (
+                            <span className="status-tag warn">Demande en attente</span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="secondary"
+                              disabled={busy}
+                              onClick={() => handleRequestContact(other)}
+                            >
+                              <MessageCircle size={14} /> Demander à discuter
+                            </button>
+                          )}
                         </div>
                       </div>
-                      <div className="wf-inline-actions">
-                        <button
-                          className="primary"
-                          onClick={() => {
-                            setSelectedRelId(r.id);
-                            setDrawerOpen(true);
-                          }}
-                        >
-                          <MessageCircle size={14} /> Message
-                        </button>
-                        <button className="secondary danger" disabled={busy} onClick={() => handleToggleBlock(r)}>
-                          {r.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer'}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          )}
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
 
           <aside className="right-rail" aria-label="Repères réseau">
@@ -1790,8 +1887,12 @@ export default function App() {
               <span className="eyebrow">RÉSEAU EN BREF</span>
               <div className="rail-stat-list tabular-nums">
                 <div className="rail-stat-row">
-                  <span>Abonnements actifs</span>
+                  <span>Comptes suivis</span>
                   <b>{myFollowing.length}</b>
+                </div>
+                <div className="rail-stat-row">
+                  <span>Suggestions algorithme</span>
+                  <b>{discoverEntries.length}</b>
                 </div>
                 <div className="rail-stat-row">
                   <span>Contacts acceptés</span>
@@ -1815,172 +1916,54 @@ export default function App() {
     }
 
     if (page === 'member') {
-      const target = people.find((p) => p.id === selectedId) || people.find((p) => p.id !== uid) || user;
-      const details = ext.profileDetails[target.id];
-      const rel = target.id !== uid ? relations.find((r) => r.id === pairId(uid, target.id)) : undefined;
-      const isFollowed = myFollowing.includes(target.id);
-      const memberContents = dynamicCatalog.filter((c) => c.author.toLowerCase().includes(target.name.split(' ')[0].toLowerCase()));
-      const memberPosts = ext.posts.filter((p) => p.authorId === target.id);
-      const otherMembers = people.filter((p) => p.id !== uid && p.id !== target.id);
-
+      const target =
+        networkDirectory.find((p) => p.id === selectedId) ||
+        networkDirectory.find((p) => p.id !== uid) ||
+        user;
       return (
-        <div className="dashboard-grid">
-          <div className="dashboard-main">
-            <button className="back-link" onClick={() => nav('relations')}>
-              ← Retour aux relations
-            </button>
-
-          <section className="wf-card">
-            <div className="member-cover" aria-hidden="true" />
-            <div className="member-header-row">
-              <div className="member-identity">
-                <Avatar person={target} />
-                <div>
-                  <div className="mini-profile-name-row">
-                    <h1>{target.name}</h1>
-                    {resolveProfileVerified(target.id, ext.adminUsers, details?.verified) && <VerifiedBadge />}
-                  </div>
-                  <p className="muted">{details?.tagline || target.role}</p>
-                  {details?.location && (
-                    <span className="mini-profile-location">
-                      <MapPin size={12} aria-hidden="true" />
-                      <span>{details.location}</span>
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {target.id !== uid && (
-                <div className="wf-inline-actions">
-                  <button
-                    type="button"
-                    className={`follow-btn ${isFollowed ? 'is-following' : 'is-idle'}`}
-                    onClick={() => toggleFollowPerson(target.id)}
-                    aria-pressed={isFollowed}
-                  >
-                    {isFollowed ? <Check size={14} /> : <UserPlus size={14} />} {isFollowed ? 'Suivi' : 'Suivre'}
-                  </button>
-                  {rel?.status === 'accepted' ? (
-                    <button
-                      className="secondary"
-                      onClick={() => {
-                        setSelectedRelId(rel.id);
-                        setDrawerOpen(true);
-                      }}
-                    >
-                      <MessageCircle size={14} /> Ouvrir la discussion
-                    </button>
-                  ) : rel?.status === 'pending' ? (
-                    <span className="status-tag warn">Demande en attente</span>
-                  ) : null}
-                </div>
-              )}
-            </div>
-
-            <div className="wf-divider" />
-            <p>{details?.bio || target.bio}</p>
-            {details?.interests && (
-              <div className="interests wf-mt-sm">
-                {details.interests.split(',').map((tag) => (
-                  <span key={tag.trim()}>{tag.trim()}</span>
-                ))}
-              </div>
-            )}
-            <div className="member-footer-meta">
-              <p className="tiny muted">
-                Confidentialité : les scores de quiz et la progression personnelle de {target.name} restent privés par défaut.
-              </p>
-              {target.id !== uid && (
-                <button className="text-link danger" onClick={() => setReportTarget(`Profil de ${target.name}`)}>
-                  <Flag size={13} /> Signaler
-                </button>
-              )}
-            </div>
-          </section>
-
-          <section className="wf-card">
-            <h2 className="wf-mb-sm">Contenus publiés ({memberContents.length})</h2>
-            {memberContents.length === 0 ? (
-              <p className="tiny muted">Aucun module ou ressource publié par ce membre dans le catalogue actuel.</p>
-            ) : (
-              <div className="wf-stack-sm">
-                {memberContents.map((c) => {
-                  const targetPage = c.type === 'resource' ? 'resource-detail' : c.type === 'path' ? 'path-detail' : 'module-detail';
-                  return (
-                    <div
-                      key={c.id}
-                      className="wf-program-item is-clickable"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => nav(targetPage, c.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          nav(targetPage, c.id);
-                        }
-                      }}
-                    >
-                      <div>
-                        <b>{c.title}</b>
-                        <small>{c.domain}</small>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-
-          <section className="wf-card">
-            <h2 className="wf-mb-sm">Contributions communautaires ({memberPosts.length})</h2>
-            {memberPosts.length === 0 ? (
-              <p className="tiny muted">Aucune contribution récente.</p>
-            ) : (
-              <div className="wf-stack-sm">
-                {memberPosts.map((p) => (
-                  <button key={p.id} className="rail-quick-item" onClick={() => nav('community-thread', p.id)}>
-                    <b>{p.title}</b>
-                    <small>{p.domain} · {p.createdAt}</small>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-          </div>
-
-          <aside className="right-rail" aria-label="Autres membres">
-            <section className="rail-card">
-              <span className="eyebrow">REPÈRES PUBLICS</span>
-              <p className="tiny muted">
-                Audience du profil : {details?.profileVisibility || 'Membres'}. Seules les publications et contributions autorisées apparaissent ici.
-              </p>
-            </section>
-            <section className="rail-card">
-              <span className="eyebrow">AUTRES MEMBRES</span>
-              <div className="rail-quick-list">
-                {otherMembers.map((m) => (
-                  <button key={m.id} className="rail-quick-item" onClick={() => nav('member', m.id)}>
-                    <b>{m.name}</b>
-                    <small>{m.role}</small>
-                  </button>
-                ))}
-              </div>
-            </section>
-          </aside>
-        </div>
+        <ProfilePage
+          isOwnProfile={target.id === uid}
+          target={target}
+          currentUser={user}
+          ext={ext}
+          people={people}
+          relations={relations}
+          myFollowing={myFollowing}
+          totalXP={totalXP}
+          getModuleProgress={getModuleProgress}
+          lessonCounts={LESSON_COUNTS}
+          onToggleFollow={toggleFollowPerson}
+          onOpenChatDrawer={(relId) => {
+            setSelectedRelId(relId);
+            setDrawerOpen(true);
+          }}
+          onRequestContact={handleRequestContact}
+          onReportTarget={(label) => setReportTarget(label)}
+          onOpenInfoModal={setInfoModal}
+          nav={nav}
+          openSettingsTab={openSettingsTab}
+          setToast={setToast}
+          progress={progress}
+          updateExt={updateExt}
+          openReader={openReader}
+        />
       );
     }
 
     if (page === 'profile') {
-      const details = ext.profileDetails[uid] || initialExtendedState().profileDetails.afi;
-      const isVerified = resolveProfileVerified(uid, ext.adminUsers, details.verified);
       return (
-        <ProfileEditorView
-          user={user}
-          details={details}
-          isVerified={isVerified}
+        <ProfilePage
+          isOwnProfile={true}
+          target={user}
+          currentUser={user}
+          ext={ext}
+          people={people}
+          relations={relations}
+          myFollowing={myFollowing}
           totalXP={totalXP}
-          onSave={async (newName, tagline, location, bio, interests) => {
+          getModuleProgress={getModuleProgress}
+          lessonCounts={LESSON_COUNTS}
+          onSaveProfile={async (newName, tagline, location, bio, interests) => {
             if (newName.trim()) {
               await saveName(mode, uid, newName.trim());
             }
@@ -1999,8 +1982,20 @@ export default function App() {
             }));
             setToast('Profil mis à jour');
           }}
+          onToggleFollow={toggleFollowPerson}
+          onOpenChatDrawer={(relId) => {
+            setSelectedRelId(relId);
+            setDrawerOpen(true);
+          }}
+          onReportTarget={(label) => setReportTarget(label)}
+          onOpenComposer={() => setComposerOpen(true)}
+          onOpenInfoModal={setInfoModal}
           nav={nav}
           openSettingsTab={openSettingsTab}
+          setToast={setToast}
+          progress={progress}
+          updateExt={updateExt}
+          openReader={openReader}
         />
       );
     }
@@ -2013,11 +2008,8 @@ export default function App() {
       return (
         <div className="dashboard-grid">
           <div className="dashboard-main">
-            <div className="between">
-              <header className="page-heading wf-no-mb">
-                <span className="eyebrow">MESSAGERIE PRIVÉE</span>
-                <h1>Conversations</h1>
-              </header>
+            <div className="between wf-mb-sm">
+              <h1>Conversations</h1>
               <button className="secondary" onClick={() => nav('relations')}>
                 <Users size={15} /> Gérer mes relations
               </button>
@@ -2201,7 +2193,16 @@ export default function App() {
     if (page === 'resource-detail') return <ResourceDetailView {...extraProps} />;
     if (page === 'module-detail') return <ModuleDetailView {...extraProps} />;
     if (page === 'path-detail') return <PathDetailView {...extraProps} />;
-    if (page === 'progression') return <ProgressionPage {...extraProps} />;
+    if (page === 'progression') {
+      return (
+        <ProgressionPage
+          {...extraProps}
+          currentUser={user}
+          relations={relations}
+          myFollowing={myFollowing}
+        />
+      );
+    }
 
     if (page === 'community-compose') return <CommunityComposeView {...communityProps} />;
     if (page === 'community-thread') return <CommunityThreadView {...communityProps} />;
@@ -2262,52 +2263,12 @@ export default function App() {
         <div className={`app-shell ${isFullWidth ? 'full-width' : ''}`}>
           {!isFullWidth && (
             <aside className="left-rail" aria-label="Navigation contextuelle latérale">
-              {activeSpace !== 'account' && (
-                <ProfileIdentityCard
-                  user={user}
-                  ext={ext}
-                  caps={caps}
-                  onOpenProfile={() => nav('profile')}
-                />
-              )}
-
-              {activeSpace === 'account' && (
-                <nav className="rail-nav-card" aria-label="Navigation du compte et paramètres">
-                  <span className="left-rail-section-label">Compte & Paramètres</span>
-                  <button
-                    type="button"
-                    className={`rail-nav-btn ${page === 'profile' ? 'active' : ''}`}
-                    onClick={() => nav('profile')}
-                  >
-                    <span><User size={16} /> Mon profil</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`rail-nav-btn ${page === 'settings' && settingsTab === 'prefs' ? 'active' : ''}`}
-                    onClick={() => openSettingsTab('prefs')}
-                  >
-                    <span><Sliders size={16} /> Préférences</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`rail-nav-btn ${page === 'settings' && settingsTab === 'privacy' ? 'active' : ''}`}
-                    onClick={() => openSettingsTab('privacy')}
-                  >
-                    <span><Lock size={16} /> Confidentialité & Contacts</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`rail-nav-btn ${page === 'settings' && settingsTab === 'security' ? 'active' : ''}`}
-                    onClick={() => openSettingsTab('security')}
-                  >
-                    <span><ShieldCheck size={16} /> Sécurité & Sessions</span>
-                  </button>
-                  <div className="vous-divider" />
-                  <button type="button" className="rail-nav-btn" onClick={() => nav('home')}>
-                    <span><Home size={16} /> Retour à l’accueil</span>
-                  </button>
-                </nav>
-              )}
+              <ProfileIdentityCard
+                user={user}
+                ext={ext}
+                caps={caps}
+                onOpenProfile={() => nav('profile')}
+              />
 
               {(activeSpace === 'learner' || activeSpace === 'community') && (
                 <nav className="rail-nav-card" aria-label="Espaces d’apprentissage">
@@ -2330,7 +2291,7 @@ export default function App() {
                   <button className={`rail-nav-btn ${page === 'catalog' ? 'active' : ''}`} onClick={() => nav('catalog')}>
                     <span><Compass size={16} /> Bibliothèque</span>
                   </button>
-                  <button className={`rail-nav-btn ${page === 'progression' ? 'active' : ''}`} onClick={() => nav('progression')}>
+                  <button className="rail-nav-btn" onClick={() => nav('progression')}>
                     <span><Award size={16} /> Progression & Badges</span>
                   </button>
                   {(caps.canCreate || caps.canModerate || caps.canAdmin) && (
@@ -2657,165 +2618,5 @@ export default function App() {
         />
       )}
     </>
-  );
-}
-
-function ProfileEditorView({
-  user,
-  details,
-  isVerified,
-  totalXP,
-  onSave,
-  nav,
-  openSettingsTab
-}: {
-  user: Profile;
-  details: {
-    tagline: string;
-    location?: string;
-    bio: string;
-    interests: string;
-    profileVisibility: 'Membres' | 'Moi uniquement' | 'Public';
-    xpVisibility: 'Moi uniquement' | 'Membres';
-    contactPolicy: 'Personnes que je suis' | 'Membres autorisés' | 'Personne';
-  };
-  isVerified: boolean;
-  totalXP: number;
-  onSave: (name: string, tagline: string, location: string, bio: string, interests: string) => Promise<void>;
-  nav: (p: RoutePage, id?: string) => void;
-  openSettingsTab: (tab: 'prefs' | 'privacy' | 'security') => void;
-}) {
-  const [name, setName] = useState(user.name);
-  const [tagline, setTagline] = useState(details.tagline);
-  const [location, setLocation] = useState(details.location || 'Lomé, Région Maritime');
-  const [bio, setBio] = useState(details.bio);
-  const [interests, setInterests] = useState(details.interests);
-
-  useEffect(() => {
-    setName(user.name);
-    setTagline(details.tagline);
-    setLocation(details.location || 'Lomé, Région Maritime');
-    setBio(details.bio);
-    setInterests(details.interests);
-  }, [user.id, user.name, details.tagline, details.location, details.bio, details.interests]);
-
-  const lvl = computeGlobalLevel(totalXP);
-
-  return (
-    <div className="dashboard-grid">
-      <div className="dashboard-main">
-        <div className="workspace-mobile-nav" role="navigation" aria-label="Navigation compte et paramètres mobile">
-          <button type="button" className="active" onClick={() => nav('profile')}>
-            Mon profil
-          </button>
-          <button type="button" onClick={() => openSettingsTab('prefs')}>
-            Préférences
-          </button>
-          <button type="button" onClick={() => openSettingsTab('privacy')}>
-            Confidentialité & Contacts
-          </button>
-          <button type="button" onClick={() => openSettingsTab('security')}>
-            Sécurité & Sessions
-          </button>
-        </div>
-
-        <header className="page-heading">
-          <span className="eyebrow">MON PROFIL</span>
-          <h1>Identité & Visibilité</h1>
-          <p>Modifiez vos informations publiques. Vos résultats et XP restent soumis à vos réglages de confidentialité.</p>
-        </header>
-
-        <section className="wf-card">
-          <div className="between">
-            <div className="connect-card-head">
-              <Avatar person={user} />
-              <div>
-                <div className="mini-profile-name-row">
-                  <h2>{user.name}</h2>
-                  {isVerified && <VerifiedBadge />}
-                </div>
-                <p className="muted">{details.tagline}</p>
-                {location && (
-                  <span className="mini-profile-location">
-                    <MapPin size={12} aria-hidden="true" />
-                    <span>{location}</span>
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="wf-inline-actions">
-              <span className="inline-meta tabular-nums">
-                <b>Niveau {lvl.level}</b>
-                <span aria-hidden="true">·</span>
-                <span>{totalXP} XP</span>
-              </span>
-              <button className="secondary" onClick={() => openSettingsTab('privacy')}>
-                Confidentialité ({details.profileVisibility})
-              </button>
-            </div>
-          </div>
-
-          <form
-            className="wf-form-stack wf-mt"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              await onSave(name, tagline, location, bio, interests);
-            }}
-          >
-            <label>
-              Nom d’affichage
-              <input required value={name} onChange={(e) => setName(e.target.value)} />
-            </label>
-            <label>
-              Accroche / Titre professionnel
-              <input value={tagline} onChange={(e) => setTagline(e.target.value)} />
-            </label>
-            <label>
-              Localisation
-              <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ex. Lomé, Région Maritime" />
-            </label>
-            <label>
-              Présentation / Biographie
-              <textarea rows={3} value={bio} onChange={(e) => setBio(e.target.value)} />
-            </label>
-            <label>
-              Centres d’intérêt (séparés par des virgules)
-              <input value={interests} onChange={(e) => setInterests(e.target.value)} />
-            </label>
-            <div className="wf-inline-actions">
-              <button type="submit" className="primary">
-                <CheckCircle2 size={15} /> Enregistrer le profil
-              </button>
-              <button type="button" className="secondary" onClick={() => nav('progression')}>
-                Voir ma progression
-              </button>
-            </div>
-          </form>
-        </section>
-      </div>
-
-      <aside className="right-rail" aria-label="Visibilité et préférences">
-        <section className="rail-card">
-          <span className="eyebrow">VISIBILITÉ & ACCÈS</span>
-          <div className="rail-stat-list">
-            <div className="rail-stat-row">
-              <span>Profil</span>
-              <b>{details.profileVisibility}</b>
-            </div>
-            <div className="rail-stat-row">
-              <span>Progression XP</span>
-              <b>{details.xpVisibility}</b>
-            </div>
-            <div className="rail-stat-row">
-              <span>Contacts autorisés</span>
-              <b>{details.contactPolicy}</b>
-            </div>
-          </div>
-          <button className="secondary" onClick={() => openSettingsTab('privacy')}>
-            Paramètres & Confidentialité
-          </button>
-        </section>
-      </aside>
-    </div>
   );
 }

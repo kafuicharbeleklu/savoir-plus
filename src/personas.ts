@@ -599,6 +599,476 @@ export function resolveDefaultCommentPreview(
   return latestTop;
 }
 
+export function resolveDiscoverSuggestions(
+  people: Profile[],
+  currentUserId: string,
+  followingIds: string[],
+  limit = 3
+): Profile[] {
+  return people
+    .filter((p) => p.id !== currentUserId && !followingIds.includes(p.id))
+    .slice(0, limit);
+}
+
+export interface NetworkDirectoryEntry {
+  profile: Profile;
+  headline: string;
+  verified: boolean;
+  isFollowed: boolean;
+  relationStatus: 'none' | 'pending' | 'accepted' | 'declined';
+  blocked: boolean;
+  suggestionReason: string;
+}
+
+export function resolveCommunityDirectory(
+  people: Profile[],
+  ext: ExtendedDemoState
+): Profile[] {
+  const byId = new Map<string, Profile>();
+  for (const p of people) {
+    byId.set(p.id, p);
+  }
+  for (const post of ext.posts) {
+    if (!byId.has(post.authorId)) {
+      const resolved = resolveCommunityAuthor(post.authorId, post.authorName, people, ext);
+      byId.set(post.authorId, {
+        ...resolved.profile,
+        bio: resolved.profile.bio || `Membre actif dans ${post.domain} sur SAVOIR+.`
+      });
+    }
+    for (const rep of post.replies) {
+      if (!byId.has(rep.authorId)) {
+        const resolved = resolveCommunityAuthor(rep.authorId, rep.authorName, people, ext, rep.authorRole);
+        byId.set(rep.authorId, {
+          ...resolved.profile,
+          bio: resolved.profile.bio || `Contributeur d’entraide dans ${post.domain}.`
+        });
+      }
+    }
+  }
+  return Array.from(byId.values());
+}
+
+export function resolveAlgorithmicDiscoverProfiles(
+  directory: Profile[],
+  currentUserId: string,
+  followingIds: string[],
+  ext: ExtendedDemoState,
+  limit = 12
+): NetworkDirectoryEntry[] {
+  const myInterests = (ext.profileDetails[currentUserId]?.interests || '')
+    .toLowerCase()
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const candidates = directory.filter((p) => p.id !== currentUserId && !followingIds.includes(p.id));
+
+  const scored = candidates.map((p) => {
+    const details = ext.profileDetails[p.id];
+    const headline = details?.tagline || p.role;
+    const textPool = `${headline} ${details?.interests || ''} ${p.bio}`.toLowerCase();
+    const sharedTopics = myInterests.filter((topic) => textPool.includes(topic));
+    const verified = resolveProfileVerified(p.id, ext.adminUsers, details?.verified);
+    const suggestionReason =
+      sharedTopics.length > 0
+        ? `Suggéré · Intérêt commun : ${sharedTopics[0]}`
+        : verified
+          ? 'Suggéré · Contributeur vérifié SAVOIR+'
+          : 'Suggéré · Actif dans votre fil d’entraide';
+
+    return {
+      score: sharedTopics.length * 10 + (verified ? 3 : 0),
+      entry: {
+        profile: p,
+        headline,
+        verified,
+        isFollowed: false,
+        relationStatus: 'none' as const,
+        blocked: false,
+        suggestionReason
+      }
+    };
+  });
+
+  scored.sort((a, b) => b.score - a.score || a.entry.profile.name.localeCompare(b.entry.profile.name));
+  return scored.slice(0, limit).map((s) => s.entry);
+}
+
+export function resolveFollowedAndConnectedProfiles(
+  directory: Profile[],
+  currentUserId: string,
+  followingIds: string[],
+  relations: { id: string; members: string[]; status: 'pending' | 'accepted' | 'declined'; blockedBy: string[] }[],
+  ext: ExtendedDemoState
+): (NetworkDirectoryEntry & { relation?: { id: string; members: string[]; status: 'pending' | 'accepted' | 'declined'; blockedBy: string[] } })[] {
+  const acceptedPeers = new Map<string, typeof relations[number]>();
+  const allRelByPeer = new Map<string, typeof relations[number]>();
+
+  for (const r of relations) {
+    const peerId = r.members.find((id) => id !== currentUserId);
+    if (!peerId) continue;
+    allRelByPeer.set(peerId, r);
+    if (r.status === 'accepted') {
+      acceptedPeers.set(peerId, r);
+    }
+  }
+
+  const orderedIds = Array.from(new Set([...followingIds, ...acceptedPeers.keys()])).filter(
+    (id) => id !== currentUserId
+  );
+
+  return orderedIds.map((id) => {
+    const existing = directory.find((p) => p.id === id);
+    const resolvedFallback = existing
+      ? null
+      : resolveCommunityAuthor(id, id.charAt(0).toUpperCase() + id.slice(1), directory, ext);
+    const profile = existing || resolvedFallback!.profile;
+    const details = ext.profileDetails[profile.id];
+    const rel = allRelByPeer.get(profile.id);
+    const verified = resolveProfileVerified(profile.id, ext.adminUsers, details?.verified);
+
+    return {
+      profile,
+      headline: details?.tagline || profile.role,
+      verified,
+      isFollowed: followingIds.includes(profile.id),
+      relationStatus: rel?.status || 'none',
+      blocked: Boolean(rel?.blockedBy.length),
+      suggestionReason: followingIds.includes(profile.id) ? 'Compte suivi' : 'Discussion acceptée',
+      relation: rel
+    };
+  });
+}
+
+export interface SavoirRankInfo {
+  title: string;
+  tierIndex: number; // 1..4 diamonds
+  tierMax: number;
+  emblemTone: 'bronze' | 'silver' | 'gold' | 'emerald';
+}
+
+export function computeSavoirRank(totalXp: number, completedModules: number): SavoirRankInfo {
+  if (totalXp >= 450 || completedModules >= 3) {
+    return { title: 'Mentor SAVOIR+', tierIndex: 4, tierMax: 4, emblemTone: 'emerald' };
+  }
+  if (totalXp >= 300 || completedModules >= 2) {
+    return { title: 'Confirmé', tierIndex: 3, tierMax: 4, emblemTone: 'gold' };
+  }
+  if (totalXp >= 150 || completedModules >= 1) {
+    return { title: 'Explorateur', tierIndex: 2, tierMax: 4, emblemTone: 'silver' };
+  }
+  return { title: 'Débutant', tierIndex: 1, tierMax: 4, emblemTone: 'bronze' };
+}
+
+export function formatMemberHandle(name: string, id: string): string {
+  const slug = name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '')
+    .slice(0, 14);
+  return `@${slug || id}`;
+}
+
+export interface AnnualHeatmapMonth {
+  label: string;
+  cells: (0 | 1 | 2 | 3)[]; // 4 weekly intensity buckets per month
+}
+
+export function computeAnnualActivitySummary(params: {
+  totalXp: number;
+  completedLessonsCount: number;
+  passedQuizzesCount: number;
+  postsCount: number;
+  repliesCount: number;
+}): {
+  yearXp: number;
+  weeklyAverage: number;
+  activeWeeks: number;
+  streakWeeks: number;
+  weeklyXp: number;
+  weeklyTarget: number;
+  months: AnnualHeatmapMonth[];
+} {
+  const { totalXp, completedLessonsCount, passedQuizzesCount, postsCount, repliesCount } = params;
+  const communityXp = postsCount * 15 + repliesCount * 10;
+  const yearXp = totalXp + communityXp;
+  const activeSignals = completedLessonsCount + passedQuizzesCount + postsCount + repliesCount;
+  const activeWeeks = yearXp === 0 ? 0 : Math.min(12, Math.max(1, Math.ceil(activeSignals / 2)));
+  const streakWeeks = yearXp === 0 ? 0 : Math.min(activeWeeks, Math.max(1, passedQuizzesCount + (postsCount > 0 ? 1 : 0)));
+  const weeklyAverage = activeWeeks > 0 ? Math.round((yearXp / activeWeeks) * 10) / 10 : 0;
+  const weeklyTarget = 200;
+  const weeklyXp = Math.min(weeklyTarget, totalXp > 0 ? Math.min(weeklyTarget, (totalXp % 200) || (totalXp >= 200 ? 200 : totalXp)) : 0);
+
+  const monthLabels = ['Déc', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov'];
+  const months: AnnualHeatmapMonth[] = monthLabels.map((label, idx) => {
+    const monthsFromEnd = monthLabels.length - 1 - idx;
+    if (yearXp === 0 || monthsFromEnd >= Math.ceil(activeWeeks / 2)) {
+      return { label, cells: [0, 0, 0, 0] };
+    }
+    const baseIntensity = monthsFromEnd === 0 ? 3 : monthsFromEnd === 1 ? 2 : 1;
+    const cells: (0 | 1 | 2 | 3)[] = [0, 1, 2, 3].map((slot) => {
+      if (monthsFromEnd === 0) {
+        if (slot < Math.min(4, Math.max(1, activeSignals))) return (slot === 0 ? 3 : 2) as 0 | 1 | 2 | 3;
+        return 1;
+      }
+      return (slot % 2 === 0 ? baseIntensity : Math.max(0, baseIntensity - 1)) as 0 | 1 | 2 | 3;
+    });
+    return { label, cells };
+  });
+
+  return {
+    yearXp,
+    weeklyAverage,
+    activeWeeks,
+    streakWeeks,
+    weeklyXp,
+    weeklyTarget,
+    months
+  };
+}
+
+export type BadgeTrack = 'learning' | 'community';
+export type BadgeCategoryId = 'rank' | 'modules' | 'community' | 'streak';
+
+export interface SavoirBadgeItem {
+  id: string;
+  title: string;
+  description: string;
+  track: BadgeTrack;
+  category: BadgeCategoryId;
+  iconKey:
+    | 'compass'
+    | 'award'
+    | 'shield'
+    | 'crown'
+    | 'phishing'
+    | 'network'
+    | 'lock'
+    | 'path'
+    | 'message'
+    | 'check'
+    | 'users'
+    | 'heart'
+    | 'flame'
+    | 'target'
+    | 'book'
+    | 'sparkles';
+  earned: boolean;
+}
+
+export interface BadgeInputMetrics {
+  totalXp: number;
+  level: number;
+  completedModules: string[];
+  passedQuizzes: string[];
+  perfectQuizzes: string[];
+  completedLessonsCount: number;
+  postsCount: number;
+  repliesCount: number;
+  solutionsCount: number;
+  helpfulGivenCount: number;
+  followingCount: number;
+  acceptedRelationsCount: number;
+  streakWeeks: number;
+}
+
+export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
+  return [
+    // Category: Rangs & Niveaux (track: learning)
+    {
+      id: 'rank-starter',
+      title: 'Premier Pas',
+      description: 'Démarrer votre parcours d’apprentissage sur SAVOIR+.',
+      track: 'learning',
+      category: 'rank',
+      iconKey: 'compass',
+      earned: m.completedLessonsCount > 0 || m.totalXp > 0
+    },
+    {
+      id: 'rank-explorer',
+      title: 'Explorateur',
+      description: 'Atteindre au moins 150 XP ou valider un premier module.',
+      track: 'learning',
+      category: 'rank',
+      iconKey: 'target',
+      earned: m.totalXp >= 150 || m.completedModules.length >= 1
+    },
+    {
+      id: 'rank-confirmed',
+      title: 'Apprenant Confirmé',
+      description: 'Cumuler 300 XP et valider deux modules complets.',
+      track: 'learning',
+      category: 'rank',
+      iconKey: 'award',
+      earned: m.totalXp >= 300 || m.completedModules.length >= 2
+    },
+    {
+      id: 'rank-mentor',
+      title: 'Mentor SAVOIR+',
+      description: 'Atteindre le palier supérieur avec 450 XP ou trois modules validés.',
+      track: 'learning',
+      category: 'rank',
+      iconKey: 'crown',
+      earned: m.totalXp >= 450 || m.completedModules.length >= 3
+    },
+
+    // Category: Modules & Parcours (track: learning)
+    {
+      id: 'mod-phishing',
+      title: 'Vigilance Phishing',
+      description: 'Réussir l’évaluation du module « Ne tombez plus dans le piège ».',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'phishing',
+      earned: m.passedQuizzes.includes('phishing')
+    },
+    {
+      id: 'mod-reseaux',
+      title: 'Architecte Réseau',
+      description: 'Valider le module « Comprendre les réseaux ».',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'network',
+      earned: m.passedQuizzes.includes('reseaux')
+    },
+    {
+      id: 'mod-comptes',
+      title: 'Gardien des Accès',
+      description: 'Valider le module « Sécuriser ses comptes au quotidien ».',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'lock',
+      earned: m.passedQuizzes.includes('comptes')
+    },
+    {
+      id: 'mod-perfect',
+      title: 'Score Parfait',
+      description: 'Obtenir 100 % de bonnes réponses sur au moins un quiz final.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'shield',
+      earned: m.perfectQuizzes.length >= 1
+    },
+    {
+      id: 'mod-path',
+      title: 'Parcours Fondamentaux IT',
+      description: 'Valider l’ensemble des trois modules du parcours Fondamentaux IT.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'path',
+      earned: ['phishing', 'reseaux', 'comptes'].every((id) => m.completedModules.includes(id))
+    },
+    {
+      id: 'mod-reader',
+      title: 'Lecteur Assidu',
+      description: 'Terminer au moins 6 sections de cours guidées.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'book',
+      earned: m.completedLessonsCount >= 6
+    },
+    {
+      id: 'mod-dual',
+      title: 'Double Compétence',
+      description: 'Terminer intégralement deux modules pédagogiques distincts.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'sparkles',
+      earned: m.completedModules.length >= 2
+    },
+    {
+      id: 'mod-triple-quiz',
+      title: 'Maîtrise Évaluée',
+      description: 'Réussir trois évaluations de fin de module.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'award',
+      earned: m.passedQuizzes.length >= 3
+    },
+
+    // Category: Communauté & Entraide (track: community)
+    {
+      id: 'com-voice',
+      title: 'Esprit d’Entraide',
+      description: 'Publier un conseil ou répondre à une question dans le fil d’entraide.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'message',
+      earned: m.postsCount + m.repliesCount >= 1
+    },
+    {
+      id: 'com-solution',
+      title: 'Solution Validée',
+      description: 'Avoir une réponse choisie comme solution utile par l’auteur d’une question.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'check',
+      earned: m.solutionsCount >= 1
+    },
+    {
+      id: 'com-network',
+      title: 'Cercle Solidaire',
+      description: 'Suivre au moins deux membres ou établir une discussion acceptée.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'users',
+      earned: m.followingCount >= 2 || m.acceptedRelationsCount >= 1
+    },
+    {
+      id: 'com-helpful',
+      title: 'Soutien Bienveillant',
+      description: 'Marquer au moins deux contributions comme utiles pour encourager vos pairs.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'heart',
+      earned: m.helpfulGivenCount >= 2
+    },
+
+    // Category: Régularité & Défis (track: community)
+    {
+      id: 'str-week',
+      title: 'Série Lancée',
+      description: 'Maintenir au moins une semaine active d’apprentissage sur SAVOIR+.',
+      track: 'community',
+      category: 'streak',
+      iconKey: 'flame',
+      earned: m.streakWeeks >= 1
+    },
+    {
+      id: 'str-two-weeks',
+      title: 'Régularité Exemplaire',
+      description: 'Conserver une série active sur deux semaines ou plus.',
+      track: 'community',
+      category: 'streak',
+      iconKey: 'flame',
+      earned: m.streakWeeks >= 2
+    },
+    {
+      id: 'str-dialogue',
+      title: 'Pair Connecté',
+      description: 'Accepter ou ouvrir une conversation privée d’entraide.',
+      track: 'community',
+      category: 'streak',
+      iconKey: 'message',
+      earned: m.acceptedRelationsCount >= 1
+    },
+    {
+      id: 'str-mentor-share',
+      title: 'Passeur de Savoir',
+      description: 'Partager au moins deux contributions publiques avec la communauté.',
+      track: 'community',
+      category: 'streak',
+      iconKey: 'users',
+      earned: m.postsCount >= 2
+    }
+  ];
+}
+
+
+
+
 
 
 
