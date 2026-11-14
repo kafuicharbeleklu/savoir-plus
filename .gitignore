@@ -1,0 +1,14 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# AI Studio / Supabase CLI local artifacts
+.aistudio/
+supabase/.temp/
+# Archived source snapshot (nested zips, ~33 MB) — not part of the source tree
+public/assets/aistudio/*.zip
