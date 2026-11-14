@@ -70,6 +70,7 @@ import { MODULES_CONTENT, resolveStudyContent } from './content';
 import {
   applyPostRepost,
   appendCommunityReply,
+  canAccessRoute,
   computeGlobalLevel,
   isFocusedStudyRoute,
   computeCatalogCardSteps,
@@ -517,6 +518,29 @@ export default function App() {
   const activeStudyProgress = getModuleProgress(activeStudyModuleId);
   const activeModulePct = moduleProgressPercent(activeStudyProgress, activeStudyContent.lessons.length);
 
+  // Route guard: Studio / Governance pages typed in the URL fall back to home without the matching role.
+  const routeAllowed = canAccessRoute(page, caps);
+  useEffect(() => {
+    if (routeAllowed) return;
+    setToast(
+      isStudioRoute(page)
+        ? 'Espace réservé aux créateurs habilités.'
+        : 'Espace réservé à la modération et à la gouvernance.'
+    );
+    nav('home');
+  }, [page, routeAllowed]);
+
+  // Messages: desktop opens the quick-chat drawer; at ≤768px the drawer is hidden, so open the full page.
+  const openConversation = (relId: string) => {
+    setSelectedRelId(relId);
+    if (window.matchMedia?.('(max-width: 768px)').matches) {
+      setDrawerOpen(false);
+      nav('messages');
+    } else {
+      setDrawerOpen(true);
+    }
+  };
+
   // Sync quiz draft answers when opening study module
   useEffect(() => {
     if (page === 'quiz') {
@@ -539,16 +563,39 @@ export default function App() {
     nav('reader', moduleId);
   };
 
+  const scrollStudyToTop = () => {
+    const behavior = ext.appPrefs.reducedMotion ? 'auto' : 'smooth';
+    document.querySelector('.shell-scroll-viewport')?.scrollTo({ top: 0, behavior });
+    window.scrollTo({ top: 0, behavior });
+  };
+
+  const goToLesson = (idx: number) => {
+    setLessonIndex(idx);
+    scrollStudyToTop();
+  };
+
+  // Primary reader action: records the reading once (if not already done), then always moves forward —
+  // to the next section, or to the quiz rules after the last one (R:645: navigation ≠ declared reading).
   const handleCompleteLesson = async () => {
-    setBusy(true);
-    try {
-      const nextLessons = [...new Set([...activeStudyProgress.lessons, lessonIndex])].sort((a, b) => a - b);
-      await saveModuleProgress(activeStudyModuleId, { ...activeStudyProgress, lessons: nextLessons });
-      setToast(`Section « ${activeStudyContent.lessons[lessonIndex]?.title} » marquée comme terminée`);
-    } catch (e: any) {
-      setToast(e?.message || 'Erreur lors de la sauvegarde');
-    } finally {
-      setBusy(false);
+    const lessonCount = activeStudyContent.lessons.length;
+    const alreadyDone = activeStudyProgress.lessons.includes(lessonIndex);
+    if (!alreadyDone) {
+      setBusy(true);
+      try {
+        const nextLessons = [...new Set([...activeStudyProgress.lessons, lessonIndex])].sort((a, b) => a - b);
+        await saveModuleProgress(activeStudyModuleId, { ...activeStudyProgress, lessons: nextLessons });
+        setToast(`Section « ${activeStudyContent.lessons[lessonIndex]?.title} » terminée · +25 XP`);
+      } catch (e: any) {
+        setToast(e?.message || 'Erreur lors de la sauvegarde');
+        return; // stay on the section so the learner can retry
+      } finally {
+        setBusy(false);
+      }
+    }
+    if (lessonIndex < lessonCount - 1) {
+      goToLesson(lessonIndex + 1);
+    } else {
+      nav('quiz-intro', activeStudyModuleId);
     }
   };
 
@@ -940,7 +987,7 @@ export default function App() {
           moduleContent={activeStudyContent}
           progress={activeStudyProgress}
           lessonIndex={lessonIndex}
-          setLessonIndex={setLessonIndex}
+          setLessonIndex={goToLesson}
           busy={busy}
           onCompleteLesson={handleCompleteLesson}
           onOpenQuizIntro={() => nav('quiz-intro', activeStudyModuleId)}
@@ -1154,6 +1201,7 @@ export default function App() {
   const resumeNextIdx = [0, 1, 2].find((i) => !resumeProg.lessons.includes(i));
 
   const renderMainContent = () => {
+    if (!routeAllowed) return null; // redirect to home is in flight (route guard effect)
     if (page === 'home' || page === 'community') {
       const lvl = computeGlobalLevel(totalXP);
       const visibleFeedPosts = filterHomeFeed(ext.posts, homeFeedTab, myFollowing);
@@ -1711,8 +1759,7 @@ export default function App() {
                               className="secondary"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedRelId(rel.id);
-                                setDrawerOpen(true);
+                                openConversation(rel.id);
                               }}
                             >
                               <MessageCircle size={14} /> Message
@@ -1845,10 +1892,7 @@ export default function App() {
                               <button
                                 type="button"
                                 className="primary"
-                                onClick={() => {
-                                  setSelectedRelId(rel.id);
-                                  setDrawerOpen(true);
-                                }}
+                                onClick={() => openConversation(rel.id)}
                               >
                                 <MessageCircle size={14} /> Message
                               </button>
@@ -1933,10 +1977,7 @@ export default function App() {
           getModuleProgress={getModuleProgress}
           lessonCounts={LESSON_COUNTS}
           onToggleFollow={toggleFollowPerson}
-          onOpenChatDrawer={(relId) => {
-            setSelectedRelId(relId);
-            setDrawerOpen(true);
-          }}
+          onOpenChatDrawer={openConversation}
           onRequestContact={handleRequestContact}
           onReportTarget={(label) => setReportTarget(label)}
           onOpenInfoModal={setInfoModal}
@@ -1983,10 +2024,7 @@ export default function App() {
             setToast('Profil mis à jour');
           }}
           onToggleFollow={toggleFollowPerson}
-          onOpenChatDrawer={(relId) => {
-            setSelectedRelId(relId);
-            setDrawerOpen(true);
-          }}
+          onOpenChatDrawer={openConversation}
           onReportTarget={(label) => setReportTarget(label)}
           onOpenComposer={() => setComposerOpen(true)}
           onOpenInfoModal={setInfoModal}
@@ -2335,7 +2373,7 @@ export default function App() {
                   <span><FileText size={16} /> Contrôle & publier</span>
                 </button>
                 <button className={`rail-nav-btn ${page === 'studio-ocr' ? 'active' : ''}`} onClick={() => nav('studio-ocr')}>
-                  <span><FileUp size={16} /> Import & OCR</span>
+                  <span><FileUp size={16} /> Import & IA · Aperçu</span>
                 </button>
                 <button className={`rail-nav-btn ${page === 'studio-stats' ? 'active' : ''}`} onClick={() => nav('studio-stats')}>
                   <span><BarChart2 size={16} /> Statistiques</span>

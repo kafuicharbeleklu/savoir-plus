@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  canAccessRoute,
   resolveCapabilities,
   difficultySegments,
   isFocusedStudyRoute,
@@ -516,3 +517,21 @@ test('Savoir rank, member handle, annual activity heatmap, and badges compute de
   assert.equal(badges.find((b) => b.id === 'str-two-weeks')?.earned, true);
 });
 
+
+test('Garde de route : Studio et Gouvernance inaccessibles par URL sans le rôle requis', () => {
+  const afi = resolveCapabilities('afi', 'local', baseUsers);
+  const kossi = resolveCapabilities('kossi', 'local', baseUsers);
+  const nadege = resolveCapabilities('nadege', 'local', baseUsers);
+  // Apprenante : ni Studio ni Gouvernance, mais pages d'apprentissage et recours accessibles
+  assert.equal(canAccessRoute('admin-users', afi), false);
+  assert.equal(canAccessRoute('moderation', afi), false);
+  assert.equal(canAccessRoute('studio-editor', afi), false);
+  assert.equal(canAccessRoute('reader', afi), true);
+  assert.equal(canAccessRoute('appeal', afi), true);
+  // Créateur : Studio oui, Gouvernance non
+  assert.equal(canAccessRoute('studio-ocr', kossi), true);
+  assert.equal(canAccessRoute('admin', kossi), false);
+  // Gouvernance : tout
+  assert.equal(canAccessRoute('admin-audit', nadege), true);
+  assert.equal(canAccessRoute('studio', nadege), true);
+});

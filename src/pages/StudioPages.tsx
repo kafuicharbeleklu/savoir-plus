@@ -68,7 +68,7 @@ function StudioShell({
     { id: 'studio-quiz', label: 'Quiz' },
     { id: 'studio-media', label: 'Médias' },
     { id: 'studio-path', label: 'Parcours' },
-    { id: 'studio-ocr', label: 'Import & OCR' },
+    { id: 'studio-ocr', label: 'Import & IA · Aperçu' },
     { id: 'studio-publish', label: 'Publication' },
     { id: 'studio-stats', label: 'Statistiques' },
     { id: 'studio-profile', label: 'Profil créateur' }
@@ -1196,29 +1196,26 @@ export function StudioPublishView({ ext, updateExt, nav, selectedId, setToast, u
   );
 }
 
-export function StudioOcrView({ ext, updateExt, nav, setToast, user }: StudioProps) {
+export function StudioOcrView({ ext, updateExt, nav, user }: StudioProps) {
   const [step, setStep] = useState<'source' | 'ocr' | 'ai'>('source');
   const [pages, setPages] = useState('1 à 6');
   const page5Text = ext.ocrDraft.pagesCorrected[5] || '';
 
-  const insertIntoDraft = () => {
-    updateExt((prev) => ({
-      ...prev,
-      ocrDraft: { ...prev.ocrDraft, aiStructureAccepted: true }
-    }));
-    setToast('Proposition insérée dans un nouveau brouillon séparé (non publié)');
-    nav('studio');
-  };
-
   return (
     <StudioShell active="studio-ocr" nav={nav} user={user} ext={ext}>
       <div className="page-heading">
-        <span className="eyebrow">KNOWLEDGE STUDIO · IMPORT, OCR & ASSISTANCE IA</span>
+        <span className="eyebrow">STUDIO · IMPORT, OCR & ASSISTANCE IA · APERÇU</span>
         <h1>Préparer une source, relire l’OCR et vérifier l’aide IA</h1>
         <p>
-          Démonstration fidèle aux règles de contrôle humain : aucune génération automatique ne publie ni ne valide
-          un contenu sans relecture.
+          Parcours prévu : aucune génération automatique ne publiera ni ne validera un contenu sans relecture humaine.
         </p>
+      </div>
+
+      <div className="wf-preview-banner" role="note">
+        <span>
+          <b>Aperçu — non fonctionnel.</b> L’extraction OCR et la proposition IA ci-dessous sont un exemple fixe :
+          aucun fichier n’est analysé et aucun modèle d’IA n’est appelé.
+        </span>
       </div>
 
       <div className="catalog-tabs-underline" role="tablist" aria-label="Étapes d’extraction OCR et IA">
@@ -1262,9 +1259,9 @@ export function StudioOcrView({ ext, updateExt, nav, setToast, user }: StudioPro
             <input value={pages} onChange={(e) => setPages(e.target.value)} />
           </label>
           <div className="lesson-actions">
-            <span className="tiny muted">Traitement asynchrone simulé localement</span>
+            <span className="tiny muted">Exemple simulé : aucun traitement n’est lancé</span>
             <button className="primary" onClick={() => setStep('ocr')}>
-              Lancer l’extraction et relire <ArrowRight size={15} />
+              Voir l’exemple d’extraction <ArrowRight size={15} />
             </button>
           </div>
         </section>
@@ -1352,9 +1349,9 @@ export function StudioOcrView({ ext, updateExt, nav, setToast, user }: StudioPro
             <button className="secondary" onClick={() => setStep('ocr')}>
               Revenir à la relecture OCR
             </button>
-            <button className="primary" onClick={insertIntoDraft}>
-              Insérer dans un nouveau brouillon <ArrowRight size={15} />
-            </button>
+            <span className="tiny muted">
+              L’insertion dans un brouillon sera disponible avec le Studio IA (en préparation).
+            </span>
           </div>
         </section>
       )}

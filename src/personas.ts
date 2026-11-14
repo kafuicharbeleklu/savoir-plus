@@ -171,6 +171,19 @@ export function isGovernanceRoute(page: string): boolean {
   return page.startsWith('admin') || page === 'moderation';
 }
 
+/**
+ * Route guard: Studio and Governance pages require the same capabilities that show them in the
+ * navigation, so typing a URL never bypasses permissions (Référentiel R:2770).
+ */
+export function canAccessRoute(
+  page: string,
+  caps: Pick<RoleCapabilities, 'canCreate' | 'canModerate' | 'canAdmin'>
+): boolean {
+  if (isStudioRoute(page)) return caps.canCreate;
+  if (isGovernanceRoute(page)) return caps.canModerate || caps.canAdmin;
+  return true;
+}
+
 export function isAccountRoute(page: string): boolean {
   return page === 'profile' || page === 'settings';
 }
