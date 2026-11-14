@@ -14,3 +14,6 @@ supabase/.temp/
 public/assets/aistudio/*.zip
 # Update archives dropped at the project root
 /*.zip
+# Local credentials — never commit
+/keys.txt
+*.key
