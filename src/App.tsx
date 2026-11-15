@@ -22,7 +22,6 @@ import {
   FileUp,
   Flag,
   HelpCircle,
-  Home,
   Image as ImageIcon,
   Layers,
   Lock,
@@ -2565,10 +2564,6 @@ export default function App() {
                     </button>
                   ));
                 })()}
-                <div className="vous-divider" />
-                <button className="rail-nav-btn" onClick={() => nav('home')}>
-                  <span><Home size={16} /> Retour à l’accueil</span>
-                </button>
               </nav>
             )}
 

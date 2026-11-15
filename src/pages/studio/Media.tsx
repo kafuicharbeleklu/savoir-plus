@@ -6,8 +6,8 @@
 import React, { useRef, useState } from 'react';
 import { FileText, Film, Image as ImageIcon, Upload } from 'lucide-react';
 import type { StudioMedia } from '../../wireframeData';
-import { AlertStatus, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, PageHeader, SavedIndicator, SidePanel, StatusDot, Tabs } from '../../components/ui';
-import { importMediaFile, MEDIA_ACCEPT, mediaPreviews, mediaTone, mediaUsageCount, StudioShell, type StudioProps } from './shared';
+import { ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, PageHeader, rowTileTone, RowTitle, SavedIndicator, SidePanel, StatusDot, Tabs } from '../../components/ui';
+import { importMediaFile, MEDIA_ACCEPT, mediaPreviews, mediaRowState, mediaTone, mediaUsageCount, StudioShell, type StudioProps } from './shared';
 
 type KindFilter = 'all' | StudioMedia['kind'];
 
@@ -108,14 +108,17 @@ export function StudioMediaView({ ext, updateExt, nav, setToast, user }: StudioP
                 mediaPreviews.get(m.id) && m.kind === 'Image' ? (
                   <img className="sx-thumb" src={mediaPreviews.get(m.id)} alt="" />
                 ) : (
-                  <IconTile>
+                  <IconTile tone={rowTileTone(mediaRowState(m.state))}>
                     <KindIcon kind={m.kind} />
                   </IconTile>
                 )
               }
-              title={m.state === 'Disponible' ? m.filename : <span className="ui-muted-title">{m.filename}</span>}
+              title={
+                <RowTitle state={mediaRowState(m.state)} hint={m.state === 'Disponible' ? undefined : m.state}>
+                  {m.filename}
+                </RowTitle>
+              }
               meta={[m.kind, m.sizeLabel, usageLabel(m)].filter(Boolean).join(' · ')}
-              trailing={<AlertStatus tone={mediaTone(m.state)}>{m.state}</AlertStatus>}
               onClick={() => {
                 setSavedAt(null);
                 setOpenId(m.id);

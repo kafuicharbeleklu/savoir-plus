@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { CatalogType, StudioContent } from '../wireframeData';
-import { ActionMenu, AlertStatus, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, PageHeader, SearchField, Tabs } from '../components/ui';
+import { ActionMenu, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, PageHeader, rowTileTone, RowTitle, SearchField, Tabs, type RowState } from '../components/ui';
 import { contentStatus, formatUpdated, newStudioId, StudioShell, TYPE_LABEL, TypeIcon, type ContentBucket, type StudioProps } from './studio/shared';
 
 export { StudioEditorView, StudioPathView, StudioPublishView, StudioQuizView } from './studio/Workspace';
@@ -142,23 +142,27 @@ export function StudioHomeView({ ext, updateExt, nav, setToast, user }: StudioPr
             />
           )
         ) : (
-          visible.map(({ c, status }) => (
+          visible.map(({ c, status }) => {
+            // Publié : normal · à corriger : rouge · brouillon ou en revue : gris.
+            const state: RowState = status.bucket === 'published' ? 'ok' : status.bucket === 'fix' ? 'alert' : 'muted';
+            return (
             <ListRow
               key={c.id}
               leading={
-                <IconTile tone={status.bucket === 'published' ? 'brand' : 'neutral'}>
+                <IconTile tone={rowTileTone(state)}>
                   <TypeIcon type={c.type} />
                 </IconTile>
               }
               title={
-                status.bucket === 'published' ? c.title || 'Sans titre' : <span className="ui-muted-title">{c.title || 'Sans titre'}</span>
+                <RowTitle state={state} hint={state === 'ok' ? undefined : status.label}>
+                  {c.title || 'Sans titre'}
+                </RowTitle>
               }
               meta={`${TYPE_LABEL[c.type]} · ${c.published?.version || c.version} · ${c.domain} · ${formatUpdated(c)}`}
               onClick={() => nav(workspaceRoute(c), c.id)}
               ariaLabel={`Modifier ${c.title || 'le contenu'} (${status.label})`}
               trailing={
                 <>
-                  <AlertStatus tone={status.tone}>{status.label}</AlertStatus>
                   <ActionMenu
                     label={`Actions sur ${c.title || 'le contenu'}`}
                     items={[
@@ -171,7 +175,8 @@ export function StudioHomeView({ ext, updateExt, nav, setToast, user }: StudioPr
                 </>
               }
             />
-          ))
+            );
+          })
         )}
       </ListCard>
 

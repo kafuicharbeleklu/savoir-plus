@@ -52,15 +52,28 @@ export function StatusDot({ tone = 'neutral', children }: { tone?: StatusTone; c
   );
 }
 
+/** État d'une ligne de liste : normal, pas encore validé (gris) ou à corriger (rouge). */
+export type RowState = 'ok' | 'muted' | 'alert';
+
 /**
- * Mention de statut réservée aux alertes. Un état normal ne s'annonce pas (la ligne s'affiche
- * normalement) et un état pas encore atteint s'affiche en gris : seul ce qui demande une action
- * garde un point de couleur et un libellé.
+ * Titre d'une ligne selon son état. Aucune mention n'est affichée : un élément normal garde
+ * son aspect, un élément pas encore validé est en gris, un élément qui demande une action est
+ * en rouge. La précision (« À corriger », « Échec »…) reste lisible au survol et par les
+ * lecteurs d'écran.
  */
-export function AlertStatus({ tone, children }: { tone: StatusTone; children: React.ReactNode }) {
-  if (tone !== 'warn' && tone !== 'danger') return null;
-  return <StatusDot tone={tone}>{children}</StatusDot>;
+export function RowTitle({ state, hint, children }: { state: RowState; hint?: string; children: React.ReactNode }) {
+  if (state === 'ok') return <>{children}</>;
+  return (
+    <span className={state === 'alert' ? 'ui-alert-title' : 'ui-muted-title'} title={hint}>
+      {children}
+      {hint && <span className="sr-only"> — {hint}</span>}
+    </span>
+  );
 }
+
+/** Couleur de la pastille d'icône correspondant à l'état de la ligne. */
+export const rowTileTone = (state: RowState): 'brand' | 'neutral' | 'danger' =>
+  state === 'ok' ? 'brand' : state === 'alert' ? 'danger' : 'neutral';
 
 /* ------------------------------------------------------------------ Listes */
 
@@ -127,8 +140,8 @@ export function ListRow({
 }
 
 /** Pastille d'icône carrée (type de contenu, file…) pour le visuel d'une ligne. */
-export function IconTile({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'brand' }) {
-  return <span className={`ui-icon-tile ${tone === 'brand' ? 'is-brand' : ''}`}>{children}</span>;
+export function IconTile({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'brand' | 'danger' }) {
+  return <span className={`ui-icon-tile ${tone === 'brand' ? 'is-brand' : tone === 'danger' ? 'is-danger' : ''}`}>{children}</span>;
 }
 
 /* ------------------------------------------------------------------ Menu « … » */

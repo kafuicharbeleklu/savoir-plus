@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   EyeOff,
   Flag,
-  Home,
   Inbox,
   KeyRound,
   LifeBuoy,
@@ -117,12 +116,6 @@ export function GovernanceRail({
           </React.Fragment>
         );
       })}
-      <div className="vous-divider" />
-      <button type="button" className="rail-nav-btn" onClick={() => nav('home')}>
-        <span>
-          <Home size={16} aria-hidden="true" /> Retour à l’accueil
-        </span>
-      </button>
     </nav>
   );
 }

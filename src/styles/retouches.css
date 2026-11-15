@@ -900,3 +900,7 @@ button.pf-suggest.is-link small {
   text-overflow: ellipsis;
 }
 button.pf-suggest.is-link:hover .pf-suggest-name { color: var(--accent-brand); text-decoration: underline; }
+
+/* -- Lignes à corriger : mise en évidence rouge, sans mention ------------------------------ */
+.ui-alert-title { color: var(--accent-danger); }
+.ui-icon-tile.is-danger { background: var(--accent-danger-soft); color: var(--accent-danger); }

@@ -7,6 +7,7 @@ import type { Profile, Progress } from '../../data';
 import type { StudioReadinessCheck, StudioReadinessReport } from '../../personas';
 import { hasUnpublishedChanges, type CatalogType, type ExtendedDemoState, type StudioContent, type StudioMedia } from '../../wireframeData';
 import type { StatusTone } from '../../components/ui';
+import type { RowState } from '../../components/ui';
 
 export interface StudioProps {
   ext: ExtendedDemoState;
@@ -178,6 +179,11 @@ export function importMediaFile(
 }
 
 export const MEDIA_ACCEPT = 'image/*,video/*,application/pdf';
+
+/** État d'une ligne de média : disponible (normal), en échec (rouge), sinon en attente (gris). */
+export function mediaRowState(state: StudioMedia['state']): RowState {
+  return state === 'Disponible' ? 'ok' : state === 'Échec' ? 'alert' : 'muted';
+}
 
 export function mediaTone(state: StudioMedia['state']): StatusTone {
   return state === 'Disponible' ? 'ok' : state === 'Échec' ? 'danger' : 'neutral';

@@ -15,7 +15,7 @@ import {
   studioSnapshot,
   type StudioContent
 } from '../../wireframeData';
-import { ActionMenu, AlertStatus, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, RadioList, SavedIndicator, SidePanel, StatusDot, Tabs } from '../../components/ui';
+import { ActionMenu, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, RadioList, rowTileTone, RowTitle, SavedIndicator, SidePanel, StatusDot, Tabs } from '../../components/ui';
 import {
   AUDIENCE_LABEL,
   Checklist,
@@ -24,7 +24,7 @@ import {
   importMediaFile,
   MEDIA_ACCEPT,
   mediaPreviews,
-  mediaTone,
+  mediaRowState,
   stripNumbering,
   StudioShell,
   TYPE_LABEL,
@@ -572,16 +572,19 @@ function StudioWorkspace({
                     mediaPreviews.get(m.id) && m.kind === 'Image' ? (
                       <img className="sx-thumb" src={mediaPreviews.get(m.id)} alt="" />
                     ) : (
-                      <IconTile>
+                      <IconTile tone={rowTileTone(mediaRowState(m.state))}>
                         <Upload size={20} aria-hidden="true" />
                       </IconTile>
                     )
                   }
-                  title={m.state === 'Disponible' ? m.filename : <span className="ui-muted-title">{m.filename}</span>}
+                  title={
+                    <RowTitle state={mediaRowState(m.state)} hint={m.state === 'Disponible' ? undefined : m.state}>
+                      {m.filename}
+                    </RowTitle>
+                  }
                   meta={`${m.kind} · ${m.kind === 'Image' ? m.altText || 'Texte alternatif à renseigner' : m.rights || 'Droits à préciser'}`}
                   trailing={
                     <>
-                      <AlertStatus tone={mediaTone(m.state)}>{m.state}</AlertStatus>
                       <button type="button" className="secondary ui-btn-sm" onClick={() => detach(m.id)}>
                         Retirer
                       </button>
@@ -617,11 +620,14 @@ function StudioWorkspace({
                 <ListRow
                   key={m.id}
                   leading={<span className="sx-order tabular-nums">{String(i + 1).padStart(2, '0')}</span>}
-                  title={m.title}
+                  title={
+                    <RowTitle state={isCompatible(m.id) ? 'ok' : 'alert'} hint={isCompatible(m.id) ? undefined : 'Non accessible à cette audience'}>
+                      {m.title}
+                    </RowTitle>
+                  }
                   meta={`${m.domain} · ${m.level} · ${m.duration} · ${m.version}`}
                   trailing={
                     <>
-                      {!isCompatible(m.id) && <StatusDot tone="danger">Non accessible à cette audience</StatusDot>}
                       <button
                         type="button"
                         className="li-icon-btn"
@@ -843,9 +849,12 @@ function StudioWorkspace({
             attachable.map((m) => (
               <ListRow
                 key={m.id}
-                title={m.state === 'Disponible' ? m.filename : <span className="ui-muted-title">{m.filename}</span>}
+                title={
+                  <RowTitle state={mediaRowState(m.state)} hint={m.state === 'Disponible' ? undefined : m.state}>
+                    {m.filename}
+                  </RowTitle>
+                }
                 meta={m.kind}
-                trailing={<AlertStatus tone={mediaTone(m.state)}>{m.state}</AlertStatus>}
                 onClick={() => {
                   attach(m.id);
                   setPanel('none');
