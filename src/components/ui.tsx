@@ -362,6 +362,59 @@ export function SavedIndicator({ at }: { at?: number | null }) {
 
 /* ------------------------------------------------------------------ Panneau latéral */
 
+/**
+ * Fenêtre centrée, sur le modèle de LinkedIn : titre et fermeture en tête, corps défilant,
+ * actions en pied. `flush` retire les marges du corps (aperçu d'image, éditeur).
+ */
+export function Modal({
+  open,
+  title,
+  onClose,
+  children,
+  footer,
+  size = 'md',
+  flush = false
+}: {
+  open: boolean;
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  flush?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.activeElement as HTMLElement | null;
+    ref.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      prev?.focus?.();
+    };
+  }, [open, onClose]);
+  if (!open) return null;
+  return createPortal(
+    <div className="ui-modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div ref={ref} className={`ui-modal is-${size}`} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
+        <header className="ui-modal-head">
+          <h2>{title}</h2>
+          <button type="button" className="ui-modal-close" aria-label="Fermer" onClick={onClose}>
+            <X size={24} aria-hidden="true" />
+          </button>
+        </header>
+        <div className={`ui-modal-body${flush ? ' is-flush' : ''}`}>{children}</div>
+        {footer && <footer className="ui-modal-foot">{footer}</footer>}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export function SidePanel({
   open,
   title,

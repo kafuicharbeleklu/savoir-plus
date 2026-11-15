@@ -30,7 +30,8 @@ import { type AppPage, type CatalogItem, type ExtendedDemoState } from '../wiref
 import { Avatar, ProgressBar, VerifiedBadge } from '../components/ProfileIdentityCard';
 import type { FooterInfoTopic } from '../components/SidebarFooters';
 import { HexBadgeEmblem, PedagogicalProfileView } from '../components/PedagogicalProfileView';
-import { ActionMenu, EmptyState, IconTile, SidePanel, StatusDot } from '../components/ui';
+import { ActionMenu, EmptyState, IconTile, Modal, StatusDot } from '../components/ui';
+import { ProfileMediaDialog, type MediaKind } from '../components/ProfileMedia';
 
 interface ProfilePageProps {
   isOwnProfile: boolean;
@@ -196,6 +197,7 @@ export function ProfilePage({
   const [view, setView] = useState<'profile' | 'progression' | 'badges'>('profile');
   const [editOpen, setEditOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [mediaOpen, setMediaOpen] = useState<MediaKind | null>(null);
   const [activityTab, setActivityTab] = useState<'posts' | 'comments'>('posts');
   const [bioExpanded, setBioExpanded] = useState(false);
   const [allSkills, setAllSkills] = useState(false);
@@ -205,6 +207,7 @@ export function ProfilePage({
     setView('profile');
     setEditOpen(false);
     setContactOpen(false);
+    setMediaOpen(null);
     setBioExpanded(false);
     setAllSkills(false);
     const hasPosts = ext.posts.some((p) => p.authorId === target.id);
@@ -267,6 +270,41 @@ export function ProfilePage({
     if (isOwnProfile) nav('progression');
     else setView(tab);
   };
+
+  /** Enregistre (ou retire) la photo de profil ou la photo de couverture du membre. */
+  const saveMedia = (kind: MediaKind, dataUrl: string | null) => {
+    const field = kind === 'photo' ? 'photoDataUrl' : 'coverDataUrl';
+    updateExt?.((prev) => {
+      const base = prev.profileDetails[target.id] || {
+        tagline: target.role,
+        bio: target.bio,
+        interests: '',
+        profileVisibility: 'Membres' as const,
+        xpVisibility: 'Membres' as const,
+        contactPolicy: 'Membres autorisés' as const
+      };
+      const next = { ...base, [field]: dataUrl || undefined };
+      return { ...prev, profileDetails: { ...prev.profileDetails, [target.id]: next } };
+    });
+  };
+  const canEditMedia = isOwnProfile && Boolean(updateExt);
+  const coverPhoto = details?.coverDataUrl;
+
+  const defaultCover = (
+    <svg viewBox="0 0 804 201" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="pfCoverGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#173A30" />
+          <stop offset="60%" stopColor="#24594A" />
+          <stop offset="100%" stopColor="#3B7A62" />
+        </linearGradient>
+      </defs>
+      <rect width="804" height="201" fill="url(#pfCoverGrad)" />
+      <circle cx="690" cy="40" r="130" fill="rgba(255,255,255,0.05)" />
+      <circle cx="600" cy="170" r="96" fill="rgba(255,255,255,0.04)" />
+      <path d="M0 164 Q 200 112 420 150 T 804 124 L 804 201 L 0 201 Z" fill="rgba(8, 18, 15, 0.18)" />
+    </svg>
+  );
 
   const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -334,25 +372,38 @@ export function ProfilePage({
 
   const topCard = (
     <section className="pf-card pf-top" aria-label="Présentation">
-      <div className="pf-cover" aria-hidden="true">
-        <svg viewBox="0 0 804 201" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="pfCoverGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#173A30" />
-              <stop offset="60%" stopColor="#24594A" />
-              <stop offset="100%" stopColor="#3B7A62" />
-            </linearGradient>
-          </defs>
-          <rect width="804" height="201" fill="url(#pfCoverGrad)" />
-          <circle cx="690" cy="40" r="130" fill="rgba(255,255,255,0.05)" />
-          <circle cx="600" cy="170" r="96" fill="rgba(255,255,255,0.04)" />
-          <path d="M0 164 Q 200 112 420 150 T 804 124 L 804 201 L 0 201 Z" fill="rgba(8, 18, 15, 0.18)" />
-        </svg>
+      <div className="pf-cover-wrap">
+        <div className="pf-cover" aria-hidden="true">
+          {coverPhoto ? <img src={coverPhoto} alt="" /> : defaultCover}
+        </div>
+        {canEditMedia && (
+          <button
+            type="button"
+            className="pf-cover-edit"
+            aria-label="Modifier la photo de couverture"
+            title="Modifier la photo de couverture"
+            onClick={() => setMediaOpen('cover')}
+          >
+            <Pencil size={20} aria-hidden="true" />
+          </button>
+        )}
       </div>
       <div className="pf-top-body">
-        <div className="pf-avatar">
-          <Avatar person={target} />
-        </div>
+        {canEditMedia ? (
+          <button
+            type="button"
+            className="pf-avatar pf-avatar-btn"
+            aria-label="Modifier la photo de profil"
+            title="Modifier la photo de profil"
+            onClick={() => setMediaOpen('photo')}
+          >
+            <Avatar person={target} />
+          </button>
+        ) : (
+          <div className="pf-avatar">
+            <Avatar person={target} />
+          </div>
+        )}
         <div className={`pf-top-grid ${!profilePrivate && (institution || authored.length > 0) ? 'has-orgs' : ''}`}>
           <div className="pf-identity">
             <div className="pf-name-row">
@@ -876,7 +927,7 @@ export function ProfilePage({
       </aside>
 
       {/* Coordonnées */}
-      <SidePanel open={contactOpen} title={`Coordonnées de ${target.name}`} onClose={() => setContactOpen(false)}>
+      <Modal open={contactOpen} size="sm" title={`Coordonnées de ${target.name}`} onClose={() => setContactOpen(false)}>
         <dl className="ui-facts">
           <div>
             <dt>Profil</dt>
@@ -920,54 +971,128 @@ export function ProfilePage({
             </button>
           )}
         </div>
-      </SidePanel>
+      </Modal>
 
-      {/* Modifier le profil */}
+      {/* Modifier le profil : fenêtre centrée, libellés au-dessus des champs, « Enregistrer » en pied */}
       {isOwnProfile && (
-        <SidePanel
+        <Modal
           open={editOpen}
+          size="lg"
           title="Modifier le profil"
           onClose={() => setEditOpen(false)}
           footer={
-            <>
-              <button type="button" className="secondary ui-btn-sm" onClick={() => setEditOpen(false)}>
-                Annuler
-              </button>
-              <button type="submit" form="pf-edit-form" className="primary ui-btn-sm" disabled={!form.name.trim()}>
-                Enregistrer
-              </button>
-            </>
+            <button type="submit" form="pf-edit-form" className="primary ui-btn-sm" disabled={!form.name.trim()}>
+              Enregistrer
+            </button>
           }
         >
           <form id="pf-edit-form" className="pf-form" onSubmit={saveProfile}>
-            <label className="ui-field">
-              <span>Nom</span>
+            <p className="pf-form-note">* Champ obligatoire</p>
+            <label className="pf-field">
+              <span>Nom *</span>
               <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </label>
-            <label className="ui-field">
-              <span>Titre</span>
+            <label className="pf-field">
+              <span>Titre du profil</span>
               <input
                 value={form.tagline}
                 maxLength={160}
                 placeholder="Ex. Apprenante | Cybersécurité"
                 onChange={(e) => setForm({ ...form, tagline: e.target.value })}
               />
+              <small className="tabular-nums">{form.tagline.length} / 160</small>
             </label>
-            <label className="ui-field">
-              <span>Lieu</span>
+            <label className="pf-field">
+              <span>Ville</span>
               <input value={form.location} placeholder="Ex. Lomé, Région Maritime" onChange={(e) => setForm({ ...form, location: e.target.value })} />
             </label>
-            <label className="ui-field">
+            <label className="pf-field">
               <span>Infos</span>
               <textarea rows={5} maxLength={1200} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
+              <small className="tabular-nums">{form.bio.length} / 1 200</small>
             </label>
-            <label className="ui-field">
+            <label className="pf-field">
               <span>Centres d’intérêt</span>
               <input value={form.interests} onChange={(e) => setForm({ ...form, interests: e.target.value })} />
-              <small>Séparés par des virgules.</small>
+              <small>Séparés par des virgules. Ils servent à personnaliser vos suggestions.</small>
             </label>
+
+            {canEditMedia && (
+              <div className="pf-form-section">
+                <h3>Photos</h3>
+                <p>Ajoutez ou modifiez votre photo de profil et votre photo de couverture.</p>
+                <div className="pf-form-buttons">
+                  <button
+                    type="button"
+                    className="pf-outline-btn"
+                    onClick={() => {
+                      setEditOpen(false);
+                      setMediaOpen('photo');
+                    }}
+                  >
+                    <Pencil size={16} aria-hidden="true" /> Photo de profil
+                  </button>
+                  <button
+                    type="button"
+                    className="pf-outline-btn"
+                    onClick={() => {
+                      setEditOpen(false);
+                      setMediaOpen('cover');
+                    }}
+                  >
+                    <Pencil size={16} aria-hidden="true" /> Photo de couverture
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="pf-form-section">
+              <h3>Coordonnées</h3>
+              <p>Lien de votre profil, établissement et règles de contact.</p>
+              <div className="pf-form-buttons">
+                <button
+                  type="button"
+                  className="pf-outline-btn"
+                  onClick={() => {
+                    setEditOpen(false);
+                    setContactOpen(true);
+                  }}
+                >
+                  <Pencil size={16} aria-hidden="true" /> Voir les coordonnées
+                </button>
+              </div>
+            </div>
           </form>
-        </SidePanel>
+        </Modal>
+      )}
+
+      {/* Photo de profil et photo de couverture */}
+      {canEditMedia && (
+        <>
+          <ProfileMediaDialog
+            kind="photo"
+            open={mediaOpen === 'photo'}
+            current={details?.photoDataUrl}
+            placeholder={<Avatar person={target} />}
+            visibilityLabel={VISIBILITY_LABEL[details?.profileVisibility || 'Membres']}
+            onOpenVisibility={() => {
+              setMediaOpen(null);
+              openSettingsTab('privacy');
+            }}
+            onChange={(dataUrl) => saveMedia('photo', dataUrl)}
+            onClose={() => setMediaOpen(null)}
+            setToast={setToast}
+          />
+          <ProfileMediaDialog
+            kind="cover"
+            open={mediaOpen === 'cover'}
+            current={coverPhoto}
+            placeholder={defaultCover}
+            onChange={(dataUrl) => saveMedia('cover', dataUrl)}
+            onClose={() => setMediaOpen(null)}
+            setToast={setToast}
+          />
+        </>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useSyncExternalStore } from 'react';
 import { BadgeCheck, MapPin } from 'lucide-react';
 import type { Profile } from '../data';
 import {
@@ -8,10 +8,31 @@ import {
 } from '../personas';
 import type { DifficultyLevel, ExtendedDemoState } from '../wireframeData';
 
-export function Avatar({ person, small = false }: { person: Profile; small?: boolean }) {
+/* Photos de profil : un petit registre partagé, pour que chaque avatar de l'application
+   affiche la photo du membre dès qu'il en a une, sans faire passer l'état partout. */
+let avatarPhotos: Record<string, string> = {};
+const avatarListeners = new Set<() => void>();
+
+export function setAvatarPhotos(next: Record<string, string>) {
+  const sameKeys = Object.keys(next).length === Object.keys(avatarPhotos).length;
+  if (sameKeys && Object.keys(next).every((id) => avatarPhotos[id] === next[id])) return;
+  avatarPhotos = next;
+  avatarListeners.forEach((listener) => listener());
+}
+
+function subscribeAvatarPhotos(listener: () => void) {
+  avatarListeners.add(listener);
+  return () => {
+    avatarListeners.delete(listener);
+  };
+}
+
+export function Avatar({ person, small = false, className = '' }: { person: Profile; small?: boolean; className?: string }) {
+  const photo = useSyncExternalStore(subscribeAvatarPhotos, () => avatarPhotos[person.id]);
+  const classes = ['avatar', person.color, small ? 'small' : '', photo ? 'has-photo' : '', className].filter(Boolean).join(' ');
   return (
-    <span className={`avatar ${person.color} ${small ? 'small' : ''}`} aria-hidden="true">
-      {person.initials || 'SV'}
+    <span className={classes} aria-hidden="true">
+      {photo ? <img src={photo} alt="" /> : person.initials || 'SV'}
     </span>
   );
 }
@@ -118,7 +139,13 @@ export function ProfileIdentityCard({
 
   return (
     <section className={`profile-card ${compact ? 'profile-card-compact' : ''}`} aria-label="Carte personnelle">
-      {!compact && <div className="mini-profile-cover" aria-hidden="true" />}
+      {!compact && (
+        <div
+          className="mini-profile-cover"
+          aria-hidden="true"
+          style={details?.coverDataUrl ? { backgroundImage: `url(${details.coverDataUrl})` } : undefined}
+        />
+      )}
       <button type="button" className="mini-profile-identity" onClick={onOpenProfile}>
         <Avatar person={user} small={compact} />
         <div className="mini-profile-text">

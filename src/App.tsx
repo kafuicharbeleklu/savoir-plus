@@ -111,7 +111,7 @@ import {
 
 import { TopBar } from './components/TopBar';
 import { MobileNav } from './components/MobileNav';
-import { Avatar, DifficultyMeter, ProfileIdentityCard, ProgressBar, VerifiedBadge } from './components/ProfileIdentityCard';
+import { Avatar, DifficultyMeter, ProfileIdentityCard, ProgressBar, VerifiedBadge, setAvatarPhotos } from './components/ProfileIdentityCard';
 import { CatalogCardBanner, CatalogContentCard, ContentTypeMark, XpBadgeInline } from './components/CatalogVisuals';
 import { MessagingDrawer } from './components/MessagingDrawer';
 import {
@@ -358,6 +358,17 @@ export default function App() {
       return next;
     });
   };
+
+  // Photos de profil : chaque avatar de l'application les lit dans un registre partagé.
+  useLayoutEffect(() => {
+    setAvatarPhotos(
+      Object.fromEntries(
+        Object.entries(ext.profileDetails)
+          .filter(([, d]) => Boolean(d?.photoDataUrl))
+          .map(([id, d]) => [id, d.photoDataUrl as string])
+      )
+    );
+  }, [ext.profileDetails]);
 
   // Contributions programmées : elles paraissent à l'heure prévue (ou dès l'ouverture si l'heure est passée).
   useEffect(() => {

@@ -619,6 +619,10 @@ export interface ExtendedDemoState {
     profileVisibility: 'Membres' | 'Moi uniquement' | 'Public';
     xpVisibility: 'Moi uniquement' | 'Membres';
     contactPolicy: 'Personnes que je suis' | 'Membres autorisés' | 'Personne';
+    /** Photo de profil recadrée (data URL), choisie par le membre. */
+    photoDataUrl?: string;
+    /** Photo de couverture recadrée (data URL), choisie par le membre. */
+    coverDataUrl?: string;
   }>;
   followingIds: Record<string, string[]>;
   moduleProgress: Record<string, Record<string, { lessons: number[]; answers: number[]; submitted: boolean }>>;

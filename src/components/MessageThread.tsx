@@ -173,9 +173,7 @@ export function ConversationIntro({ person, onOpenProfile }: { person: Profile; 
   return (
     <div className="li-thread-intro">
       <button type="button" className="li-thread-intro-id" onClick={onOpenProfile}>
-        <span className={`avatar ${person.color} li-thread-intro-avatar`} aria-hidden="true">
-          {person.initials || 'SV'}
-        </span>
+        <Avatar person={person} className="li-thread-intro-avatar" />
         <b>{person.name}</b>
       </button>
       <span className="li-thread-intro-role">{person.role}</span>
