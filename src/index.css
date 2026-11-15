@@ -7489,3 +7489,7 @@ button:focus-visible, a:focus-visible, [role="tab"]:focus-visible, [tabindex]:fo
   55% { transform: scale(1.22); }
   100% { transform: scale(1); }
 }
+
+/* Barre de réactions sans filets au-dessus ni en dessous */
+.li-engagement-summary { border-bottom: 0; padding-bottom: 2px; }
+.li-comments-section { border-top: 0; padding-top: 4px; }
