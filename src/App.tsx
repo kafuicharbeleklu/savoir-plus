@@ -2630,6 +2630,7 @@ export default function App() {
         pendingCount={pendingIncoming.length}
         unreadNotifs={unreadNotifs}
         onOpenAuthModal={() => setAuthModalOpen(true)}
+        onOpenComposer={() => setComposerOpen(true)}
         onEnterVisitor={() => nav('visitor')}
       />
 

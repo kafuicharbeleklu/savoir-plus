@@ -526,9 +526,11 @@ label.pc-chip {
 }
 .conversation-empty.is-centered p { margin: 0; font-size: 0.875rem; }
 
-/* -- Mobile : dans le fil d'actualité, ni « Votre progression » ni suggestions de comptes -- */
+/* -- Mobile : le fil d'actualité seul — ni bloc de saisie (accès par « Plus › Publier »),
+      ni « Votre progression », ni suggestions de comptes ---------------------------------- */
 @media (max-width: 768px) {
-  .home-rail { display: none; }
+  .home-rail,
+  .home-composer-inline { display: none; }
 }
 
 /* -- Accueil : carte « Reprise » plus sobre — un sur-titre, un titre, une barre, une ligne d'infos -- */

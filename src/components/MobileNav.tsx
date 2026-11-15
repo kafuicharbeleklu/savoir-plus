@@ -10,6 +10,7 @@ import {
   LogOut,
   Menu,
   MessageCircle,
+  PenLine,
   Settings,
   ShieldCheck,
   User,
@@ -27,6 +28,7 @@ export function MobileNav({
   pendingCount,
   unreadNotifs,
   onOpenAuthModal,
+  onOpenComposer,
   onEnterVisitor
 }: {
   page: string;
@@ -37,6 +39,8 @@ export function MobileNav({
   pendingCount: number;
   unreadNotifs: number;
   onOpenAuthModal: () => void;
+  /** Ouvre la fenêtre de publication (accès mobile, le bloc de saisie n'étant pas affiché dans le fil). */
+  onOpenComposer?: () => void;
   onEnterVisitor: () => void;
 }) {
   useEffect(() => {
@@ -113,6 +117,16 @@ export function MobileNav({
             </div>
 
             <div className="mobile-sheet-grid">
+              {onOpenComposer && (
+                <button
+                  onClick={() => {
+                    setMoreOpen(false);
+                    onOpenComposer();
+                  }}
+                >
+                  <PenLine size={18} /> Publier
+                </button>
+              )}
               <button onClick={() => go('profile')}>
                 <User size={18} /> Mon profil
               </button>
