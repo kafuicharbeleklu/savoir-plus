@@ -914,7 +914,7 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       bio: 'Passionné de technologie. Toujours partant pour apprendre ensemble.',
       interests: 'Numérique, Réseaux, Partage de connaissances',
       profileVisibility: 'Membres',
-      xpVisibility: 'Moi uniquement',
+      xpVisibility: 'Membres',
       contactPolicy: 'Membres autorisés'
     },
     nadege: {

@@ -445,3 +445,11 @@ label.ui-radio {
   text-align: left;
   font-weight: 400;
 }
+
+/* -- Faits (dl) : libellé gris au-dessus de la valeur ---------------------------- */
+.ui-facts { margin: 0; display: flex; flex-direction: column; }
+.ui-facts > div { display: flex; flex-direction: column; gap: 2px; padding: 12px 0; border-bottom: 1px solid var(--border-hairline); }
+.ui-facts > div:first-child { padding-top: 0; }
+.ui-facts > div:last-child { border-bottom: 0; }
+.ui-facts dt { font-size: 0.75rem; color: var(--fg-muted); }
+.ui-facts dd { margin: 0; font-size: 0.875rem; color: var(--fg-primary); overflow-wrap: anywhere; }

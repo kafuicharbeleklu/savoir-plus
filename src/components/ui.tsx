@@ -5,6 +5,7 @@
  * état vide partout, enregistrement automatique.
  */
 import React, { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ArrowLeft, MoreHorizontal, Search, X } from 'lucide-react';
 
 /* ------------------------------------------------------------------ En-tête */
@@ -388,7 +389,8 @@ export function SidePanel({
     };
   }, [open, onClose]);
   if (!open) return null;
-  return (
+  // Rendu dans <body> : un ancêtre animé (transform) deviendrait sinon le repère du panneau fixe.
+  return createPortal(
     <div className="ui-panel-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
         ref={ref}
@@ -407,7 +409,8 @@ export function SidePanel({
         <div className="ui-panel-body">{children}</div>
         {footer && <footer className="ui-panel-foot">{footer}</footer>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

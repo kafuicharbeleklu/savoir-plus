@@ -44,6 +44,7 @@ import {
 } from '../personas';
 import { buildDynamicCatalog, CATALOG_ITEMS, type AppPage, type ExtendedDemoState } from '../wireframeData';
 import { Avatar, VerifiedBadge } from './ProfileIdentityCard';
+import { computeMemberStats } from '../memberStats';
 
 export interface PedagogicalProfileViewProps {
   target: Profile;
@@ -112,7 +113,7 @@ function BadgeGlyph({ iconKey, size = 20 }: { iconKey: SavoirBadgeItem['iconKey'
   }
 }
 
-function HexBadgeEmblem({
+export function HexBadgeEmblem({
   iconKey,
   earned,
   size = 'md'
@@ -199,103 +200,26 @@ export function PedagogicalProfileView({
     setMoreMenuOpen(false);
   }, [target.id, bioText, interestsRaw]);
 
-  const catalog = useMemo(() => buildDynamicCatalog(ext), [ext]);
-  const playableModules = useMemo(
-    () => catalog.filter((c) => c.type === 'module' && c.interactive),
-    [catalog]
+  // Calcul partagé avec la page profil (src/memberStats.ts) : mêmes chiffres partout.
+  const stats = useMemo(
+    () => computeMemberStats({ target, isOwnProfile, ext, relations, myFollowing, progress, getModuleProgress }),
+    [target, isOwnProfile, ext, relations, myFollowing, progress, getModuleProgress]
   );
-
-  const moduleMetrics = useMemo(
-    () =>
-      playableModules.map((mod) => {
-        const modProg = isOwnProfile
-          ? resolveModProg(mod.id, progress, ext, target.id, getModuleProgress)
-          : ext.moduleProgress?.[target.id]?.[mod.id] || { lessons: [], answers: [], submitted: false };
-        const study = MODULES_CONTENT[mod.id];
-        const lessonCount = study ? study.lessons.length : 3;
-        const correctIndices = study ? study.questions.map((q) => q.correctIndex) : [0, 0];
-        const key = study ? correctIndices : undefined;
-        const pctVal = moduleProgressPercent(modProg, lessonCount, key);
-        const xpVal = moduleXp(modProg, lessonCount, key);
-        const qLen = correctIndices.length;
-        const passThreshold = Math.max(1, Math.ceil(qLen * 0.66));
-        const qScore = scoreAnswers(modProg.answers || [], correctIndices);
-        const passed = modProg.submitted && qScore >= passThreshold;
-        const perfect = modProg.submitted && qScore === qLen && qLen > 0;
-        return { mod, modProg, lessonCount, pctVal, xpVal, qScore, qLen, passed, perfect };
-      }),
-    [playableModules, isOwnProfile, progress, ext, target.id, getModuleProgress]
-  );
-
-  const totalXp = moduleMetrics.reduce((acc, m) => acc + m.xpVal, 0);
-  const lvl = computeGlobalLevel(totalXp);
-  const completedModules = moduleMetrics.filter((m) => m.pctVal === 100).map((m) => m.mod.id);
-  const passedQuizzes = moduleMetrics.filter((m) => m.passed).map((m) => m.mod.id);
-  const perfectQuizzes = moduleMetrics.filter((m) => m.perfect).map((m) => m.mod.id);
-  const completedLessonsCount = moduleMetrics.reduce((acc, m) => acc + m.modProg.lessons.length, 0);
-
-  const postsCount = ext.posts.filter((p) => p.authorId === target.id && !p.repostedFrom).length;
-  const repliesCount = ext.posts.reduce(
-    (acc, p) => acc + p.replies.filter((r) => r.authorId === target.id).length,
-    0
-  );
-  const solutionsCount = ext.posts.filter(
-    (p) => p.solutionReplyId && p.replies.some((r) => r.id === p.solutionReplyId && r.authorId === target.id)
-  ).length;
-  const helpfulGivenCount = ext.posts.reduce(
-    (acc, p) =>
-      acc +
-      (p.helpfulBy?.includes(target.id) ? 1 : 0) +
-      p.replies.filter((r) => r.helpfulBy.includes(target.id)).length,
-    0
-  );
-  const followingCount = (isOwnProfile ? myFollowing : ext.followingIds[target.id] || []).length;
-  const acceptedRelationsCount = relations.filter(
-    (r) => r.members.includes(target.id) && r.status === 'accepted'
-  ).length;
-
-  const rankInfo = computeSavoirRank(totalXp, completedModules.length);
-  const activity = computeAnnualActivitySummary({
+  const {
+    catalog,
+    moduleMetrics,
     totalXp,
-    completedLessonsCount,
-    passedQuizzesCount: passedQuizzes.length,
+    lvl,
+    completedModules,
+    passedQuizzes,
     postsCount,
-    repliesCount
-  });
-
-  const badges = useMemo(
-    () =>
-      computeSavoirBadges({
-        totalXp,
-        level: lvl.level,
-        completedModules,
-        passedQuizzes,
-        perfectQuizzes,
-        completedLessonsCount,
-        postsCount,
-        repliesCount,
-        solutionsCount,
-        helpfulGivenCount,
-        followingCount,
-        acceptedRelationsCount,
-        streakWeeks: activity.streakWeeks
-      }),
-    [
-      totalXp,
-      lvl.level,
-      completedModules,
-      passedQuizzes,
-      perfectQuizzes,
-      completedLessonsCount,
-      postsCount,
-      repliesCount,
-      solutionsCount,
-      helpfulGivenCount,
-      followingCount,
-      acceptedRelationsCount,
-      activity.streakWeeks
-    ]
-  );
+    repliesCount,
+    followingCount,
+    acceptedRelationsCount,
+    rankInfo,
+    activity,
+    badges
+  } = stats;
 
   const learningBadges = badges.filter((b) => b.track === 'learning');
   const communityBadges = badges.filter((b) => b.track === 'community');

@@ -129,7 +129,10 @@ export function SettingsView({ ext, updateExt, nav, user, caps, relations, peopl
 
   const details = ext.profileDetails[user.id] || ext.profileDetails.afi;
   const isVerified = resolveProfileVerified(user.id, ext.adminUsers, details?.verified);
-  const email = mode === 'cloud' ? cloudEmail : ext.adminUsers.find((u) => u.id === user.id)?.email || null;
+  const email =
+    mode === 'cloud'
+      ? cloudEmail
+      : ext.adminUsers.find((u) => u.id === user.id || u.id === `usr-${user.id}`)?.email || null;
   const blocked = relations.filter((r) => r.blockedBy.includes(user.id));
   const theme = ext.appPrefs.theme;
   const exportAt = ext.appPrefs.dataExportRequestedAt;

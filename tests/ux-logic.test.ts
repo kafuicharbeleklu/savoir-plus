@@ -589,3 +589,39 @@ test('Préparation publication : un contenu Studio IA est contrôlé sur son pro
   const legacy = evaluateStudioReadiness(base, brokenShared, []);
   assert.equal(legacy.checks.find((c) => c.id === 'quiz')?.ok, false);
 });
+
+test('Profil : progression d’un membre calculée à un seul endroit (abonnés, compétences, modules)', async () => {
+  const { computeMemberStats } = await import('../src/memberStats');
+  const { initialExtendedState } = await import('../src/wireframeData');
+  const ext = initialExtendedState();
+  const empty = { lessons: [], answers: [], submitted: false };
+  const person = (id: string, name: string) => ({ id, name, role: '', initials: '', color: 'mint', bio: '' });
+
+  // Autre membre : seules ses données enregistrées comptent (pas la progression de l’utilisateur courant).
+  const kossi = computeMemberStats({
+    target: person('kossi', 'Kossi Agbo'),
+    isOwnProfile: false,
+    ext,
+    relations: [],
+    myFollowing: [],
+    progress: { lessons: [0, 1, 2], answers: [0, 0, 0], submitted: true }
+  });
+  assert.deepEqual(kossi.passedQuizzes, ['reseaux']);
+  assert.equal(kossi.followersCount, 2, 'Afi et Nadège suivent Kossi');
+  assert.ok(kossi.skills.length > 0 && kossi.skills.every((s) => s.validated));
+  assert.equal(kossi.totalXp, kossi.moduleMetrics.reduce((acc, m) => acc + m.xpVal, 0));
+
+  // Son propre profil : la progression en cours fait apparaître des compétences « en cours ».
+  const afi = computeMemberStats({
+    target: person('afi', 'Afi Mensah'),
+    isOwnProfile: true,
+    ext,
+    relations: [],
+    myFollowing: ['kossi', 'maya'],
+    progress: empty
+  });
+  assert.equal(afi.followersCount, 1, 'Kossi suit Afi');
+  assert.equal(afi.followingCount, 2);
+  assert.deepEqual(afi.passedQuizzes, []);
+  assert.ok(afi.skills.length > 0 && afi.skills.every((s) => !s.validated));
+});
