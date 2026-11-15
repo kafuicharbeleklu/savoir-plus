@@ -7456,3 +7456,34 @@ button:focus-visible, a:focus-visible, [role="tab"]:focus-visible, [tabindex]:fo
   .landing-persona { padding: var(--space-4); }
   .landing-auth { padding: var(--space-5); border-radius: var(--radius-lg); }
 }
+
+/* ==========================================================================
+   Accueil connecté (refonte v2)
+   ========================================================================== */
+.home-hero { display: flex; flex-direction: column; gap: 2px; padding: var(--space-2) 0 var(--space-1); }
+.home-hero-date { font-size: 0.8125rem; font-weight: 600; color: var(--fg-subtle); }
+.home-hero-date::first-letter { text-transform: uppercase; }
+.home-hero h1 { font-size: clamp(1.75rem, 2.6vw, 2.25rem); letter-spacing: -0.03em; }
+.home-hero-sub { font-size: 1rem; color: var(--fg-muted); }
+
+/* Bandeau de démonstration plus discret */
+.demo-banner { padding: var(--space-4) 48px var(--space-4) var(--space-5); background: var(--bg-surface); border-color: var(--border-hairline); box-shadow: var(--shadow-card); border-left: 3px solid var(--accent-brand); }
+.demo-banner-pitch { font-size: 0.9375rem; }
+
+/* Carte de reprise : l'élément principal de la page */
+.home-resume {
+  padding: var(--space-6);
+  border-color: var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--accent-brand) 7%, transparent) 0%, transparent 55%),
+    var(--bg-surface);
+  gap: var(--space-4);
+}
+.home-resume h2 { font-size: clamp(1.25rem, 1.8vw, 1.5rem); letter-spacing: -0.02em; }
+.home-resume .primary { min-height: 44px; padding: 0 22px; }
+.home-recommended { padding: var(--space-6); }
+
+.home-section-head { display: flex; flex-direction: column; gap: 2px; padding-top: var(--space-4); }
+.home-section-head h2 { font-size: 1.25rem; }
+.home-section-head p { font-size: 0.875rem; }

@@ -112,7 +112,6 @@ import { MessagingDrawer } from './components/MessagingDrawer';
 import { SplashScreen } from './components/SplashScreen';
 import { FeedPostCard } from './components/FeedPostCard';
 import {
-  RightRailShowcaseCard,
   SidebarCompactFooter,
   type FooterInfoTopic
 } from './components/SidebarFooters';
@@ -1304,6 +1303,20 @@ export default function App() {
       return (
         <div className="dashboard-grid">
           <div className="dashboard-main">
+            <header className="home-hero">
+              <p className="home-hero-date">
+                {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </p>
+              <h1>Bonjour {user.name.split(' ')[0]}</h1>
+              <p className="home-hero-sub">
+                {resumeValidated
+                  ? 'Module validé : découvrez la suite de votre parcours.'
+                  : resumePct > 0
+                    ? 'Reprenez là où vous en étiez.'
+                    : 'Commencez par un module court : quelques minutes suffisent.'}
+              </p>
+            </header>
+
             {mode === 'local' && !demoBannerHidden && page === 'home' && (() => {
               const phishingPct = modulePct('phishing');
               const startLabel = isModuleValidated('phishing')
@@ -1358,70 +1371,9 @@ export default function App() {
               );
             })()}
 
-            {/* Inline LinkedIn-style Composer */}
-            <section className="home-composer-inline" aria-label="Créer une contribution">
-              <div className="home-composer-trigger-row">
-                <Avatar person={user} small />
-                <button
-                  type="button"
-                  className="home-composer-prompt"
-                  onClick={() => setComposerOpen(true)}
-                >
-                  Bonjour {user.name.split(' ')[0]}, partagez une astuce ou posez une question…
-                </button>
-              </div>
-              <div className="home-composer-shortcuts">
-                <button
-                  type="button"
-                  className="home-composer-shortcut-btn"
-                  onClick={() => nav('community-compose')}
-                >
-                  <HelpCircle size={15} /> Poser une question
-                </button>
-                <button
-                  type="button"
-                  className="home-composer-shortcut-btn"
-                  onClick={() => setComposerOpen(true)}
-                >
-                  <MessageSquare size={15} /> Partager une méthode
-                </button>
-                <button
-                  type="button"
-                  className="home-composer-shortcut-btn"
-                  onClick={() => nav('catalog')}
-                >
-                  <BookOpen size={15} /> Explorer les modules
-                </button>
-              </div>
-            </section>
-
-            {/* Unified Feed Filter Bar */}
-            <div className="feed-filter-bar" role="tablist" aria-label="Filtrer le fil d’accueil">
-              {(
-                [
-                  { id: 'all', label: 'Tous' },
-                  { id: 'following', label: `Abonnements (${myFollowing.length})` },
-                  { id: 'open-questions', label: `Questions ouvertes (${openHelpPosts.length})` },
-                  { id: 'modules', label: 'Modules & Parcours' }
-                ] as const
-              ).map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={homeFeedTab === tab.id}
-                  className={homeFeedTab === tab.id ? 'selected' : ''}
-                  onClick={() => setHomeFeedTab(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
             {/* Pedagogical Resume Card + Popular Carousel (All / Modules) */}
-            {(homeFeedTab === 'all' || homeFeedTab === 'modules') && (
-              <>
-                <article className="htb-card">
+            <>
+                <article className="htb-card home-resume">
                   <div className="between">
                     <ContentTypeMark type="module" labelOverride="Reprise · Module" />
                     <DifficultyMeter level={resumeCatalog.level} />
@@ -1463,7 +1415,7 @@ export default function App() {
                   </div>
                 </article>
 
-                <section className="wf-card">
+                <section className="wf-card home-recommended">
                   <div className="between wf-mb-sm">
                     <div>
                       <span className="eyebrow">RECOMMANDÉ POUR VOUS</span>
@@ -1519,8 +1471,72 @@ export default function App() {
                     )}
                   </div>
                 </section>
-              </>
-            )}
+            </>
+
+
+            <div className="home-section-head">
+              <h2>Fil d’entraide</h2>
+              <p className="muted">Questions, méthodes et réponses des membres que vous suivez.</p>
+            </div>
+
+            {/* Inline LinkedIn-style Composer */}
+            <section className="home-composer-inline" aria-label="Créer une contribution">
+              <div className="home-composer-trigger-row">
+                <Avatar person={user} small />
+                <button
+                  type="button"
+                  className="home-composer-prompt"
+                  onClick={() => setComposerOpen(true)}
+                >
+                  Bonjour {user.name.split(' ')[0]}, partagez une astuce ou posez une question…
+                </button>
+              </div>
+              <div className="home-composer-shortcuts">
+                <button
+                  type="button"
+                  className="home-composer-shortcut-btn"
+                  onClick={() => nav('community-compose')}
+                >
+                  <HelpCircle size={15} /> Poser une question
+                </button>
+                <button
+                  type="button"
+                  className="home-composer-shortcut-btn"
+                  onClick={() => setComposerOpen(true)}
+                >
+                  <MessageSquare size={15} /> Partager une méthode
+                </button>
+                <button
+                  type="button"
+                  className="home-composer-shortcut-btn"
+                  onClick={() => nav('catalog')}
+                >
+                  <BookOpen size={15} /> Explorer les modules
+                </button>
+              </div>
+            </section>
+
+            {/* Unified Feed Filter Bar */}
+            <div className="feed-filter-bar" role="tablist" aria-label="Filtrer le fil d’accueil">
+              {(
+                [
+                  { id: 'all', label: 'Tous' },
+                  { id: 'following', label: `Abonnements (${myFollowing.length})` },
+                  { id: 'open-questions', label: `Questions ouvertes (${openHelpPosts.length})` }
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={homeFeedTab === tab.id}
+                  className={homeFeedTab === tab.id ? 'selected' : ''}
+                  onClick={() => setHomeFeedTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
             {/* Unified Community Stream */}
             {homeFeedTab !== 'modules' && (
@@ -1645,7 +1661,6 @@ export default function App() {
               </button>
             </section>
 
-            <RightRailShowcaseCard onOpenInfoModal={setInfoModal} />
           </aside>
         </div>
       );
