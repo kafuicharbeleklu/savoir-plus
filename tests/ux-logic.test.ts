@@ -182,7 +182,8 @@ test('Sober card metadata and step ratio helpers handle module, resource, and pa
 
   const pathSteps = computeCatalogCardSteps(path, getProg, counts);
   assert.ok(pathSteps.pct > 0);
-  assert.equal(pathSteps.totalSteps, 6);
+  // Le parcours annonce maintenant exactement les trois modules qu'il liste.
+  assert.equal(pathSteps.totalSteps, 3);
 });
 
 test('Profile verification badge resolves deterministically and defaults include LinkedIn-style location', () => {

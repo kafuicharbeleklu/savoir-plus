@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+  ChevronRight,
+  Check,
   ArrowLeft,
   ArrowRight,
   BookOpen,
@@ -640,12 +642,12 @@ export function ModuleDetailView({
                   : modProg.lessons.includes(idx)
                 : sec.status === 'Terminé';
               return (
-                <div className="wf-program-item" key={sec.title}>
+                <div className={`wf-program-item ${done ? 'is-done' : 'is-todo'}`} key={sec.title}>
                   <div>
                     <b>{sec.title}</b>
                     <small>{sec.subtitle}</small>
                   </div>
-                  <span className={`status-tag ${done ? 'ok' : ''}`}>{done ? 'Terminé' : 'À commencer'}</span>
+                  {done && <Check size={18} className="wf-program-check" aria-label="Section terminée" />}
                 </div>
               );
             })}
@@ -736,17 +738,15 @@ export function PathDetailView({
           <p className="tiny muted">{item.prerequisites}</p>
           <div className="wf-program-list">
             {(item.pathModules || []).map((pm) => (
-              <div className="wf-program-item" key={pm.id}>
-                <div>
+              <button type="button" className="wf-program-item is-link" key={pm.id} onClick={() => nav('module-detail', pm.id)}>
+                <span>
                   <b>{pm.title}</b>
                   <small>
                     {pm.version} · {pm.note}
                   </small>
-                </div>
-                <button className="secondary" onClick={() => nav('module-detail', pm.id)}>
-                  Voir le module
-                </button>
-              </div>
+                </span>
+                <ChevronRight size={18} aria-hidden="true" />
+              </button>
             ))}
           </div>
         </div>

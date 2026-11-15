@@ -13,7 +13,6 @@ import { contentStatus, StudioShell, TYPE_LABEL, TypeIcon, type StudioProps } fr
 
 /** Identifiant du contenu côté apprenant (les deux contenus d'origine remplacent des entrées du catalogue). */
 const catalogIdOf = (studioId: string) => (studioId === 'st-2' ? 'reseaux' : studioId === 'st-1' ? 'fiche-reseau' : studioId);
-const studioIdOf = (catalogId: string) => (catalogId === 'reseaux' ? 'st-2' : catalogId === 'fiche-reseau' ? 'st-1' : catalogId);
 const detailRoute = (type: CatalogType) => (type === 'resource' ? 'resource-detail' : type === 'path' ? 'path-detail' : 'module-detail');
 
 export function StudioStatsView({ ext, nav, progress, user }: StudioProps) {
@@ -195,35 +194,20 @@ export function StudioCreatorProfileView({ ext, nav, user }: StudioProps) {
           />
         ) : (
           authored.map((c) => {
-            const source = ext.studioContents.find((s) => s.id === studioIdOf(c.id));
+            // Un contenu validé s'affiche normalement ; un contenu pas encore validé s'affiche en gris.
+            const validated = c.review === 'Pédagogique';
             return (
               <ListRow
                 key={c.id}
                 leading={
-                  <IconTile tone="brand">
+                  <IconTile tone={validated ? 'brand' : 'neutral'}>
                     <TypeIcon type={c.type} />
                   </IconTile>
                 }
-                title={c.title}
+                title={validated ? c.title : <span className="ui-muted-title">{c.title}</span>}
                 meta={[TYPE_LABEL[c.type], c.domain, /non précisée/i.test(c.duration) ? '' : c.duration, c.version.replace(/^Version\s+/i, 'v')].filter(Boolean).join(' · ')}
                 onClick={() => nav(detailRoute(c.type), c.id)}
-                ariaLabel={`Ouvrir ${c.title}`}
-                trailing={
-                  <>
-                    <StatusDot tone={c.review === 'Pédagogique' ? 'ok' : 'neutral'}>
-                      {c.review === 'Pédagogique' ? 'Validé' : 'Revue communautaire'}
-                    </StatusDot>
-                    {!memberView && source && (
-                      <button
-                        type="button"
-                        className="secondary ui-btn-sm sx-row-edit"
-                        onClick={() => nav(source.type === 'path' ? 'studio-path' : 'studio-editor', source.id)}
-                      >
-                        Modifier
-                      </button>
-                    )}
-                  </>
-                }
+                ariaLabel={`Ouvrir ${c.title}${validated ? '' : ' (pas encore validé)'}`}
               />
             );
           })

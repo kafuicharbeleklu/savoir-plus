@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { CatalogType, StudioContent } from '../wireframeData';
-import { ActionMenu, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, PageHeader, SearchField, StatusDot, Tabs } from '../components/ui';
+import { ActionMenu, AlertStatus, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, PageHeader, SearchField, Tabs } from '../components/ui';
 import { contentStatus, formatUpdated, newStudioId, StudioShell, TYPE_LABEL, TypeIcon, type ContentBucket, type StudioProps } from './studio/shared';
 
 export { StudioEditorView, StudioPathView, StudioPublishView, StudioQuizView } from './studio/Workspace';
@@ -146,20 +146,19 @@ export function StudioHomeView({ ext, updateExt, nav, setToast, user }: StudioPr
             <ListRow
               key={c.id}
               leading={
-                <IconTile>
+                <IconTile tone={status.bucket === 'published' ? 'brand' : 'neutral'}>
                   <TypeIcon type={c.type} />
                 </IconTile>
               }
-              title={c.title || 'Sans titre'}
+              title={
+                status.bucket === 'published' ? c.title || 'Sans titre' : <span className="ui-muted-title">{c.title || 'Sans titre'}</span>
+              }
               meta={`${TYPE_LABEL[c.type]} · ${c.published?.version || c.version} · ${c.domain} · ${formatUpdated(c)}`}
               onClick={() => nav(workspaceRoute(c), c.id)}
-              ariaLabel={`Modifier ${c.title || 'le contenu'}`}
+              ariaLabel={`Modifier ${c.title || 'le contenu'} (${status.label})`}
               trailing={
                 <>
-                  <StatusDot tone={status.tone}>{status.label}</StatusDot>
-                  <button type="button" className="secondary ui-btn-sm sx-row-edit" onClick={() => nav(workspaceRoute(c), c.id)}>
-                    Modifier
-                  </button>
+                  <AlertStatus tone={status.tone}>{status.label}</AlertStatus>
                   <ActionMenu
                     label={`Actions sur ${c.title || 'le contenu'}`}
                     items={[

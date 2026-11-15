@@ -15,19 +15,7 @@ import {
   studioSnapshot,
   type StudioContent
 } from '../../wireframeData';
-import {
-  ActionMenu,
-  ConfirmDialog,
-  EmptyState,
-  IconTile,
-  ListCard,
-  ListRow,
-  RadioList,
-  SavedIndicator,
-  SidePanel,
-  StatusDot,
-  Tabs
-} from '../../components/ui';
+import { ActionMenu, AlertStatus, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, RadioList, SavedIndicator, SidePanel, StatusDot, Tabs } from '../../components/ui';
 import {
   AUDIENCE_LABEL,
   Checklist,
@@ -589,11 +577,11 @@ function StudioWorkspace({
                       </IconTile>
                     )
                   }
-                  title={m.filename}
+                  title={m.state === 'Disponible' ? m.filename : <span className="ui-muted-title">{m.filename}</span>}
                   meta={`${m.kind} · ${m.kind === 'Image' ? m.altText || 'Texte alternatif à renseigner' : m.rights || 'Droits à préciser'}`}
                   trailing={
                     <>
-                      <StatusDot tone={mediaTone(m.state)}>{m.state}</StatusDot>
+                      <AlertStatus tone={mediaTone(m.state)}>{m.state}</AlertStatus>
                       <button type="button" className="secondary ui-btn-sm" onClick={() => detach(m.id)}>
                         Retirer
                       </button>
@@ -633,11 +621,7 @@ function StudioWorkspace({
                   meta={`${m.domain} · ${m.level} · ${m.duration} · ${m.version}`}
                   trailing={
                     <>
-                      {isCompatible(m.id) ? (
-                        <StatusDot tone="ok">Accessible</StatusDot>
-                      ) : (
-                        <StatusDot tone="danger">Non accessible à cette audience</StatusDot>
-                      )}
+                      {!isCompatible(m.id) && <StatusDot tone="danger">Non accessible à cette audience</StatusDot>}
                       <button
                         type="button"
                         className="li-icon-btn"
@@ -859,9 +843,9 @@ function StudioWorkspace({
             attachable.map((m) => (
               <ListRow
                 key={m.id}
-                title={m.filename}
+                title={m.state === 'Disponible' ? m.filename : <span className="ui-muted-title">{m.filename}</span>}
                 meta={m.kind}
-                trailing={<StatusDot tone={mediaTone(m.state)}>{m.state}</StatusDot>}
+                trailing={<AlertStatus tone={mediaTone(m.state)}>{m.state}</AlertStatus>}
                 onClick={() => {
                   attach(m.id);
                   setPanel('none');

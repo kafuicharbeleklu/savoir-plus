@@ -130,11 +130,11 @@ export function ProgressionView({
     <ListRow
       key={m.mod.id}
       leading={
-        <IconTile tone={m.status === 'todo' ? 'neutral' : 'brand'}>
+        <IconTile tone={m.status === 'done' ? 'brand' : 'neutral'}>
           <BannerEmblem item={m.mod} size={20} />
         </IconTile>
       }
-      title={m.mod.title}
+      title={m.status === 'done' ? m.mod.title : <span className="ui-muted-title">{m.mod.title}</span>}
       meta={
         <span className="tabular-nums">
           {m.mod.domain} · {m.mod.duration} · {m.xpVal} / {m.xpMax} XP
@@ -249,11 +249,11 @@ export function ProgressionView({
                     <ListRow
                       key={path.id}
                       leading={
-                        <IconTile tone={started || done > 0 ? 'brand' : 'neutral'}>
+                        <IconTile tone={done === total ? 'brand' : 'neutral'}>
                           <BannerEmblem item={path} size={20} />
                         </IconTile>
                       }
-                      title={path.title}
+                      title={done === total ? path.title : <span className="ui-muted-title">{path.title}</span>}
                       meta={
                         <span className="tabular-nums">
                           {path.domain} · {plural(total, 'module', 'modules')}
@@ -350,7 +350,7 @@ export function ProgressionView({
                       <ListRow
                         key={badge.id}
                         leading={<HexBadgeEmblem iconKey={badge.iconKey} earned={badge.earned} size="sm" />}
-                        title={badge.title}
+                        title={badge.earned ? badge.title : <span className="ui-muted-title">{badge.title}</span>}
                         meta={badge.description}
                       />
                     ))}
@@ -372,7 +372,7 @@ export function ProgressionView({
                       {skill.validated ? <Check size={20} aria-label="Compétence validée" /> : <CircleDashed size={20} aria-label="Compétence en cours" />}
                     </IconTile>
                   }
-                  title={skill.name}
+                  title={skill.validated ? skill.name : <span className="ui-muted-title">{skill.name}</span>}
                   meta={`Module : ${skill.moduleTitle}`}
                 />
               ))}

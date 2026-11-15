@@ -6,7 +6,7 @@
 import React, { useRef, useState } from 'react';
 import { FileText, Film, Image as ImageIcon, Upload } from 'lucide-react';
 import type { StudioMedia } from '../../wireframeData';
-import { ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, PageHeader, SavedIndicator, SidePanel, StatusDot, Tabs } from '../../components/ui';
+import { AlertStatus, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, PageHeader, SavedIndicator, SidePanel, StatusDot, Tabs } from '../../components/ui';
 import { importMediaFile, MEDIA_ACCEPT, mediaPreviews, mediaTone, mediaUsageCount, StudioShell, type StudioProps } from './shared';
 
 type KindFilter = 'all' | StudioMedia['kind'];
@@ -113,9 +113,9 @@ export function StudioMediaView({ ext, updateExt, nav, setToast, user }: StudioP
                   </IconTile>
                 )
               }
-              title={m.filename}
+              title={m.state === 'Disponible' ? m.filename : <span className="ui-muted-title">{m.filename}</span>}
               meta={[m.kind, m.sizeLabel, usageLabel(m)].filter(Boolean).join(' · ')}
-              trailing={<StatusDot tone={mediaTone(m.state)}>{m.state}</StatusDot>}
+              trailing={<AlertStatus tone={mediaTone(m.state)}>{m.state}</AlertStatus>}
               onClick={() => {
                 setSavedAt(null);
                 setOpenId(m.id);

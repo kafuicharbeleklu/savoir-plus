@@ -851,3 +851,52 @@ label.pm-slider { display: flex; flex-direction: column; gap: 12px; min-height: 
 }
 .ui-modal:focus,
 .ui-modal:focus-visible { outline: none; }
+
+/* -- Listes : un élément validé s'affiche normalement, un élément pas encore validé en gris
+      (plus de mention « Validé », « En cours »… à droite de la ligne) ---------------------- */
+.ui-muted-title { color: var(--fg-muted); font-weight: 400; }
+
+/* -- Fiche d'un module : section terminée = normale avec une coche, sinon en gris ---------- */
+.wf-program-item.is-todo b { color: var(--fg-muted); font-weight: 400; }
+.wf-program-check { flex: none; color: var(--accent-brand); }
+
+/* -- Fiche d'un parcours : toute la ligne ouvre le module ---------------------------------- */
+button.wf-program-item.is-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--bg-surface);
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+button.wf-program-item.is-link > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+button.wf-program-item.is-link b { color: var(--fg-primary); }
+button.wf-program-item.is-link:hover { background: var(--bg-subtle); }
+button.wf-program-item.is-link:hover b { text-decoration: underline; }
+
+/* -- Profil › « Vous aimerez peut-être » : toute la ligne ouvre le contenu ----------------- */
+button.pf-suggest.is-link {
+  width: 100%;
+  align-items: center;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+button.pf-suggest.is-link .pf-suggest-name { display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+button.pf-suggest.is-link small {
+  display: block;
+  max-width: 100%;
+  font-size: 0.75rem;
+  line-height: 1.33;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+button.pf-suggest.is-link:hover .pf-suggest-name { color: var(--accent-brand); text-decoration: underline; }

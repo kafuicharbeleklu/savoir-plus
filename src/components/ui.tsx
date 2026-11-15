@@ -52,6 +52,16 @@ export function StatusDot({ tone = 'neutral', children }: { tone?: StatusTone; c
   );
 }
 
+/**
+ * Mention de statut réservée aux alertes. Un état normal ne s'annonce pas (la ligne s'affiche
+ * normalement) et un état pas encore atteint s'affiche en gris : seul ce qui demande une action
+ * garde un point de couleur et un libellé.
+ */
+export function AlertStatus({ tone, children }: { tone: StatusTone; children: React.ReactNode }) {
+  if (tone !== 'warn' && tone !== 'danger') return null;
+  return <StatusDot tone={tone}>{children}</StatusDot>;
+}
+
 /* ------------------------------------------------------------------ Listes */
 
 /** Carte contenant une liste ; toutes les lignes ont la même hauteur. */

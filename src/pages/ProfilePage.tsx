@@ -31,7 +31,7 @@ import { Avatar, ProgressBar, VerifiedBadge } from '../components/ProfileIdentit
 import type { FooterInfoTopic } from '../components/SidebarFooters';
 import { HexBadgeEmblem } from '../components/BadgeEmblem';
 import { ProgressionView } from './ProgressionPage';
-import { ActionMenu, EmptyState, IconTile, Modal, StatusDot } from '../components/ui';
+import { ActionMenu, EmptyState, IconTile, Modal } from '../components/ui';
 import { ProfileMediaDialog, type MediaKind } from '../components/ProfileMedia';
 
 interface ProfilePageProps {
@@ -747,14 +747,17 @@ export function ProfilePage({
                   <Entry
                     key={m.mod.id}
                     leading={
-                      <IconTile>
+                      <IconTile tone={m.passed ? 'brand' : 'neutral'}>
                         <BookOpen size={20} aria-hidden="true" />
                       </IconTile>
                     }
-                    title={m.mod.title}
+                    title={m.passed ? m.mod.title : <span className="ui-muted-title">{m.mod.title}</span>}
                     meta={`${m.mod.domain} · ${m.mod.level} · ${m.mod.duration}`}
                     trailing={
-                      m.passed ? <StatusDot tone="ok">Validé</StatusDot> : <StatusDot tone="info">En cours · {m.pctVal} %</StatusDot>
+                      <span className="pg-row-progress">
+                        <ProgressBar value={m.pctVal} label={`Avancement de ${m.mod.title}`} tone="htb" />
+                        <b className="tabular-nums">{m.pctVal} %</b>
+                      </span>
                     }
                     onClick={() => nav('module-detail', m.mod.id)}
                   />
@@ -812,9 +815,8 @@ export function ProfilePage({
                 {visibleSkills.map((s) => (
                   <Entry
                     key={s.name}
-                    title={s.name}
+                    title={s.validated ? s.name : <span className="ui-muted-title">{s.name}</span>}
                     meta={`Module « ${s.moduleTitle} »`}
-                    trailing={s.validated ? <StatusDot tone="ok">Validée</StatusDot> : <StatusDot tone="info">En cours</StatusDot>}
                   />
                 ))}
               </div>
@@ -902,20 +904,20 @@ export function ProfilePage({
             <h2>Vous aimerez peut-être</h2>
             <div className="pf-suggest-list">
               {suggestedCatalog.map((item) => (
-                <div key={item.id} className="pf-suggest">
+                <button
+                  key={item.id}
+                  type="button"
+                  className="pf-suggest is-link"
+                  onClick={() => nav(detailRoute(item.type), item.id)}
+                >
                   <IconTile>
                     {item.type === 'path' ? <Layers size={20} aria-hidden="true" /> : <BookOpen size={20} aria-hidden="true" />}
                   </IconTile>
-                  <div className="pf-suggest-text">
-                    <button type="button" className="pf-suggest-name" onClick={() => nav(detailRoute(item.type), item.id)}>
-                      {item.title}
-                    </button>
-                    <p>{itemMeta(item)}</p>
-                    <button type="button" className="secondary ui-btn-sm" onClick={() => nav(detailRoute(item.type), item.id)}>
-                      Découvrir
-                    </button>
-                  </div>
-                </div>
+                  <span className="pf-suggest-text">
+                    <b className="pf-suggest-name">{item.title}</b>
+                    <small>{itemMeta(item)}</small>
+                  </span>
+                </button>
               ))}
             </div>
             <button type="button" className="pf-section-foot" onClick={() => nav('catalog')}>

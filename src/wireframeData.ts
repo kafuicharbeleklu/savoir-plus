@@ -236,7 +236,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     version: 'Version 1',
     review: 'Pédagogique',
     pathType: 'Compétence',
-    moduleCount: 6,
+    moduleCount: 3,
     summary: 'Comprendre un environnement informatique courant et adopter les premiers réflexes de diagnostic.',
     objectives: [
       'Comprendre le matériel, les systèmes et les réseaux locaux.',
@@ -244,9 +244,9 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     ],
     prerequisites: 'Utilisation courante d’un ordinateur conseillée. L’ordre proposé guide la progression ; il ne crée pas de verrouillage.',
     pathModules: [
-      { id: 'phishing', title: '01 Ne tombez plus dans le piège', version: 'v2', note: 'Revue pédagogique visible sur la fiche', status: 'Terminé' },
-      { id: 'reseaux', title: '02 Comprendre les réseaux', version: 'v2', note: 'Voir le module · Reprise disponible', status: 'En cours' },
-      { id: 'comptes', title: '03 Protéger ses comptes', version: 'v1', note: 'Voir le module · Accès selon vos droits', status: 'À commencer' }
+      { id: 'phishing', title: '01 Ne tombez plus dans le piège', version: 'v2', note: '12 min · Débutant', status: 'Terminé' },
+      { id: 'reseaux', title: '02 Comprendre les réseaux', version: 'v2', note: '45 min · Débutant', status: 'En cours' },
+      { id: 'comptes', title: '03 Protéger ses comptes', version: 'v1', note: '25 min · Débutant', status: 'À commencer' }
     ]
   },
   {
@@ -261,7 +261,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     version: 'Version 1',
     review: 'Pédagogique',
     pathType: 'Métier',
-    moduleCount: 8,
+    moduleCount: 2,
     summary: 'Accompagner les utilisateurs, diagnostiquer les incidents courants et documenter les solutions.',
     objectives: [
       'Structurer un diagnostic méthodique.',
@@ -269,8 +269,8 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     ],
     prerequisites: 'Connaissances de base en environnement bureautique et réseau.',
     pathModules: [
-      { id: 'reseaux', title: '01 Comprendre les réseaux', version: 'v2', note: 'Voir le module', status: 'En cours' },
-      { id: 'comptes', title: '02 Protéger ses comptes', version: 'v1', note: 'Voir le module', status: 'À commencer' }
+      { id: 'reseaux', title: '01 Comprendre les réseaux', version: 'v2', note: '45 min · Débutant', status: 'En cours' },
+      { id: 'comptes', title: '02 Protéger ses comptes', version: 'v1', note: '25 min · Débutant', status: 'À commencer' }
     ]
   },
   ...EXTRA_CATALOG_MODULES,
