@@ -13,7 +13,7 @@ import type { BadgeCategoryId, SavoirBadgeItem } from '../personas';
 import { BannerEmblem } from '../components/CatalogVisuals';
 import { HexBadgeEmblem } from '../components/BadgeEmblem';
 import { ProgressBar } from '../components/ProfileIdentityCard';
-import { EmptyState, IconTile, ListCard, ListRow, PageHeader, Tabs } from '../components/ui';
+import { EmptyState, IconTile, ListCard, ListRow, PageHeader, StateTile, Tabs } from '../components/ui';
 
 type ViewId = 'overview' | 'modules' | 'badges' | 'skills';
 type BadgeFilter = 'all' | 'earned' | 'todo';
@@ -130,9 +130,9 @@ export function ProgressionView({
     <ListRow
       key={m.mod.id}
       leading={
-        <IconTile tone={m.status === 'done' ? 'brand' : 'neutral'}>
+        <StateTile state={m.status === 'done' ? 'ok' : 'muted'}>
           <BannerEmblem item={m.mod} size={20} />
-        </IconTile>
+        </StateTile>
       }
       title={m.status === 'done' ? m.mod.title : <span className="ui-muted-title">{m.mod.title}</span>}
       meta={
@@ -249,9 +249,9 @@ export function ProgressionView({
                     <ListRow
                       key={path.id}
                       leading={
-                        <IconTile tone={done === total ? 'brand' : 'neutral'}>
+                        <StateTile state={done === total ? 'ok' : 'muted'}>
                           <BannerEmblem item={path} size={20} />
-                        </IconTile>
+                        </StateTile>
                       }
                       title={done === total ? path.title : <span className="ui-muted-title">{path.title}</span>}
                       meta={

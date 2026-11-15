@@ -8,7 +8,7 @@ import type { Progress } from '../../data';
 import { moduleProgressPercent } from '../../domain.mjs';
 import { buildDynamicCatalog, publishedView, type CatalogType } from '../../wireframeData';
 import { Avatar } from '../../components/ProfileIdentityCard';
-import { EmptyState, IconTile, ListCard, ListRow, PageHeader, StatusDot, Tabs } from '../../components/ui';
+import { EmptyState, ListCard, ListRow, PageHeader, StateTile, StatusDot, Tabs } from '../../components/ui';
 import { contentStatus, StudioShell, TYPE_LABEL, TypeIcon, type StudioProps } from './shared';
 
 /** Identifiant du contenu côté apprenant (les deux contenus d'origine remplacent des entrées du catalogue). */
@@ -200,9 +200,9 @@ export function StudioCreatorProfileView({ ext, nav, user }: StudioProps) {
               <ListRow
                 key={c.id}
                 leading={
-                  <IconTile tone={validated ? 'brand' : 'neutral'}>
+                  <StateTile state={validated ? 'ok' : 'muted'}>
                     <TypeIcon type={c.type} />
-                  </IconTile>
+                  </StateTile>
                 }
                 title={validated ? c.title : <span className="ui-muted-title">{c.title}</span>}
                 meta={[TYPE_LABEL[c.type], c.domain, /non précisée/i.test(c.duration) ? '' : c.duration, c.version.replace(/^Version\s+/i, 'v')].filter(Boolean).join(' · ')}

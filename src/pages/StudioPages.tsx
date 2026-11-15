@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { CatalogType, StudioContent } from '../wireframeData';
-import { ActionMenu, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, PageHeader, rowTileTone, RowTitle, SearchField, Tabs, type RowState } from '../components/ui';
+import { ActionMenu, ConfirmDialog, EmptyState, ListCard, ListRow, PageHeader, type RowState, RowTitle, SearchField, StateTile, Tabs } from '../components/ui';
 import { contentStatus, formatUpdated, newStudioId, StudioShell, TYPE_LABEL, TypeIcon, type ContentBucket, type StudioProps } from './studio/shared';
 
 export { StudioEditorView, StudioPathView, StudioPublishView, StudioQuizView } from './studio/Workspace';
@@ -149,9 +149,9 @@ export function StudioHomeView({ ext, updateExt, nav, setToast, user }: StudioPr
             <ListRow
               key={c.id}
               leading={
-                <IconTile tone={rowTileTone(state)}>
+                <StateTile state={state}>
                   <TypeIcon type={c.type} />
-                </IconTile>
+                </StateTile>
               }
               title={
                 <RowTitle state={state} hint={state === 'ok' ? undefined : status.label}>

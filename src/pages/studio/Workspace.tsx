@@ -15,7 +15,7 @@ import {
   studioSnapshot,
   type StudioContent
 } from '../../wireframeData';
-import { ActionMenu, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, RadioList, rowTileTone, RowTitle, SavedIndicator, SidePanel, StatusDot, Tabs } from '../../components/ui';
+import { ActionMenu, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, RadioList, RowTitle, SavedIndicator, SidePanel, StateTile, StatusDot, Tabs } from '../../components/ui';
 import {
   AUDIENCE_LABEL,
   Checklist,
@@ -570,11 +570,13 @@ function StudioWorkspace({
                   key={m.id}
                   leading={
                     mediaPreviews.get(m.id) && m.kind === 'Image' ? (
-                      <img className="sx-thumb" src={mediaPreviews.get(m.id)} alt="" />
+                      <StateTile state={mediaRowState(m.state)} plain>
+                        <img className="sx-thumb" src={mediaPreviews.get(m.id)} alt="" />
+                      </StateTile>
                     ) : (
-                      <IconTile tone={rowTileTone(mediaRowState(m.state))}>
+                      <StateTile state={mediaRowState(m.state)}>
                         <Upload size={20} aria-hidden="true" />
-                      </IconTile>
+                      </StateTile>
                     )
                   }
                   title={

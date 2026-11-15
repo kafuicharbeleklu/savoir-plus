@@ -6,7 +6,7 @@
 import React, { useRef, useState } from 'react';
 import { FileText, Film, Image as ImageIcon, Upload } from 'lucide-react';
 import type { StudioMedia } from '../../wireframeData';
-import { ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, PageHeader, rowTileTone, RowTitle, SavedIndicator, SidePanel, StatusDot, Tabs } from '../../components/ui';
+import { ConfirmDialog, EmptyState, ListCard, ListRow, PageHeader, RowTitle, SavedIndicator, SidePanel, StateTile, StatusDot, Tabs } from '../../components/ui';
 import { importMediaFile, MEDIA_ACCEPT, mediaPreviews, mediaRowState, mediaTone, mediaUsageCount, StudioShell, type StudioProps } from './shared';
 
 type KindFilter = 'all' | StudioMedia['kind'];
@@ -106,11 +106,13 @@ export function StudioMediaView({ ext, updateExt, nav, setToast, user }: StudioP
               key={m.id}
               leading={
                 mediaPreviews.get(m.id) && m.kind === 'Image' ? (
-                  <img className="sx-thumb" src={mediaPreviews.get(m.id)} alt="" />
+                  <StateTile state={mediaRowState(m.state)} plain>
+                    <img className="sx-thumb" src={mediaPreviews.get(m.id)} alt="" />
+                  </StateTile>
                 ) : (
-                  <IconTile tone={rowTileTone(mediaRowState(m.state))}>
+                  <StateTile state={mediaRowState(m.state)}>
                     <KindIcon kind={m.kind} />
-                  </IconTile>
+                  </StateTile>
                 )
               }
               title={

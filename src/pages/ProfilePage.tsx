@@ -31,7 +31,7 @@ import { Avatar, ProgressBar, VerifiedBadge } from '../components/ProfileIdentit
 import type { FooterInfoTopic } from '../components/SidebarFooters';
 import { HexBadgeEmblem } from '../components/BadgeEmblem';
 import { ProgressionView } from './ProgressionPage';
-import { ActionMenu, EmptyState, IconTile, Modal } from '../components/ui';
+import { ActionMenu, EmptyState, IconTile, Modal, StateTile } from '../components/ui';
 import { ProfileMediaDialog, type MediaKind } from '../components/ProfileMedia';
 
 interface ProfilePageProps {
@@ -747,9 +747,9 @@ export function ProfilePage({
                   <Entry
                     key={m.mod.id}
                     leading={
-                      <IconTile tone={m.passed ? 'brand' : 'neutral'}>
+                      <StateTile state={m.passed ? 'ok' : 'muted'}>
                         <BookOpen size={20} aria-hidden="true" />
-                      </IconTile>
+                      </StateTile>
                     }
                     title={m.passed ? m.mod.title : <span className="ui-muted-title">{m.mod.title}</span>}
                     meta={`${m.mod.domain} · ${m.mod.level} · ${m.mod.duration}`}

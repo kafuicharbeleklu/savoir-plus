@@ -904,3 +904,30 @@ button.pf-suggest.is-link:hover .pf-suggest-name { color: var(--accent-brand); t
 /* -- Lignes à corriger : mise en évidence rouge, sans mention ------------------------------ */
 .ui-alert-title { color: var(--accent-danger); }
 .ui-icon-tile.is-danger { background: var(--accent-danger-soft); color: var(--accent-danger); }
+
+/* -- Repère d'état sur l'icône d'une ligne : ✓ publié ou validé · – en attente · ✕ à corriger -- */
+.ui-state-tile { position: relative; display: inline-flex; flex: none; line-height: 0; }
+.ui-state-badge {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--bg-surface);
+  border-radius: 50%;
+  background: var(--fg-muted);
+  color: #fff;
+}
+.ui-state-tile.is-ok .ui-state-badge { background: var(--accent-brand); }
+.ui-state-tile.is-alert .ui-state-badge { background: var(--accent-danger); }
+.pf-entry-leading .ui-state-tile .ui-icon-tile { width: 48px; height: 48px; }
+
+/* -- Accueil › « Ajouter à votre fil d'actualité » : un filet entre les suggestions,
+      comme dans « Personnes que vous pourriez connaître » ----------------------------------- */
+.discover-feed-list { gap: 0; }
+.discover-feed-row { padding: 12px 0; border-bottom: 1px solid var(--border-hairline); }
+.discover-feed-row:first-child { padding-top: 4px; }
+.discover-feed-row:last-child { border-bottom: 0; }

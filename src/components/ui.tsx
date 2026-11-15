@@ -6,7 +6,7 @@
  */
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, MoreHorizontal, Search, X } from 'lucide-react';
+import { ArrowLeft, Check, Minus, MoreHorizontal, Search, X } from 'lucide-react';
 
 /* ------------------------------------------------------------------ En-tête */
 
@@ -142,6 +142,22 @@ export function ListRow({
 /** Pastille d'icône carrée (type de contenu, file…) pour le visuel d'une ligne. */
 export function IconTile({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'brand' | 'danger' }) {
   return <span className={`ui-icon-tile ${tone === 'brand' ? 'is-brand' : tone === 'danger' ? 'is-danger' : ''}`}>{children}</span>;
+}
+
+/**
+ * Pastille d'icône avec repère d'état dans l'angle : ✓ publié ou validé, – en attente,
+ * ✕ en échec ou à corriger. Le repère double la couleur, pour que l'état ne repose jamais
+ * sur la couleur seule. `plain` garde le visuel fourni tel quel (une vignette d'image).
+ */
+export function StateTile({ state, plain = false, children }: { state: RowState; plain?: boolean; children: React.ReactNode }) {
+  return (
+    <span className={`ui-state-tile is-${state}`}>
+      {plain ? children : <IconTile tone={rowTileTone(state)}>{children}</IconTile>}
+      <i className="ui-state-badge" aria-hidden="true">
+        {state === 'ok' ? <Check size={10} strokeWidth={3.5} /> : state === 'alert' ? <X size={10} strokeWidth={3.5} /> : <Minus size={10} strokeWidth={3.5} />}
+      </i>
+    </span>
+  );
 }
 
 /* ------------------------------------------------------------------ Menu « … » */
