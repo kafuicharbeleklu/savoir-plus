@@ -717,7 +717,24 @@ label.pf-field { display: flex; flex-direction: column; gap: 4px; min-height: 0;
   cursor: pointer;
 }
 .pf-cover-edit:hover { background: var(--bg-subtle); }
-button.pf-avatar-btn { display: block; padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; }
+button.pf-avatar-btn { position: relative; display: block; padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; }
+/* Stylo sur l'avatar : même pastille que sur la photo de couverture */
+.pf-avatar-edit {
+  position: absolute;
+  right: 4px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  color: var(--accent-brand);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+  line-height: 0;
+}
+button.pf-avatar-btn:hover .pf-avatar-edit { background: var(--bg-subtle); }
 button.pf-avatar-btn:hover .avatar { filter: brightness(0.94); }
 .mini-profile-cover { background-size: cover; background-position: center; }
 
@@ -834,7 +851,3 @@ label.pm-slider { display: flex; flex-direction: column; gap: 12px; min-height: 
 }
 .ui-modal:focus,
 .ui-modal:focus-visible { outline: none; }
-
-/* -- Profil : suggestions de la colonne de droite sans filet de séparation ---------------- */
-.pf-suggest { border-bottom: 0; padding: 8px 0; }
-.pf-suggest-list { padding-bottom: 4px; }

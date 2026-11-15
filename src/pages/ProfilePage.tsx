@@ -398,6 +398,9 @@ export function ProfilePage({
             onClick={() => setMediaOpen('photo')}
           >
             <Avatar person={target} />
+            <span className="pf-avatar-edit" aria-hidden="true">
+              <Pencil size={18} />
+            </span>
           </button>
         ) : (
           <div className="pf-avatar">
@@ -1016,35 +1019,6 @@ export function ProfilePage({
               <input value={form.interests} onChange={(e) => setForm({ ...form, interests: e.target.value })} />
               <small>Séparés par des virgules. Ils servent à personnaliser vos suggestions.</small>
             </label>
-
-            {canEditMedia && (
-              <div className="pf-form-section">
-                <h3>Photos</h3>
-                <p>Ajoutez ou modifiez votre photo de profil et votre photo de couverture.</p>
-                <div className="pf-form-buttons">
-                  <button
-                    type="button"
-                    className="pf-outline-btn"
-                    onClick={() => {
-                      setEditOpen(false);
-                      setMediaOpen('photo');
-                    }}
-                  >
-                    <Pencil size={16} aria-hidden="true" /> Photo de profil
-                  </button>
-                  <button
-                    type="button"
-                    className="pf-outline-btn"
-                    onClick={() => {
-                      setEditOpen(false);
-                      setMediaOpen('cover');
-                    }}
-                  >
-                    <Pencil size={16} aria-hidden="true" /> Photo de couverture
-                  </button>
-                </div>
-              </div>
-            )}
 
             <div className="pf-form-section">
               <h3>Coordonnées</h3>
