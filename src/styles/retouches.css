@@ -325,8 +325,8 @@ label.pc-chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border: 0;
   border-radius: var(--angle);
   background: none;
@@ -360,7 +360,6 @@ label.pc-chip {
   padding: 12px 24px;
   border-top: 1px solid var(--border-hairline);
 }
-.pc-hint { margin-right: auto; font-size: 0.8125rem; color: var(--fg-muted); }
 .pc-submit { min-height: 32px; height: 32px; padding: 0 16px; font-size: 1rem; font-weight: 600; }
 
 /* -- Commentaires : pas de fond, comme sur LinkedIn ---------------------------------------- */
@@ -380,3 +379,154 @@ label.pc-chip {
 
 /* -- Relations › Invitations : une ligne simple, pas de carte dans la carte --------------- */
 .wf-card .wf-stack-sm > .relation-row { border: 0; padding: 0; background: none; }
+
+/* -- Nouvelle contribution : outils de mise en forme, image jointe, programmation -------- */
+.pc-tools-sep { width: 1px; height: 24px; margin: 0 6px; background: var(--border-hairline); }
+.pc-image { position: relative; align-self: flex-start; max-width: 100%; margin: 4px 0 12px; }
+.pc-image img { display: block; max-width: 100%; max-height: 260px; border-radius: var(--angle); border: 1px solid var(--border-hairline); }
+.pc-image button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--angle);
+  background: rgba(22, 32, 26, 0.72);
+  color: #fff;
+  cursor: pointer;
+}
+.pc-image button:hover { background: rgba(22, 32, 26, 0.9); }
+.pc-when {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+.pc-when button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--angle);
+  background: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.pc-when button:hover { background: var(--bg-subtle); color: var(--fg-primary); }
+.pc-clock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--angle);
+  background: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.pc-clock:hover { background: var(--bg-subtle); color: var(--fg-primary); }
+
+.pc-view-schedule,
+.pc-view-scheduled { max-width: 560px; min-height: 0; }
+.pc-sub-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border-hairline); }
+.pc-sub-head h2 { flex: 1; margin: 0; font-size: 1.25rem; font-weight: 600; }
+.pc-sub-head .pc-close { margin: 0; }
+.pc-sub-body { display: flex; flex-direction: column; gap: 12px; padding: 20px 24px; overflow-y: auto; }
+.pc-sched-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.pc-sched-fields label { font-size: 0.875rem; font-weight: 600; }
+.pc-sched-fields input { width: 100%; height: 44px; min-height: 44px; padding: 0 12px; font-size: 1rem; }
+.pc-sched-note { margin: 0; font-size: 0.8125rem; line-height: 1.5; color: var(--fg-muted); }
+.pc-sched-note.is-error { color: var(--accent-danger); }
+.pc-link {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent-brand);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.pc-link.is-danger { color: var(--accent-danger); }
+.pc-sched-empty { margin: 0; padding: 32px 0; text-align: center; font-size: 0.875rem; color: var(--fg-muted); }
+.pc-sched-list { margin: 0; padding: 0; list-style: none; border: 1px solid var(--border-hairline); border-radius: var(--angle); }
+.pc-sched-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border-hairline);
+}
+.pc-sched-list li:first-child { border-top: 0; }
+.pc-sched-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pc-sched-main b { font-size: 0.875rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-sched-main small { font-size: 0.75rem; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-sched-actions { display: inline-flex; align-items: center; gap: 12px; flex: none; font-size: 0.875rem; color: var(--fg-muted); }
+.pc-sched-actions .pc-link { align-self: center; }
+
+.home-composer-scheduled {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin: 0 16px 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.home-composer-scheduled:hover { color: var(--fg-primary); }
+
+/* -- Contributions : image ou vidéo jointe, liens du texte ------------------------------- */
+.li-post-media { margin: 12px 0 0; }
+.li-post-media img,
+.li-post-media video {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  object-fit: cover;
+  border-radius: var(--angle);
+  border: 1px solid var(--border-hairline);
+  background: var(--bg-subtle);
+}
+.li-post-media video { object-fit: contain; background: #101613; }
+.li-post-media figcaption { margin-top: 6px; font-size: 0.75rem; color: var(--fg-muted); }
+.rt-link { color: var(--accent-brand); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; word-break: break-word; }
+
+/* -- Tiroir de chat vide : un court texte, centré ---------------------------------------- */
+.conversation-list:has(> .conversation-empty.is-centered) { flex: 1 1 auto; }
+.conversation-empty.is-centered {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 220px;
+  padding: 24px;
+  text-align: center;
+  color: var(--fg-muted);
+}
+.conversation-empty.is-centered p { margin: 0; font-size: 0.875rem; }
+
+/* -- Mobile : dans le fil d'actualité, ni « Votre progression » ni suggestions de comptes -- */
+@media (max-width: 768px) {
+  .home-rail { display: none; }
+}

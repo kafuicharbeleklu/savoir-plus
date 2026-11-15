@@ -14,6 +14,8 @@ import type { Profile, Relation } from '../data';
 import { CATALOG_ITEMS, type CommunityPost, type CommunityReply, type ExtendedDemoState } from '../wireframeData';
 import { resolveCommunityAuthor, resolveDefaultCommentPreview } from '../personas';
 import { Avatar, VerifiedBadge } from './ProfileIdentityCard';
+import { RichText } from './RichText';
+import { PostMediaView } from './PostMedia';
 
 export interface FeedPostCardProps {
   post: CommunityPost;
@@ -391,7 +393,11 @@ export function FeedPostCard({
       <div className="li-post-content">
         {post.repostedFrom ? (
           <>
-            {post.repostNote && <p className="li-post-body">{post.repostNote}</p>}
+            {post.repostNote && (
+              <p className="li-post-body">
+                <RichText text={post.repostNote} />
+              </p>
+            )}
             <div className="li-repost-quote-box">
               <div className="li-repost-quote-meta">
                 <b>{post.repostedFrom.authorName}</b>
@@ -399,7 +405,9 @@ export function FeedPostCard({
                 <span>{post.repostedFrom.domain}</span>
               </div>
               <h3 className="li-post-title">{post.repostedFrom.title}</h3>
-              <p className="li-post-body muted">{post.repostedFrom.body}</p>
+              <p className="li-post-body muted">
+                <RichText text={post.repostedFrom.body} />
+              </p>
             </div>
           </>
         ) : (
@@ -414,7 +422,10 @@ export function FeedPostCard({
                 {post.title}
               </button>
             </h3>
-            <p className="li-post-body">{post.body}</p>
+            <p className="li-post-body">
+              <RichText text={post.body} />
+            </p>
+            {post.media && <PostMediaView media={post.media} title={post.title} />}
           </>
         )}
       </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, ChevronUp, Lock, Maximize2, Search, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Lock, Maximize2, MessageCircle, Search, X } from 'lucide-react';
 import type { Message, Profile, Relation } from '../data';
 import { canSend } from '../domain.mjs';
 import { Avatar } from './ProfileIdentityCard';
@@ -238,11 +238,9 @@ export function MessagingDrawer({
             </label>
             <div className="conversation-list" role="list">
               {rows.length === 0 ? (
-                <div className="conversation-empty">
-                  <p>Aucune discussion pour le moment.</p>
-                  <button type="button" className="li-text-link" onClick={onOpenRelations}>
-                    Découvrir des membres
-                  </button>
+                <div className="conversation-empty is-centered">
+                  <MessageCircle size={28} aria-hidden="true" />
+                  <p>Aucune discussion</p>
                 </div>
               ) : visibleRows.length === 0 ? (
                 <p className="conversation-empty">Aucune personne ne correspond à « {query} ».</p>

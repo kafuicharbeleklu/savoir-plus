@@ -274,6 +274,15 @@ export interface CommunityReply {
   replyToName?: string;
 }
 
+/** Image ou vidéo jointe à une contribution. */
+export interface PostMedia {
+  kind: 'image' | 'video';
+  src: string;
+  alt?: string;
+  /** Mention d'origine affichée sous le média (auteur, source). */
+  credit?: string;
+}
+
 export interface CommunityPost {
   id: string;
   kind: 'question' | 'publication';
@@ -283,6 +292,10 @@ export interface CommunityPost {
   authorName: string;
   body: string;
   createdAt: string;
+  /** Image ou vidéo jointe. */
+  media?: PostMedia;
+  /** Publication programmée : heure prévue (en millisecondes). Absent une fois la contribution parue. */
+  scheduledAtMs?: number;
   solutionReplyId?: string;
   followers: string[];
   helpfulBy?: string[];
@@ -545,6 +558,8 @@ export interface PlatformSettingsState {
 export interface ExtendedDemoState {
   plannedIds: string[];
   posts: CommunityPost[];
+  /** Contributions programmées, pas encore parues : elles rejoignent `posts` à l'heure prévue. */
+  scheduledPosts?: CommunityPost[];
   studioContents: StudioContent[];
   studioQuiz: {
     title: string;
@@ -1375,8 +1390,50 @@ export function readExtended(): ExtendedDemoState {
   }
 }
 
-export function writeExtended(next: ExtendedDemoState) {
-  localStorage.setItem(EXT_KEY, JSON.stringify(next));
+/** Enregistre l'état dans le navigateur. Renvoie `false` si l'espace de stockage est plein ou indisponible. */
+export function writeExtended(next: ExtendedDemoState): boolean {
+  try {
+    localStorage.setItem(EXT_KEY, JSON.stringify(next));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const twoDigits = (n: number) => String(n).padStart(2, '0');
+const clockLabel = (d: Date) => `${twoDigits(d.getHours())} h ${twoDigits(d.getMinutes())}`;
+
+/** Date d'une contribution dans le fil : « Aujourd’hui · 10 h 15 » ou « 16 nov. · 09 h 00 ». */
+export function formatPostDate(ms: number, now: number = Date.now()): string {
+  const d = new Date(ms);
+  if (new Date(now).toDateString() === d.toDateString()) return `Aujourd’hui · ${clockLabel(d)}`;
+  const day = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(d);
+  return `${day} · ${clockLabel(d)}`;
+}
+
+/** Date et heure complètes d'une programmation : « 16 nov. 2026 · 09 h 00 ». */
+export function formatScheduleDate(ms: number): string {
+  const d = new Date(ms);
+  const day = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
+  return `${day} · ${clockLabel(d)}`;
+}
+
+/**
+ * Fait paraître les contributions programmées dont l'heure est passée :
+ * elles rejoignent le fil, datées de l'heure prévue, et quittent la liste d'attente.
+ */
+export function promoteDuePosts(state: ExtendedDemoState, now: number = Date.now()): ExtendedDemoState {
+  const waiting = state.scheduledPosts || [];
+  const due = waiting.filter((p) => (p.scheduledAtMs ?? 0) <= now);
+  if (due.length === 0) return state;
+  const published = [...due]
+    .sort((a, b) => (b.scheduledAtMs ?? 0) - (a.scheduledAtMs ?? 0))
+    .map(({ scheduledAtMs, ...post }) => ({ ...post, createdAt: formatPostDate(scheduledAtMs ?? now, now) }));
+  return {
+    ...state,
+    posts: [...published, ...state.posts],
+    scheduledPosts: waiting.filter((p) => (p.scheduledAtMs ?? 0) > now)
+  };
 }
 
 const SNAPSHOT_KEYS = [

@@ -22,6 +22,7 @@ import {
   PenLine,
   Plus
 } from 'lucide-react';
+import { RichText } from '../components/RichText';
 import type { Profile, Progress, Relation } from '../data';
 import { computeMemberStats } from '../memberStats';
 import { resolveAlgorithmicDiscoverProfiles, resolveCommunityDirectory, resolveProfileVerified } from '../personas';
@@ -653,7 +654,9 @@ export function ProfilePage({
                       {p.kind === 'question' ? 'Question d’entraide' : 'Publication'} · {p.createdAt}
                     </small>
                     <b>{p.title}</b>
-                    <p>{p.body}</p>
+                    <p>
+                      <RichText text={p.body} />
+                    </p>
                     <small className="tabular-nums">
                       {p.domain} · {plural(p.helpfulBy?.length || 0, 'utile', 'utiles')} · {plural(p.replies.length, 'réponse', 'réponses')}
                     </small>

@@ -17,6 +17,8 @@ import {
 import type { CommunityPost, ExtendedDemoState } from '../wireframeData';
 import type { Profile, Relation } from '../data';
 import { FeedPostCard } from '../components/FeedPostCard';
+import { RichText } from '../components/RichText';
+import { PostMediaView } from '../components/PostMedia';
 import { appendCommunityReply, applyPostRepost, togglePostHelpful } from '../personas';
 
 interface CommunityProps {
@@ -668,7 +670,10 @@ export function CommunityThreadView({
             </button>
           )}
         </div>
-        <p className="wf-thread-body">{post.body}</p>
+        <p className="wf-thread-body">
+          <RichText text={post.body} />
+        </p>
+        {post.media && <PostMediaView media={post.media} title={post.title} />}
       </article>
 
       <div className="section-title">

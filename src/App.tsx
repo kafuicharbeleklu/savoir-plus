@@ -5,6 +5,7 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
+  Clock,
   ArrowRight,
   Award,
   BarChart2,
@@ -97,7 +98,9 @@ import {
   ADMIN_ROLES,
   buildDynamicCatalog,
   initialExtendedState,
+  formatScheduleDate,
   notificationsFor,
+  promoteDuePosts,
   readExtended,
   writeExtended,
   type AdminRoleName,
@@ -306,6 +309,8 @@ export default function App() {
   const [moreOpen, setMoreOpen] = useState<boolean>(false);
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [composerOpen, setComposerOpen] = useState<boolean>(false);
+  const [composerView, setComposerView] = useState<'compose' | 'scheduled'>('compose');
+  const [scheduleTick, setScheduleTick] = useState(0);
   const [reportTarget, setReportTarget] = useState<string | null>(null);
   const [infoModal, setInfoModal] = useState<FooterInfoTopic | null>(null);
 
@@ -345,10 +350,33 @@ export default function App() {
   const updateExt = (fn: (prev: ExtendedDemoState) => ExtendedDemoState) => {
     setExt((prev) => {
       const next = fn(prev);
-      writeExtended(next);
+      if (next !== prev && !writeExtended(next)) {
+        queueMicrotask(() =>
+          setToast('Espace du navigateur plein : ce changement ne sera pas conservé après rechargement.')
+        );
+      }
       return next;
     });
   };
+
+  // Contributions programmées : elles paraissent à l'heure prévue (ou dès l'ouverture si l'heure est passée).
+  useEffect(() => {
+    const waiting = ext.scheduledPosts || [];
+    if (waiting.length === 0) return;
+    const nextDue = Math.min(...waiting.map((p) => p.scheduledAtMs ?? 0));
+    const delay = nextDue - Date.now();
+    const publishDue = () => updateExt((prev) => promoteDuePosts(prev));
+    if (delay <= 0) {
+      publishDue();
+      return;
+    }
+    // Un minuteur ne dépasse pas 24 jours : au-delà, on revérifie à l'échéance du minuteur.
+    const timer = window.setTimeout(() => {
+      publishDue();
+      setScheduleTick((t) => t + 1);
+    }, Math.min(delay + 250, 2_000_000_000));
+    return () => window.clearTimeout(timer);
+  }, [ext.scheduledPosts, scheduleTick]);
 
   // Hash navigation listener
   useEffect(() => {
@@ -1359,6 +1387,22 @@ export default function App() {
                   <BookOpen size={15} /> Explorer les modules
                 </button>
               </div>
+              {(ext.scheduledPosts || []).some((p) => p.authorId === user.id) && (
+                <button
+                  type="button"
+                  className="home-composer-scheduled"
+                  onClick={() => {
+                    setComposerView('scheduled');
+                    setComposerOpen(true);
+                  }}
+                >
+                  <Clock size={14} aria-hidden="true" />
+                  {(() => {
+                    const n = (ext.scheduledPosts || []).filter((p) => p.authorId === user.id).length;
+                    return n > 1 ? `${n} publications programmées` : '1 publication programmée';
+                  })()}
+                </button>
+              )}
             </section>
 
             {/* Pedagogical Resume Card + Popular Carousel (All / Modules) */}
@@ -1522,8 +1566,8 @@ export default function App() {
             )}
           </div>
 
-          {/* Right Rail (Desktop 3rd Column) */}
-          <aside className="right-rail" aria-label="Repères et découvertes">
+          {/* Right Rail (Desktop 3rd Column) — masquée sur mobile : le fil d'actualité seul */}
+          <aside className="right-rail home-rail" aria-label="Repères et découvertes">
             <section className="rail-card">
               <span className="eyebrow">Votre progression</span>
               <h3 className="tabular-nums">Niveau {lvl.level} · {totalXP} XP</h3>
@@ -2597,12 +2641,38 @@ export default function App() {
 
       <PostComposerModal
         open={composerOpen}
-        onClose={() => setComposerOpen(false)}
+        initialView={composerView}
+        onClose={() => {
+          setComposerOpen(false);
+          setComposerView('compose');
+        }}
         user={user}
+        scheduled={(ext.scheduledPosts || []).filter((p) => p.authorId === user.id)}
         onPublish={(post) => {
           updateExt((prev) => ({ ...prev, posts: [post, ...prev.posts] }));
           setToast('Contribution publiée dans la communauté');
           nav('community-thread', post.id);
+        }}
+        onSchedule={(post) => {
+          updateExt((prev) => ({ ...prev, scheduledPosts: [...(prev.scheduledPosts || []), post] }));
+          setToast(`Publication programmée : ${formatScheduleDate(post.scheduledAtMs ?? Date.now())}`);
+        }}
+        onPublishScheduled={(id) => {
+          const now = Date.now();
+          updateExt((prev) =>
+            promoteDuePosts(
+              {
+                ...prev,
+                scheduledPosts: (prev.scheduledPosts || []).map((p) => (p.id === id ? { ...p, scheduledAtMs: now } : p))
+              },
+              now
+            )
+          );
+          setToast('Contribution publiée dans la communauté');
+        }}
+        onDeleteScheduled={(id) => {
+          updateExt((prev) => ({ ...prev, scheduledPosts: (prev.scheduledPosts || []).filter((p) => p.id !== id) }));
+          setToast('Publication programmée supprimée');
         }}
       />
 

@@ -684,3 +684,44 @@ test('Gouvernance : chaque vue ne voit et ne fait que ce que son rôle permet', 
   ext.dossiers[0].status = 'Décision soumise';
   assert.equal(govCounts(ext).moderation, ext.dossiers.length - 1);
 });
+
+test('mise en forme : gras, italique et liens sont reconnus, le reste est du texte', async () => {
+  const { tokenizeRichText } = await import('../src/richText');
+  const tokens = tokenizeRichText('Lisez **bien** la *source* : https://exemple.test/guide. Puis 2 * 3 * 4.');
+  assert.deepEqual(
+    tokens.filter((t) => t.type !== 'text'),
+    [
+      { type: 'bold', value: 'bien' },
+      { type: 'italic', value: 'source' },
+      { type: 'link', value: 'https://exemple.test/guide' }
+    ]
+  );
+  assert.equal(tokens.map((t) => t.value).join(''), 'Lisez bien la source : https://exemple.test/guide. Puis 2 * 3 * 4.');
+});
+
+test('publication programmée : seule la contribution arrivée à échéance rejoint le fil', async () => {
+  const { promoteDuePosts, initialExtendedState } = await import('../src/wireframeData');
+  const base = initialExtendedState();
+  const now = new Date(2026, 10, 16, 9, 0).getTime();
+  const draft = (id: string, at: number) => ({
+    id,
+    kind: 'publication' as const,
+    title: id,
+    domain: 'Numérique' as const,
+    authorId: 'afi',
+    authorName: 'Afi Mensah',
+    body: 'Texte',
+    createdAt: '',
+    followers: ['afi'],
+    replies: [],
+    scheduledAtMs: at
+  });
+  const state = { ...base, scheduledPosts: [draft('due', now - 60_000), draft('later', now + 3_600_000)] };
+  const next = promoteDuePosts(state, now);
+  assert.equal(next.posts[0].id, 'due');
+  assert.equal(next.posts[0].scheduledAtMs, undefined);
+  assert.equal(next.posts[0].createdAt, 'Aujourd’hui · 08 h 59');
+  assert.deepEqual((next.scheduledPosts || []).map((p) => p.id), ['later']);
+  assert.equal(next.posts.length, base.posts.length + 1);
+  assert.equal(promoteDuePosts(next, now), next);
+});
