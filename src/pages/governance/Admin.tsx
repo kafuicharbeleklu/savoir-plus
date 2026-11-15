@@ -25,19 +25,7 @@ import {
   type PlatformSettingsState,
   type RoleAssignmentRecord
 } from '../../wireframeData';
-import {
-  ActionMenu,
-  ConfirmDialog,
-  EmptyState,
-  ListCard,
-  ListRow,
-  PageHeader,
-  SearchField,
-  SidePanel,
-  StatusDot,
-  Tabs,
-  type StatusTone
-} from '../../components/ui';
+import { ActionMenu, ConfirmDialog, EmptyState, ListCard, ListRow, PageHeader, SearchField, Select, SidePanel, StatusDot, type StatusTone, Tabs } from '../../components/ui';
 import { Block, Facts, GovShell, normalize, type GovProps } from './shared';
 
 /* ================================================================== Utilisateurs */
@@ -407,21 +395,21 @@ export function AdminRolesView({ ext, updateExt, nav, user, setToast }: GovProps
         <form id="gv-role-form" className="gv-form" onSubmit={submit}>
           <label className="ui-field">
             <span>Membre</span>
-            <select value={targetUserId} onChange={(e) => setTargetUserId(e.target.value)}>
+            <Select value={targetUserId} onChange={(e) => setTargetUserId(e.target.value)}>
               {ext.adminUsers.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="ui-field">
             <span>Rôle</span>
-            <select value={roleChoice} onChange={(e) => setRoleChoice(e.target.value as AdminRoleName)}>
+            <Select value={roleChoice} onChange={(e) => setRoleChoice(e.target.value as AdminRoleName)}>
               {ADMIN_ROLES.map((r) => (
                 <option key={r}>{r}</option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="ui-field">
             <span>Périmètre</span>

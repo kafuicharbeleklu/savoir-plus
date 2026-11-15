@@ -15,7 +15,7 @@ import {
   studioSnapshot,
   type StudioContent
 } from '../../wireframeData';
-import { ActionMenu, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, RadioList, RowTitle, SavedIndicator, SidePanel, StateTile, StatusDot, Tabs } from '../../components/ui';
+import { ActionMenu, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, RadioList, RowTitle, SavedIndicator, Select, SidePanel, StateTile, StatusDot, Tabs } from '../../components/ui';
 import {
   AUDIENCE_LABEL,
   Checklist,
@@ -673,13 +673,13 @@ function StudioWorkspace({
             <div className="sx-form-row">
               <label className="ui-field">
                 <span>Domaine</span>
-                <select value={content.domain} onChange={(e) => patch((c) => ({ ...c, domain: e.target.value as StudioContent['domain'] }))}>
+                <Select value={content.domain} onChange={(e) => patch((c) => ({ ...c, domain: e.target.value as StudioContent['domain'] }))}>
                   {DOMAINS.map((d) => (
                     <option key={d} value={d}>
                       {d}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
               <label className="ui-field">
                 <span>Durée estimée</span>

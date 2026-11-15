@@ -27,7 +27,7 @@ import {
 } from '../../governance';
 import type { RoleCapabilities } from '../../personas';
 import { ADMIN_ROLES, type AdminRoleName, type ExtendedDemoState } from '../../wireframeData';
-import { EmptyState } from '../../components/ui';
+import { EmptyState, Select } from '../../components/ui';
 
 export interface GovProps {
   ext: ExtendedDemoState;
@@ -60,7 +60,7 @@ function RoleSelect({
   setToast
 }: Pick<GovProps, 'ext' | 'updateExt' | 'setToast'>) {
   return (
-    <select
+    <Select
       aria-label="Vue de gouvernance"
       title={ROLE_DESCRIPTION[ext.adminActiveRole]}
       value={ext.adminActiveRole}
@@ -75,7 +75,7 @@ function RoleSelect({
           {r}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }
 
@@ -137,13 +137,13 @@ export function GovShell({
       <div className="gv-mobile-nav">
         <label>
           <span>Rubrique</span>
-          <select value={sections.includes(section) ? section : 'admin'} onChange={(e) => nav(e.target.value)}>
+          <Select value={sections.includes(section) ? section : 'admin'} onChange={(e) => nav(e.target.value)}>
             {sections.map((s) => (
               <option key={s} value={s}>
                 {GOV_LABEL[s]}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         <label>
           <span>Vue</span>

@@ -28,6 +28,7 @@ import { formatScheduleDate } from '../wireframeData';
 import type { CommunityPost, ExtendedDemoState, ReportItem } from '../wireframeData';
 import { Avatar } from './ProfileIdentityCard';
 
+import { Select } from './ui';
 const COMPOSER_EMOJIS = ['👍', '🙏', '💡', '✅', '⚠️', '🔒', '📌', '🎯', '🤔', '👏', '🚀', '😊'];
 const MAX_SCHEDULE_DAYS = 90;
 
@@ -325,20 +326,20 @@ export function PostComposerModal({
                   <label className="pc-chip pc-chip-select">
                     {kind === 'question' ? <HelpCircle size={16} aria-hidden="true" /> : <Lightbulb size={16} aria-hidden="true" />}
                     <span className="sr-only">Type de contribution</span>
-                    <select value={kind} onChange={(e) => setKind(e.target.value as 'publication' | 'question')}>
+                    <Select value={kind} onChange={(e) => setKind(e.target.value as 'publication' | 'question')}>
                       <option value="publication">Astuce ou méthode</option>
                       <option value="question">Question d’entraide</option>
-                    </select>
+                    </Select>
                     <ChevronDown size={16} aria-hidden="true" />
                   </label>
                   <label className="pc-chip pc-chip-select">
                     <Hash size={16} aria-hidden="true" />
                     <span className="sr-only">Domaine</span>
-                    <select value={domain} onChange={(e) => setDomain(e.target.value as typeof domain)}>
+                    <Select value={domain} onChange={(e) => setDomain(e.target.value as typeof domain)}>
                       <option value="Numérique">Numérique</option>
                       <option value="Communication">Communication</option>
                       <option value="Gestion">Gestion</option>
-                    </select>
+                    </Select>
                     <ChevronDown size={16} aria-hidden="true" />
                   </label>
                 </div>
@@ -753,14 +754,14 @@ export function ReportDialog({
 
         <label className="modal-field">
           <span>Motif du signalement</span>
-          <select value={reason} onChange={(e) => setReason(e.target.value)}>
+          <Select value={reason} onChange={(e) => setReason(e.target.value)}>
             <option>Harcèlement ou propos abusifs</option>
             <option>Désinformation pédagogique ou technique</option>
             <option>Spam ou sollicitation répétée</option>
             <option>Usurpation d’identité</option>
             <option>Exposition de données personnelles</option>
             <option>Autre</option>
-          </select>
+          </Select>
         </label>
 
         <label className="modal-field">

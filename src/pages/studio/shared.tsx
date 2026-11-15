@@ -9,6 +9,7 @@ import { hasUnpublishedChanges, type CatalogType, type ExtendedDemoState, type S
 import type { StatusTone } from '../../components/ui';
 import type { RowState } from '../../components/ui';
 
+import { Select } from '../../components/ui';
 export interface StudioProps {
   ext: ExtendedDemoState;
   updateExt: (fn: (prev: ExtendedDemoState) => ExtendedDemoState) => void;
@@ -95,13 +96,13 @@ export function StudioShell({
     <div className="sx-page">
       <label className="sx-mobile-nav">
         <span>Rubrique</span>
-        <select value={active} onChange={(e) => nav(e.target.value)}>
+        <Select value={active} onChange={(e) => nav(e.target.value)}>
           {STUDIO_SECTIONS.map((s) => (
             <option key={s.id} value={s.id}>
               {s.label}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
       {children}
     </div>

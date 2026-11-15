@@ -31,6 +31,7 @@ import { computeCatalogCardSteps } from '../personas';
 import { DifficultyMeter, ProgressBar } from '../components/ProfileIdentityCard';
 import { CatalogContentCard, ContentTypeMark, XpBadgeInline } from '../components/CatalogVisuals';
 
+import { Select } from '../components/ui';
 const LESSON_COUNTS: Record<string, number> = Object.fromEntries(
   Object.entries(MODULES_CONTENT).map(([id, mod]) => [id, mod.lessons.length])
 );
@@ -209,7 +210,7 @@ export function CatalogExtraView({
               <span className="cf-sep" aria-hidden="true">–</span>
               <span className="cf-val">{domain}</span>
               <ChevronDown size={14} className="cf-chevron" aria-hidden="true" />
-              <select
+              <Select
                 aria-label="Domaine"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
@@ -219,7 +220,7 @@ export function CatalogExtraView({
                     {d}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <div className={`catalog-filter-pill ${levelFilter !== 'Tous' ? 'is-filtered' : ''}`}>
@@ -227,7 +228,7 @@ export function CatalogExtraView({
               <span className="cf-sep" aria-hidden="true">–</span>
               <span className="cf-val">{levelFilter}</span>
               <ChevronDown size={14} className="cf-chevron" aria-hidden="true" />
-              <select
+              <Select
                 aria-label="Niveau"
                 value={levelFilter}
                 onChange={(e) => setLevelFilter(e.target.value as 'Tous' | DifficultyLevel)}
@@ -237,7 +238,7 @@ export function CatalogExtraView({
                     {l}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <div className={`catalog-filter-pill ${reviewFilter !== 'Toutes' ? 'is-filtered' : ''}`}>
@@ -251,7 +252,7 @@ export function CatalogExtraView({
                 </>
               )}
               <ChevronDown size={14} className="cf-chevron" aria-hidden="true" />
-              <select
+              <Select
                 aria-label="Revue du contenu"
                 value={reviewFilter}
                 onChange={(e) => setReviewFilter(e.target.value as 'Toutes' | ReviewLevel)}
@@ -261,7 +262,7 @@ export function CatalogExtraView({
                     {r}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
         </div>

@@ -21,18 +21,7 @@ import {
   type SupportTicketRecord,
   type ValidationRequestRecord
 } from '../../wireframeData';
-import {
-  ActionMenu,
-  ConfirmDialog,
-  EmptyState,
-  ListCard,
-  ListRow,
-  PageHeader,
-  StatusDot,
-  Tabs,
-  useIsNarrow,
-  type StatusTone
-} from '../../components/ui';
+import { ActionMenu, ConfirmDialog, EmptyState, ListCard, ListRow, PageHeader, Select, StatusDot, type StatusTone, Tabs, useIsNarrow } from '../../components/ui';
 import { Block, Facts, GovShell, Split, type GovProps } from './shared';
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
@@ -175,19 +164,19 @@ function DecisionForm({
       <div className="gv-form-row">
         <label className="ui-field">
           <span>Mesure</span>
-          <select value={measure} onChange={(e) => setMeasure(e.target.value)}>
+          <Select value={measure} onChange={(e) => setMeasure(e.target.value)}>
             {MEASURES.map((m) => (
               <option key={m}>{m}</option>
             ))}
-          </select>
+          </Select>
         </label>
         <label className="ui-field">
           <span>Durée</span>
-          <select value={noSanction ? 'Sans durée' : duration} disabled={noSanction} onChange={(e) => setDuration(e.target.value)}>
+          <Select value={noSanction ? 'Sans durée' : duration} disabled={noSanction} onChange={(e) => setDuration(e.target.value)}>
             {[...durations, 'Sans durée'].map((d) => (
               <option key={d}>{d}</option>
             ))}
-          </select>
+          </Select>
         </label>
       </div>
       <label className="ui-field">

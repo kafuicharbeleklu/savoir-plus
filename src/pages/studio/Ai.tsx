@@ -16,7 +16,7 @@ import {
   type AiStatus
 } from '../../ai';
 import { appendAuditLog, type StudioContent } from '../../wireframeData';
-import { PageHeader, StatusDot } from '../../components/ui';
+import { PageHeader, Select, StatusDot } from '../../components/ui';
 import { DOMAINS, newStudioId, StudioShell, type StudioProps } from './shared';
 
 const AI_EXAMPLE_SOURCE =
@@ -236,13 +236,13 @@ export function StudioAiView({ updateExt, nav, setToast, user }: StudioProps) {
             </label>
             <label className="ui-field">
               <span>Domaine</span>
-              <select value={domain} onChange={(e) => setDomain(e.target.value as StudioContent['domain'])}>
+              <Select value={domain} onChange={(e) => setDomain(e.target.value as StudioContent['domain'])}>
                 {DOMAINS.map((d) => (
                   <option key={d} value={d}>
                     {d}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           </div>
           <label className="ui-field">
@@ -424,10 +424,10 @@ export function StudioAiView({ updateExt, nav, setToast, user }: StudioProps) {
             <div className="sx-card-head-actions">
               <label className="sx-inline-select">
                 <span>Résolution</span>
-                <select value={imgSize} onChange={(e) => setImgSize(Number(e.target.value) as AiImageSize)} disabled={imgPhase === 'loading'}>
+                <Select value={imgSize} onChange={(e) => setImgSize(Number(e.target.value) as AiImageSize)} disabled={imgPhase === 'loading'}>
                   <option value={1024}>Standard · 1024 px</option>
                   <option value={1536}>Haute · 1536 px</option>
-                </select>
+                </Select>
               </label>
               <button
                 type="button"

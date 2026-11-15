@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Bell,
-  Check,
   CheckCircle2,
   Eye,
   Flag,
@@ -21,6 +20,7 @@ import type { Profile, Relation } from '../data';
 import { resolveCommunityDirectory, resolveProfileVerified, type RoleCapabilities } from '../personas';
 import { Avatar } from '../components/ProfileIdentityCard';
 
+import { Select } from '../components/ui';
 interface AccountAdminProps {
   ext: ExtendedDemoState;
   updateExt: (fn: (prev: ExtendedDemoState) => ExtendedDemoState) => void;
@@ -54,6 +54,13 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast 
 
   const items = notificationsFor(ext.notifications, user.id, ext.notifPrefs);
 
+  // Filtres : toutes, non lues, puis une entrée par catégorie présente.
+  const [filter, setFilter] = useState<'all' | 'unread' | NotificationItem['category']>('all');
+  const categories = (['Apprentissage', 'Communauté', 'Relations', 'Compte'] as NotificationItem['category'][]).filter((c) =>
+    items.some((n) => n.category === c)
+  );
+  const shown = items.filter((n) => (filter === 'all' ? true : filter === 'unread' ? !n.read : n.category === filter));
+
   const markAllRead = () => {
     updateExt((prev) => ({
       ...prev,
@@ -75,30 +82,33 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast 
   return (
     <div className="dashboard-grid">
       <div className="dashboard-main">
-        <div className="between wf-mb-sm">
-          <div className="page-heading wf-no-mb">
-            <h1>Alertes</h1>
-          </div>
-          <div className="wf-inline-actions">
-            <button className="secondary" onClick={() => nav('settings', 'notifications')}>
-              Gérer les notifications
-            </button>
-            <button className="primary" onClick={markAllRead}>
-              <Check size={15} /> Tout marquer comme lu
-            </button>
-          </div>
+        <div className="page-heading wf-no-mb">
+          <h1>Alertes</h1>
         </div>
 
+        <div className="ui-filter" role="group" aria-label="Filtrer les alertes">
+          {(
+            [
+              { id: 'all', label: 'Toutes' },
+              { id: 'unread', label: `Non lues${items.some((n) => !n.read) ? ` (${items.filter((n) => !n.read).length})` : ''}` },
+              ...categories.map((c) => ({ id: c, label: c }))
+            ] as { id: typeof filter; label: string }[]
+          ).map((f) => (
+            <button key={f.id} type="button" aria-pressed={filter === f.id} className={filter === f.id ? 'is-on' : ''} onClick={() => setFilter(f.id)}>
+              {f.label}
+            </button>
+          ))}
+        </div>
 
-        {items.length === 0 ? (
+        {shown.length === 0 ? (
           <div className="empty">
             <Bell size={34} />
-            <h3>Aucune alerte pour le moment.</h3>
-            <p>Vos événements récents apparaîtront ici.</p>
+            <h3>{items.length === 0 ? 'Aucune alerte pour le moment.' : 'Aucune alerte dans ce filtre.'}</h3>
+            <p>{items.length === 0 ? 'Vos événements récents apparaîtront ici.' : 'Choisissez « Toutes » pour revoir l’ensemble.'}</p>
           </div>
         ) : (
           <div className="wf-notif-list" role="list">
-            {items.map((n) => {
+            {shown.map((n) => {
               const actor = resolveActor(n);
               return (
                 <button
@@ -129,6 +139,11 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast 
         <section className="rail-card">
           <span className="eyebrow">À traiter en priorité</span>
           <h3>{unreadCount > 0 ? `${unreadCount} alerte(s) non lue(s)` : 'Tout est à jour'}</h3>
+          {unreadCount > 0 && (
+            <button type="button" className="li-text-link" onClick={markAllRead}>
+              Tout marquer comme lu
+            </button>
+          )}
           <div className="rail-quick-list">
             <button type="button" className="rail-quick-item" onClick={() => nav('report')}>
               <b>Suivi des signalements ({ext.reports.length})</b>
@@ -137,6 +152,10 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast 
                   ? 'Précisions demandées sur un dossier'
                   : 'Consulter vos démarches privées'}
               </small>
+            </button>
+            <button type="button" className="rail-quick-item" onClick={() => nav('settings', 'notifications')}>
+              <b>Préférences de notification</b>
+              <small>Choisir les alertes que vous recevez</small>
             </button>
           </div>
         </section>
@@ -214,13 +233,13 @@ export function ReportView({ ext, updateExt, nav, reportTarget, setToast }: Acco
           </p>
           <label>
             Motif principal
-            <select value={reason} onChange={(e) => setReason(e.target.value)}>
+            <Select value={reason} onChange={(e) => setReason(e.target.value)}>
               <option>Contenu trompeur ou désinformation</option>
               <option>Harcèlement ou propos abusifs</option>
               <option>Spam ou sollicitation répétée</option>
               <option>Exposition de données personnelles</option>
               <option>Autre</option>
-            </select>
+            </Select>
           </label>
           <label>
             Précisions (facultatif)

@@ -23,6 +23,7 @@ import { RichText } from '../components/RichText';
 import { PostMediaView } from '../components/PostMedia';
 import { appendCommunityReply, applyPostRepost, togglePostHelpful } from '../personas';
 
+import { Select } from '../components/ui';
 interface CommunityProps {
   ext: ExtendedDemoState;
   updateExt: (fn: (prev: ExtendedDemoState) => ExtendedDemoState) => void;
@@ -169,7 +170,7 @@ export function CommunityFeedView({
               <span className="cf-sep" aria-hidden="true">–</span>
               <span className="cf-val">{domainFilter}</span>
               <ChevronDown size={14} className="cf-chevron" aria-hidden="true" />
-              <select
+              <Select
                 aria-label="Domaine"
                 value={domainFilter}
                 onChange={(e) => setDomainFilter(e.target.value as any)}
@@ -179,7 +180,7 @@ export function CommunityFeedView({
                     {d}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
           {(domainFilter !== 'Tous' || filterTab !== 'all') && (
@@ -453,11 +454,11 @@ export function CommunityComposeView({ ext, updateExt, nav, user, setToast }: Co
             </label>
             <label>
               Domaine
-              <select value={domain} onChange={(e) => setDomain(e.target.value as any)}>
+              <Select value={domain} onChange={(e) => setDomain(e.target.value as any)}>
                 <option value="Numérique">Numérique</option>
                 <option value="Communication">Communication</option>
                 <option value="Gestion">Gestion</option>
-              </select>
+              </Select>
             </label>
             <label>
               {kind === 'question' ? 'Contexte et ce que vous avez essayé (ou ce qui vous bloque)' : 'Votre partage'}

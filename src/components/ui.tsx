@@ -4,9 +4,9 @@
  * une action principale par écran, actions secondaires dans un menu « … »,
  * état vide partout, enregistrement automatique.
  */
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, Check, Minus, MoreHorizontal, Search, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, Award, Ban, BarChart3, BookOpen, Check, CheckCircle2, ChevronDown, Copy, Download, FileText, Flag, Layers, Link2, Minus, MoreHorizontal, Pencil, Search, Send, Settings, Sparkles, Trash2, User, X } from 'lucide-react';
 
 /* ------------------------------------------------------------------ En-tête */
 
@@ -165,10 +165,39 @@ export function StateTile({ state, plain = false, children }: { state: RowState;
 export type ActionMenuItem = {
   label: string;
   onSelect: () => void;
+  /** Icône de l'action ; à défaut, elle est déduite du libellé (Supprimer, Dupliquer, Signaler…). */
+  icon?: React.ReactNode;
   danger?: boolean;
   disabled?: boolean;
   hidden?: boolean;
 };
+
+/** Icône usuelle d'une action d'après son libellé, pour que tous les menus se ressemblent. */
+function menuIcon(label: string): React.ReactNode {
+  const rules: [RegExp, React.ReactNode][] = [
+    [/supprimer|retirer/i, <Trash2 size={20} aria-hidden="true" />],
+    [/signaler/i, <Flag size={20} aria-hidden="true" />],
+    [/bloquer|révoquer|suspendre/i, <Ban size={20} aria-hidden="true" />],
+    [/dupliquer/i, <Copy size={20} aria-hidden="true" />],
+    [/copier/i, <Link2 size={20} aria-hidden="true" />],
+    [/publier/i, <Send size={20} aria-hidden="true" />],
+    [/statistiques/i, <BarChart3 size={20} aria-hidden="true" />],
+    [/progression/i, <Award size={20} aria-hidden="true" />],
+    [/profil/i, <User size={20} aria-hidden="true" />],
+    [/visibilité|préférences|réglages/i, <Settings size={20} aria-hidden="true" />],
+    [/résolu|clôturer|approuver|valider/i, <CheckCircle2 size={20} aria-hidden="true" />],
+    [/monter/i, <ArrowUp size={20} aria-hidden="true" />],
+    [/descendre/i, <ArrowDown size={20} aria-hidden="true" />],
+    [/\bia\b/i, <Sparkles size={20} aria-hidden="true" />],
+    [/^ressource/i, <FileText size={20} aria-hidden="true" />],
+    [/^parcours/i, <Layers size={20} aria-hidden="true" />],
+    [/^module/i, <BookOpen size={20} aria-hidden="true" />],
+    [/modifier|renommer/i, <Pencil size={20} aria-hidden="true" />],
+    [/exporter|télécharger/i, <Download size={20} aria-hidden="true" />]
+  ];
+  const match = rules.find(([pattern]) => pattern.test(label));
+  return match ? match[1] : <span className="li-menu-spacer" aria-hidden="true" />;
+}
 
 export function ActionMenu({
   items,
@@ -184,8 +213,11 @@ export function ActionMenu({
   triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [upward, setUpward] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const visible = items.filter((i) => !i.hidden);
+
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
@@ -195,7 +227,22 @@ export function ActionMenu({
       if (e.key === 'Escape') {
         e.stopPropagation();
         setOpen(false);
+        ref.current?.querySelector<HTMLButtonElement>('button[aria-haspopup]')?.focus();
+        return;
       }
+      // Flèches, Début et Fin : parcourir les actions au clavier.
+      const options = Array.from(listRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') || []);
+      if (options.length === 0) return;
+      const index = options.indexOf(document.activeElement as HTMLButtonElement);
+      const go = (next: number) => {
+        e.preventDefault();
+        options[(next + options.length) % options.length].focus();
+      };
+      if (e.key === 'ArrowDown') go(index + 1);
+      else if (e.key === 'ArrowUp') go(index <= 0 ? options.length - 1 : index - 1);
+      else if (e.key === 'Home') go(0);
+      else if (e.key === 'End') go(options.length - 1);
+      else if (e.key === 'Tab') setOpen(false);
     };
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
@@ -204,7 +251,22 @@ export function ActionMenu({
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
+
+  // À l'ouverture : le menu s'ouvre vers le haut s'il dépasserait le bas de la fenêtre.
+  useLayoutEffect(() => {
+    if (!open) {
+      setUpward(false);
+      return;
+    }
+    const list = listRef.current;
+    const anchor = ref.current;
+    if (!list || !anchor) return;
+    const room = window.innerHeight - anchor.getBoundingClientRect().bottom;
+    setUpward(room < list.offsetHeight + 16 && anchor.getBoundingClientRect().top > list.offsetHeight + 16);
+  }, [open]);
+
   if (visible.length === 0) return null;
+  const firstDanger = visible.findIndex((it) => it.danger);
   return (
     <div className="li-menu" ref={ref}>
       <button
@@ -222,26 +284,254 @@ export function ActionMenu({
         {trigger || <MoreHorizontal size={20} aria-hidden="true" />}
       </button>
       {open && (
-        <div className="li-menu-list" role="menu">
-          {visible.map((it) => (
-            <button
-              key={it.label}
-              type="button"
-              role="menuitem"
-              className={it.danger ? 'is-danger' : ''}
-              disabled={it.disabled}
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpen(false);
-                it.onSelect();
-              }}
-            >
-              {it.label}
-            </button>
+        <div ref={listRef} className={`li-menu-list${upward ? ' is-up' : ''}`} role="menu">
+          {visible.map((it, index) => (
+            <React.Fragment key={it.label}>
+              {index === firstDanger && index > 0 && <span className="li-menu-sep" role="separator" />}
+              <button
+                type="button"
+                role="menuitem"
+                className={it.danger ? 'is-danger' : ''}
+                disabled={it.disabled}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(false);
+                  it.onSelect();
+                }}
+              >
+                {it.icon || menuIcon(it.label)}
+                <span>{it.label}</span>
+              </button>
+            </React.Fragment>
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ Liste déroulante */
+
+type SelectOption = { value: string; label: string; disabled?: boolean };
+
+const textOf = (node: React.ReactNode): string => {
+  if (node == null || typeof node === 'boolean') return '';
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join('');
+  if (React.isValidElement(node)) return textOf((node.props as { children?: React.ReactNode }).children);
+  return '';
+};
+
+/** Lit les <option> passées en enfants, comme pour un <select> ordinaire. */
+function collectOptions(children: React.ReactNode, out: SelectOption[] = []): SelectOption[] {
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child)) return;
+    const props = child.props as { value?: unknown; disabled?: boolean; children?: React.ReactNode };
+    if (child.type === 'option') {
+      const label = textOf(props.children);
+      out.push({ value: String(props.value ?? label), label, disabled: props.disabled });
+    } else if (props.children) {
+      collectOptions(props.children, out);
+    }
+  });
+  return out;
+}
+
+/**
+ * Liste déroulante de l'application. Elle s'emploie comme un <select> (mêmes <option>, même
+ * onChange avec `event.target.value`) mais sa liste reprend la présentation des menus, au lieu
+ * de celle du navigateur. Clavier : flèches, Début, Fin, Entrée, Échap, saisie de la première lettre.
+ */
+export function Select({
+  value,
+  onChange,
+  children,
+  disabled = false,
+  className = '',
+  id,
+  title,
+  'aria-label': ariaLabel
+}: {
+  value?: string | number;
+  onChange?: (event: { target: { value: string }; currentTarget: { value: string } }) => void;
+  children: React.ReactNode;
+  disabled?: boolean;
+  className?: string;
+  id?: string;
+  title?: string;
+  'aria-label'?: string;
+  required?: boolean;
+}) {
+  const options = collectOptions(children);
+  const current = String(value ?? '');
+  const selected = options.find((o) => o.value === current);
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const [pos, setPos] = useState<{ left: number; top?: number; bottom?: number; minWidth: number; maxHeight: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const listId = useId();
+
+  const close = (focusBack: boolean) => {
+    setOpen(false);
+    if (focusBack) btnRef.current?.focus();
+  };
+
+  const choose = (opt: SelectOption | undefined) => {
+    if (!opt || opt.disabled) return;
+    if (opt.value !== current) onChange?.({ target: { value: opt.value }, currentTarget: { value: opt.value } });
+    close(true);
+  };
+
+  const openList = () => {
+    const box = btnRef.current?.getBoundingClientRect();
+    if (!box) return;
+    const below = window.innerHeight - box.bottom - 12;
+    const above = box.top - 12;
+    const wanted = Math.min(320, options.length * 40 + 8);
+    const up = below < Math.min(wanted, 200) && above > below;
+    const minWidth = Math.max(box.width, 180);
+    setPos({
+      left: Math.max(8, Math.min(box.left, window.innerWidth - minWidth - 8)),
+      minWidth,
+      maxHeight: Math.max(120, Math.min(320, up ? above : below)),
+      ...(up ? { bottom: window.innerHeight - box.top + 6 } : { top: box.bottom + 6 })
+    });
+    setActive(Math.max(0, options.findIndex((o) => o.value === current)));
+    setOpen(true);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      const node = e.target as Node;
+      if (btnRef.current?.contains(node) || listRef.current?.contains(node)) return;
+      setOpen(false);
+    };
+    const onScroll = (e: Event) => {
+      if (listRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    const onResize = () => setOpen(false);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [open]);
+
+  // La liste reste dans la fenêtre, et l'option active reste visible.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const list = listRef.current;
+    if (!list) return;
+    const overflow = list.getBoundingClientRect().right - (window.innerWidth - 8);
+    if (overflow > 0) setPos((p) => (p ? { ...p, left: Math.max(8, p.left - overflow) } : p));
+    list.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' });
+  }, [open, active]);
+
+  const step = (from: number, delta: number) => {
+    let index = from;
+    for (let i = 0; i < options.length; i += 1) {
+      index = (index + delta + options.length) % options.length;
+      if (!options[index].disabled) return index;
+    }
+    return from;
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (!open) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openList();
+      }
+      return;
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      close(true);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive((i) => step(i, 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive((i) => step(i, -1));
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setActive(step(-1, 1));
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      setActive(step(0, -1));
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      choose(options[active]);
+    } else if (e.key === 'Tab') {
+      close(false);
+    } else if (e.key.length === 1) {
+      const letter = e.key.toLocaleLowerCase('fr');
+      const order = [...options.keys()].map((k) => (active + 1 + k) % options.length);
+      const found = order.find((k) => !options[k].disabled && options[k].label.toLocaleLowerCase('fr').startsWith(letter));
+      if (found !== undefined) setActive(found);
+    }
+  };
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        id={id}
+        className={`ui-select ${className}`.trim()}
+        role="combobox"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? listId : undefined}
+        aria-activedescendant={open ? `${listId}-${active}` : undefined}
+        aria-label={ariaLabel}
+        title={title}
+        disabled={disabled}
+        onClick={() => (open ? close(false) : openList())}
+        onKeyDown={onKeyDown}
+      >
+        <span className="ui-select-value">{selected?.label ?? ''}</span>
+        <ChevronDown size={16} className="ui-select-chevron" aria-hidden="true" />
+      </button>
+      {open &&
+        pos &&
+        createPortal(
+          <div
+            ref={listRef}
+            id={listId}
+            className="ui-select-list"
+            role="listbox"
+            aria-label={ariaLabel}
+            style={{ left: pos.left, top: pos.top, bottom: pos.bottom, minWidth: pos.minWidth, maxHeight: pos.maxHeight }}
+          >
+            {options.map((opt, index) => (
+              <div
+                key={`${opt.value}-${index}`}
+                id={`${listId}-${index}`}
+                role="option"
+                aria-selected={opt.value === current}
+                aria-disabled={opt.disabled || undefined}
+                data-active={index === active}
+                className={`ui-select-option${index === active ? ' is-active' : ''}${opt.value === current ? ' is-selected' : ''}`}
+                onMouseEnter={() => setActive(index)}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => choose(opt)}
+              >
+                <span>{opt.label}</span>
+                {opt.value === current && <Check size={16} aria-hidden="true" />}
+              </div>
+            ))}
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
 
