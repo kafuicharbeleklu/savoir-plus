@@ -17,3 +17,4 @@ public/assets/aistudio/*.zip
 # Local credentials — never commit
 /keys.txt
 *.key
+/ckay.txt
