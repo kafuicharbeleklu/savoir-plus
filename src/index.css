@@ -7009,3 +7009,82 @@ ul.lesson-points + h3, .wf-muted-text + h3 { margin-top: 16px; }
   .demo-banner { padding: 14px 44px 14px 14px; }
   .demo-banner-actions { width: 100%; }
 }
+
+/* ==========================================================================
+   Studio IA (génération assistée) et fiche illustrée pas à pas
+   ========================================================================== */
+.wf-create-btn.is-ai { border-color: var(--accent-brand); background: var(--accent-brand-soft); }
+.ai-compose-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; }
+.ai-compose-meta { gap: 16px; align-items: flex-start; }
+.ai-count-warn { color: var(--accent-warm); font-weight: 600; }
+.ai-spin { animation: ai-spin 1s linear infinite; }
+@keyframes ai-spin { to { transform: rotate(360deg); } }
+
+.ai-review-grid { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+.ai-source-pane { position: sticky; top: 72px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 96px); overflow: auto; }
+.ai-source-text { margin: 0; font-size: 0.875rem; line-height: 1.55; white-space: pre-wrap; color: var(--fg-muted); }
+.ai-gaps { padding: 10px 12px; border-radius: 8px; background: var(--accent-warm-soft); border: 1px solid var(--accent-warm); display: flex; flex-direction: column; gap: 6px; font-size: 0.8125rem; }
+.ai-gaps ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.ai-proposal-pane { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ai-block-title { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; }
+.ai-block-title h3 { display: flex; align-items: center; gap: 8px; margin: 0; }
+.ai-block.is-dropped, .ai-step-card.is-dropped { opacity: 0.5; }
+.ai-keep { flex-direction: row !important; align-items: center; gap: 8px; font-weight: 600; font-size: 0.8125rem; }
+.ai-keep input, .ai-option input[type="radio"] { width: auto; accent-color: var(--accent-brand); }
+.ai-options { display: flex; flex-direction: column; gap: 6px; }
+.ai-option { display: flex; align-items: center; gap: 8px; }
+.ai-option input:not([type="radio"]) { flex: 1 1 auto; min-width: 0; }
+.ai-option.is-correct input:not([type="radio"]) { border-color: var(--accent-brand); }
+.ai-option .status-tag { flex-shrink: 0; white-space: nowrap; }
+
+.ai-steps-grid, .ai-fiche-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+.ai-step-card { margin: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--border-hairline); border-radius: 12px; background: var(--bg-surface); }
+.ai-step-visual {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px dashed var(--border-hairline);
+  overflow: hidden;
+  text-align: center;
+  padding: 8px;
+}
+.ai-step-visual img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ai-step-num {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent-brand);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+/* Fiche illustrée côté apprenant (lecteur) */
+.ai-fiche { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 12px; border: 1px solid var(--border-hairline); background: var(--bg-subtle); }
+.ai-fiche-head { gap: 12px; flex-wrap: wrap; }
+.ai-fiche-grid { list-style: none; margin: 0; padding: 0; }
+.ai-fiche-step { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 10px; background: var(--bg-surface); border: 1px solid var(--border-hairline); }
+.ai-fiche-step img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 8px; background: #ffffff; }
+.ai-fiche-step p { margin: 0; font-size: 0.875rem; line-height: 1.45; }
+.ai-fiche-step:not(:has(img)) { padding-top: 40px; }
+
+@media (max-width: 960px) {
+  .ai-review-grid { grid-template-columns: minmax(0, 1fr); }
+  .ai-source-pane { position: static; max-height: none; }
+}
+@media (max-width: 640px) {
+  .ai-compose-row { grid-template-columns: minmax(0, 1fr); }
+  .ai-steps-grid, .ai-fiche-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* 4 entrées dans « Créer un contenu » depuis l’ajout du Studio IA */
+.wf-create-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }

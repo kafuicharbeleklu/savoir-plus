@@ -70,6 +70,35 @@ function StudyTopBar({
   );
 }
 
+/** Fiche illustrée pas à pas d'un module (créé avec le Studio IA). */
+function IllustratedSteps({
+  steps,
+  aiAssisted
+}: {
+  steps: { caption: string; imageUrl?: string }[];
+  aiAssisted?: boolean;
+}) {
+  return (
+    <section className="ai-fiche" aria-label="Fiche illustrée pas à pas">
+      <div className="between ai-fiche-head">
+        <span className="study-type-tag">FICHE PAS À PAS</span>
+        {aiAssisted && <span className="tiny muted">Structurée et illustrée avec l’IA, relue par l’auteur</span>}
+      </div>
+      <ol className="ai-fiche-grid">
+        {steps.map((s, i) => (
+          <li key={`${i}-${s.caption}`} className="ai-fiche-step">
+            <span className="ai-step-num tabular-nums" aria-hidden="true">
+              {i + 1}
+            </span>
+            {s.imageUrl && <img src={s.imageUrl} alt="" loading="lazy" />}
+            <p>{s.caption}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 export function AcademyReaderView({
   moduleContent = MODULES_CONTENT.phishing,
   progress,
@@ -206,7 +235,9 @@ export function AcademyReaderView({
           <p className="study-lead">{current.intro}</p>
           <p className="study-body">{current.body}</p>
 
-          {(safeIndex === 0 || safeIndex === 1) && <ModuleInteractiveLab labType={moduleContent.labType} />}
+          {moduleContent.steps?.length
+            ? safeIndex === 0 && <IllustratedSteps steps={moduleContent.steps} aiAssisted={moduleContent.aiAssisted} />
+            : (safeIndex === 0 || safeIndex === 1) && <ModuleInteractiveLab labType={moduleContent.labType} />}
 
           <div className="study-points-box">
             <h3>Points essentiels à retenir</h3>

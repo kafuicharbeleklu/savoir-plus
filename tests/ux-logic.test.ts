@@ -544,3 +544,36 @@ test('Personnage de démo : ?as= prioritaire, puis mémoire de l’onglet, sinon
   assert.equal(resolveDemoPersona('?as=pirate', 'inconnu'), 'afi');
   assert.equal(resolveDemoPersona('', null), 'afi');
 });
+
+test('Studio IA : un contenu porte ses propres points clés, réflexe, quiz et fiche illustrée', () => {
+  const studio = [
+    {
+      id: 'st-ai-1',
+      title: 'Sauvegarder ses fichiers',
+      domain: 'Numérique',
+      duration: '10 min',
+      sources: 'Explication de Kossi · structuration assistée par IA',
+      sections: [
+        { id: 'sec-1', title: 'La règle 3-2-1', body: 'Trois copies, deux supports, une hors de chez soi.', keyPoints: ['3 copies', '2 supports'], tip: 'Testez la restauration.' },
+        { id: 'sec-2', title: 'Copier', body: 'Copiez chaque semaine.' },
+        { id: 'sec-3', title: 'Vérifier', body: 'Ouvrez un fichier restauré.' }
+      ],
+      quiz: [{ prompt: 'Combien de copies ?', options: ['1', '2', '3'], correctIndex: 2, explanation: 'Règle 3-2-1.' }],
+      steps: [{ caption: 'Choisissez vos dossiers', imageUrl: 'https://exemple.test/1.jpg' }, { caption: '' }],
+      aiAssisted: true
+    }
+  ];
+  const shared = { title: 'Quiz partagé', questions: [{ prompt: 'Autre', options: ['a', 'b'], correctIndex: 0, explanation: '' }] };
+  const content = resolveStudyContent('st-ai-1', studio, shared);
+  assert.deepEqual(content.lessons[0].points, ['3 copies', '2 supports']);
+  assert.equal(content.lessons[0].tip, 'Testez la restauration.');
+  assert.equal(content.lessons[1].points.length, 2); // valeurs par défaut quand la section n'a pas de points clés
+  assert.equal(content.questions.length, 1);
+  assert.equal(content.questions[0].text, 'Combien de copies ?');
+  assert.equal(content.questions[0].correctIndex, 2);
+  assert.equal(content.steps?.length, 1); // les étapes sans légende sont ignorées
+  assert.equal(content.aiAssisted, true);
+  // Sans quiz propre : le quiz partagé du Studio reste utilisé
+  const legacy = resolveStudyContent('st-x', [{ ...studio[0], id: 'st-x', quiz: undefined }], shared);
+  assert.equal(legacy.questions[0].text, 'Autre');
+});

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   ArrowDown,
@@ -33,6 +33,15 @@ import type { Profile, Progress } from '../data';
 import { MODULES_CONTENT } from '../content';
 import { moduleProgressPercent } from '../domain.mjs';
 import { evaluateStudioReadiness } from '../personas';
+import {
+  AI_SOURCE_MAX,
+  AI_SOURCE_MIN,
+  aiStatus,
+  generateModuleProposal,
+  illustrateSteps,
+  type AiModuleProposal,
+  type AiStatus
+} from '../ai';
 import { ContentTypeMark } from '../components/CatalogVisuals';
 
 interface StudioProps {
@@ -68,7 +77,7 @@ function StudioShell({
     { id: 'studio-quiz', label: 'Quiz' },
     { id: 'studio-media', label: 'Médias' },
     { id: 'studio-path', label: 'Parcours' },
-    { id: 'studio-ocr', label: 'Import & IA · Aperçu' },
+    { id: 'studio-ocr', label: 'Studio IA' },
     { id: 'studio-publish', label: 'Publication' },
     { id: 'studio-stats', label: 'Statistiques' },
     { id: 'studio-profile', label: 'Profil créateur' }
@@ -191,6 +200,11 @@ export function StudioHomeView({ ext, updateExt, nav, setToast, user }: StudioPr
       <section className="wf-card wf-mb">
         <h3>Créer un contenu</h3>
         <div className="wf-create-grid">
+          <button className="wf-create-btn is-ai" onClick={() => nav('studio-ocr')}>
+            <Layers size={20} />
+            <b>Créer avec l’IA</b>
+            <span>De votre explication à un module illustré, relu par vous</span>
+          </button>
           <button className="wf-create-btn" onClick={() => createNew('resource')}>
             <FileText size={20} />
             <b>Ressource autonome</b>
@@ -1196,164 +1210,441 @@ export function StudioPublishView({ ext, updateExt, nav, selectedId, setToast, u
   );
 }
 
-export function StudioOcrView({ ext, updateExt, nav, user }: StudioProps) {
-  const [step, setStep] = useState<'source' | 'ocr' | 'ai'>('source');
-  const [pages, setPages] = useState('1 à 6');
-  const page5Text = ext.ocrDraft.pagesCorrected[5] || '';
+const AI_EXAMPLE_SOURCE =
+  'Pour protéger ses fichiers importants (photos, devoirs, mémoire), on applique la règle 3-2-1 : garder trois copies de ses données, sur deux supports différents, dont une copie hors de chez soi. ' +
+  'Concrètement, on choisit d’abord les dossiers essentiels. On copie ces dossiers sur une clé USB ou un disque externe, au moins une fois par semaine. ' +
+  'On active aussi une sauvegarde en ligne protégée par un mot de passe solide et la double authentification. ' +
+  'On range le disque externe dans un endroit différent de l’ordinateur. ' +
+  'Enfin, une fois par mois, on vérifie qu’on peut réellement ouvrir un fichier restauré : une sauvegarde jamais testée peut être inutilisable.';
+
+type AiPhase = 'compose' | 'generating' | 'review';
+
+export function StudioAiView({ ext, updateExt, nav, setToast, user }: StudioProps) {
+  const [status, setStatus] = useState<AiStatus | null>(null);
+  const [titleHint, setTitleHint] = useState('');
+  const [domain, setDomain] = useState<StudioContent['domain']>('Numérique');
+  const [source, setSource] = useState('');
+  const [phase, setPhase] = useState<AiPhase>('compose');
+  const [error, setError] = useState('');
+  const [model, setModel] = useState('');
+  const [proposal, setProposal] = useState<AiModuleProposal | null>(null);
+  const [keepSections, setKeepSections] = useState<boolean[]>([]);
+  const [keepQuestions, setKeepQuestions] = useState<boolean[]>([]);
+  const [keepSteps, setKeepSteps] = useState<boolean[]>([]);
+  const [images, setImages] = useState<(string | undefined)[]>([]);
+  const [imgPhase, setImgPhase] = useState<'idle' | 'loading' | 'done'>('idle');
+  const [imgError, setImgError] = useState('');
+
+  useEffect(() => {
+    let alive = true;
+    aiStatus().then((s) => {
+      if (alive) setStatus(s);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const sourceLength = source.trim().length;
+  const canGenerate = Boolean(status?.text) && sourceLength >= AI_SOURCE_MIN && sourceLength <= AI_SOURCE_MAX;
+
+  const generate = async () => {
+    setError('');
+    setPhase('generating');
+    try {
+      const res = await generateModuleProposal(source.trim(), titleHint.trim());
+      setModel(res.model);
+      setProposal(res.module);
+      setKeepSections(res.module.sections.map(() => true));
+      setKeepQuestions(res.module.questions.map(() => true));
+      setKeepSteps(res.module.steps.map(() => true));
+      setImages([]);
+      setImgPhase('idle');
+      setImgError('');
+      setPhase('review');
+    } catch (e: any) {
+      setError(e?.message || 'La génération a échoué.');
+      setPhase('compose');
+    }
+  };
+
+  const illustrate = async () => {
+    if (!proposal) return;
+    setImgError('');
+    setImgPhase('loading');
+    try {
+      const res = await illustrateSteps(proposal.steps.map((s) => s.illustrationPrompt));
+      setImages(proposal.steps.map((_, i) => res[i]?.url));
+      const failed = proposal.steps.filter((_, i) => !res[i]?.url).length;
+      if (failed) setImgError(`${failed} illustration(s) indisponible(s) : vous pouvez réessayer.`);
+      setImgPhase('done');
+    } catch (e: any) {
+      setImgError(e?.message || 'Illustrations indisponibles.');
+      setImgPhase('idle');
+    }
+  };
+
+  const patchSection = (i: number, patch: Partial<AiModuleProposal['sections'][number]>) =>
+    setProposal((p) => p && { ...p, sections: p.sections.map((s, j) => (j === i ? { ...s, ...patch } : s)) });
+  const patchQuestion = (i: number, patch: Partial<AiModuleProposal['questions'][number]>) =>
+    setProposal((p) => p && { ...p, questions: p.questions.map((q, j) => (j === i ? { ...q, ...patch } : q)) });
+  const patchStep = (i: number, caption: string) =>
+    setProposal((p) => p && { ...p, steps: p.steps.map((s, j) => (j === i ? { ...s, caption } : s)) });
+  const toggle = (setter: React.Dispatch<React.SetStateAction<boolean[]>>, i: number) =>
+    setter((prev) => prev.map((v, j) => (j === i ? !v : v)));
+
+  const createDraft = () => {
+    if (!proposal) return;
+    const sections = proposal.sections
+      .filter((_, i) => keepSections[i])
+      .map((s, i) => ({
+        id: `sec-${i + 1}`,
+        title: s.title.trim() || `Section ${i + 1}`,
+        body: s.body.trim(),
+        keyPoints: s.keyPoints.map((k) => k.trim()).filter(Boolean),
+        tip: s.tip.trim()
+      }));
+    if (sections.length === 0) {
+      setError('Retenez au moins une section pour créer le brouillon.');
+      return;
+    }
+    const quiz = proposal.questions
+      .filter((_, i) => keepQuestions[i])
+      .map((q) => ({
+        prompt: q.prompt.trim(),
+        options: q.options.map((o) => o.trim()),
+        correctIndex: q.correctIndex,
+        explanation: q.explanation.trim()
+      }));
+    const steps = proposal.steps
+      .map((s, i) => ({ caption: s.caption.trim(), imageUrl: images[i], keep: keepSteps[i] }))
+      .filter((s) => s.keep && s.caption)
+      .map(({ caption, imageUrl }) => ({ caption, imageUrl }));
+    const author = user?.name || 'l’encadreur';
+    const id = `st-ai-${Date.now()}`;
+    const item: StudioContent = {
+      id,
+      type: 'module',
+      title: proposal.title.trim() || titleHint.trim() || 'Module sans titre',
+      domain,
+      version: 'v1',
+      pubStatus: 'Brouillon',
+      reviewStatus: 'Non soumise',
+      audience: 'Membres autorisés',
+      duration: `${Math.max(5, sections.length * 3 + 4)} min`,
+      sources: `Explication de ${author} · structuration assistée par IA (${model})${
+        steps.some((s) => s.imageUrl) ? ' · illustrations FLUX.2' : ''
+      }`,
+      updatedAt: 'Brouillon créé avec le Studio IA',
+      sections,
+      quiz: quiz.length ? quiz : undefined,
+      steps: steps.length ? steps : undefined,
+      aiAssisted: true
+    };
+    updateExt((prev) => ({
+      ...prev,
+      studioContents: [item, ...prev.studioContents],
+      auditLogs: appendAuditLog(prev.auditLogs, {
+        actor: author,
+        action: 'Brouillon créé avec le Studio IA',
+        target: item.title,
+        scope: 'Studio IA',
+        result: 'Succès',
+        justification: 'Proposition IA relue par l’auteur ; aucune publication automatique.'
+      })
+    }));
+    setToast('Brouillon créé à partir de la proposition IA : relisez-le puis publiez.');
+    nav('studio-editor', id);
+  };
 
   return (
     <StudioShell active="studio-ocr" nav={nav} user={user} ext={ext}>
       <div className="page-heading">
-        <span className="eyebrow">STUDIO · IMPORT, OCR & ASSISTANCE IA · APERÇU</span>
-        <h1>Préparer une source, relire l’OCR et vérifier l’aide IA</h1>
+        <span className="eyebrow">STUDIO IA · GÉNÉRATION ASSISTÉE</span>
+        <h1>De votre explication à un module prêt à relire</h1>
         <p>
-          Parcours prévu : aucune génération automatique ne publiera ni ne validera un contenu sans relecture humaine.
+          Collez votre explication : l’IA propose trois sections, un quiz corrigé et une fiche illustrée pas à pas. Vous
+          gardez la main : rien n’est publié sans votre relecture.
         </p>
       </div>
 
-      <div className="wf-preview-banner" role="note">
-        <span>
-          <b>Aperçu — non fonctionnel.</b> L’extraction OCR et la proposition IA ci-dessous sont un exemple fixe :
-          aucun fichier n’est analysé et aucun modèle d’IA n’est appelé.
-        </span>
-      </div>
+      {status === null && <p className="tiny muted wf-mb">Vérification du service IA…</p>}
+      {status && !status.text && (
+        <div className="wf-alert-warn wf-mb" role="status">
+          <AlertTriangle size={16} />
+          <span>
+            Service IA indisponible pour le moment. Vous pouvez toujours créer un module à la main depuis « Mes
+            contenus ».
+          </span>
+        </div>
+      )}
 
-      <div className="catalog-tabs-underline" role="tablist" aria-label="Étapes d’extraction OCR et IA">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={step === 'source'}
-          className={step === 'source' ? 'selected' : ''}
-          onClick={() => setStep('source')}
-        >
-          1. Préparation de source
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={step === 'ocr'}
-          className={step === 'ocr' ? 'selected' : ''}
-          onClick={() => setStep('ocr')}
-        >
-          2. Relecture OCR côte à côte
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={step === 'ai'}
-          className={step === 'ai' ? 'selected' : ''}
-          onClick={() => setStep('ai')}
-        >
-          3. Proposition IA séparée
-        </button>
-      </div>
+      {error && (
+        <div className="wf-alert-warn wf-mb" role="alert">
+          <AlertTriangle size={16} />
+          <span>{error}</span>
+        </div>
+      )}
 
-      {step === 'source' && (
+      {phase !== 'review' && (
         <section className="wf-card wf-form-stack">
-          <h3>Source sélectionnée : bases-reseaux.pdf (6 pages)</h3>
-          <p className="tiny muted">
-            Pages 1 à 4 : texte natif exploitable · Pages 5 à 6 : images scannées (OCR requis).
-          </p>
+          <div className="ai-compose-row">
+            <label>
+              Titre souhaité (facultatif)
+              <input
+                value={titleHint}
+                maxLength={120}
+                onChange={(e) => setTitleHint(e.target.value)}
+                placeholder="Ex. Sauvegarder ses fichiers importants"
+              />
+            </label>
+            <label>
+              Domaine
+              <select value={domain} onChange={(e) => setDomain(e.target.value as StudioContent['domain'])}>
+                <option>Numérique</option>
+                <option>Communication</option>
+                <option>Gestion</option>
+              </select>
+            </label>
+          </div>
           <label>
-            Pages à traiter
-            <input value={pages} onChange={(e) => setPages(e.target.value)} />
+            Votre explication
+            <textarea
+              rows={10}
+              value={source}
+              maxLength={AI_SOURCE_MAX}
+              onChange={(e) => setSource(e.target.value)}
+              placeholder="Expliquez la notion comme à un apprenant : étapes, règles, erreurs à éviter…"
+            />
           </label>
-          <div className="lesson-actions">
-            <span className="tiny muted">Exemple simulé : aucun traitement n’est lancé</span>
-            <button className="primary" onClick={() => setStep('ocr')}>
-              Voir l’exemple d’extraction <ArrowRight size={15} />
-            </button>
-          </div>
-        </section>
-      )}
-
-      {step === 'ocr' && (
-        <section className="wf-card">
-          <div className="between wf-mb">
-            <h3>Relecture OCR · Page 5 / 6</h3>
-            <span className="status-tag warn">Page 6 : échec d’OCR (exclue)</span>
-          </div>
-          <div className="wf-ocr-split">
-            <div className="wf-ocr-source">
-              <span className="eyebrow">IMAGE SOURCE (SIMULÉE)</span>
-              <div className="wf-ocr-box">
-                <p>
-                  « Une adresse IP identifie une interface sur un réseau. Le routeur transmet les paquets entre des
-                  réseaux distincts. »
-                </p>
-              </div>
-              <small className="muted">Vérifiez les chiffres, noms propres et négations avant insertion.</small>
-            </div>
-            <div className="wf-form-stack">
-              <label>
-                Texte extrait éditable (page 5)
-                <textarea
-                  rows={5}
-                  value={page5Text}
-                  onChange={(e) =>
-                    updateExt((prev) => ({
-                      ...prev,
-                      ocrDraft: {
-                        ...prev.ocrDraft,
-                        pagesCorrected: { ...prev.ocrDraft.pagesCorrected, 5: e.target.value }
-                      }
-                    }))
-                  }
-                />
-              </label>
-            </div>
-          </div>
-          <div className="lesson-actions">
-            <button className="secondary" onClick={() => setStep('source')}>
-              Changer les pages
-            </button>
-            <button className="primary" onClick={() => setStep('ai')}>
-              Marquer page 5 relue & continuer <ArrowRight size={15} />
-            </button>
-          </div>
-        </section>
-      )}
-
-      {step === 'ai' && (
-        <section className="wf-card">
-          <div className="between wf-mb">
-            <h3>
-              <Layers size={16} /> Proposition de structure (séparée du brouillon)
-            </h3>
-            <span className="inline-meta">Provenance : bases-reseaux.pdf (p. 1–5 relues)</span>
-          </div>
-          <div className="wf-program-list wf-mb">
-            <div className="wf-program-item">
-              <div>
-                <b>Section 1 : Les équipements réseau</b>
-                <small>Appuyée sur les pages 1 à 3 · Vérifiée</small>
-              </div>
-              <span className="status-tag ok">Sourcée</span>
-            </div>
-            <div className="wf-program-item">
-              <div>
-                <b>Section 2 : Rôle de l’adresse IP et du routeur</b>
-                <small>Appuyée sur la page 5 relue par l’auteur</small>
-              </div>
-              <span className="status-tag ok">Sourcée</span>
-            </div>
-            <div className="wf-program-item">
-              <div>
-                <b>Section 3 : Synthèse proposée (hors extrait page 6)</b>
-                <small>À vérifier par l’auteur (page 6 exclue de l’extraction)</small>
-              </div>
-              <span className="status-tag warn">À vérifier</span>
-            </div>
-          </div>
-          <div className="lesson-actions">
-            <button className="secondary" onClick={() => setStep('ocr')}>
-              Revenir à la relecture OCR
-            </button>
-            <span className="tiny muted">
-              L’insertion dans un brouillon sera disponible avec le Studio IA (en préparation).
+          <div className="between tiny muted ai-compose-meta">
+            <span>
+              Seul ce texte est envoyé au modèle d’IA (Google Gemini). N’y mettez pas de données personnelles ; les
+              instructions qu’il contiendrait sont ignorées.
+            </span>
+            <span className={`tabular-nums ${sourceLength > 0 && sourceLength < AI_SOURCE_MIN ? 'ai-count-warn' : ''}`}>
+              {sourceLength} / {AI_SOURCE_MAX}
             </span>
           </div>
+          <div className="lesson-actions">
+            <button
+              className="secondary"
+              type="button"
+              onClick={() => setSource(AI_EXAMPLE_SOURCE)}
+              disabled={phase === 'generating'}
+            >
+              <FileText size={15} /> Utiliser un exemple
+            </button>
+            <button className="primary" type="button" onClick={generate} disabled={!canGenerate || phase === 'generating'}>
+              {phase === 'generating' ? (
+                <>
+                  <RefreshCw size={15} className="ai-spin" /> Structuration en cours… (≈ 10 s)
+                </>
+              ) : (
+                <>
+                  Générer la proposition <ArrowRight size={15} />
+                </>
+              )}
+            </button>
+          </div>
         </section>
+      )}
+
+      {phase === 'review' && proposal && (
+        <>
+          <div className="wf-preview-banner" role="note">
+            <span>
+              <b>Proposition de l’IA ({model}), à relire.</b> Décochez ce que vous ne retenez pas et corrigez le texte si
+              besoin. Rien n’est enregistré tant que vous n’avez pas créé le brouillon.
+            </span>
+          </div>
+
+          <div className="ai-review-grid">
+            <aside className="wf-card ai-source-pane" aria-label="Texte source">
+              <span className="eyebrow">VOTRE TEXTE SOURCE</span>
+              <p className="ai-source-text">{source}</p>
+              {proposal.gaps.length > 0 && (
+                <div className="ai-gaps">
+                  <b>Points que votre texte ne précise pas</b>
+                  <ul>
+                    {proposal.gaps.map((g) => (
+                      <li key={g}>{g}</li>
+                    ))}
+                  </ul>
+                  <small className="tiny muted">L’IA les signale au lieu de les inventer : complétez-les si besoin.</small>
+                </div>
+              )}
+              <button className="secondary" type="button" onClick={() => setPhase('compose')}>
+                <ArrowLeft size={15} /> Modifier le texte
+              </button>
+            </aside>
+
+            <div className="ai-proposal-pane">
+              <section className="wf-card wf-form-stack">
+                <label>
+                  Titre du module
+                  <input
+                    value={proposal.title}
+                    maxLength={120}
+                    onChange={(e) => setProposal({ ...proposal, title: e.target.value })}
+                  />
+                </label>
+                {proposal.summary && <p className="tiny muted">{proposal.summary}</p>}
+              </section>
+
+              <h3 className="ai-block-title">
+                <Layers size={16} /> Sections ({keepSections.filter(Boolean).length} / {proposal.sections.length} retenues)
+              </h3>
+              {proposal.sections.map((s, i) => (
+                <section key={i} className={`wf-card wf-form-stack ai-block ${keepSections[i] ? '' : 'is-dropped'}`}>
+                  <label className="ai-keep">
+                    <input type="checkbox" checked={keepSections[i]} onChange={() => toggle(setKeepSections, i)} />
+                    Retenir la section {i + 1}
+                  </label>
+                  <input
+                    aria-label={`Titre de la section ${i + 1}`}
+                    value={s.title}
+                    onChange={(e) => patchSection(i, { title: e.target.value })}
+                  />
+                  <textarea
+                    aria-label={`Contenu de la section ${i + 1}`}
+                    rows={4}
+                    value={s.body}
+                    onChange={(e) => patchSection(i, { body: e.target.value })}
+                  />
+                  <label>
+                    Points clés (un par ligne)
+                    <textarea
+                      rows={3}
+                      value={s.keyPoints.join('\n')}
+                      onChange={(e) => patchSection(i, { keyPoints: e.target.value.split('\n') })}
+                    />
+                  </label>
+                  <label>
+                    Réflexe clé
+                    <input value={s.tip} onChange={(e) => patchSection(i, { tip: e.target.value })} />
+                  </label>
+                </section>
+              ))}
+
+              <h3 className="ai-block-title">
+                <ListChecks size={16} /> Quiz ({keepQuestions.filter(Boolean).length} / {proposal.questions.length} questions
+                retenues)
+              </h3>
+              {proposal.questions.map((q, i) => (
+                <section key={i} className={`wf-card wf-form-stack ai-block ${keepQuestions[i] ? '' : 'is-dropped'}`}>
+                  <label className="ai-keep">
+                    <input type="checkbox" checked={keepQuestions[i]} onChange={() => toggle(setKeepQuestions, i)} />
+                    Retenir la question {i + 1}
+                  </label>
+                  <input
+                    aria-label={`Question ${i + 1}`}
+                    value={q.prompt}
+                    onChange={(e) => patchQuestion(i, { prompt: e.target.value })}
+                  />
+                  <div className="ai-options" role="radiogroup" aria-label={`Bonne réponse de la question ${i + 1}`}>
+                    {q.options.map((o, oi) => (
+                      <div key={oi} className={`ai-option ${q.correctIndex === oi ? 'is-correct' : ''}`}>
+                        <input
+                          type="radio"
+                          name={`ai-q-${i}`}
+                          aria-label={`Définir l’option ${oi + 1} comme bonne réponse`}
+                          checked={q.correctIndex === oi}
+                          onChange={() => patchQuestion(i, { correctIndex: oi })}
+                        />
+                        <input
+                          aria-label={`Option ${oi + 1}`}
+                          value={o}
+                          onChange={(e) =>
+                            patchQuestion(i, { options: q.options.map((x, xi) => (xi === oi ? e.target.value : x)) })
+                          }
+                        />
+                        {q.correctIndex === oi && <span className="status-tag ok">Bonne réponse</span>}
+                      </div>
+                    ))}
+                  </div>
+                  <label>
+                    Explication
+                    <textarea
+                      rows={2}
+                      value={q.explanation}
+                      onChange={(e) => patchQuestion(i, { explanation: e.target.value })}
+                    />
+                  </label>
+                </section>
+              ))}
+
+              <div className="between ai-block-title">
+                <h3>
+                  <ImageIcon size={16} /> Fiche illustrée pas à pas
+                </h3>
+                <button
+                  className="secondary"
+                  type="button"
+                  onClick={illustrate}
+                  disabled={!status?.images || imgPhase === 'loading'}
+                  title={!status?.images ? 'Illustrations indisponibles pour le moment' : undefined}
+                >
+                  {imgPhase === 'loading' ? (
+                    <>
+                      <RefreshCw size={15} className="ai-spin" /> Illustration en cours…
+                    </>
+                  ) : imgPhase === 'done' ? (
+                    <>
+                      <RefreshCw size={15} /> Régénérer les illustrations
+                    </>
+                  ) : (
+                    <>
+                      <ImageIcon size={15} /> Générer les illustrations
+                    </>
+                  )}
+                </button>
+              </div>
+              {imgError && <p className="tiny ai-count-warn">{imgError}</p>}
+              <div className="ai-steps-grid">
+                {proposal.steps.map((s, i) => (
+                  <figure key={i} className={`ai-step-card ${keepSteps[i] ? '' : 'is-dropped'}`}>
+                    <div className="ai-step-visual">
+                      <span className="ai-step-num tabular-nums">{i + 1}</span>
+                      {images[i] ? (
+                        <img src={images[i]} alt={s.caption} loading="lazy" />
+                      ) : (
+                        <span className="tiny muted">
+                          {imgPhase === 'loading' ? 'Dessin en cours…' : 'Illustration à générer'}
+                        </span>
+                      )}
+                    </div>
+                    <figcaption className="wf-form-stack">
+                      <textarea
+                        aria-label={`Légende de l’étape ${i + 1}`}
+                        rows={2}
+                        value={s.caption}
+                        onChange={(e) => patchStep(i, e.target.value)}
+                      />
+                      <label className="ai-keep">
+                        <input type="checkbox" checked={keepSteps[i]} onChange={() => toggle(setKeepSteps, i)} />
+                        Retenir
+                      </label>
+                    </figcaption>
+                  </figure>
+                ))}
+              </div>
+              <p className="tiny muted">
+                Illustrations générées par IA (FLUX.2) dans un style de pictogramme fixe. Vérifiez qu’elles correspondent
+                bien à chaque étape avant de les retenir.
+              </p>
+
+              <div className="lesson-actions">
+                <button className="secondary" type="button" onClick={() => setPhase('compose')}>
+                  <ArrowLeft size={15} /> Recommencer
+                </button>
+                <button className="primary" type="button" onClick={createDraft}>
+                  <CheckCircle2 size={15} /> Créer le brouillon et relire
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </StudioShell>
   );

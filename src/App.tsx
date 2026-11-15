@@ -160,7 +160,7 @@ import {
   StudioEditorView,
   StudioHomeView,
   StudioMediaView,
-  StudioOcrView,
+  StudioAiView,
   StudioPathView,
   StudioPublishView,
   StudioQuizView,
@@ -2381,7 +2381,7 @@ export default function App() {
     if (page === 'studio-media') return <StudioMediaView {...studioProps} />;
     if (page === 'studio-path') return <StudioPathView {...studioProps} />;
     if (page === 'studio-publish') return <StudioPublishView {...studioProps} />;
-    if (page === 'studio-ocr') return <StudioOcrView {...studioProps} />;
+    if (page === 'studio-ocr') return <StudioAiView {...studioProps} />;
     if (page === 'studio-stats') return <StudioStatsView {...studioProps} />;
     if (page === 'studio-profile') return <StudioCreatorProfileView {...studioProps} />;
 
@@ -2496,7 +2496,7 @@ export default function App() {
                   <span><FileText size={16} /> Contrôle & publier</span>
                 </button>
                 <button className={`rail-nav-btn ${page === 'studio-ocr' ? 'active' : ''}`} onClick={() => nav('studio-ocr')}>
-                  <span><FileUp size={16} /> Import & IA · Aperçu</span>
+                  <span><FileUp size={16} /> Studio IA</span>
                 </button>
                 <button className={`rail-nav-btn ${page === 'studio-stats' ? 'active' : ''}`} onClick={() => nav('studio-stats')}>
                   <span><BarChart2 size={16} /> Statistiques</span>

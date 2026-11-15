@@ -311,8 +311,14 @@ export interface StudioContent {
   audience: 'Membres autorisés' | 'Public' | 'Privé';
   duration: string;
   sources: string;
-  sections: { id: string; title: string; body: string }[];
+  sections: { id: string; title: string; body: string; keyPoints?: string[]; tip?: string }[];
   updatedAt: string;
+  /** Quiz propre au contenu (Studio IA) ; sinon le quiz partagé du Studio est utilisé. */
+  quiz?: { prompt: string; options: string[]; correctIndex: number; explanation: string }[];
+  /** Fiche illustrée pas à pas. */
+  steps?: { caption: string; imageUrl?: string }[];
+  /** Structuré avec l'aide de l'IA puis relu par l'auteur. */
+  aiAssisted?: boolean;
 }
 
 export interface StudioQuizQuestion {
@@ -1371,7 +1377,9 @@ export function buildDynamicCatalog(ext: ExtendedDemoState): CatalogItem[] {
       interactive: s.type === 'module',
       xpReward: s.type === 'module' ? 150 : undefined,
       summary: s.sections[0]?.body || 'Contenu publié depuis le Studio Créateur SAVOIR+.',
-      objectives: ['Comprendre et appliquer les notions clés présentées dans ce contenu.'],
+      objectives: s.sections.some((sec) => sec.keyPoints?.length)
+        ? s.sections.map((sec) => sec.keyPoints?.[0]).filter((k): k is string => Boolean(k)).slice(0, 3)
+        : ['Comprendre et appliquer les notions clés présentées dans ce contenu.'],
       prerequisites: s.sources ? `Source déclarée : ${s.sources}` : 'Aucun prérequis bloquant.',
       resourceFormat: s.type === 'resource' ? 'Fiche' : undefined,
       resourceBody:

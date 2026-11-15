@@ -22,6 +22,23 @@ export interface ModuleStudyContent {
   labType: 'phishing' | 'reseaux' | 'comptes' | 'generic';
   lessons: StudyLesson[];
   questions: StudyQuestion[];
+  /** Fiche illustrée pas à pas (contenus créés avec le Studio IA). */
+  steps?: { caption: string; imageUrl?: string }[];
+  /** Contenu structuré avec l'aide de l'IA puis relu par son auteur. */
+  aiAssisted?: boolean;
+}
+
+/** Forme minimale d'un contenu du Studio utilisée par le lecteur (voir StudioContent). */
+export interface StudioStudySource {
+  id: string;
+  title: string;
+  domain: string;
+  duration?: string;
+  sources?: string;
+  sections: { id: string; title: string; body: string; keyPoints?: string[]; tip?: string }[];
+  quiz?: { prompt: string; options: string[]; correctIndex: number; explanation: string }[];
+  steps?: { caption: string; imageUrl?: string }[];
+  aiAssisted?: boolean;
 }
 
 export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
@@ -263,7 +280,7 @@ export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
 export const lessons = MODULES_CONTENT.phishing.lessons;
 export const questions = MODULES_CONTENT.phishing.questions;
 
-export function resolveStudyContent(moduleId: string, studioContents?: { id: string; title: string; domain: string; duration?: string; sources?: string; sections: { id: string; title: string; body: string }[] }[], studioQuiz?: { title: string; questions: { prompt: string; options: string[]; correctIndex: number; explanation: string }[] }): ModuleStudyContent {
+export function resolveStudyContent(moduleId: string, studioContents?: StudioStudySource[], studioQuiz?: { title: string; questions: { prompt: string; options: string[]; correctIndex: number; explanation: string }[] }): ModuleStudyContent {
   if (MODULES_CONTENT[moduleId]) return MODULES_CONTENT[moduleId];
   const fromStudio = studioContents?.find((s) => s.id === moduleId);
   if (fromStudio) {
@@ -273,11 +290,13 @@ export function resolveStudyContent(moduleId: string, studioContents?: { id: str
       minutes: fromStudio.duration || '5 min',
       intro: sec.body || 'Contenu pédagogique structuré.',
       body: `${sec.body || ''}${fromStudio.sources ? ` · Source déclarée : ${fromStudio.sources}` : ''}`,
-      points: [
-        `Point clé issu de « ${sec.title || 'cette section'} »`,
-        'Vérifiez votre compréhension avant de passer à l’étape suivante.'
-      ],
-      tip: 'Relisez les notions clés ou posez une question dans la Communauté en cas de blocage.'
+      points: sec.keyPoints?.length
+        ? sec.keyPoints
+        : [
+            `Point clé issu de « ${sec.title || 'cette section'} »`,
+            'Vérifiez votre compréhension avant de passer à l’étape suivante.'
+          ],
+      tip: sec.tip || 'Relisez les notions clés ou posez une question dans la Communauté en cas de blocage.'
     }));
     while (mappedLessons.length < 3) {
       mappedLessons.push({
@@ -290,8 +309,16 @@ export function resolveStudyContent(moduleId: string, studioContents?: { id: str
         tip: 'Vous pouvez revenir sur chaque section à tout moment.'
       });
     }
-    const mappedQuestions: StudyQuestion[] =
-      studioQuiz && studioQuiz.questions.length >= 1
+    // Un contenu qui porte son propre quiz (Studio IA) l'utilise ; sinon, quiz partagé du Studio.
+    const ownQuiz = fromStudio.quiz?.filter((q) => q.prompt && q.options.length >= 2) || [];
+    const mappedQuestions: StudyQuestion[] = ownQuiz.length
+      ? ownQuiz.slice(0, 3).map((q) => ({
+          text: q.prompt,
+          answers: q.options,
+          correctIndex: Math.min(Math.max(q.correctIndex, 0), q.options.length - 1),
+          explanation: q.explanation || 'Correction enregistrée par le créateur du module.'
+        }))
+      : studioQuiz && studioQuiz.questions.length >= 1
         ? studioQuiz.questions.slice(0, 3).map((q) => ({
             text: q.prompt,
             answers: q.options.length >= 2 ? q.options : ['Réponse A', 'Réponse B'],
@@ -305,7 +332,9 @@ export function resolveStudyContent(moduleId: string, studioContents?: { id: str
       quizTitle: studioQuiz?.title || `Évaluation — ${fromStudio.title}`,
       labType: 'generic',
       lessons: mappedLessons,
-      questions: mappedQuestions
+      questions: mappedQuestions,
+      steps: fromStudio.steps?.filter((s) => s.caption),
+      aiAssisted: fromStudio.aiAssisted
     };
   }
   return MODULES_CONTENT.phishing;
