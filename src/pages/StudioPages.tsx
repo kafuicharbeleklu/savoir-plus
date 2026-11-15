@@ -1859,7 +1859,7 @@ export function StudioCreatorProfileView({ ext, nav, user }: StudioProps) {
   const details = (user && ext.profileDetails[user.id]) || ext.profileDetails.kossi;
   const dynamicCatalog = buildDynamicCatalog(ext);
   const catalogAuthored = dynamicCatalog.filter(
-    (c) => c.author === displayName || c.author === 'Kossi Davi'
+    (c) => c.author === displayName || c.author === 'Kossi Agbo'
   );
   const publishedStudio = ext.studioContents.filter(
     (c) =>

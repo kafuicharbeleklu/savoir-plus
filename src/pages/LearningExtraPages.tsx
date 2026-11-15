@@ -166,7 +166,11 @@ export function CatalogExtraView({
   return (
     <div className="dashboard-grid">
       <div className="dashboard-main">
-        <h1 className="sr-only">Bibliothèque pédagogique</h1>
+        <header className="page-header">
+          <span className="eyebrow">Apprendre</span>
+          <h1>Bibliothèque</h1>
+          <p>Modules courts, fiches de révision et parcours pour progresser à votre rythme.</p>
+        </header>
 
         <div className="catalog-tabs-underline" role="tablist" aria-label="Type de contenu">
           {[
@@ -346,23 +350,6 @@ export function CatalogExtraView({
           )}
         </section>
 
-        <section className="rail-card">
-          <span className="eyebrow">FILTRER PAR DOMAINE</span>
-          <h3>Explorer rapidement</h3>
-          <div className="rail-quick-list">
-            {domainCounts.map((dc) => (
-              <button
-                key={dc.label}
-                type="button"
-                className={`rail-filter-btn ${domain === dc.label ? 'active' : ''}`}
-                onClick={() => setDomain(dc.label)}
-              >
-                <span>{dc.label}</span>
-                <b className="tabular">{dc.count}</b>
-              </button>
-            ))}
-          </div>
-        </section>
 
         <section className="rail-card">
           <span className="eyebrow">À COMMENCER ({plannedItems.length})</span>
@@ -814,7 +801,7 @@ export function ProgressionPage({
   const safeExt = ext || initialExtendedState();
   const resolvedTarget: Profile = currentUser || {
     id: userId,
-    name: userId === 'kossi' ? 'Kossi Mensah' : userId === 'nadege' ? 'Nadège Kpadonou' : 'Afi T.',
+    name: userId === 'kossi' ? 'Kossi Agbo' : userId === 'nadege' ? 'Nadège Koffi' : 'Afi Mensah',
     role: safeExt.profileDetails[userId]?.tagline || 'Membre SAVOIR+',
     bio: safeExt.profileDetails[userId]?.bio || '',
     color: '#1D4D3B',
