@@ -28,6 +28,7 @@ import {
   MessageCircle,
   MessageSquare,
   Plus,
+  Search,
   Send,
   Settings,
   ShieldCheck,
@@ -109,6 +110,14 @@ import { MobileNav } from './components/MobileNav';
 import { Avatar, DifficultyMeter, ProfileIdentityCard, ProgressBar, VerifiedBadge } from './components/ProfileIdentityCard';
 import { CatalogCardBanner, CatalogContentCard, ContentTypeMark, XpBadgeInline } from './components/CatalogVisuals';
 import { MessagingDrawer } from './components/MessagingDrawer';
+import {
+  ConversationIntro,
+  ConversationMenu,
+  MessageComposer,
+  MessageThread,
+  ThreadScroll,
+  normalizeSearch
+} from './components/MessageThread';
 import { SplashScreen } from './components/SplashScreen';
 import { FeedPostCard } from './components/FeedPostCard';
 import {
@@ -265,6 +274,7 @@ export default function App() {
   const [progress, setProgress] = useState<Progress>(emptyProgress());
   const [relations, setRelations] = useState<Relation[]>([]);
   const [selectedRelId, setSelectedRelId] = useState<string>('');
+  const [conversationQuery, setConversationQuery] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState<string>('');
 
@@ -1922,75 +1932,78 @@ export default function App() {
                     </button>
                   </div>
                 ) : (
-                  myNetworkEntries.map((entry) => {
-                    const other = entry.profile;
-                    const rel = entry.relation
-                      ? relations.find((r) => r.id === entry.relation!.id)
-                      : undefined;
-                    const blocked = Boolean(rel && rel.blockedBy.length > 0);
-                    return (
-                      <div key={other.id} className="relation-row">
-                        <div className="connect-card-head">
-                          <Avatar person={other} small />
-                          <div>
-                            <div className="mini-profile-name-row">
-                              <button type="button" className="identity-link" onClick={() => nav('member', other.id)}>
-                                <b>{other.name}</b>
-                              </button>
-                              {entry.verified && <VerifiedBadge />}
+                  <div className="wf-notif-list relation-list" role="list">
+                    {myNetworkEntries.map((entry) => {
+                      const other = entry.profile;
+                      const rel = entry.relation
+                        ? relations.find((r) => r.id === entry.relation!.id)
+                        : undefined;
+                      const blocked = Boolean(rel && rel.blockedBy.length > 0);
+                      return (
+                        <div key={other.id} role="listitem" className="wf-notif-row read relation-list-row">
+                          <button
+                            type="button"
+                            className="relation-list-identity"
+                            onClick={() => nav('member', other.id)}
+                          >
+                            <Avatar person={other} />
+                            <div className="wf-notif-body">
+                              <div className="wf-notif-head">
+                                <h3>
+                                  {other.name}
+                                  {entry.verified && <VerifiedBadge />}
+                                </h3>
+                              </div>
+                              <p className="tiny muted">{entry.headline}</p>
+                              <span className="tiny muted wf-notif-actor">
+                                {blocked
+                                  ? 'Échange bloqué'
+                                  : entry.relationStatus === 'accepted'
+                                    ? 'Suivi · discussion active'
+                                    : rel?.status === 'pending'
+                                      ? 'Suivi · demande de discussion en attente'
+                                      : 'Compte suivi'}
+                              </span>
                             </div>
-                            <small className="tiny muted">
-                              {blocked
-                                ? 'Échange bloqué'
-                                : `${entry.headline} · ${entry.relationStatus === 'accepted' ? 'Suivi & discussion active' : 'Compte suivi'}`}
-                            </small>
+                          </button>
+                          <div className="relation-list-actions">
+                            {entry.isFollowed && (
+                              <button
+                                type="button"
+                                className="follow-btn follow-btn-sm is-following"
+                                onClick={() => toggleFollowPerson(other.id)}
+                                aria-pressed={true}
+                              >
+                                <Check size={13} /> Suivi
+                              </button>
+                            )}
+                            {rel?.status === 'accepted' && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="secondary"
+                                  onClick={() => openConversation(rel.id)}
+                                >
+                                  Message
+                                </button>
+                                <ConversationMenu
+                                  label={`Plus d’options pour ${other.name}`}
+                                  items={[
+                                    {
+                                      label: rel.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer',
+                                      danger: true,
+                                      disabled: busy,
+                                      onSelect: () => handleToggleBlock(rel)
+                                    }
+                                  ]}
+                                />
+                              </>
+                            )}
                           </div>
                         </div>
-                        <div className="wf-inline-actions">
-                          {entry.isFollowed && (
-                            <button
-                              type="button"
-                              className="follow-btn follow-btn-sm is-following"
-                              onClick={() => toggleFollowPerson(other.id)}
-                              aria-pressed={true}
-                            >
-                              <Check size={13} /> Suivi
-                            </button>
-                          )}
-                          {rel?.status === 'accepted' ? (
-                            <>
-                              <button
-                                type="button"
-                                className="primary"
-                                onClick={() => openConversation(rel.id)}
-                              >
-                                <MessageCircle size={14} /> Message
-                              </button>
-                              <button
-                                type="button"
-                                className="secondary danger"
-                                disabled={busy}
-                                onClick={() => handleToggleBlock(rel)}
-                              >
-                                {rel.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer'}
-                              </button>
-                            </>
-                          ) : rel?.status === 'pending' ? (
-                            <span className="status-tag warn">Demande en attente</span>
-                          ) : (
-                            <button
-                              type="button"
-                              className="secondary"
-                              disabled={busy}
-                              onClick={() => handleRequestContact(other)}
-                            >
-                              <MessageCircle size={14} /> Demander à discuter
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
@@ -2116,105 +2129,92 @@ export default function App() {
       return (
         <div className="dashboard-grid">
           <div className="dashboard-main">
-            <div className="between wf-mb-sm">
-              <h1>Conversations</h1>
-              <button className="secondary" onClick={() => nav('relations')}>
-                <Users size={15} /> Gérer mes relations
-              </button>
-            </div>
-
-            <section className="chat-panel" aria-label="Messagerie complète">
-              <aside className="conversation-list">
-                <div className="conversation-title">Discussions ({acceptedRelations.length})</div>
+            <section className="chat-panel" aria-label="Messagerie">
+              <header className="chat-panel-head">
+                <h1>Messagerie</h1>
+                <label className="li-search">
+                  <Search size={16} aria-hidden="true" />
+                  <input
+                    type="search"
+                    placeholder="Rechercher dans les messages"
+                    aria-label="Rechercher une discussion"
+                    value={conversationQuery}
+                    onChange={(e) => setConversationQuery(e.target.value)}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="li-icon-btn chat-panel-head-action"
+                  title="Gérer mes relations"
+                  aria-label="Gérer mes relations"
+                  onClick={() => nav('relations')}
+                >
+                  <Users size={18} aria-hidden="true" />
+                </button>
+              </header>
+              <div className="conversation-list" role="list">
                 {acceptedRelations.length === 0 ? (
                   <div className="conversation-empty">
                     Aucune discussion active. Acceptez ou envoyez une demande dans Relations.
                   </div>
                 ) : (
-                  acceptedRelations.map((r) => {
-                    const p = people.find((x) => x.id === r.members.find((id) => id !== uid));
-                    if (!p) return null;
-                    return (
+                  (() => {
+                    const q = normalizeSearch(conversationQuery);
+                    const rows = acceptedRelations
+                      .map((r) => ({ r, p: people.find((x) => x.id === r.members.find((id) => id !== uid)) }))
+                      .filter((x) => x.p && (!q || normalizeSearch(x.p.name).includes(q)));
+                    if (rows.length === 0) {
+                      return <p className="conversation-empty">Aucun contact ne correspond à « {conversationQuery} ».</p>;
+                    }
+                    return rows.map(({ r, p }) => (
                       <button
                         key={r.id}
-                        className={selectedRelId === r.id ? 'active' : ''}
+                        type="button"
+                        role="listitem"
+                        className={`conversation-row ${selectedRelId === r.id ? 'active' : ''}`}
+                        aria-current={selectedRelId === r.id ? 'true' : undefined}
                         onClick={() => setSelectedRelId(r.id)}
                       >
-                        <Avatar person={p} small />
-                        <div>
-                          <b>{p.name}</b>
-                          <small>{r.blockedBy.length ? 'Échange bloqué' : p.role}</small>
-                        </div>
+                        <Avatar person={p!} />
+                        <span className="conversation-row-text">
+                          <b>{p!.name}</b>
+                          <small>{r.blockedBy.length ? 'Échange bloqué' : p!.role}</small>
+                        </span>
                       </button>
-                    );
-                  })
+                    ));
+                  })()
                 )}
-              </aside>
+              </div>
 
               <div className="chat-main">
                 {activeRel && other ? (
                   <>
                     <div className="chat-header">
                       <button className="identity-link" onClick={() => nav('member', other.id)}>
-                        <Avatar person={other} small />
                         <div>
                           <b>{other.name}</b>
-                          <small className="tiny muted">{other.role}</small>
+                          <small>{ext.profileDetails[other.id]?.tagline || other.role}</small>
                         </div>
                       </button>
-                      <div className="wf-inline-actions">
-                        <button
-                          className="secondary"
-                          onClick={() => setReportTarget(`Conversation avec ${other.name}`)}
-                        >
-                          <Flag size={14} /> Signaler
-                        </button>
-                        <button className="secondary danger" disabled={busy} onClick={() => handleToggleBlock(activeRel)}>
-                          {activeRel.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer'}
-                        </button>
-                      </div>
+                      <ConversationMenu
+                        items={[
+                          { label: 'Voir le profil', onSelect: () => nav('member', other.id) },
+                          { label: 'Signaler cet échange', onSelect: () => setReportTarget(`Conversation avec ${other.name}`) },
+                          {
+                            label: activeRel.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer',
+                            danger: true,
+                            disabled: busy,
+                            onSelect: () => handleToggleBlock(activeRel)
+                          }
+                        ]}
+                      />
                     </div>
-                    <div className="chat-context">
-                      <Lock size={12} /> Échange privé entre participants ayant accepté la relation.
-                    </div>
-                    <div className="chat-messages">
-                      {messages.length === 0 ? (
-                        <div className="chat-welcome">
-                          <MessageCircle size={28} />
-                          <h3>Démarrez la discussion avec {other.name}</h3>
-                          <p>Posez votre question ou partagez votre avancement.</p>
-                        </div>
-                      ) : (
-                        messages.map((m) => (
-                          <div key={m.id} className={`message ${m.author === uid ? 'mine' : ''}`}>
-                            <p>{m.text}</p>
-                            <small>
-                              {new Date(m.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                              {m.author === uid && <CheckCheck size={12} />}
-                            </small>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                    <ThreadScroll className="chat-messages" watch={messages}>
+                      <ConversationIntro person={other} onOpenProfile={() => nav('member', other.id)} />
+                      <MessageThread messages={messages} people={people} />
+                    </ThreadScroll>
                     {canSend(activeRel, uid) ? (
-                      <form
-                        className="chat-compose"
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }}
-                      >
-                        <input
-                          aria-label="Message à envoyer"
-                          placeholder="Écrire un message…"
-                          maxLength={1000}
-                          value={draft}
-                          onChange={(e) => setDraft(e.target.value)}
-                        />
-                        <button type="submit" className="primary" disabled={busy || !draft.trim()}>
-                          <Send size={14} /> Envoyer
-                        </button>
-                      </form>
+                      <MessageComposer draft={draft} setDraft={setDraft} onSend={handleSendMessage} busy={busy} />
                     ) : (
                       <div className="chat-blocked">
                         <Lock size={14} /> Envoi impossible : un blocage est actif sur cette relation.
