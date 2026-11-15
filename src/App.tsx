@@ -257,7 +257,16 @@ export default function App() {
   });
   const [cloudPreviewRole, setCloudPreviewRole] = useState<'learner' | 'creator' | 'admin'>('learner');
 
-  const [page, setPage] = useState<RoutePage>(initialRoute.page);
+  // Première visite (aucun lien précis, aucun personnage choisi dans cet onglet) : page d'accueil visiteur.
+  const [page, setPage] = useState<RoutePage>(() => {
+    if (window.location.hash || new URLSearchParams(window.location.search).get('as')) return initialRoute.page;
+    try {
+      if (window.sessionStorage.getItem(DEMO_PERSONA_KEY)) return initialRoute.page;
+    } catch {
+      return initialRoute.page;
+    }
+    return 'visitor';
+  });
   const [selectedId, setSelectedId] = useState<string>(initialRoute.id);
   const [ext, setExt] = useState<ExtendedDemoState>(() => readExtended());
 
@@ -584,14 +593,15 @@ export default function App() {
   }, [page, routeAllowed]);
 
   // Mémorise le personnage de démo pour cet onglet (un rechargement ne ramène plus à Afi).
+  // Sur l'accueil visiteur (première visite ou déconnexion), rien n'est mémorisé et l'ancien choix est oublié.
   useEffect(() => {
-    if (mode !== 'local') return;
     try {
-      window.sessionStorage.setItem(DEMO_PERSONA_KEY, uid);
+      if (page === 'visitor') window.sessionStorage.removeItem(DEMO_PERSONA_KEY);
+      else if (mode === 'local') window.sessionStorage.setItem(DEMO_PERSONA_KEY, uid);
     } catch {
       // stockage indisponible : sans conséquence
     }
-  }, [uid, mode]);
+  }, [uid, mode, page]);
 
   const hideDemoBanner = () => {
     setDemoBannerHidden(true);
@@ -2586,7 +2596,11 @@ export default function App() {
           </aside>
           )}
 
-          <main className="main-content">{renderMainContent()}</main>
+          <main className="main-content">
+            <div key={`${page}:${selectedId}`} className="page-transition">
+              {renderMainContent()}
+            </div>
+          </main>
         </div>
       </div>
 

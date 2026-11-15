@@ -222,7 +222,7 @@ export function AcademyReaderView({
           </p>
         </aside>
 
-        <article className="study-main-pane">
+        <article key={safeIndex} className="study-main-pane section-transition">
           <div className="study-section-meta">
             <span className="study-type-tag">
               <BookOpen size={13} /> Théorie & Atelier guidé

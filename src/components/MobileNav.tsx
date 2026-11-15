@@ -48,10 +48,11 @@ export function MobileNav({
     return () => window.removeEventListener('keydown', onKey);
   }, [moreOpen, setMoreOpen]);
 
-  const isLearning = page === 'learning' || page === 'progression';
-  const isResources = ['catalog', 'resource-detail', 'module-detail', 'path-detail'].includes(page);
-  const isHomeOrCommunity = page === 'home' || page === 'community';
-  const isPlus = !isHomeOrCommunity && !isLearning && !isResources;
+  const isLearning = ['learning', 'progression', 'catalog', 'resource-detail', 'module-detail', 'path-detail'].includes(page);
+  const isNetwork = page === 'relations' || page === 'member';
+  const isMessages = page === 'messages';
+  const isHomeOrCommunity = page === 'home' || page.startsWith('community');
+  const isPlus = !isHomeOrCommunity && !isLearning && !isNetwork && !isMessages;
 
   const go = (target: string) => {
     setMoreOpen(false);
@@ -69,9 +70,16 @@ export function MobileNav({
           <BookOpen size={20} />
           <span>Apprendre</span>
         </button>
-        <button className={isResources ? 'active' : ''} onClick={() => go('catalog')}>
-          <Compass size={20} />
-          <span>Ressources</span>
+        <button className={isNetwork ? 'active' : ''} onClick={() => go('relations')}>
+          <span className="top-icon">
+            <Users size={20} />
+            {pendingCount > 0 && <i className="tabular-nums">{pendingCount}</i>}
+          </span>
+          <span>Relations</span>
+        </button>
+        <button className={isMessages ? 'active' : ''} onClick={() => go('messages')}>
+          <MessageCircle size={20} />
+          <span>Messagerie</span>
         </button>
         <button
           className={moreOpen || isPlus ? 'active' : ''}
@@ -80,9 +88,7 @@ export function MobileNav({
         >
           <span className="top-icon">
             <Menu size={20} />
-            {(pendingCount > 0 || unreadNotifs > 0) && (
-              <i className="tabular-nums">{pendingCount + unreadNotifs}</i>
-            )}
+            {unreadNotifs > 0 && <i className="tabular-nums">{unreadNotifs}</i>}
           </span>
           <span>Plus</span>
         </button>
@@ -113,11 +119,8 @@ export function MobileNav({
               <button onClick={() => go('progression')}>
                 <Award size={18} /> Progression
               </button>
-              <button onClick={() => go('relations')}>
-                <Users size={18} /> Relations {pendingCount > 0 ? `(${pendingCount})` : ''}
-              </button>
-              <button onClick={() => go('messages')}>
-                <MessageCircle size={18} /> Messagerie
+              <button onClick={() => go('catalog')}>
+                <Compass size={18} /> Bibliothèque
               </button>
               <button onClick={() => go('notifications')}>
                 <Bell size={18} /> Alertes {unreadNotifs > 0 ? `(${unreadNotifs})` : ''}

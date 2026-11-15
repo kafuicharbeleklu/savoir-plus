@@ -1,16 +1,53 @@
 import React, { useState } from 'react';
 import {
+  ArrowLeft,
   ArrowRight,
-  Award,
   BookOpen,
   CheckCircle2,
-  Cloud,
+  ChevronRight,
   KeyRound,
+  Layers,
   Lock,
   Mail,
   ShieldCheck,
   Users
 } from 'lucide-react';
+
+type AuthTab = 'login' | 'signup' | 'verify' | 'reset' | 'onboarding';
+
+const DEMO_PERSONAS: {
+  id: 'afi' | 'kossi' | 'nadege';
+  initials: string;
+  name: string;
+  role: string;
+  preview: string;
+  tone: string;
+}[] = [
+  {
+    id: 'afi',
+    initials: 'AM',
+    name: 'Afi Mensah',
+    role: 'Apprenante',
+    preview: 'Suivre un module, gagner des XP et demander de l’aide à un membre.',
+    tone: 'peach'
+  },
+  {
+    id: 'kossi',
+    initials: 'KA',
+    name: 'Kossi Agbo',
+    role: 'Créateur & mentor',
+    preview: 'Créer un module avec le Studio IA et répondre aux apprenants.',
+    tone: 'lavender'
+  },
+  {
+    id: 'nadege',
+    initials: 'NK',
+    name: 'Nadège Koffi',
+    role: 'Modération',
+    preview: 'Superviser la plateforme et ses signalements (aperçu).',
+    tone: 'mint'
+  }
+];
 
 export function VisitorAuthView({
   cloudConfigured,
@@ -29,7 +66,7 @@ export function VisitorAuthView({
   onCompleteOnboarding?: (displayName: string, interests: string) => void;
   setToast: (msg: string) => void;
 }) {
-  const [authTab, setAuthTab] = useState<'login' | 'signup' | 'verify' | 'reset' | 'onboarding'>('login');
+  const [authTab, setAuthTab] = useState<AuthTab>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
@@ -49,324 +86,385 @@ export function VisitorAuthView({
     }
   };
 
+  const openAuth = (tab: AuthTab) => {
+    setAuthTab(tab);
+    document.getElementById('landing-auth')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const isPrimaryTab = authTab === 'login' || authTab === 'signup';
+
   return (
-    <div className="visitor-shell">
-      <header className="visitor-topbar">
+    <div className="visitor-shell landing">
+      <header className="visitor-topbar landing-topbar">
         <div className="brand">
           SAVOIR<span className="brand-plus">+</span>
         </div>
         <div className="visitor-top-actions">
-          <button className="secondary" onClick={() => setAuthTab('login')}>
+          <button className="secondary" onClick={() => openAuth('login')}>
             Se connecter
           </button>
-          <button className="primary" onClick={() => setAuthTab('signup')}>
+          <button className="primary" onClick={() => openAuth('signup')}>
             Créer un compte
           </button>
         </div>
       </header>
 
       <div className="shell-scroll-viewport">
-        <main className="visitor-grid">
-        <section className="visitor-hero">
-          <span className="eyebrow">PLATEFORME COLLABORATIVE D’APPRENTISSAGE & D’ENTRAIDE</span>
-          <h1>Apprendre à son rythme, transmettre son savoir et progresser ensemble.</h1>
-          <p className="visitor-lead">
-            SAVOIR+ réunit la clarté d’un réseau d’entraide et la rigueur d’une académie pratique par sections, quiz et
-            parcours vérifiés.
-          </p>
+        <main className="landing-grid">
+          <section className="landing-hero" aria-labelledby="landing-title">
+            <span className="eyebrow">Plateforme d’apprentissage et d’entraide</span>
+            <h1 id="landing-title">
+              Apprendre à son rythme.
+              <br />
+              Progresser ensemble.
+            </h1>
+            <p className="landing-lead">
+              Des modules courts et pratiques, un quiz corrigé, des XP pour garder l’élan, et des membres à qui demander
+              de l’aide quand on bloque. Les encadreurs transforment leurs explications en modules illustrés grâce au
+              Studio IA.
+            </p>
 
-          <div className="visitor-pillars">
-            <div>
-              <BookOpen size={18} />
-              <div>
-                <b>Parcours & Modules guidés</b>
-                <span>Sections théoriques, ateliers interactifs et vérification des acquis.</span>
-              </div>
-            </div>
-            <div>
-              <Users size={18} />
-              <div>
-                <b>Entraide & Messagerie maîtrisée</b>
-                <span>Questions communautaires, solutions choisies et demandes de contact acceptées.</span>
-              </div>
-            </div>
-            <div>
-              <Award size={18} />
-              <div>
-                <b>Progression & Studio créateur</b>
-                <span>Suivi personnel clair, création ouverte aux contributeurs habilités et gouvernance tracée.</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="visitor-demo-box">
-            <span className="eyebrow">ACCÈS RAPIDE À LA DÉMONSTRATION</span>
-            <h3>Explorer immédiatement selon un rôle</h3>
-            <div className="visitor-demo-buttons">
-              <button className="secondary" onClick={() => onSelectPersona('afi')}>
-                <b>Afi Mensah</b>
-                <small>Apprenante · Parcours & Communauté</small>
+            <div className="landing-cta">
+              <button className="primary landing-cta-main" onClick={() => onSelectPersona('afi')}>
+                Essayer la démo <ArrowRight size={16} />
               </button>
               <button className="secondary" onClick={() => onSelectPersona('kossi')}>
-                <b>Kossi Agbo</b>
-                <small>Créateur & Mentor · Studio</small>
-              </button>
-              <button className="secondary" onClick={() => onSelectPersona('nadege')}>
-                <b>Nadège Koffi</b>
-                <small>Modération & Gouvernance</small>
+                Je suis encadreur
               </button>
             </div>
-          </div>
-        </section>
 
-        <section className="visitor-auth-card" aria-label="Authentification">
-          <div className="tabs">
-            <button className={authTab === 'login' ? 'selected' : ''} onClick={() => setAuthTab('login')}>
-              Connexion
-            </button>
-            <button className={authTab === 'signup' ? 'selected' : ''} onClick={() => setAuthTab('signup')}>
-              Inscription
-            </button>
-            <button className={authTab === 'verify' ? 'selected' : ''} onClick={() => setAuthTab('verify')}>
-              Vérification
-            </button>
-            <button className={authTab === 'reset' ? 'selected' : ''} onClick={() => setAuthTab('reset')}>
-              Récupération
-            </button>
-          </div>
-
-          {authTab === 'login' && (
-            <form
-              className="visitor-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!cloudConfigured) {
-                  setToast('Configurez Supabase ou utilisez un compte de démonstration ci-contre.');
-                  return;
-                }
-                onLoginCloud(email, password);
-              }}
-            >
-              <h2>Se connecter à SAVOIR+</h2>
-              <p className="tiny muted">
-                Accès synchronisé via Supabase Auth, ou test immédiat avec l’un des 3 profils de démonstration.
-              </p>
-
-              <label>
-                Adresse e-mail
-                <input
-                  type="email"
-                  required
-                  placeholder="nom@exemple.test"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </label>
-
-              <label>
-                Mot de passe
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </label>
-
-              {error && <p className="modal-error">{error}</p>}
-
-              <button type="submit" className="primary" disabled={busy}>
-                <Cloud size={15} /> Connexion Supabase <ArrowRight size={15} />
-              </button>
-
-              <button type="button" className="text-link" onClick={() => setAuthTab('reset')}>
-                Mot de passe oublié ?
-              </button>
-            </form>
-          )}
-
-          {authTab === 'signup' && (
-            <form
-              className="visitor-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!acceptedTerms || !signupEmail.trim()) return;
-                setSignupSent(true);
-                setEmailVerified(false);
-                setToast('Demande d’inscription enregistrée — passez à la vérification e-mail.');
-                setAuthTab('verify');
-              }}
-            >
-              <h2>Créer un compte membre</h2>
-              <p className="tiny muted">
-                La vérification d’adresse e-mail est obligatoire avant toute publication ou messagerie.
-              </p>
-
-              <label>
-                Adresse e-mail
-                <input
-                  type="email"
-                  required
-                  placeholder="prenom.nom@exemple.test"
-                  value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
-                />
-              </label>
-              <label>
-                Mot de passe (12 caractères minimum recommandés)
-                <input
-                  type="password"
-                  required
-                  minLength={8}
-                  placeholder="••••••••••••"
-                  value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
-                />
-              </label>
-              <label className="check-inline">
-                <input
-                  type="checkbox"
-                  checked={acceptedTerms}
-                  onChange={(e) => setAcceptedTerms(e.target.checked)}
-                />
-                <span>J’accepte les conditions d’utilisation et la politique de confidentialité.</span>
-              </label>
-
-              <button type="submit" className="primary" disabled={!acceptedTerms || !signupEmail.trim()}>
-                Créer mon compte <ArrowRight size={15} />
-              </button>
-
-              {signupSent && (
-                <div className="tip">
-                  <CheckCircle2 size={16} />
-                  <p>
-                    Un lien de confirmation temporaire a été préparé pour <b>{signupEmail}</b>.
-                  </p>
+            <ul className="landing-values">
+              <li>
+                <span className="landing-value-icon" aria-hidden="true">
+                  <BookOpen size={18} />
+                </span>
+                <div>
+                  <b>Apprendre en pratiquant</b>
+                  <p>Sections courtes, atelier interactif et quiz corrigé : on comprend en faisant.</p>
                 </div>
-              )}
-            </form>
-          )}
+              </li>
+              <li>
+                <span className="landing-value-icon" aria-hidden="true">
+                  <Users size={18} />
+                </span>
+                <div>
+                  <b>Ne plus bloquer seul</b>
+                  <p>Invitez un membre et discutez après son accord, dans un cadre respectueux.</p>
+                </div>
+              </li>
+              <li>
+                <span className="landing-value-icon" aria-hidden="true">
+                  <Layers size={18} />
+                </span>
+                <div>
+                  <b>Transmettre avec l’IA</b>
+                  <p>Collez votre explication : l’IA propose module, quiz et fiche illustrée, que vous relisez.</p>
+                </div>
+              </li>
+            </ul>
 
-          {authTab === 'verify' && (
-            <div className="visitor-form">
-              <h2>Vérifier votre adresse e-mail</h2>
-              <p className="tiny muted">
-                Un lien de confirmation est valide pour une durée limitée. Tout nouvel envoi invalide automatiquement
-                les liens précédents.
-              </p>
-              <div className="tip">
-                <Mail size={16} />
-                <p>
-                  {signupEmail
-                    ? `En attente de confirmation pour ${signupEmail}.`
-                    : 'En attente de confirmation ? Demandez un nouvel envoi ou simulez la validation du lien ci-dessous.'}
-                </p>
+            <section className="landing-personas" aria-labelledby="landing-personas-title">
+              <div className="landing-personas-head">
+                <h2 id="landing-personas-title">Explorer avec un personnage de démonstration</h2>
+                <small className="muted">Personnages fictifs · données conservées dans votre navigateur</small>
               </div>
-              <button
-                type="button"
-                className="primary"
-                onClick={() => {
-                  setEmailVerified(true);
-                  setToast('Adresse e-mail confirmée — complétez votre profil initial.');
-                  setAuthTab('onboarding');
+              <div className="landing-persona-list">
+                {DEMO_PERSONAS.map((p) => (
+                  <button key={p.id} type="button" className="landing-persona" onClick={() => onSelectPersona(p.id)}>
+                    <span className={`landing-persona-avatar tone-${p.tone}`} aria-hidden="true">
+                      {p.initials}
+                    </span>
+                    <span className="landing-persona-text">
+                      <b>{p.name}</b>
+                      <span className="landing-persona-role">{p.role}</span>
+                      <span className="landing-persona-preview">{p.preview}</span>
+                    </span>
+                    <ChevronRight size={18} className="landing-persona-chevron" aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+            </section>
+          </section>
+
+          <section id="landing-auth" className="landing-auth" aria-label="Connexion et inscription">
+            {isPrimaryTab && (
+              <div className="landing-segmented" role="tablist" aria-label="Choisir entre connexion et inscription">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={authTab === 'login'}
+                  className={authTab === 'login' ? 'selected' : ''}
+                  onClick={() => setAuthTab('login')}
+                >
+                  Connexion
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={authTab === 'signup'}
+                  className={authTab === 'signup' ? 'selected' : ''}
+                  onClick={() => setAuthTab('signup')}
+                >
+                  Inscription
+                </button>
+              </div>
+            )}
+
+            {!isPrimaryTab && authTab !== 'onboarding' && (
+              <button type="button" className="text-link landing-back" onClick={() => setAuthTab('login')}>
+                <ArrowLeft size={15} /> Retour à la connexion
+              </button>
+            )}
+
+            {authTab === 'login' && (
+              <form
+                className="landing-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!cloudConfigured) {
+                    setToast('Connexion indisponible : utilisez un personnage de démonstration.');
+                    return;
+                  }
+                  onLoginCloud(email, password);
                 }}
               >
-                <CheckCircle2 size={15} /> Confirmer ce lien de vérification (simulation)
-              </button>
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => setToast('Nouveau lien de vérification simulé envoyé ; les anciens liens sont annulés.')}
-              >
-                Renvoyer un lien de vérification
-              </button>
-            </div>
-          )}
-
-          {authTab === 'onboarding' && (
-            <form
-              className="visitor-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                finishOnboarding(signupName.trim() || 'Nouveau membre', signupInterests.trim());
-              }}
-            >
-              <span className="eyebrow">ÉTAPE 3/3 · PROFIL INITIAL</span>
-              <h2>Bienvenue sur SAVOIR+</h2>
-              <p className="tiny muted">
-                {emailVerified
-                  ? 'Votre adresse est vérifiée. Choisissez votre nom d’affichage et vos domaines d’intérêt.'
-                  : 'Personnalisez votre profil avant d’entrer dans votre espace.'}
-              </p>
-
-              <label>
-                Nom d’affichage (facultatif)
-                <input
-                  placeholder="Ex. Kofi A. ou Afi Mensah"
-                  value={signupName}
-                  onChange={(e) => setSignupName(e.target.value)}
-                />
-              </label>
-
-              <label>
-                Centres d’intérêt
-                <input
-                  placeholder="Ex. Cybersécurité, Réseaux, Entraide"
-                  value={signupInterests}
-                  onChange={(e) => setSignupInterests(e.target.value)}
-                />
-              </label>
-
-              <button type="submit" className="primary">
-                Accéder à mon espace <ArrowRight size={15} />
-              </button>
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => finishOnboarding('Membre SAVOIR+', signupInterests.trim())}
-              >
-                Compléter plus tard
-              </button>
-            </form>
-          )}
-
-          {authTab === 'reset' && (
-            <form
-              className="visitor-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                setResetSent(true);
-                setToast('Procédure de récupération déclenchée (réponse neutre)');
-              }}
-            >
-              <h2>Récupérer l’accès au compte</h2>
-              <p className="tiny muted">
-                Pour votre sécurité, la réponse reste identique qu’un compte corresponde ou non. Une réinitialisation
-                révoque toutes les anciennes sessions.
-              </p>
-              <label>
-                Adresse e-mail du compte
-                <input type="email" required placeholder="nom@exemple.test" />
-              </label>
-              <button type="submit" className="primary">
-                <KeyRound size={15} /> Envoyer les instructions
-              </button>
-              {resetSent && (
-                <div className="tip">
-                  <Lock size={16} />
-                  <p>Si un compte vérifié correspond à cette adresse, un lien temporaire vient d’être généré.</p>
+                <div className="landing-form-head">
+                  <h2>Se connecter</h2>
+                  <p className="muted">Avec votre compte SAVOIR+.</p>
                 </div>
-              )}
-            </form>
-          )}
+                <label>
+                  Adresse e-mail
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="nom@exemple.test"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </label>
+                <label>
+                  <span className="landing-label-row">
+                    Mot de passe
+                    <button type="button" className="text-link" onClick={() => setAuthTab('reset')}>
+                      Mot de passe oublié ?
+                    </button>
+                  </span>
+                  <input
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </label>
+                {error && (
+                  <p className="modal-error" role="alert">
+                    {error}
+                  </p>
+                )}
+                <button type="submit" className="primary landing-submit" disabled={busy}>
+                  {busy ? 'Connexion…' : 'Se connecter'}
+                </button>
+                <div className="landing-divider">
+                  <span>ou</span>
+                </div>
+                <button type="button" className="secondary landing-submit" onClick={() => onSelectPersona('afi')}>
+                  Explorer sans compte
+                </button>
+              </form>
+            )}
 
-          <div className="visitor-security-note">
-            <ShieldCheck size={15} />
-            <span>En mode connecté, les droits et la confidentialité sont contrôlés côté serveur (Supabase). La démo locale reste dans votre navigateur.</span>
-          </div>
-        </section>
-      </main>
+            {authTab === 'signup' && (
+              <form
+                className="landing-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!acceptedTerms || !signupEmail.trim()) return;
+                  setSignupSent(true);
+                  setEmailVerified(false);
+                  setToast('Demande d’inscription enregistrée : vérifiez votre adresse e-mail.');
+                  setAuthTab('verify');
+                }}
+              >
+                <div className="landing-form-head">
+                  <h2>Créer un compte</h2>
+                  <p className="muted">La vérification de l’adresse e-mail est requise avant de publier ou d’échanger.</p>
+                </div>
+                <label>
+                  Adresse e-mail
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="prenom.nom@exemple.test"
+                    value={signupEmail}
+                    onChange={(e) => setSignupEmail(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Mot de passe
+                  <input
+                    type="password"
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                    aria-describedby="signup-password-hint"
+                    value={signupPassword}
+                    onChange={(e) => setSignupPassword(e.target.value)}
+                  />
+                  <small id="signup-password-hint" className="muted landing-hint">
+                    12 caractères ou plus recommandés.
+                  </small>
+                </label>
+                <label className="check-inline landing-check">
+                  <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} />
+                  <span>J’accepte les conditions d’utilisation et la politique de confidentialité.</span>
+                </label>
+                <button
+                  type="submit"
+                  className="primary landing-submit"
+                  disabled={!acceptedTerms || !signupEmail.trim()}
+                >
+                  Créer mon compte
+                </button>
+                {signupSent && (
+                  <div className="tip">
+                    <CheckCircle2 size={16} />
+                    <p>
+                      Un lien de confirmation a été préparé pour <b>{signupEmail}</b>.
+                    </p>
+                  </div>
+                )}
+              </form>
+            )}
+
+            {authTab === 'verify' && (
+              <div className="landing-form">
+                <div className="landing-form-head">
+                  <span className="landing-step">Étape 2 sur 3</span>
+                  <h2>Vérifiez votre adresse</h2>
+                  <p className="muted">
+                    Le lien de confirmation est valable pour une durée limitée ; un nouvel envoi annule les précédents.
+                  </p>
+                </div>
+                <div className="tip">
+                  <Mail size={16} />
+                  <p>
+                    {signupEmail
+                      ? `En attente de confirmation pour ${signupEmail}.`
+                      : 'En attente de confirmation : demandez un nouvel envoi si besoin.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="primary landing-submit"
+                  onClick={() => {
+                    setEmailVerified(true);
+                    setToast('Adresse e-mail confirmée : complétez votre profil.');
+                    setAuthTab('onboarding');
+                  }}
+                >
+                  <CheckCircle2 size={15} /> J’ai confirmé mon adresse (démo)
+                </button>
+                <button
+                  type="button"
+                  className="secondary landing-submit"
+                  onClick={() => setToast('Nouveau lien envoyé (démo) ; les anciens liens sont annulés.')}
+                >
+                  Renvoyer le lien
+                </button>
+              </div>
+            )}
+
+            {authTab === 'onboarding' && (
+              <form
+                className="landing-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  finishOnboarding(signupName.trim() || 'Nouveau membre', signupInterests.trim());
+                }}
+              >
+                <div className="landing-form-head">
+                  <span className="landing-step">Étape 3 sur 3</span>
+                  <h2>Bienvenue sur SAVOIR+</h2>
+                  <p className="muted">
+                    {emailVerified
+                      ? 'Adresse vérifiée. Choisissez votre nom d’affichage et vos centres d’intérêt.'
+                      : 'Personnalisez votre profil avant d’entrer dans votre espace.'}
+                  </p>
+                </div>
+                <label>
+                  Nom d’affichage (facultatif)
+                  <input placeholder="Ex. Kofi A." value={signupName} onChange={(e) => setSignupName(e.target.value)} />
+                </label>
+                <label>
+                  Centres d’intérêt
+                  <input
+                    placeholder="Ex. Cybersécurité, Réseaux, Entraide"
+                    value={signupInterests}
+                    onChange={(e) => setSignupInterests(e.target.value)}
+                  />
+                </label>
+                <button type="submit" className="primary landing-submit">
+                  Accéder à mon espace <ArrowRight size={15} />
+                </button>
+                <button
+                  type="button"
+                  className="secondary landing-submit"
+                  onClick={() => finishOnboarding('Membre SAVOIR+', signupInterests.trim())}
+                >
+                  Compléter plus tard
+                </button>
+              </form>
+            )}
+
+            {authTab === 'reset' && (
+              <form
+                className="landing-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setResetSent(true);
+                  setToast('Si un compte correspond, un lien de réinitialisation a été envoyé.');
+                }}
+              >
+                <div className="landing-form-head">
+                  <h2>Mot de passe oublié</h2>
+                  <p className="muted">
+                    Par sécurité, la réponse est la même qu’un compte existe ou non. Une réinitialisation ferme toutes les
+                    sessions ouvertes.
+                  </p>
+                </div>
+                <label>
+                  Adresse e-mail du compte
+                  <input type="email" required autoComplete="email" placeholder="nom@exemple.test" />
+                </label>
+                <button type="submit" className="primary landing-submit">
+                  <KeyRound size={15} /> Envoyer le lien
+                </button>
+                {resetSent && (
+                  <div className="tip">
+                    <Lock size={16} />
+                    <p>Si un compte vérifié correspond à cette adresse, un lien temporaire vient d’être envoyé.</p>
+                  </div>
+                )}
+              </form>
+            )}
+
+            <p className="landing-security">
+              <ShieldCheck size={14} aria-hidden="true" />
+              <span>
+                Compte connecté : droits et confidentialité contrôlés côté serveur. Démo : tout reste dans votre
+                navigateur.
+              </span>
+            </p>
+          </section>
+        </main>
+
+        <footer className="landing-footer">
+          <span>SAVOIR+ · par Nexus</span>
+          <span>Hackathon CREATE WITH AI · Forum Femmes &amp; IA 2026</span>
+        </footer>
       </div>
     </div>
   );
