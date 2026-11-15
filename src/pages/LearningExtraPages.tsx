@@ -12,7 +12,6 @@ import {
   Search,
   Target
 } from 'lucide-react';
-import { PageHeader } from '../components/ui';
 import {
   buildDynamicCatalog,
   CATALOG_ITEMS,
@@ -29,7 +28,6 @@ import { isQuizPassed, moduleProgressPercent } from '../domain.mjs';
 import { computeCatalogCardSteps } from '../personas';
 import { DifficultyMeter, ProgressBar } from '../components/ProfileIdentityCard';
 import { CatalogContentCard, ContentTypeMark, XpBadgeInline } from '../components/CatalogVisuals';
-import { PedagogicalProfileView } from '../components/PedagogicalProfileView';
 
 const LESSON_COUNTS: Record<string, number> = Object.fromEntries(
   Object.entries(MODULES_CONTENT).map(([id, mod]) => [id, mod.lessons.length])
@@ -777,57 +775,5 @@ export function PathDetailView({
   );
 }
 
-export function ProgressionPage({
-  progress,
-  nav,
-  ext,
-  updateExt,
-  userId = 'afi',
-  currentUser,
-  relations = [],
-  myFollowing = [],
-  getModuleProgress,
-  openReader,
-  setToast
-}: Pick<LearningExtraProps, 'progress' | 'nav' | 'setToast'> & {
-  ext?: ExtendedDemoState;
-  updateExt?: (fn: (prev: ExtendedDemoState) => ExtendedDemoState) => void;
-  userId?: string;
-  currentUser?: Profile;
-  relations?: Relation[];
-  myFollowing?: string[];
-  getModuleProgress?: (modId: string) => Progress;
-  openReader?: (moduleId?: string, sectionIdx?: number) => void;
-}) {
-  const safeExt = ext || initialExtendedState();
-  const resolvedTarget: Profile = currentUser || {
-    id: userId,
-    name: userId === 'kossi' ? 'Kossi Agbo' : userId === 'nadege' ? 'Nadège Koffi' : 'Afi Mensah',
-    role: safeExt.profileDetails[userId]?.tagline || 'Membre SAVOIR+',
-    bio: safeExt.profileDetails[userId]?.bio || '',
-    color: '#1D4D3B',
-    initials: userId.slice(0, 2).toUpperCase()
-  };
-
-  return (
-    <div className="htb-page-shell">
-      <PageHeader title="Progression" subtitle="Votre niveau, vos XP, vos badges et vos compétences." />
-      <PedagogicalProfileView
-        embedded
-        target={resolvedTarget}
-        isOwnProfile={true}
-        ext={safeExt}
-        updateExt={updateExt}
-        relations={relations}
-        myFollowing={myFollowing}
-        progress={progress}
-        getModuleProgress={getModuleProgress}
-        openReader={openReader}
-        nav={nav}
-        setToast={setToast}
-        initialTab="about"
-      />
-    </div>
-  );
-}
+export { ProgressionPage } from './ProgressionPage';
 

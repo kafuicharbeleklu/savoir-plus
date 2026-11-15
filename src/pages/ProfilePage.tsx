@@ -29,7 +29,8 @@ import { resolveAlgorithmicDiscoverProfiles, resolveCommunityDirectory, resolveP
 import { type AppPage, type CatalogItem, type ExtendedDemoState } from '../wireframeData';
 import { Avatar, ProgressBar, VerifiedBadge } from '../components/ProfileIdentityCard';
 import type { FooterInfoTopic } from '../components/SidebarFooters';
-import { HexBadgeEmblem, PedagogicalProfileView } from '../components/PedagogicalProfileView';
+import { HexBadgeEmblem } from '../components/BadgeEmblem';
+import { ProgressionView } from './ProgressionPage';
 import { ActionMenu, EmptyState, IconTile, Modal, StatusDot } from '../components/ui';
 import { ProfileMediaDialog, type MediaKind } from '../components/ProfileMedia';
 
@@ -331,20 +332,15 @@ export function ProfilePage({
         <button type="button" className="ui-back-link" onClick={() => setView('profile')}>
           <ArrowLeft size={16} aria-hidden="true" /> Profil de {firstName}
         </button>
-        <PedagogicalProfileView
+        <ProgressionView
           key={`${target.id}-${view}`}
-          embedded
           target={target}
           isOwnProfile={false}
           ext={ext}
-          updateExt={updateExt}
+          nav={nav}
           relations={relations}
           myFollowing={myFollowing}
-          progress={EMPTY_PROGRESS}
-          openReader={openReader}
-          nav={nav}
-          setToast={setToast}
-          initialTab={view === 'badges' ? 'badges' : 'about'}
+          initialView={view === 'badges' ? 'badges' : 'overview'}
         />
       </div>
     );

@@ -1252,8 +1252,7 @@ export default function App() {
     page === 'auth-flows' ||
     page === 'profile' ||
     page === 'settings' ||
-    page === 'member' ||
-    page === 'progression';
+    page === 'member';
 
   // Common props passed to subpages
   const extraProps = {
@@ -2518,7 +2517,7 @@ export default function App() {
                   <button className={`rail-nav-btn ${page === 'catalog' ? 'active' : ''}`} onClick={() => nav('catalog')}>
                     <span><Compass size={16} /> Bibliothèque</span>
                   </button>
-                  <button className="rail-nav-btn" onClick={() => nav('progression')}>
+                  <button className={`rail-nav-btn ${page === 'progression' ? 'active' : ''}`} onClick={() => nav('progression')}>
                     <span><Award size={16} /> Progression & Badges</span>
                   </button>
                   {(caps.canCreate || caps.canModerate || caps.canAdmin) && (
