@@ -1,14 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
   Cloud,
+  Eye,
   Flag,
+  Hash,
   HelpCircle,
+  Lightbulb,
+  ListOrdered,
   Lock,
-  MessageSquare,
   RotateCcw,
   Send,
+  Smile,
   User,
   X
 } from 'lucide-react';
@@ -16,6 +21,13 @@ import type { Profile } from '../data';
 import type { CommunityPost, ExtendedDemoState, ReportItem } from '../wireframeData';
 import { Avatar } from './ProfileIdentityCard';
 
+const COMPOSER_EMOJIS = ['👍', '🙏', '💡', '✅', '⚠️', '🔒', '📌', '🎯', '🤔', '👏', '🚀', '😊'];
+
+/**
+ * Fenêtre « Nouvelle contribution », sur le modèle de la fenêtre de publication de LinkedIn :
+ * auteur et réglages en tête, titre et texte sans cadre, outils en bas à gauche, « Publier » à droite.
+ * Chaque commande est réelle : type et domaine sont enregistrés, les outils modifient le texte.
+ */
 export function PostComposerModal({
   open,
   onClose,
@@ -31,21 +43,53 @@ export function PostComposerModal({
   const [domain, setDomain] = useState<'Numérique' | 'Communication' | 'Gestion'>('Numérique');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
+  const titleRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key !== 'Escape') return;
+      if (emojiOpen) setEmojiOpen(false);
+      else onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open, onClose, emojiOpen]);
+
+  useEffect(() => {
+    if (open) titleRef.current?.focus();
+    else setEmojiOpen(false);
+  }, [open]);
 
   if (!open) return null;
 
+  const ready = Boolean(title.trim() && body.trim());
+
+  /** Insère un texte à l'emplacement du curseur, dans la zone de texte. */
+  const insertInBody = (text: string) => {
+    const area = bodyRef.current;
+    const from = area ? area.selectionStart : body.length;
+    const to = area ? area.selectionEnd : body.length;
+    const next = body.slice(0, from) + text + body.slice(to);
+    setBody(next);
+    requestAnimationFrame(() => {
+      if (!area) return;
+      area.focus();
+      const caret = from + text.length;
+      area.setSelectionRange(caret, caret);
+    });
+  };
+
+  const insertSteps = () => {
+    const prefix = body && !body.endsWith('\n') ? '\n' : '';
+    insertInBody(`${prefix}1. \n2. \n3. `);
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !body.trim()) return;
+    if (!ready) return;
     onPublish({
       id: `post-${Date.now()}`,
       kind,
@@ -68,70 +112,118 @@ export function PostComposerModal({
       className="modal-backdrop"
       role="dialog"
       aria-modal="true"
-      aria-label="Publier dans la communauté"
+      aria-label="Nouvelle contribution"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <form className="modal" onSubmit={submit}>
-        <button type="button" className="icon-btn modal-close" aria-label="Fermer" onClick={onClose}>
-          <X size={18} />
-        </button>
-        <div className="modal-author-row">
-          <Avatar person={user} small />
-          <div>
-            <b>{user.name}</b>
-            <small>Partager avec les membres connectés</small>
+      <form className="pc" onSubmit={submit}>
+        <header className="pc-head">
+          <Avatar person={user} />
+          <div className="pc-head-main">
+            <b className="pc-name">{user.name}</b>
+            <div className="pc-chips">
+              <span className="pc-chip" title="Les contributions sont visibles par les membres connectés">
+                <Eye size={16} aria-hidden="true" /> Membres connectés
+              </span>
+              <label className="pc-chip pc-chip-select">
+                {kind === 'question' ? <HelpCircle size={16} aria-hidden="true" /> : <Lightbulb size={16} aria-hidden="true" />}
+                <span className="sr-only">Type de contribution</span>
+                <select value={kind} onChange={(e) => setKind(e.target.value as 'publication' | 'question')}>
+                  <option value="publication">Astuce ou méthode</option>
+                  <option value="question">Question d’entraide</option>
+                </select>
+                <ChevronDown size={16} aria-hidden="true" />
+              </label>
+              <label className="pc-chip pc-chip-select">
+                <Hash size={16} aria-hidden="true" />
+                <span className="sr-only">Domaine</span>
+                <select value={domain} onChange={(e) => setDomain(e.target.value as typeof domain)}>
+                  <option value="Numérique">Numérique</option>
+                  <option value="Communication">Communication</option>
+                  <option value="Gestion">Gestion</option>
+                </select>
+                <ChevronDown size={16} aria-hidden="true" />
+              </label>
+            </div>
           </div>
-        </div>
-        <h2>Nouvelle contribution</h2>
-        <div className="tabs modal-tabs">
-          <button type="button" className={kind === 'publication' ? 'selected' : ''} onClick={() => setKind('publication')}>
-            <MessageSquare size={14} /> Astuce ou méthode
+          <button type="button" className="pc-close" aria-label="Fermer" onClick={onClose}>
+            <X size={24} />
           </button>
-          <button type="button" className={kind === 'question' ? 'selected' : ''} onClick={() => setKind('question')}>
-            <HelpCircle size={14} /> Question d’entraide
-          </button>
-        </div>
+        </header>
 
-        <label className="modal-field">
-          <span>Domaine</span>
-          <select value={domain} onChange={(e) => setDomain(e.target.value as any)}>
-            <option value="Numérique">Numérique</option>
-            <option value="Communication">Communication</option>
-            <option value="Gestion">Gestion</option>
-          </select>
-        </label>
-
-        <label className="modal-field">
-          <span>{kind === 'question' ? 'Votre question en une phrase' : 'Titre de votre astuce'}</span>
+        <div className="pc-body">
           <input
+            ref={titleRef}
+            className="pc-title"
             required
-            placeholder={kind === 'question' ? 'Ex. Comment repérer un lien raccourci suspect ?' : 'Ex. Ma check-list avant de cliquer'}
+            aria-label={kind === 'question' ? 'Votre question en une phrase' : 'Titre de votre astuce'}
+            placeholder={kind === 'question' ? 'Votre question en une phrase' : 'Titre de votre astuce'}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-        </label>
-
-        <label className="modal-field">
-          <span>Détails et contexte</span>
           <textarea
+            ref={bodyRef}
+            className="pc-text"
             required
-            rows={4}
-            placeholder="Partagez votre méthode ou expliquez ce que vous avez déjà essayé…"
+            aria-label="Détails et contexte"
+            placeholder={
+              kind === 'question'
+                ? 'Expliquez le contexte et ce que vous avez déjà essayé…'
+                : 'Partagez votre méthode, étape par étape…'
+            }
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />
-        </label>
+        </div>
 
-        <div className="modal-actions">
-          <button type="button" className="secondary" onClick={onClose}>
-            Annuler
-          </button>
-          <button type="submit" className="primary" disabled={!title.trim() || !body.trim()}>
-            {kind === 'question' ? 'Publier la question' : 'Publier l’astuce'}
+        <div className="pc-tools">
+          <div className="pc-tool-wrap">
+            <button
+              type="button"
+              className="pc-tool"
+              aria-label="Afficher le sélecteur d’émoticônes"
+              aria-expanded={emojiOpen}
+              title="Émoticônes"
+              onClick={() => setEmojiOpen((v) => !v)}
+            >
+              <Smile size={24} />
+            </button>
+            {emojiOpen && (
+              <div className="pc-emoji" role="group" aria-label="Émoticônes">
+                {COMPOSER_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    aria-label={`Insérer ${emoji}`}
+                    onClick={() => {
+                      insertInBody(emoji);
+                      setEmojiOpen(false);
+                    }}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            className="pc-tool"
+            aria-label="Insérer des étapes numérotées"
+            title="Étapes numérotées"
+            onClick={insertSteps}
+          >
+            <ListOrdered size={24} />
           </button>
         </div>
+
+        <footer className="pc-foot">
+          {!ready && <span className="pc-hint">Un titre et un texte sont nécessaires pour publier.</span>}
+          <button type="submit" className="primary pc-submit" disabled={!ready}>
+            Publier
+          </button>
+        </footer>
       </form>
     </div>
   );

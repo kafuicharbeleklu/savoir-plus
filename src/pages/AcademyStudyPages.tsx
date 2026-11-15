@@ -522,7 +522,7 @@ export function AcademyResultView({
   const lvl = computeGlobalLevel(totalXP);
   const levelUp = passed && computeGlobalLevel(Math.max(0, totalXP - quizXp)).level < lvl.level;
 
-  const eyebrow = moduleValidated ? 'MODULE VALIDÉ' : passed ? 'QUIZ RÉUSSI' : 'RÉVISION CONSEILLÉE';
+  const eyebrow = moduleValidated ? 'Module validé' : passed ? 'Quiz réussi' : 'Révision conseillée';
   const headline = passed ? 'Bravo, vos réflexes sont solides.' : 'Prenez le temps de revoir les points clés.';
   const lead = moduleValidated
     ? 'Résultat enregistré. Les explications ci-dessous vous aident à consolider chaque situation.'

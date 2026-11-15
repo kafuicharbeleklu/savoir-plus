@@ -33,17 +33,14 @@
   padding: 24px;
   gap: 16px;
   border: 1px solid var(--border-hairline);
-  border-radius: 12px;
+  border-radius: var(--angle);
   box-shadow: none;
   background: var(--bg-surface);
 }
 .landing .landing-form-head h2 { font-size: 1.25rem; font-weight: 600; letter-spacing: 0; }
 .landing .landing-submit { min-height: 44px; }
-.landing .landing-personas-head h2 { font-size: 1rem; font-weight: 600; letter-spacing: 0; }
-.landing .landing-persona-role { font-size: 0.75rem; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--accent-brand); }
 .landing .landing-step,
 .landing .landing-divider { text-transform: none; letter-spacing: 0; }
-.landing .landing-persona-text b { font-size: 0.875rem; font-weight: 600; }
 .landing .landing-footer { max-width: 1240px; margin: 0 auto; padding: 16px 32px 24px; border-top: 0; }
 
 /* Formulaire : champs hauts, libellés nets, un seul bouton principal */
@@ -67,7 +64,7 @@
   min-height: 48px;
   padding: 0 14px;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--angle);
   background: var(--bg-surface);
   font-size: 1rem;
   color: var(--fg-primary);
@@ -86,7 +83,7 @@
   height: 32px;
   padding: 0 12px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--angle);
   background: none;
   font-size: 0.875rem;
   font-weight: 600;
@@ -94,13 +91,25 @@
   cursor: pointer;
 }
 .lf-reveal:hover { background: var(--accent-brand-soft); }
-.landing .landing-submit { min-height: 48px; border-radius: 999px; font-size: 1rem; font-weight: 600; }
+.landing .landing-submit { min-height: 48px; border-radius: var(--angle); font-size: 1rem; font-weight: 600; }
 .lf-switch { margin: 0; text-align: center; font-size: 0.875rem; color: var(--fg-muted); }
 .lf-switch .text-link { display: inline; min-height: 0; padding: 0; font-size: inherit; font-weight: 600; }
 .landing .landing-back { min-height: 0; padding: 0; }
+/* Accès à la démonstration : un simple lien souligné, sous la carte */
+.lf-explore {
+  align-self: flex-end;
+  margin-top: -8px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.lf-explore:hover { color: var(--fg-primary); }
 .landing .landing-check { font-weight: 400; color: var(--fg-muted); }
-.landing .landing-personas { gap: 12px; padding-top: 0; }
-.landing .landing-persona-list { border-radius: 12px; }
 
 /* Colonne du visuel : reste visible pendant le défilement */
 .lg-right {
@@ -117,7 +126,7 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: 20px;
+  border-radius: var(--angle);
   /* Fond d'attente (et de secours si la vidéo ne se charge pas) */
   background: linear-gradient(150deg, #173a2f 0%, #20503f 55%, #2f6f58 100%);
   isolation: isolate;
@@ -149,6 +158,51 @@
   font-size: 0.6875rem;
   line-height: 1;
   color: rgba(255, 255, 255, 0.72);
+}
+
+/* Grand écran : toute la page tient dans la fenêtre, sans barre de défilement.
+   Le film occupe la hauteur disponible ; le formulaire est centré verticalement. */
+@media (min-width: 961px) {
+  .landing .shell-scroll-viewport { display: flex; flex-direction: column; overflow: hidden; }
+  .lg-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+    padding: 0 32px 8px;
+  }
+  .lg-left {
+    padding: 0;
+    gap: clamp(12px, 2.4vh, 24px);
+    /* Dernier recours sur un écran très bas : le formulaire reste atteignable, sans barre visible */
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .lg-left::-webkit-scrollbar { display: none; }
+  .lg-left::before,
+  .lg-left::after { content: ''; flex: 1 1 0; min-height: 0; }
+  .lg-right { position: static; height: auto; min-height: 0; max-height: none; }
+  .landing .landing-footer { flex: none; width: 100%; padding: 8px 32px 12px; }
+}
+
+/* Écrans peu hauts (portables) : tailles resserrées */
+@media (min-width: 961px) and (max-height: 760px) {
+  .lg-intro { gap: 8px; }
+  .lg-intro h1 { font-size: 2rem; }
+  .lg-lead { font-size: 0.9375rem; }
+  .landing .landing-auth { padding: 20px; gap: 12px; }
+  .landing .landing-form { gap: 12px; }
+  .landing .landing-form .lf-field input { height: 44px; min-height: 44px; }
+  .landing .landing-submit { min-height: 44px; }
+  /* Étapes secondaires (inscription, vérification…) : le formulaire seul */
+  .lg-left:not(.is-login) .lg-intro { display: none; }
+}
+@media (min-width: 961px) and (max-height: 640px) {
+  .lg-intro h1 { font-size: 1.75rem; }
+  .lg-lead { display: none; }
+  .landing .landing-auth { padding: 16px 20px; }
+  .landing .landing-form .lf-field input { height: 40px; min-height: 40px; }
+  .landing .landing-submit { min-height: 40px; }
 }
 
 /* Écrans étroits : le formulaire seul (le visuel est réservé aux grands écrans) */

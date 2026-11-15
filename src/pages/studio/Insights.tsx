@@ -205,7 +205,7 @@ export function StudioCreatorProfileView({ ext, nav, user }: StudioProps) {
                   </IconTile>
                 }
                 title={c.title}
-                meta={[TYPE_LABEL[c.type], c.domain, /non précisée/i.test(c.duration) ? '' : c.duration, c.version].filter(Boolean).join(' · ')}
+                meta={[TYPE_LABEL[c.type], c.domain, /non précisée/i.test(c.duration) ? '' : c.duration, c.version.replace(/^Version\s+/i, 'v')].filter(Boolean).join(' · ')}
                 onClick={() => nav(detailRoute(c.type), c.id)}
                 ariaLabel={`Ouvrir ${c.title}`}
                 trailing={

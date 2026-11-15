@@ -16,7 +16,7 @@
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  border-radius: 999px;
+  border-radius: var(--angle);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -68,7 +68,7 @@
 .gv-detail {
   background: var(--bg-surface);
   border: 1px solid var(--border-hairline);
-  border-radius: 8px;
+  border-radius: var(--angle);
   display: flex;
   flex-direction: column;
   min-width: 0;

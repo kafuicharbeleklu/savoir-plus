@@ -27,11 +27,11 @@
 .pf-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-hairline);
-  border-radius: 8px;
+  border-radius: var(--angle);
 }
 
 /* -- Carte d'identité --------------------------------------------------------- */
-.pf-cover { height: 201px; background: #173A30; border-radius: 7px 7px 0 0; overflow: hidden; }
+.pf-cover { height: 201px; background: #173A30; border-radius: var(--angle) var(--angle) 0 0; overflow: hidden; }
 .pf-cover svg { display: block; width: 100%; height: 100%; }
 .pf-top-body { position: relative; padding: 0 24px 24px; }
 .pf-avatar { margin-top: -112px; margin-bottom: 8px; line-height: 0; }
@@ -79,7 +79,7 @@
 .pf-link:hover { text-decoration: underline; background: none; }
 .pf-orgs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .pf-orgs li { display: flex; align-items: center; gap: 8px; font-size: 0.875rem; font-weight: 600; color: var(--fg-primary); }
-.pf-orgs .ui-icon-tile { width: 32px; height: 32px; flex: 0 0 32px; border-radius: 4px; }
+.pf-orgs .ui-icon-tile { width: 32px; height: 32px; flex: 0 0 32px; border-radius: var(--angle); }
 .pf-orgs li > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .pf-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .pf-note { margin: 12px 0 0; font-size: 0.75rem; color: var(--fg-muted); }
@@ -128,7 +128,7 @@
   transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
 }
 .pf-section-foot:hover { background: var(--bg-subtle); color: var(--fg-primary); }
-.pf-card > .pf-section-foot:last-child { border-radius: 0 0 7px 7px; }
+.pf-card > .pf-section-foot:last-child { border-radius: 0 0 var(--angle) var(--angle); }
 
 /* Statistiques : trois colonnes */
 .pf-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -139,7 +139,7 @@
   padding: 8px;
   margin: -8px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--angle);
   background: none;
   text-align: left;
   color: var(--fg-primary);
@@ -210,7 +210,7 @@
 button.pf-entry { cursor: pointer; }
 button.pf-entry:hover .pf-entry-text b { color: var(--accent-brand); text-decoration: underline; }
 .pf-entry-leading { flex: 0 0 48px; width: 48px; display: inline-flex; justify-content: center; }
-.pf-entry-leading .ui-icon-tile { width: 48px; height: 48px; border-radius: 4px; }
+.pf-entry-leading .ui-icon-tile { width: 48px; height: 48px; border-radius: var(--angle); }
 .pf-entry-leading .htb-hex-badge { margin: 0; }
 .pf-entry-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .pf-entry-text b,
@@ -229,7 +229,7 @@ button.pf-entry:hover .pf-entry-text b { color: var(--accent-brand); text-decora
   height: 32px;
   padding: 0 12px;
   border: 1px solid var(--border-strong);
-  border-radius: 999px;
+  border-radius: var(--angle);
   background: none;
   font-size: 0.875rem;
   font-weight: 600;
@@ -279,7 +279,7 @@ button.pf-entry:hover .pf-entry-text b { color: var(--accent-brand); text-decora
   height: 32px;
   padding: 0 12px;
   border: 1px solid var(--border-hairline);
-  border-radius: 999px;
+  border-radius: var(--angle);
   font-size: 0.875rem;
   color: var(--fg-primary);
 }
@@ -304,7 +304,7 @@ button.pf-entry:hover .pf-entry-text b { color: var(--accent-brand); text-decora
 .pf-suggest { display: flex; align-items: flex-start; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--border-hairline); }
 .pf-suggest:last-child { border-bottom: 0; }
 .pf-suggest-avatar { padding: 0; border: 0; background: none; line-height: 0; cursor: pointer; flex: 0 0 auto; }
-.pf-suggest > .ui-icon-tile { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 4px; }
+.pf-suggest > .ui-icon-tile { width: 48px; height: 48px; flex: 0 0 48px; border-radius: var(--angle); }
 .pf-suggest-text { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .pf-suggest-name {
   display: inline-flex;

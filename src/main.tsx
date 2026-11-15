@@ -8,5 +8,6 @@ import './styles/studio.css';
 import './styles/governance.css';
 import './styles/landing.css';
 import './styles/retouches.css';
+import './styles/angles.css';
 
 createRoot(document.getElementById('root')!).render(<App />);

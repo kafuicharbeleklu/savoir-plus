@@ -18,7 +18,7 @@
 /* -- Boutons : pilule, comme LinkedIn ------------------------------------- */
 .primary,
 .secondary {
-  border-radius: 999px;
+  border-radius: var(--angle);
 }
 .primary:hover {
   box-shadow: none;
@@ -122,7 +122,7 @@
   flex-direction: column;
   background: var(--bg-surface);
   border: 1px solid var(--border-hairline);
-  border-radius: 8px;
+  border-radius: var(--angle);
   overflow: hidden;
 }
 .ui-row {
@@ -191,7 +191,7 @@ button.ui-row-main { cursor: pointer; }
 .ui-icon-tile {
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--angle);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -295,7 +295,7 @@ button.ui-row-main { cursor: pointer; }
   min-height: 24px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--angle);
   background: var(--fg-muted);
   cursor: pointer;
   transition: background-color var(--dur-fast) var(--ease-standard);
@@ -306,7 +306,7 @@ button.ui-row-main { cursor: pointer; }
   left: 3px;
   width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: var(--angle);
   background: #FFFFFF;
   transition: transform var(--dur-fast) var(--ease-standard);
 }
@@ -396,7 +396,7 @@ button.ui-row-main { cursor: pointer; }
   grid-auto-columns: minmax(0, 1fr);
   background: var(--bg-surface);
   border: 1px solid var(--border-hairline);
-  border-radius: 8px;
+  border-radius: var(--angle);
   overflow: hidden;
 }
 .ui-kpi {
@@ -470,7 +470,7 @@ label.ui-radio {
   width: min(420px, 100%);
   padding: 24px;
   background: var(--bg-surface);
-  border-radius: 8px;
+  border-radius: var(--angle);
   box-shadow: var(--shadow-elevated);
   outline: none;
   display: flex;

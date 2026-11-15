@@ -164,7 +164,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     level: 'Débutant',
     duration: '5 min',
     author: 'Kossi Agbo',
-    authorRole: 'Contributrice pédagogique',
+    authorRole: 'Contributeur pédagogique',
     version: 'Version 1',
     review: 'Communautaire',
     resourceFormat: 'Fiche',

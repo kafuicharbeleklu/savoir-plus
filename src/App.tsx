@@ -1686,7 +1686,7 @@ export default function App() {
                     onOpen={() => nav('module-detail', item.id)}
                     footerActions={
                       <div className="between wf-full-actions">
-                        <button type="button" className="primary" onClick={() => openReader(item.id)}>
+                        <button type="button" className="secondary ui-btn-sm" onClick={() => openReader(item.id)}>
                           {pct === 0 ? 'Commencer' : pct === 100 ? 'Revoir' : 'Continuer'} <ArrowRight size={14} />
                         </button>
                         {isPlanned && pct === 0 && (

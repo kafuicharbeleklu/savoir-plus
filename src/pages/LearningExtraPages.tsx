@@ -470,7 +470,7 @@ export function ResourceDetailView({
         <aside className="wf-side-card">
           <h3>Accès & conditions</h3>
           <p className="tiny muted">
-            Accès membre autorisé · Version {item.version}.
+            Accès membre autorisé · {item.version}.
           </p>
           <button className="primary wf-full-btn" onClick={() => nav('resource-read', item.id)}>
             Consulter la ressource <ArrowRight size={16} />
@@ -740,10 +740,10 @@ export function PathDetailView({
             {(item.pathModules || []).map((pm) => (
               <div className="wf-program-item" key={pm.id}>
                 <div>
-                  <b>
-                    {pm.title} <small>({pm.version})</small>
-                  </b>
-                  <small>{pm.note}</small>
+                  <b>{pm.title}</b>
+                  <small>
+                    {pm.version} · {pm.note}
+                  </small>
                 </div>
                 <button className="secondary" onClick={() => nav('module-detail', pm.id)}>
                   Voir le module

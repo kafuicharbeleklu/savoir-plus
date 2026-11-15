@@ -1,42 +1,8 @@
 import React, { useState } from 'react';
 import { LandingVideo } from '../components/LandingVideo';
-import { ArrowLeft, ArrowRight, CheckCircle2, ChevronRight, KeyRound, Lock, Mail } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, KeyRound, Lock, Mail } from 'lucide-react';
 
 type AuthTab = 'login' | 'signup' | 'verify' | 'reset' | 'onboarding';
-
-const DEMO_PERSONAS: {
-  id: 'afi' | 'kossi' | 'nadege';
-  initials: string;
-  name: string;
-  role: string;
-  preview: string;
-  tone: string;
-}[] = [
-  {
-    id: 'afi',
-    initials: 'AM',
-    name: 'Afi Mensah',
-    role: 'Apprenante',
-    preview: 'Suivre un module, gagner des XP et demander de l’aide à un membre.',
-    tone: 'peach'
-  },
-  {
-    id: 'kossi',
-    initials: 'KA',
-    name: 'Kossi Agbo',
-    role: 'Créateur & mentor',
-    preview: 'Créer un module avec l’aide de l’IA et répondre aux apprenants.',
-    tone: 'lavender'
-  },
-  {
-    id: 'nadege',
-    initials: 'NK',
-    name: 'Nadège Koffi',
-    role: 'Modération',
-    preview: 'Superviser la plateforme et ses signalements (aperçu).',
-    tone: 'mint'
-  }
-];
 
 /** Champ de mot de passe : libellé relié au champ, action à droite du libellé, bouton Afficher / Masquer. */
 function PasswordField({
@@ -144,7 +110,7 @@ export function VisitorAuthView({
 
       <div className="shell-scroll-viewport">
         <main className="lg-grid">
-          <div className="lg-left">
+          <div className={`lg-left is-${authTab}`}>
             <section className="lg-intro" aria-labelledby="landing-title">
               <h1 id="landing-title">
                 Apprendre à son rythme.
@@ -169,7 +135,7 @@ export function VisitorAuthView({
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!cloudConfigured) {
-                    setToast('Connexion indisponible : utilisez un personnage de démonstration.');
+                    setToast('Connexion indisponible pour le moment : utilisez « Explorer sans compte ».');
                     return;
                   }
                   onLoginCloud(email, password);
@@ -404,27 +370,12 @@ export function VisitorAuthView({
 
           </section>
 
-            <section className="landing-personas" aria-labelledby="landing-personas-title">
-              <div className="landing-personas-head">
-                <h2 id="landing-personas-title">Ou essayez la démonstration</h2>
-                <small className="muted">Personnages fictifs · rien ne quitte votre navigateur</small>
-              </div>
-              <div className="landing-persona-list">
-                {DEMO_PERSONAS.map((p) => (
-                  <button key={p.id} type="button" className="landing-persona" onClick={() => onSelectPersona(p.id)}>
-                    <span className={`landing-persona-avatar tone-${p.tone}`} aria-hidden="true">
-                      {p.initials}
-                    </span>
-                    <span className="landing-persona-text">
-                      <b>{p.name}</b>
-                      <span className="landing-persona-role">{p.role}</span>
-                      <span className="landing-persona-preview">{p.preview}</span>
-                    </span>
-                    <ChevronRight size={18} className="landing-persona-chevron" aria-hidden="true" />
-                  </button>
-                ))}
-              </div>
-            </section>
+          {isPrimaryTab && (
+            <button type="button" className="lf-explore" onClick={() => onSelectPersona('afi')}>
+              Explorer sans compte
+            </button>
+          )}
+
           </div>
 
           <aside className="lg-right">

@@ -113,7 +113,7 @@ export function TopBar({
               <Search size={15} aria-hidden="true" />
               <input
                 aria-label="Recherche globale dans SAVOIR+"
-                placeholder="Rechercher un module, une question, un membre…"
+                placeholder="Rechercher"
                 value={topQuery}
                 onFocus={() => setSearchOpen(true)}
                 onChange={(e) => {

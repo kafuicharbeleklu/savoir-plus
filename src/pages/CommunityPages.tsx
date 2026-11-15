@@ -631,7 +631,7 @@ export function CommunityThreadView({
       <article className="wf-card wf-mb">
         <div className="between">
           <div className="wf-inline-actions">
-            <span className="eyebrow">{post.kind === 'question' ? 'QUESTION' : 'PUBLICATION'}</span>
+            <span className="eyebrow">{post.kind === 'question' ? 'Question' : 'Publication'}</span>
             {post.kind === 'question' && post.solutionReplyId && (
               <span className="status-tag ok">Résolue</span>
             )}

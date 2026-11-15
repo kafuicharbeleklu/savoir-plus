@@ -1,0 +1,11 @@
+/* ==========================================================================
+   Angles — un seul rayon pour toute l'interface.
+   Cartes, champs, boutons, tuiles, étiquettes, menus, fenêtres, images et vidéo
+   partagent le même arrondi léger : plus de mélange 8 / 10 / 12 / 20 px ni de
+   boutons « pilule ». Dans toutes les feuilles, les rayons s'écrivent var(--angle).
+   Seuls restent ronds les éléments circulaires par nature (avatars, points de
+   statut, médaillons d'illustration, jauge de la barre du haut).
+   Pour changer l'arrondi de toute l'application, modifier cette seule valeur.
+   ========================================================================== */
+
+:root { --angle: 6px; }

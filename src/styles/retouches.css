@@ -81,7 +81,7 @@ b, strong { font-weight: 600; }
   min-height: 32px;
   height: 32px;
   padding: 0 16px;
-  border-radius: 999px;
+  border-radius: var(--angle);
   font-size: 0.875rem;
   font-weight: 600;
 }
@@ -103,7 +103,7 @@ b, strong { font-weight: 600; }
   width: 32px;
   height: 32px;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--angle);
   background: transparent;
   color: var(--fg-muted);
 }
@@ -114,7 +114,7 @@ b, strong { font-weight: 600; }
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0;
   border: 1px solid var(--border-hairline);
-  border-radius: 8px;
+  border-radius: var(--angle);
   overflow: hidden;
 }
 .quiz-rules-grid > div {
@@ -129,13 +129,13 @@ b, strong { font-weight: 600; }
 .quiz-rules-grid > div b { font-size: 0.875rem; }
 
 /* -- Fiche d'un module : respiration de la carte « Votre suivi », auteur sobre ------- */
-.wf-side-card { border-radius: 8px; box-shadow: none; gap: 12px; }
+.wf-side-card { border-radius: var(--angle); box-shadow: none; gap: 12px; }
 .wf-side-card .wf-full-btn { min-height: 40px; }
 .author-link, .wf-author-link { font-family: inherit; font-weight: 600; letter-spacing: 0; }
 
 /* -- Progression : graisses et cartes alignées sur le reste ---------------------------- */
 .htb-page-shell { display: flex; flex-direction: column; gap: 12px; }
-.htb-card, .htb-section-block .htb-card { border-radius: 8px; box-shadow: none; }
+.htb-card, .htb-section-block .htb-card { border-radius: var(--angle); box-shadow: none; }
 .htb-block-heading { font-size: 1rem; font-weight: 600; letter-spacing: 0; }
 
 /* -- Barre d'étude : fil d'Ariane sobre --------------------------------------------------- */
@@ -148,6 +148,235 @@ b, strong { font-weight: 600; }
 .wf-side-card > h3 { margin: 0; font-size: 1rem; font-weight: 600; }
 .wf-side-card > p { margin: 0; }
 .wf-card .lesson-points { background: none; border: 0; border-radius: 0; padding: 0; }
-.wf-program-list { gap: 0; border: 1px solid var(--border-hairline); border-radius: 8px; overflow: hidden; }
+.wf-program-list { gap: 0; border: 1px solid var(--border-hairline); border-radius: var(--angle); overflow: hidden; }
 .wf-program-list .wf-program-item { border: 0; border-top: 1px solid var(--border-hairline); border-radius: 0; min-height: 64px; }
 .wf-program-list .wf-program-item:first-child { border-top: 0; }
+
+/* -- Lecteur de ressource : une vraie colonne de lecture, sur carte ---------------------- */
+.study-centered-pane:has(.wf-two-col) { max-width: 1072px; }
+.study-centered-pane .wf-two-col { grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; }
+.study-centered-pane .lesson-content {
+  padding: 32px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+}
+.study-centered-pane .lesson-content h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: 0; }
+
+/* -- Quiz : réponses sur fond blanc, cadre fin ; le choix se lit au cadre vert ----------- */
+.question label { background: var(--bg-surface); font-weight: 400; min-height: 48px; }
+.question label:hover { background: var(--bg-subtle); }
+.question label.checked,
+.question label.chosen { background: var(--accent-brand-soft); border-color: var(--accent-brand); }
+
+/* -- Résultat : « Correct / Incorrect » en texte coloré, sans pastille -------------------- */
+.result-review .correct,
+.result-review .incorrect { padding: 0; background: none; font-size: 0.8125rem; }
+
+/* -- Parcours : lignes de modules, informations sur une ligne ------------------------------ */
+.wf-program-item small { font-size: 0.75rem; color: var(--fg-muted); }
+
+/* -- Barre du haut : menu regroupé à droite, à côté de « Vous » (comme LinkedIn) -------- */
+@media (min-width: 961px) {
+  .top-navigation { justify-content: flex-end; padding-right: 0; gap: 8px; }
+  .topbar-right { margin-left: 8px; }
+  .top-search-wrap { flex: 0 1 280px; width: 280px; }
+}
+
+/* -- Recherche : une ligne par résultat, icône à gauche, titre puis précision dessous --- */
+.top-search-hit {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 12px;
+}
+.top-search-hit > svg { flex: none; margin-top: 3px; color: var(--fg-muted); }
+.top-search-hit > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.top-search-hit b { font-weight: 600; color: var(--fg-primary); }
+.top-search-hit small { font-weight: 400; color: var(--fg-muted); }
+
+/* -- Recherche de la barre du haut : même dessin que les autres champs de recherche
+      (fond doux, sans cadre, 34 px) ; au focus, fond blanc et filet vert sur tout le champ */
+.top-searchbox {
+  height: 34px;
+  padding: 0 6px 0 12px;
+  border: 0;
+  background: var(--bg-subtle);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.top-searchbox:focus-within { background: var(--bg-surface); box-shadow: inset 0 0 0 1px var(--accent-brand); }
+.top-searchbox > svg { flex: none; }
+.top-searchbox input,
+.top-searchbox input:hover,
+.top-searchbox input:focus,
+.top-searchbox input:focus-visible {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  font-size: 0.875rem;
+  color: var(--fg-primary);
+}
+.search-clear { flex: none; width: 24px; height: 24px; padding: 0; align-items: center; justify-content: center; border-radius: var(--angle); }
+.search-clear:hover { background: var(--bg-subtle); color: var(--fg-primary); }
+.top-search-results { top: calc(100% + 6px); min-width: 320px; padding: 4px; gap: 0; }
+
+/* -- Fenêtre « Nouvelle contribution » : sur le modèle de la publication LinkedIn -------- */
+.pc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 744px;
+  min-height: min(560px, calc(100dvh - 64px));
+  max-height: calc(100dvh - 64px);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--angle);
+  box-shadow: var(--shadow-elevated);
+  animation: savoir-pop-in var(--dur-slow) var(--ease-enter) both;
+}
+.pc-head { display: flex; align-items: flex-start; gap: 12px; padding: 20px 24px 12px; }
+.pc-head .avatar { flex: none; width: 56px; height: 56px; font-size: 1.125rem; }
+.pc-head-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1; padding-top: 2px; }
+.pc-name { font-size: 1.25rem; font-weight: 600; line-height: 1.2; color: var(--fg-primary); }
+.pc-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.pc-chip,
+label.pc-chip {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  min-height: 0;
+  padding: 0 12px;
+  border-radius: var(--angle);
+  background: var(--bg-subtle);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--fg-primary);
+  white-space: nowrap;
+}
+.pc-chip > svg { flex: none; color: var(--fg-muted); }
+.pc-chip-select { position: relative; padding-right: 8px; cursor: pointer; }
+.pc-chip-select:hover,
+.pc-chip-select:focus-within { box-shadow: inset 0 0 0 1px var(--border-strong); }
+.pc-chip-select select,
+.pc-chip-select select:hover,
+.pc-chip-select select:focus-visible {
+  appearance: none;
+  -webkit-appearance: none;
+  width: auto;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.pc-close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: -6px -8px 0 0;
+  border: 0;
+  border-radius: var(--angle);
+  background: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.pc-close:hover { background: var(--bg-subtle); color: var(--fg-primary); }
+
+.pc-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 4px; padding: 4px 24px 0; overflow-y: auto; }
+.pc .pc-title,
+.pc .pc-text,
+.pc .pc-title:hover,
+.pc .pc-text:hover,
+.pc .pc-title:focus-visible,
+.pc .pc-text:focus-visible {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+  color: var(--fg-primary);
+}
+.pc .pc-title { min-height: 0; height: 40px; font-size: 1.25rem; font-weight: 600; }
+.pc .pc-text { flex: 1 1 auto; min-height: 200px; resize: none; font-size: 1.125rem; line-height: 1.5; }
+.pc .pc-title::placeholder,
+.pc .pc-text::placeholder { color: var(--fg-muted); font-weight: 400; }
+
+.pc-tools { display: flex; align-items: center; gap: 4px; padding: 8px 16px; }
+.pc-tool-wrap { position: relative; }
+.pc-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: var(--angle);
+  background: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.pc-tool:hover,
+.pc-tool[aria-expanded='true'] { background: var(--bg-subtle); color: var(--fg-primary); }
+.pc-emoji {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(6, 36px);
+  gap: 2px;
+  padding: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--angle);
+  box-shadow: var(--shadow-elevated);
+}
+.pc-emoji button { width: 36px; height: 36px; border: 0; border-radius: var(--angle); background: none; font-size: 1.25rem; line-height: 1; cursor: pointer; }
+.pc-emoji button:hover { background: var(--bg-subtle); }
+
+.pc-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--border-hairline);
+}
+.pc-hint { margin-right: auto; font-size: 0.8125rem; color: var(--fg-muted); }
+.pc-submit { min-height: 32px; height: 32px; padding: 0 16px; font-size: 1rem; font-weight: 600; }
+
+/* -- Commentaires : pas de fond, comme sur LinkedIn ---------------------------------------- */
+.li-comment-bubble,
+.li-comment-node.is-solution .li-comment-bubble { background: none; border: 0; padding: 0; }
+
+/* -- Compteurs (alertes, files de la gouvernance) : pastilles rondes ---------------------- */
+.top-navigation button i,
+.topbar-action-btn i,
+.mobile-bottom-nav button i,
+.gv-count { border-radius: 999px; }
+
+/* -- Publications et réponses : les retours à la ligne saisis sont conservés -------------- */
+.li-post-body,
+.wf-thread-body,
+.li-comment-body { white-space: pre-line; }
+
+/* -- Relations › Invitations : une ligne simple, pas de carte dans la carte --------------- */
+.wf-card .wf-stack-sm > .relation-row { border: 0; padding: 0; background: none; }
