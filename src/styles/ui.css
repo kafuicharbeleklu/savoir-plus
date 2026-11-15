@@ -453,3 +453,35 @@ label.ui-radio {
 .ui-facts > div:last-child { border-bottom: 0; }
 .ui-facts dt { font-size: 0.75rem; color: var(--fg-muted); }
 .ui-facts dd { margin: 0; font-size: 0.875rem; color: var(--fg-primary); overflow-wrap: anywhere; }
+
+/* -- Fenêtre de confirmation ---------------------------------------------------- */
+.ui-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--scrim, rgba(0, 0, 0, 0.32));
+  animation: savoir-fade-in var(--dur-base) var(--ease-standard);
+}
+.ui-dialog {
+  width: min(420px, 100%);
+  padding: 24px;
+  background: var(--bg-surface);
+  border-radius: 8px;
+  box-shadow: var(--shadow-elevated);
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ui-dialog h2 { margin: 0; font-size: 1.25rem; line-height: 1.4; font-weight: 600; color: var(--fg-primary); }
+.ui-dialog p { margin: 0; font-size: 0.875rem; line-height: 1.42857; color: var(--fg-muted); }
+.ui-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.primary.is-danger { background: var(--accent-danger); border-color: var(--accent-danger); color: #FFFFFF; }
+[data-theme="dark"] .primary.is-danger { color: #1B1B1B; }
+
+/* Boutons d'icône désactivés (ex. « Monter » sur la première ligne) */
+.li-icon-btn:disabled { opacity: 0.3; cursor: not-allowed; background: transparent; }

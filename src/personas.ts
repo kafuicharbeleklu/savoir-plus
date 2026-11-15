@@ -229,11 +229,13 @@ export function filterHomeFeed(
 }
 
 export interface StudioReadinessCheck {
-  id: string;
+  id: 'title-sources' | 'structure' | 'quiz' | 'media' | 'duration';
   label: string;
   ok: boolean;
   blocking: boolean;
   detail: string;
+  /** Onglet de l'espace de travail où corriger ce point. */
+  tab: 'content' | 'modules' | 'quiz' | 'media' | 'settings';
 }
 
 export interface StudioReadinessReport {
@@ -243,102 +245,124 @@ export interface StudioReadinessReport {
   checks: StudioReadinessCheck[];
 }
 
+/** Une question est complète si elle a un énoncé, au moins deux réponses, une bonne réponse et une explication. */
+export function isStudioQuestionComplete(q: { prompt: string; options: string[]; correctIndex: number; explanation: string }): boolean {
+  return (
+    q.prompt.trim().length > 0 &&
+    q.options.length >= 2 &&
+    q.options.every((o) => o.trim().length > 0) &&
+    q.correctIndex >= 0 &&
+    q.correctIndex < q.options.length &&
+    q.explanation.trim().length > 0
+  );
+}
+
+/**
+ * Vérifications avant publication (une seule liste, un seul vocabulaire).
+ * Chaque contenu est contrôlé sur son propre quiz et sur les médias qui lui sont joints.
+ */
 export function evaluateStudioReadiness(
   content: StudioContent | undefined,
-  quiz: ExtendedDemoState['studioQuiz'],
-  media: StudioMedia[]
+  ctx: { media: StudioMedia[]; contents?: StudioContent[] }
 ): StudioReadinessReport {
+  const isPath = content?.type === 'path';
   const hasTitleAndSources = Boolean(
     content?.title.trim() && content?.sources.trim() && content.sources.trim() !== 'À préciser'
   );
-  const hasValidSections = Boolean(
-    content &&
-      content.sections.length > 0 &&
-      content.sections.every((s) => s.title.trim().length > 0 && s.body.trim().length > 0)
-  );
-  const unavailableReferenced = media.filter(
-    (m) => m.state !== 'Disponible' && /utilis/i.test(m.usage)
-  );
-  const libraryIssues = media.filter((m) => m.state !== 'Disponible').length;
-  const availableCount = media.filter((m) => m.state === 'Disponible').length;
-  const mediaOk = unavailableReferenced.length === 0;
 
-  const totalPoints = quiz.questions.reduce((acc, q) => acc + (q.points > 0 ? q.points : 1), 0);
-  const quizValid =
-    quiz.questions.length > 0 &&
-    quiz.questions.every(
-      (q) =>
-        q.prompt.trim().length > 0 &&
-        q.options.filter((o) => o.trim().length > 0).length >= 2 &&
-        q.correctIndex >= 0 &&
-        q.correctIndex < q.options.length &&
-        q.explanation.trim().length > 0
-    ) &&
-    quiz.passingScore > 0 &&
-    quiz.passingScore <= totalPoints;
-  const audienceOk = Boolean(content?.audience);
+  // Structure : sections rédigées (ressource, module) ou modules compatibles (parcours).
+  const sections = content?.sections || [];
+  const sectionsOk =
+    sections.length > 0 && sections.every((sec) => sec.title.trim().length > 0 && sec.body.trim().length > 0);
+  const moduleIds = content?.pathModuleIds || [];
+  const incompatible = moduleIds.filter((id) => {
+    const source = (ctx.contents || []).find((c) => c.id === id);
+    return Boolean(source && source.audience === 'Privé' && content?.audience !== 'Privé');
+  });
+  const structureOk = isPath ? moduleIds.length >= 2 && incompatible.length === 0 : sectionsOk;
+  const structureDetail = isPath
+    ? incompatible.length > 0
+      ? `${incompatible.length} module(s) non accessible(s) à l’audience du parcours`
+      : moduleIds.length >= 2
+        ? `${moduleIds.length} modules`
+        : 'Au moins 2 modules requis'
+    : sections.length === 0
+      ? 'Aucune section'
+      : sectionsOk
+        ? `${sections.length} section(s) rédigée(s)`
+        : 'Une section n’a pas de titre ou de texte';
 
-  // Contenu du Studio IA : il porte son propre quiz, c'est lui qui est contrôlé (et non le quiz partagé).
-  const ownQuiz = content?.quiz;
-  const ownQuizValid = Boolean(
-    ownQuiz &&
-      ownQuiz.length > 0 &&
-      ownQuiz.every(
-        (q) =>
-          q.prompt.trim().length > 0 &&
-          q.options.filter((o) => o.trim().length > 0).length >= 2 &&
-          q.correctIndex >= 0 &&
-          q.correctIndex < q.options.length &&
-          q.explanation.trim().length > 0
-      )
-  );
-  const quizCheckOk = ownQuiz ? ownQuizValid : quizValid;
-  const quizCheckDetail = ownQuiz
-    ? ownQuizValid
-      ? `${ownQuiz.length} question(s) propres au contenu · seuil ${Math.max(1, Math.ceil(ownQuiz.length * 0.66))}/${ownQuiz.length}`
-      : 'Questions du contenu incomplètes'
-    : quizValid
-      ? `${quiz.questions.length} question(s) · seuil ${quiz.passingScore}/${totalPoints}`
-      : `Seuil (${quiz.passingScore}) > total (${totalPoints}) ou questions incomplètes`;
+  // Quiz : celui du contenu. Obligatoire pour un module, facultatif pour une ressource.
+  const quiz = content?.quiz || [];
+  const quizComplete = quiz.length > 0 && quiz.every(isStudioQuestionComplete);
+  const quizOk = isPath ? true : content?.type === 'module' ? quizComplete : quiz.length === 0 || quizComplete;
+  const quizDetail = isPath
+    ? 'Sans objet pour un parcours'
+    : quiz.length === 0
+      ? content?.type === 'module'
+        ? 'Aucune question'
+        : 'Facultatif pour une ressource'
+      : quizComplete
+        ? `${quiz.length} question(s) · réussite à partir de ${Math.max(1, Math.ceil(quiz.length * 0.66))}`
+        : 'Une question est incomplète';
+
+  // Médias : uniquement ceux joints à ce contenu.
+  const attached = (content?.mediaIds || [])
+    .map((id) => ctx.media.find((m) => m.id === id))
+    .filter((m): m is StudioMedia => Boolean(m));
+  const notReady = attached.filter((m) => m.state !== 'Disponible');
+  const noAlt = attached.filter((m) => m.kind === 'Image' && !m.altText.trim());
+  const mediaDetail =
+    attached.length === 0
+      ? 'Aucun média joint'
+      : notReady.length > 0
+        ? `${notReady.length} média(s) indisponible(s)`
+        : noAlt.length > 0
+          ? `${noAlt.length} image(s) sans texte alternatif`
+          : `${attached.length} média(s) prêt(s)`;
+
+  const hasDuration = Boolean(content?.duration.trim());
 
   const checks: StudioReadinessCheck[] = [
     {
       id: 'title-sources',
-      label: 'Titre et provenance',
+      label: 'Titre et sources',
       ok: hasTitleAndSources,
       blocking: true,
-      detail: hasTitleAndSources ? 'Renseignés' : 'Titre ou sources à préciser'
+      detail: hasTitleAndSources ? 'Renseignés' : content?.title.trim() ? 'Sources et droits à préciser' : 'Titre à renseigner',
+      tab: content?.title.trim() ? 'settings' : isPath ? 'modules' : 'content'
     },
     {
-      id: 'sections',
-      label: 'Structure pédagogique',
-      ok: hasValidSections,
+      id: 'structure',
+      label: isPath ? 'Modules du parcours' : 'Sections',
+      ok: structureOk,
       blocking: true,
-      detail: content ? `${content.sections.length} section(s)` : 'Aucune section'
-    },
-    {
-      id: 'media',
-      label: 'Médias prêts',
-      ok: mediaOk && libraryIssues === 0,
-      blocking: unavailableReferenced.length > 0,
-      detail:
-        libraryIssues === 0
-          ? `${availableCount} média(s) disponibles`
-          : `${availableCount} prêt(s) · ${libraryIssues} en attente ou échec`
+      detail: structureDetail,
+      tab: isPath ? 'modules' : 'content'
     },
     {
       id: 'quiz',
-      label: 'Évaluation à choix unique',
-      ok: quizCheckOk,
-      blocking: content?.type === 'module',
-      detail: quizCheckDetail
+      label: 'Quiz',
+      ok: quizOk,
+      blocking: !isPath && (content?.type === 'module' || quiz.length > 0),
+      detail: quizDetail,
+      tab: 'quiz'
     },
     {
-      id: 'audience',
-      label: 'Audience cible',
-      ok: audienceOk,
-      blocking: true,
-      detail: content?.audience || 'Non définie'
+      id: 'media',
+      label: 'Médias',
+      ok: notReady.length === 0 && noAlt.length === 0,
+      blocking: notReady.length > 0,
+      detail: mediaDetail,
+      tab: 'media'
+    },
+    {
+      id: 'duration',
+      label: 'Durée estimée',
+      ok: hasDuration,
+      blocking: false,
+      detail: hasDuration ? content!.duration : 'Non renseignée (recommandé)',
+      tab: 'settings'
     }
   ];
 

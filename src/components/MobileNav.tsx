@@ -134,7 +134,7 @@ export function MobileNav({
 
               {caps.canCreate && (
                 <button className="sheet-role-btn" onClick={() => go('studio')}>
-                  <Layers size={18} /> Studio Créateur
+                  <Layers size={18} /> Studio
                 </button>
               )}
 

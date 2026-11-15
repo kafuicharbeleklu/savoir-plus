@@ -39,6 +39,8 @@ export interface StudioStudySource {
   quiz?: { prompt: string; options: string[]; correctIndex: number; explanation: string }[];
   steps?: { caption: string; imageUrl?: string }[];
   aiAssisted?: boolean;
+  /** Dernière version publiée : c'est elle que lisent les apprenants. */
+  published?: Partial<Omit<StudioStudySource, 'id' | 'published' | 'aiAssisted'>>;
 }
 
 export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
@@ -282,9 +284,11 @@ export const questions = MODULES_CONTENT.phishing.questions;
 
 export function resolveStudyContent(moduleId: string, studioContents?: StudioStudySource[], studioQuiz?: { title: string; questions: { prompt: string; options: string[]; correctIndex: number; explanation: string }[] }): ModuleStudyContent {
   if (MODULES_CONTENT[moduleId]) return MODULES_CONTENT[moduleId];
-  const fromStudio = studioContents?.find((s) => s.id === moduleId);
+  const rawStudio = studioContents?.find((s) => s.id === moduleId);
+  // Les apprenants lisent la version publiée, pas le brouillon en cours de modification.
+  const fromStudio = rawStudio?.published ? { ...rawStudio, ...rawStudio.published } : rawStudio;
   if (fromStudio) {
-    const studioSections = (fromStudio.sections.length ? fromStudio.sections : [{ id: 's1', title: 'Introduction', body: 'Contenu publié depuis Studio Créateur.' }]).slice(0, 3);
+    const studioSections = (fromStudio.sections.length ? fromStudio.sections : [{ id: 's1', title: 'Introduction', body: 'Contenu publié depuis le Studio.' }]).slice(0, 3);
     const totalMinutes = parseInt(fromStudio.duration || '', 10);
     const sectionMinutes = Number.isFinite(totalMinutes)
       ? `${Math.max(2, Math.round(totalMinutes / Math.max(1, studioSections.length)))} min`
@@ -316,7 +320,7 @@ export function resolveStudyContent(moduleId: string, studioContents?: StudioStu
         title: `Approfondissement ${mappedLessons.length + 1}`,
         label: fromStudio.domain,
         minutes: '4 min',
-        intro: 'Complément pédagogique du module publié depuis Studio Créateur.',
+        intro: 'Complément pédagogique du module publié depuis le Studio.',
         body: 'Consolidez les notions présentées dans les sections précédentes avant l’évaluation finale.',
         points: ['Relier la théorie à un cas concret.', 'Tester vos acquis avec le quiz.'],
         tip: 'Vous pouvez revenir sur chaque section à tout moment.'

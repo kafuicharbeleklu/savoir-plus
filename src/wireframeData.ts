@@ -313,13 +313,28 @@ export interface StudioContent {
   sources: string;
   sections: { id: string; title: string; body: string; keyPoints?: string[]; tip?: string }[];
   updatedAt: string;
-  /** Quiz propre au contenu (Studio IA) ; sinon le quiz partagé du Studio est utilisé. */
+  /** Quiz propre au contenu (chaque contenu porte son quiz). */
   quiz?: { prompt: string; options: string[]; correctIndex: number; explanation: string }[];
   /** Fiche illustrée pas à pas. */
   steps?: { caption: string; imageUrl?: string }[];
   /** Structuré avec l'aide de l'IA puis relu par l'auteur. */
   aiAssisted?: boolean;
+  /** Auteur (nom affiché) ; absent sur les contenus d'origine : Kossi Agbo. */
+  authorName?: string;
+  /** Dernière modification (ms). */
+  updatedAtMs?: number;
+  /** Médias de la bibliothèque joints à ce contenu. */
+  mediaIds?: string[];
+  /** Modules d'un parcours, dans l'ordre conseillé (identifiants du catalogue). */
+  pathModuleIds?: string[];
+  /** Copie de la dernière version publiée : c'est elle que voient les apprenants. */
+  published?: StudioPublishedSnapshot;
 }
+
+export type StudioPublishedSnapshot = Pick<
+  StudioContent,
+  'title' | 'domain' | 'duration' | 'sources' | 'sections' | 'quiz' | 'steps' | 'version' | 'audience' | 'mediaIds' | 'pathModuleIds'
+>;
 
 export interface StudioQuizQuestion {
   id: string;
@@ -339,6 +354,8 @@ export interface StudioMedia {
   altText: string;
   source: string;
   rights: string;
+  /** Poids lisible (« 240 Ko ») pour les fichiers importés. */
+  sizeLabel?: string;
 }
 
 export interface NotificationItem {
@@ -594,6 +611,22 @@ export interface ExtendedDemoState {
 
 const EXT_KEY = 'savoir-extended-v1';
 
+/** Quiz d'origine du module « Comprendre les réseaux » (chaque contenu porte désormais son quiz). */
+const SEED_NETWORK_QUIZ: NonNullable<StudioContent['quiz']> = [
+  {
+    prompt: 'À quoi sert une adresse IP sur un réseau local ?',
+    options: ['Identifier une interface réseau', 'Augmenter la taille de l’écran', 'Remplacer le câble électrique'],
+    correctIndex: 0,
+    explanation: 'L’adresse IP permet d’identifier une interface et d’acheminer les échanges.'
+  },
+  {
+    prompt: 'Quel équipement relie des réseaux IP distincts ?',
+    options: ['Un routeur', 'Un clavier', 'Un écran'],
+    correctIndex: 0,
+    explanation: 'Le routeur permet de relier des réseaux IP. Revoir la section Les adresses IP.'
+  }
+];
+
 export const initialExtendedState = (): ExtendedDemoState => ({
   plannedIds: ['comptes'],
   posts: [
@@ -701,7 +734,8 @@ export const initialExtendedState = (): ExtendedDemoState => ({
         { id: 'm1', title: '01 Introduction aux réseaux', body: 'Dans cette section, vous découvrirez les équipements qui permettent aux appareils de communiquer.' },
         { id: 'm2', title: '02 Les adresses IP', body: 'Une adresse IP identifie une interface sur un réseau IP.' },
         { id: 'm3', title: '03 Vérification', body: 'Quiz de 5 questions à choix unique.' }
-      ]
+      ],
+      quiz: SEED_NETWORK_QUIZ
     },
     {
       id: 'st-3',
@@ -1329,7 +1363,10 @@ export function readExtended(): ExtendedDemoState {
       followingIds: { ...base.followingIds, ...(parsed?.followingIds || {}) },
       moduleProgress: { ...base.moduleProgress, ...(parsed?.moduleProgress || {}) },
       requestMessages: { ...base.requestMessages, ...(parsed?.requestMessages || {}) },
-      platformSettings: { ...base.platformSettings, ...(parsed?.platformSettings || {}) }
+      platformSettings: { ...base.platformSettings, ...(parsed?.platformSettings || {}) },
+      studioContents: (Array.isArray(parsed?.studioContents) ? parsed.studioContents : base.studioContents).map(
+        (c: StudioContent) => (c.id === 'st-2' && !c.quiz ? { ...c, quiz: SEED_NETWORK_QUIZ } : c)
+      )
     };
   } catch {
     return initialExtendedState();
@@ -1340,9 +1377,74 @@ export function writeExtended(next: ExtendedDemoState) {
   localStorage.setItem(EXT_KEY, JSON.stringify(next));
 }
 
+const SNAPSHOT_KEYS = [
+  'title',
+  'domain',
+  'duration',
+  'sources',
+  'sections',
+  'quiz',
+  'steps',
+  'audience',
+  'mediaIds',
+  'pathModuleIds'
+] as const;
+
+/** Copie figée d'un contenu au moment de sa publication. */
+export function studioSnapshot(c: StudioContent): StudioPublishedSnapshot {
+  return JSON.parse(
+    JSON.stringify({
+      title: c.title,
+      domain: c.domain,
+      duration: c.duration,
+      sources: c.sources,
+      sections: c.sections,
+      quiz: c.quiz,
+      steps: c.steps,
+      version: c.version,
+      audience: c.audience,
+      mediaIds: c.mediaIds,
+      pathModuleIds: c.pathModuleIds
+    })
+  );
+}
+
+/** Ce que voient les apprenants : la dernière version publiée, pas le brouillon en cours. */
+export function publishedView(c: StudioContent): StudioContent {
+  const p = c.published;
+  if (!p) return c;
+  return {
+    ...c,
+    title: p.title,
+    domain: p.domain,
+    duration: p.duration,
+    sources: p.sources,
+    sections: p.sections,
+    quiz: p.quiz,
+    steps: p.steps,
+    version: p.version,
+    audience: p.audience,
+    mediaIds: p.mediaIds,
+    pathModuleIds: p.pathModuleIds
+  };
+}
+
+/** Vrai si un contenu publié a été modifié depuis sa dernière publication. */
+export function hasUnpublishedChanges(c: StudioContent): boolean {
+  if (c.pubStatus !== 'Publié' || !c.published) return false;
+  const pick = (x: Partial<StudioContent>) => JSON.stringify(SNAPSHOT_KEYS.map((k) => x[k] ?? null));
+  return pick(c) !== pick(c.published);
+}
+
+/** « v2 » → « v3 ». */
+export function nextStudioVersion(version: string): string {
+  const n = parseInt((version || '').replace(/\D/g, ''), 10);
+  return `v${(Number.isFinite(n) ? n : 1) + 1}`;
+}
+
 export function buildDynamicCatalog(ext: ExtendedDemoState): CatalogItem[] {
   const base = CATALOG_ITEMS.map((item) => ({ ...item }));
-  const publishedStudio = ext.studioContents.filter((s) => s.pubStatus === 'Publié');
+  const publishedStudio = ext.studioContents.filter((s) => s.pubStatus === 'Publié').map(publishedView);
 
   for (const s of publishedStudio) {
     if (s.id === 'st-2') {
@@ -1372,13 +1474,13 @@ export function buildDynamicCatalog(ext: ExtendedDemoState): CatalogItem[] {
       domain: s.domain,
       level: 'Débutant',
       duration: s.duration || '5 min',
-      author: 'Kossi Agbo',
+      author: s.authorName || 'Kossi Agbo',
       authorRole: 'Créateur & Mentor · Studio pédagogique',
       version: s.version || 'v1',
       review: reviewLevel,
       interactive: s.type === 'module',
       xpReward: s.type === 'module' ? 150 : undefined,
-      summary: s.sections[0]?.body || 'Contenu publié depuis le Studio Créateur SAVOIR+.',
+      summary: s.sections[0]?.body || 'Contenu publié depuis le Studio SAVOIR+.',
       objectives: s.sections.some((sec) => sec.keyPoints?.length)
         ? s.sections.map((sec) => sec.keyPoints?.[0]).filter((k): k is string => Boolean(k)).slice(0, 3)
         : ['Comprendre et appliquer les notions clés présentées dans ce contenu.'],
@@ -1394,6 +1496,15 @@ export function buildDynamicCatalog(ext: ExtendedDemoState): CatalogItem[] {
               title: `0${idx + 1} ${sec.title}`,
               subtitle: `Section Studio · ${s.duration || '5 min'}`
             }))
+          : undefined,
+      pathType: s.type === 'path' ? 'Compétence' : undefined,
+      moduleCount: s.type === 'path' ? (s.pathModuleIds || []).length : undefined,
+      pathModules:
+        s.type === 'path'
+          ? (s.pathModuleIds || []).flatMap((id) => {
+              const m = base.find((b) => b.id === id);
+              return m ? [{ id: m.id, title: m.title, version: m.version, note: m.duration, status: 'À commencer' as const }] : [];
+            })
           : undefined
     };
 

@@ -236,19 +236,19 @@ test('Home feed filter separates all, following, open questions, and modules det
 test('Studio readiness evaluation detects missing fields, media errors, and invalid quiz thresholds', () => {
   const ext = initialExtendedState();
   const content = ext.studioContents[0];
-  const validQuiz = { ...ext.studioQuiz, passingScore: 2 };
-  const readyMedia = ext.studioMedia.filter((m) => m.state === 'Disponible');
-  const okReport = evaluateStudioReadiness(content, validQuiz, readyMedia);
+  // La bibliothèque contient des médias en échec, mais aucun n'est joint à ce contenu : rien ne bloque.
+  const okReport = evaluateStudioReadiness(content, { media: ext.studioMedia });
   assert.equal(okReport.canPublish, true);
   assert.equal(okReport.blockingCount, 0);
 
-  const brokenQuiz = { ...ext.studioQuiz, passingScore: 9 };
-  const brokenMedia = ext.studioMedia.map((m, idx) =>
-    idx === 0 ? { ...m, state: 'Échec' as const, usage: 'Utilisé dans 1 brouillon' } : m
+  const brokenMedia = ext.studioMedia.map((m, idx) => (idx === 0 ? { ...m, state: 'Échec' as const } : m));
+  const failReport = evaluateStudioReadiness(
+    { ...content, title: ' ', mediaIds: [brokenMedia[0].id] },
+    { media: brokenMedia }
   );
-  const failReport = evaluateStudioReadiness({ ...content, title: ' ' }, brokenQuiz, brokenMedia);
   assert.equal(failReport.canPublish, false);
   assert.ok(failReport.blockingCount >= 2);
+  assert.equal(failReport.checks.find((c) => c.id === 'media')?.blocking, true);
 });
 
 import { shouldBypassSplash, resolveSplashDurations, SPLASH_HOLD_MS, SPLASH_REDUCED_HOLD_MS } from '../src/personas';
@@ -581,13 +581,43 @@ test('Studio IA : un contenu porte ses propres points clés, réflexe, quiz et f
 test('Préparation publication : un contenu Studio IA est contrôlé sur son propre quiz', async () => {
   const { evaluateStudioReadiness } = await import('../src/personas');
   const ext = initialExtendedState();
-  const brokenShared = { ...ext.studioQuiz, passingScore: 99 };
   const base = { ...ext.studioContents[0], type: 'module' as const, title: 'Sauvegardes', sources: 'Explication de Kossi', audience: 'Membres autorisés' as const,
     sections: [{ id: 's1', title: 'Règle 3-2-1', body: 'Trois copies.' }] };
-  const own = evaluateStudioReadiness({ ...base, quiz: [{ prompt: 'Combien ?', options: ['1', '3'], correctIndex: 1, explanation: 'Règle 3-2-1.' }] }, brokenShared, []);
+  const own = evaluateStudioReadiness({ ...base, quiz: [{ prompt: 'Combien ?', options: ['1', '3'], correctIndex: 1, explanation: 'Règle 3-2-1.' }] }, { media: [] });
   assert.equal(own.checks.find((c) => c.id === 'quiz')?.ok, true);
-  const legacy = evaluateStudioReadiness(base, brokenShared, []);
-  assert.equal(legacy.checks.find((c) => c.id === 'quiz')?.ok, false);
+  assert.equal(own.canPublish, true);
+  // Un module sans question n'est pas publiable ; une ressource sans quiz l'est.
+  const noQuiz = evaluateStudioReadiness(base, { media: [] });
+  assert.equal(noQuiz.checks.find((c) => c.id === 'quiz')?.ok, false);
+  assert.equal(noQuiz.canPublish, false);
+  assert.equal(evaluateStudioReadiness({ ...base, type: 'resource' as const }, { media: [] }).canPublish, true);
+  // Un parcours se contrôle sur ses modules.
+  const path = { ...base, type: 'path' as const, pathModuleIds: ['phishing'] };
+  assert.equal(evaluateStudioReadiness(path, { media: [] }).canPublish, false);
+  assert.equal(evaluateStudioReadiness({ ...path, pathModuleIds: ['phishing', 'reseaux'] }, { media: [] }).canPublish, true);
+});
+
+test('Studio : les apprenants lisent la version publiée, pas le brouillon en cours', async () => {
+  const { buildDynamicCatalog, hasUnpublishedChanges, nextStudioVersion, publishedView, studioSnapshot } = await import('../src/wireframeData');
+  const ext = initialExtendedState();
+  const live = {
+    ...ext.studioContents[0],
+    id: 'st-live-9',
+    type: 'module' as const,
+    title: 'Titre publié',
+    version: 'v1',
+    pubStatus: 'Publié' as const
+  };
+  const published = { ...live, published: studioSnapshot(live) };
+  assert.equal(hasUnpublishedChanges(published), false);
+
+  const edited = { ...published, title: 'Titre en cours de réécriture' };
+  assert.equal(hasUnpublishedChanges(edited), true);
+  assert.equal(publishedView(edited).title, 'Titre publié');
+  ext.studioContents.unshift(edited);
+  assert.equal(buildDynamicCatalog(ext).find((c) => c.id === 'st-live-9')?.title, 'Titre publié');
+  assert.equal(resolveStudyContent('st-live-9', ext.studioContents).title, 'Titre publié');
+  assert.equal(nextStudioVersion('v2'), 'v3');
 });
 
 test('Profil : progression d’un membre calculée à un seul endroit (abonnés, compétences, modules)', async () => {

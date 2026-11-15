@@ -384,7 +384,7 @@ export function DemoAuthModal({
         <h2>Comptes & Connexion</h2>
         <p>
           Explorez SAVOIR+ avec trois personnages de démonstration fictifs pour tester l’intégration contextuelle des espaces Apprenant,
-          Studio Créateur et Console Gouvernance.
+          Studio et Gouvernance.
         </p>
 
         <div className="persona-choices-three">

@@ -325,7 +325,7 @@ export function TopBar({
                       nav('studio');
                     }}
                   >
-                    <Layers size={15} /> Studio Créateur
+                    <Layers size={15} /> Studio
                   </button>
                 )}
 

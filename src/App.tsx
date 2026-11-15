@@ -2477,7 +2477,7 @@ export default function App() {
                       <span className="left-rail-section-label">Espaces habilités</span>
                       {caps.canCreate && (
                         <button className="rail-nav-btn" onClick={() => nav('studio')}>
-                          <span><Layers size={16} /> Studio Créateur</span>
+                          <span><Layers size={16} /> Studio</span>
                         </button>
                       )}
                       {(caps.canModerate || caps.canAdmin) && (

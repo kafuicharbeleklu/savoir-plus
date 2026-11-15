@@ -134,12 +134,15 @@ export type ActionMenuItem = {
 export function ActionMenu({
   items,
   label = 'Plus d’actions',
-  trigger
+  trigger,
+  triggerClassName = 'secondary ui-btn-sm'
 }: {
   items: ActionMenuItem[];
   label?: string;
   /** Contenu du bouton (par défaut « … »). */
   trigger?: React.ReactNode;
+  /** Classes du bouton quand `trigger` est fourni. */
+  triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -167,7 +170,7 @@ export function ActionMenu({
     <div className="li-menu" ref={ref}>
       <button
         type="button"
-        className={trigger ? 'secondary ui-btn-sm' : 'li-icon-btn'}
+        className={trigger ? triggerClassName : 'li-icon-btn'}
         aria-label={trigger ? undefined : label}
         title={trigger ? undefined : label}
         aria-haspopup="menu"
@@ -428,4 +431,58 @@ export function useIsNarrow(query = '(max-width: 768px)') {
     return () => mq.removeEventListener?.('change', on);
   }, [query]);
   return narrow;
+}
+
+/* ------------------------------------------------------------------ Confirmation */
+
+/** Petite fenêtre de confirmation (actions irréversibles). */
+export function ConfirmDialog({
+  open,
+  title,
+  text,
+  confirmLabel,
+  danger = false,
+  onConfirm,
+  onCancel
+}: {
+  open: boolean;
+  title: string;
+  text?: React.ReactNode;
+  confirmLabel: string;
+  danger?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.activeElement as HTMLElement | null;
+    ref.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      prev?.focus?.();
+    };
+  }, [open, onCancel]);
+  if (!open) return null;
+  return createPortal(
+    <div className="ui-dialog-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onCancel()}>
+      <div ref={ref} className="ui-dialog" role="alertdialog" aria-modal="true" aria-label={title} tabIndex={-1}>
+        <h2>{title}</h2>
+        {text && <p>{text}</p>}
+        <div className="ui-dialog-actions">
+          <button type="button" className="secondary ui-btn-sm" onClick={onCancel}>
+            Annuler
+          </button>
+          <button type="button" className={`primary ui-btn-sm ${danger ? 'is-danger' : ''}`} onClick={onConfirm}>
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
 }
