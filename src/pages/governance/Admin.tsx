@@ -13,7 +13,7 @@ import {
   canManageStatus,
   canSeeEmail,
   govAccess,
-  splitTimestamp
+  dateLabelRank
 } from '../../governance';
 import {
   ADMIN_ROLES,
@@ -25,7 +25,7 @@ import {
   type PlatformSettingsState,
   type RoleAssignmentRecord
 } from '../../wireframeData';
-import { ActionMenu, ConfirmDialog, EmptyState, ListCard, ListRow, PageHeader, SearchField, Select, SidePanel, StatusDot, type StatusTone, Tabs } from '../../components/ui';
+import { ActionMenu, ConfirmDialog, EmptyState, ListCard, ListRow, PageHeader, SearchField, Select, SidePanel, SortTh, StatusDot, type StatusTone, Tabs, useTableSort } from '../../components/ui';
 import { Block, Facts, GovShell, normalize, type GovProps } from './shared';
 
 /* ================================================================== Utilisateurs */
@@ -49,6 +49,14 @@ export function AdminUsersView({ ext, updateExt, nav, user, setToast }: GovProps
   );
   const open = ext.adminUsers.find((u) => u.id === openId);
   const statuses = (Object.keys(ACCOUNT_STATUS) as AccountStatus[]).filter((s) => ext.adminUsers.some((u) => u.status === s));
+  const userSort = useTableSort<'name' | 'institution' | 'roles' | 'status' | 'activity'>();
+  const sortedUsers = userSort.apply(users, {
+    name: (u) => u.name,
+    institution: (u) => u.institution,
+    roles: (u) => u.roles.join(', '),
+    status: (u) => ACCOUNT_STATUS[u.status].label,
+    activity: (u) => dateLabelRank(u.lastActivity)
+  });
 
   const applyStatus = () => {
     if (!open || !nextStatus) return;
@@ -110,15 +118,25 @@ export function AdminUsersView({ ext, updateExt, nav, user, setToast }: GovProps
           <table className="gv-table">
             <thead>
               <tr>
-                <th scope="col" className="w-md">Nom</th>
-                <th scope="col">Établissement</th>
-                <th scope="col">Rôles</th>
-                <th scope="col" className="w-lg">Statut</th>
-                <th scope="col" className="w-md">Dernière activité</th>
+                <SortTh sortKey="name" sort={userSort.sort} onSort={userSort.toggle} className="w-md">
+                  Nom
+                </SortTh>
+                <SortTh sortKey="institution" sort={userSort.sort} onSort={userSort.toggle}>
+                  Établissement
+                </SortTh>
+                <SortTh sortKey="roles" sort={userSort.sort} onSort={userSort.toggle}>
+                  Rôles
+                </SortTh>
+                <SortTh sortKey="status" sort={userSort.sort} onSort={userSort.toggle} className="w-lg">
+                  Statut
+                </SortTh>
+                <SortTh sortKey="activity" sort={userSort.sort} onSort={userSort.toggle} className="w-date">
+                  Dernière activité
+                </SortTh>
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {sortedUsers.map((u) => (
                 <tr key={u.id} className={u.id === openId ? 'is-active' : ''}>
                   <th scope="row">
                     <button type="button" className="gv-table-link" onClick={() => setOpenId(u.id)}>
@@ -130,7 +148,7 @@ export function AdminUsersView({ ext, updateExt, nav, user, setToast }: GovProps
                   <td>
                     <StatusDot tone={ACCOUNT_STATUS[u.status].tone}>{ACCOUNT_STATUS[u.status].label}</StatusDot>
                   </td>
-                  <td>{u.lastActivity}</td>
+                  <td className="is-date tabular-nums">{u.lastActivity}</td>
                 </tr>
               ))}
             </tbody>
@@ -227,6 +245,14 @@ export function AdminRolesView({ ext, updateExt, nav, user, setToast }: GovProps
   const [toRevoke, setToRevoke] = useState<RoleAssignmentRecord | null>(null);
   const role = ext.adminActiveRole;
   const canAct = govAccess(role, 'admin-roles') === 'act';
+  const roleSort = useTableSort<'member' | 'role' | 'scope' | 'requester' | 'status'>();
+  const sortedRoles = roleSort.apply(ext.roleAssignments, {
+    member: (r) => r.targetName,
+    role: (r) => r.role,
+    scope: (r) => r.scope,
+    requester: (r) => r.requester,
+    status: (r) => ROLE_STATUS_LABEL[r.status]
+  });
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -335,18 +361,28 @@ export function AdminRolesView({ ext, updateExt, nav, user, setToast }: GovProps
           <table className="gv-table">
             <thead>
               <tr>
-                <th scope="col" className="w-md">Membre</th>
-                <th scope="col" className="w-md">Rôle</th>
-                <th scope="col">Périmètre</th>
-                <th scope="col">Validation</th>
-                <th scope="col" className="w-sm">Statut</th>
+                <SortTh sortKey="member" sort={roleSort.sort} onSort={roleSort.toggle} className="w-md">
+                  Membre
+                </SortTh>
+                <SortTh sortKey="role" sort={roleSort.sort} onSort={roleSort.toggle} className="w-md">
+                  Rôle
+                </SortTh>
+                <SortTh sortKey="scope" sort={roleSort.sort} onSort={roleSort.toggle}>
+                  Périmètre
+                </SortTh>
+                <SortTh sortKey="requester" sort={roleSort.sort} onSort={roleSort.toggle}>
+                  Validation
+                </SortTh>
+                <SortTh sortKey="status" sort={roleSort.sort} onSort={roleSort.toggle} className="w-sm">
+                  Statut
+                </SortTh>
                 <th scope="col" className="w-sm">
                   <span className="sr-only">Action</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {ext.roleAssignments.map((r) => (
+              {sortedRoles.map((r) => (
                 <tr key={r.id}>
                   <th scope="row" title={r.justification}>
                     {r.targetName}
@@ -677,13 +713,14 @@ export function AdminAuditView({ ext, updateExt, nav, user, setToast }: GovProps
   const logs = ext.auditLogs.filter(
     (l) => (filter === 'all' || l.result === filter) && (!q || normalize(`${l.actor} ${l.action} ${l.target} ${l.scope} ${l.justification}`).includes(q))
   );
-  const days: { day: string; rows: AuditLogEntry[] }[] = [];
-  for (const l of logs) {
-    const { day } = splitTimestamp(l.timestamp);
-    const last = days[days.length - 1];
-    if (last && last.day === day) last.rows.push(l);
-    else days.push({ day, rows: [l] });
-  }
+  const auditSort = useTableSort<'date' | 'actor' | 'action' | 'target' | 'result'>([{ key: 'date', dir: 'desc' }]);
+  const sortedLogs = auditSort.apply(logs, {
+    date: (l) => dateLabelRank(l.timestamp),
+    actor: (l) => l.actor,
+    action: (l) => l.action,
+    target: (l) => l.target,
+    result: (l) => l.result
+  });
 
   const exportCsv = () => {
     const header = ['Identifiant', 'Horodatage', 'Acteur', 'Action', 'Objet', 'Périmètre', 'Résultat', 'Justification', 'Requête'];
@@ -745,39 +782,42 @@ export function AdminAuditView({ ext, updateExt, nav, user, setToast }: GovProps
           <table className="gv-table gv-audit">
             <thead>
               <tr>
-                <th scope="col" className="w-xs">Heure</th>
-                <th scope="col">Acteur</th>
-                <th scope="col">Action</th>
-                <th scope="col">Objet</th>
-                <th scope="col" className="w-sm">Résultat</th>
+                <SortTh sortKey="date" sort={auditSort.sort} onSort={auditSort.toggle} className="w-date">
+                  Date
+                </SortTh>
+                <SortTh sortKey="actor" sort={auditSort.sort} onSort={auditSort.toggle}>
+                  Acteur
+                </SortTh>
+                <SortTh sortKey="action" sort={auditSort.sort} onSort={auditSort.toggle}>
+                  Action
+                </SortTh>
+                <SortTh sortKey="target" sort={auditSort.sort} onSort={auditSort.toggle}>
+                  Objet
+                </SortTh>
+                <SortTh sortKey="result" sort={auditSort.sort} onSort={auditSort.toggle} className="w-sm">
+                  Résultat
+                </SortTh>
               </tr>
             </thead>
-            {days.map((d) => (
-              <tbody key={d.day}>
-                <tr className="gv-day">
-                  <th scope="rowgroup" colSpan={5}>
-                    {d.day}
-                  </th>
+            <tbody>
+              {sortedLogs.map((l) => (
+                <tr key={l.id} title={l.justification}>
+                  <td className="is-date tabular-nums">{l.timestamp || '—'}</td>
+                  <td>
+                    {l.actor}
+                    <small>{l.scope}</small>
+                  </td>
+                  <td>
+                    {l.action}
+                    <small>{l.justification}</small>
+                  </td>
+                  <td>{l.target}</td>
+                  <td>
+                    <StatusDot tone={l.result === 'Succès' ? 'ok' : 'danger'}>{l.result}</StatusDot>
+                  </td>
                 </tr>
-                {d.rows.map((l) => (
-                  <tr key={l.id} title={l.justification}>
-                    <td className="tabular-nums">{splitTimestamp(l.timestamp).time || '—'}</td>
-                    <td>
-                      {l.actor}
-                      <small>{l.scope}</small>
-                    </td>
-                    <td>
-                      {l.action}
-                      <small>{l.justification}</small>
-                    </td>
-                    <td>{l.target}</td>
-                    <td>
-                      <StatusDot tone={l.result === 'Succès' ? 'ok' : 'danger'}>{l.result}</StatusDot>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            ))}
+              ))}
+            </tbody>
           </table>
         )}
       </div>

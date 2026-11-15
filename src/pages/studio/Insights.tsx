@@ -2,130 +2,234 @@
  * Studio — Statistiques et Profil créateur.
  * Les chiffres viennent des progressions réellement enregistrées dans la démonstration.
  */
-import React, { useState } from 'react';
-import { MODULES_CONTENT } from '../../content';
+import React, { useMemo, useState } from 'react';
 import type { Progress } from '../../data';
-import { moduleProgressPercent } from '../../domain.mjs';
-import { buildDynamicCatalog, publishedView, type CatalogType } from '../../wireframeData';
+import { buildDynamicCatalog, type CatalogType } from '../../wireframeData';
+import { computeCreatorStats, hasQuestionGap, hasStepLoss, moduleInsights } from '../../studioStats';
 import { Avatar } from '../../components/ProfileIdentityCard';
-import { EmptyState, ListCard, ListRow, PageHeader, StateTile, StatusDot, Tabs } from '../../components/ui';
-import { contentStatus, StudioShell, TYPE_LABEL, TypeIcon, type StudioProps } from './shared';
+import { ChartCard, InlineMeter, SplitCount, StepColumns } from '../../components/Charts';
+import { EmptyState, ListCard, ListRow, PageHeader, Select, SortTh, StateTile, useTableSort } from '../../components/ui';
+import { StudioShell, TYPE_LABEL, TypeIcon, type StudioProps } from './shared';
 
-/** Identifiant du contenu côté apprenant (les deux contenus d'origine remplacent des entrées du catalogue). */
-const catalogIdOf = (studioId: string) => (studioId === 'st-2' ? 'reseaux' : studioId === 'st-1' ? 'fiche-reseau' : studioId);
 const detailRoute = (type: CatalogType) => (type === 'resource' ? 'resource-detail' : type === 'path' ? 'path-detail' : 'module-detail');
 
-export function StudioStatsView({ ext, nav, progress, user }: StudioProps) {
-  const [typeFilter, setTypeFilter] = useState<'all' | CatalogType>('all');
+/** Progression principale des personnages de démonstration (module phishing), enregistrée à part. */
+function readLocalMainProgress(): Record<string, Progress> {
+  try {
+    const raw = JSON.parse(localStorage.getItem('savoir-demo-v1') || 'null');
+    return (raw && raw.progress) || {};
+  } catch {
+    return {};
+  }
+}
 
-  const learnerIds = Array.from(new Set([...Object.keys(ext.moduleProgress || {}), ...(user ? [user.id] : [])]));
-  const progressOf = (uid: string, catalogId: string): Progress | undefined =>
-    catalogId === 'phishing' && uid === user?.id && progress ? progress : ext.moduleProgress?.[uid]?.[catalogId];
+type StatColumn = 'title' | 'learners' | 'completion' | 'passRate' | 'avgScore';
 
-  const rows = ext.studioContents.map((c) => {
-    const catalogId = catalogIdOf(c.id);
-    const published = c.pubStatus === 'Publié';
-    const live = publishedView(c);
-    const lessonCount = MODULES_CONTENT[catalogId]?.lessons.length || live.sections.length || 3;
-    const active = published
-      ? learnerIds
-          .map((uid) => ({ uid, p: progressOf(uid, catalogId) }))
-          .filter((x): x is { uid: string; p: Progress } => Boolean(x.p && (x.p.lessons.length > 0 || x.p.submitted)))
-      : [];
-    const completion =
-      published && c.type === 'module' && active.length > 0
-        ? Math.round(active.reduce((sum, x) => sum + moduleProgressPercent(x.p, lessonCount), 0) / active.length)
-        : null;
-    const attempts = active.filter((x) => x.p.submitted).length;
-    return { c, active, completion, attempts, published };
+export function StudioStatsView({ ext, nav, user }: StudioProps) {
+  const [pickedId, setPickedId] = useState('');
+  const { sort, toggle, apply } = useTableSort<StatColumn>([{ key: 'learners', dir: 'desc' }]);
+
+  const authored = user ? buildDynamicCatalog(ext).filter((c) => c.author === user.name) : [];
+  const modules = authored.filter((c) => c.type === 'module' && c.interactive);
+  const untracked = authored.length - modules.length;
+
+  // Toutes les progressions connues : celles des membres, et la progression principale des personnages.
+  const progressByUser = useMemo(() => {
+    const merged: Record<string, Record<string, Progress | undefined>> = {};
+    for (const [uid, main] of Object.entries(readLocalMainProgress())) merged[uid] = { phishing: main };
+    for (const [uid, byModule] of Object.entries(ext.moduleProgress || {})) merged[uid] = { ...(merged[uid] || {}), ...byModule };
+    return merged;
+  }, [ext.moduleProgress]);
+
+  const stats = computeCreatorStats({ modules, progressByUser, excludeUserId: user?.id });
+  const maxLearners = Math.max(1, ...stats.modules.map((s) => s.learners));
+  const rows = apply(stats.modules, {
+    title: (s) => s.title,
+    learners: (s) => s.learners,
+    completion: (s) => s.completion,
+    passRate: (s) => s.passRate,
+    avgScore: (s) => s.avgScore
   });
-
-  const visible = rows.filter((r) => typeFilter === 'all' || r.c.type === typeFilter);
-  const count = (t: CatalogType) => rows.filter((r) => r.c.type === t).length;
-  const publishedCount = visible.filter((r) => r.published).length;
-  // Un même apprenant actif sur deux contenus n'est compté qu'une fois.
-  const activeLearners = new Set(visible.flatMap((r) => r.active.map((x) => x.uid))).size;
-  const rates = visible.map((r) => r.completion).filter((x): x is number => x !== null);
-  const avgCompletion = rates.length ? Math.round(rates.reduce((a, b) => a + b, 0) / rates.length) : null;
+  const selected = stats.modules.find((s) => s.id === pickedId) || [...stats.modules].sort((a, b) => b.learners - a.learners)[0];
+  const insights = selected ? moduleInsights(selected) : [];
+  const showSteps = Boolean(selected && hasStepLoss(selected));
+  const showQuestions = Boolean(selected && hasQuestionGap(selected));
+  const show = (value: number | null | undefined, suffix = '') => (value === null || value === undefined ? '—' : `${value}${suffix}`);
 
   return (
     <StudioShell active="studio-stats" nav={nav}>
-      <PageHeader title="Statistiques" subtitle="Ce que les apprenants font de vos contenus publiés." />
+      <PageHeader title="Statistiques" subtitle="Ce que les apprenants font de vos modules publiés." />
 
-      <Tabs<'all' | CatalogType>
-        label="Filtrer par type"
-        value={typeFilter}
-        onChange={setTypeFilter}
-        items={[
-          { id: 'all', label: 'Tous', count: rows.length },
-          { id: 'module', label: 'Modules', count: count('module') },
-          { id: 'resource', label: 'Ressources', count: count('resource') },
-          { id: 'path', label: 'Parcours', count: count('path') }
-        ]}
-      />
-
+      {/* Les chiffres d'ensemble : des nombres, pas un graphique. */}
       <div className="ui-kpis tabular-nums">
         <div className="ui-kpi">
-          <b>{publishedCount}</b>
-          <span>{publishedCount > 1 ? 'contenus publiés' : 'contenu publié'}</span>
+          <b>{stats.totals.learners}</b>
+          <span>{stats.totals.learners > 1 ? 'apprenants' : 'apprenant'}</span>
         </div>
         <div className="ui-kpi">
-          <b>{activeLearners}</b>
-          <span>{activeLearners > 1 ? 'apprenants actifs' : 'apprenant actif'}</span>
+          <b>{show(stats.totals.completion, ' %')}</b>
+          <span>achèvement moyen</span>
         </div>
         <div className="ui-kpi">
-          <b>{avgCompletion === null ? '—' : `${avgCompletion} %`}</b>
-          <span>achèvement moyen des modules</span>
+          <b>{show(stats.totals.passRate, ' %')}</b>
+          <span>réussite au quiz</span>
+        </div>
+        <div className="ui-kpi">
+          <b>{show(stats.totals.avgScore, ' %')}</b>
+          <span>score moyen au quiz</span>
         </div>
       </div>
 
+      {/* Comparer les modules : un tableau, avec une jauge fine dans chaque colonne. */}
+      <div className="sx-stats-pick">
+        <h2>Vos modules</h2>
+        <ul className="ch-legend" aria-label="Légende de la colonne Apprenants">
+          <li>
+            <i className="ch-swatch" aria-hidden="true" /> module validé
+          </li>
+          <li>
+            <i className="ch-swatch is-soft" aria-hidden="true" /> en cours
+          </li>
+        </ul>
+      </div>
       <div className="ui-list sx-table-wrap">
-        {visible.length === 0 ? (
-          <EmptyState title="Aucun contenu de ce type" text="Les statistiques apparaissent dès qu’un contenu est publié." />
+        {stats.modules.length === 0 ? (
+          <EmptyState
+            title="Aucun module publié"
+            text="Les statistiques apparaissent dès qu’un module est publié et suivi par un apprenant."
+            action={{ label: 'Voir mes contenus', onClick: () => nav('studio') }}
+          />
         ) : (
-          <table className="sx-table tabular-nums">
+          <table className="sx-table sx-stats-table tabular-nums">
             <thead>
               <tr>
-                <th scope="col">Contenu</th>
-                <th scope="col">Statut</th>
-                <th scope="col" className="is-num">
+                <SortTh sortKey="title" sort={sort} onSort={toggle}>
+                  Module
+                </SortTh>
+                <SortTh sortKey="learners" sort={sort} onSort={toggle} className="is-num">
                   Apprenants
-                </th>
-                <th scope="col" className="is-num">
+                </SortTh>
+                <SortTh sortKey="completion" sort={sort} onSort={toggle} className="is-num">
                   Achèvement
-                </th>
-                <th scope="col" className="is-num">
-                  Quiz passés
-                </th>
+                </SortTh>
+                <SortTh sortKey="passRate" sort={sort} onSort={toggle} className="is-num">
+                  Réussite au quiz
+                </SortTh>
+                <SortTh sortKey="avgScore" sort={sort} onSort={toggle} className="is-num">
+                  Score moyen
+                </SortTh>
               </tr>
             </thead>
             <tbody>
-              {visible.map(({ c, active, completion, attempts, published }) => {
-                const status = contentStatus(c);
-                return (
-                  <tr key={c.id}>
-                    <th scope="row">
-                      <button type="button" className="sx-table-link" onClick={() => nav(c.type === 'path' ? 'studio-path' : 'studio-editor', c.id)}>
-                        {c.title || 'Sans titre'}
-                      </button>
-                      <small>
-                        {TYPE_LABEL[c.type]} · {c.published?.version || c.version} · {c.domain}
-                      </small>
-                    </th>
-                    <td>
-                      <StatusDot tone={status.tone}>{status.label}</StatusDot>
-                    </td>
-                    <td className="is-num">{published ? active.length : '—'}</td>
-                    <td className="is-num">{completion === null ? '—' : `${completion} %`}</td>
-                    <td className="is-num">{published && c.type === 'module' ? attempts : '—'}</td>
-                  </tr>
-                );
-              })}
+              {rows.map((s) => (
+                <tr key={s.id} className={selected?.id === s.id ? 'is-active' : ''}>
+                  <th scope="row">
+                    <button
+                      type="button"
+                      className="sx-table-link"
+                      aria-pressed={selected?.id === s.id}
+                      title="Afficher le détail de ce module"
+                      onClick={() => setPickedId(s.id)}
+                    >
+                      {s.title}
+                    </button>
+                    <small>{s.domain}</small>
+                  </th>
+                  <td className="is-num">
+                    <SplitCount main={s.validated} soft={s.inProgress} max={maxLearners} mainLabel="module validé" softLabel="en cours" />
+                  </td>
+                  <td className="is-num">
+                    <InlineMeter value={s.completion} />
+                  </td>
+                  <td className="is-num">{show(s.passRate, ' %')}</td>
+                  <td className="is-num">{show(s.avgScore, ' %')}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
       </div>
-      <p className="sx-note">Chiffres calculés à partir des progressions enregistrées sur cet appareil ; aucune réponse individuelle n’est affichée.</p>
+
+      {/* Le détail d'un module : où en sont les apprenants, et quelles questions posent problème. */}
+      {selected && (
+        <>
+          <div className="sx-stats-pick">
+            <h2>Détail du module</h2>
+            <label className="sx-inline-select">
+              <span className="sr-only">Module étudié</span>
+              <Select aria-label="Module étudié" value={selected.id} onChange={(e) => setPickedId(e.target.value)}>
+                {stats.modules.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.title}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          </div>
+
+          {selected.learners === 0 ? (
+            <div className="sx-card">
+              <EmptyState title="Aucun apprenant sur ce module" text="Le détail apparaîtra dès qu’un membre le commencera." />
+            </div>
+          ) : (
+            <>
+              <ul className="sx-insights">
+                {insights.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+              {(showSteps || showQuestions) && (
+                <ChartCard
+                  title="Parcours du module"
+                  subtitle={`Nombre d’apprenants à chaque étape, sur ${selected.learners} ${selected.learners > 1 ? 'inscrits' : 'inscrit'}.`}
+                >
+                  <StepColumns
+                    max={selected.learners}
+                    groups={[
+                      {
+                        label: 'Sections lues',
+                        columns: selected.steps.slice(0, -1).map((step, index) => ({
+                          key: `section-${index}`,
+                          tick: String(index + 1),
+                          value: step.count,
+                          weak: (step.rate ?? 100) < 50,
+                          tip: `${step.label}${step.detail ? ` · ${step.detail}` : ''} — lue par ${step.count} sur ${selected.learners}`
+                        }))
+                      },
+                      {
+                        label: 'Questions réussies',
+                        columns: selected.questions.map((q, index) => ({
+                          key: `question-${index}`,
+                          tick: String(index + 1),
+                          value: q.correct,
+                          weak: (q.correctRate ?? 100) < 50,
+                          tip: `${q.label} · ${q.text} — ${q.correct} ${q.correct > 1 ? 'bonnes réponses' : 'bonne réponse'} sur ${selected.submitted} quiz ${selected.submitted > 1 ? 'envoyés' : 'envoyé'}`
+                        }))
+                      },
+                      {
+                        label: '',
+                        columns: [
+                          {
+                            key: 'validated',
+                            tick: 'Module validé',
+                            value: selected.validated,
+                            tip: `Module validé par ${selected.validated} sur ${selected.learners}`
+                          }
+                        ]
+                      }
+                    ]}
+                  />
+                </ChartCard>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      <p className="sx-note">
+        Chiffres calculés à partir des progressions enregistrées sur cet appareil ; aucune réponse individuelle n’est affichée.
+        {untracked > 0 ? ` Vos ${untracked} ressources et parcours n’ont pas de suivi par apprenant.` : ''}
+      </p>
     </StudioShell>
   );
 }

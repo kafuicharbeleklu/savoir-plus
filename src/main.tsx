@@ -8,6 +8,7 @@ import './styles/profile.css';
 import './styles/studio.css';
 import './styles/governance.css';
 import './styles/progression.css';
+import './styles/charts.css';
 import './styles/landing.css';
 import './styles/retouches.css';
 import './styles/angles.css';

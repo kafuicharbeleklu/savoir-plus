@@ -1589,8 +1589,8 @@ export default function App() {
                   <b>{pendingIncoming.length}</b>
                 </div>
               </div>
-              <button className="secondary" onClick={() => nav('progression')}>
-                Ma progression détaillée
+              <button type="button" className="rail-card-foot" onClick={() => nav('progression')}>
+                Ma progression détaillée <ArrowRight size={16} aria-hidden="true" />
               </button>
             </section>
 
@@ -1642,8 +1642,8 @@ export default function App() {
                   })
                 )}
               </div>
-              <button type="button" className="text-link discover-see-all" onClick={() => nav('relations')}>
-                Voir toutes les suggestions <ArrowRight size={14} />
+              <button type="button" className="rail-card-foot" onClick={() => nav('relations')}>
+                Voir toutes les suggestions <ArrowRight size={16} aria-hidden="true" />
               </button>
             </section>
 

@@ -1,0 +1,105 @@
+/* ==========================================================================
+   Représentations chiffrées — jauges fines, une teinte et son pas plus clair.
+   Les deux tons ont été contrôlés (même teinte, écart de clarté, contraste sur
+   le fond) dans les deux thèmes.
+   ========================================================================== */
+
+:root {
+  --chart-main: #1d4d3b;
+  --chart-soft: #8fc1aa;
+}
+[data-theme='dark'] {
+  --chart-main: #6fcba4;
+  --chart-soft: #2f6b54;
+}
+
+/* -- Carte ---------------------------------------------------------------------------------- */
+.ch-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  padding: 16px 20px 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--angle);
+}
+.ch-card-head h3 { margin: 0; font-size: 1rem; font-weight: 600; line-height: 1.4; color: var(--fg-primary); }
+.ch-card-head p { margin: 2px 0 0; font-size: 0.75rem; line-height: 1.4; color: var(--fg-muted); }
+
+/* -- Histogramme par étapes ------------------------------------------------------------------ */
+.ch-steps { display: flex; align-items: flex-start; gap: 20px; }
+.ch-steps-group { display: flex; flex: 1 1 0; flex-direction: column; gap: 8px; min-width: 0; }
+.ch-steps-plot { display: flex; }
+.ch-step { display: flex; flex: 1 1 0; flex-direction: column; align-items: center; gap: 6px; min-width: 0; border-radius: var(--angle); }
+.ch-step-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  width: 100%;
+  height: 152px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+.ch-step-bar b { font-size: 0.8125rem; font-weight: 600; line-height: 20px; color: var(--fg-primary); }
+.ch-step-bar i {
+  display: block;
+  flex: none;
+  width: 24px;
+  max-width: 60%;
+  min-height: 2px;
+  height: calc((100% - 24px) * var(--ratio, 0));
+  border-radius: 4px 4px 0 0;
+  background: var(--chart-main);
+}
+.ch-step:hover .ch-step-bar i { opacity: 0.85; }
+.ch-step.is-weak .ch-step-bar i { background: var(--accent-danger); }
+.ch-step.is-weak .ch-step-bar b { color: var(--accent-danger); }
+.ch-step-tick { font-size: 0.75rem; line-height: 1.25; text-align: center; color: var(--fg-muted); }
+.ch-steps-label { font-size: 0.75rem; font-weight: 600; line-height: 1.25; text-align: center; color: var(--fg-primary); }
+
+/* -- Cellules de tableau : chiffre et jauge fine ------------------------------------------- */
+.ch-inline { display: inline-flex; align-items: center; justify-content: flex-end; gap: 10px; width: 100%; }
+.ch-inline b { flex: none; min-width: 44px; font-weight: 600; text-align: right; color: var(--fg-primary); }
+.ch-inline.is-empty { color: var(--fg-muted); }
+.ch-inline-track,
+.ch-split { flex: 1 1 auto; min-width: 40px; max-width: 96px; height: 6px; }
+.ch-inline-track { border-radius: 3px; background: var(--bg-subtle); overflow: hidden; }
+.ch-inline-track i { display: block; height: 100%; border-radius: 3px; background: var(--chart-main); }
+.ch-split { display: flex; gap: 2px; }
+.ch-split i { display: block; height: 100%; min-width: 3px; background: var(--chart-main); }
+.ch-split i.is-soft { background: var(--chart-soft); }
+.ch-split i:last-child { border-radius: 0 3px 3px 0; }
+.ch-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0; list-style: none; font-size: 0.75rem; color: var(--fg-muted); }
+.ch-legend li { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ch-swatch { width: 10px; height: 10px; border-radius: 2px; background: var(--chart-main); }
+.ch-swatch.is-soft { background: var(--chart-soft); }
+
+/* -- En-tête de colonne triable ------------------------------------------------------------ */
+.ui-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ui-sort:hover { color: var(--fg-primary); }
+.ui-sort svg { flex: none; }
+.ui-sort-idle { opacity: 0.55; }
+.ui-sort:hover .ui-sort-idle { opacity: 1; }
+.ui-sort.is-on { color: var(--fg-primary); }
+.ui-sort.is-on svg { color: var(--accent-brand); }
+.ui-sort-rank { margin-left: -2px; font-size: 0.625rem; font-weight: 600; color: var(--accent-brand); }
+th.is-num .ui-sort { flex-direction: row-reverse; }
+
+@media (max-width: 560px) {
+  .ch-steps { gap: 10px; }
+  .ch-step-bar { height: 128px; }
+  .ch-step-bar i { width: 18px; }
+}

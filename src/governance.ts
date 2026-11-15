@@ -147,3 +147,30 @@ export function splitTimestamp(ts: string): { day: string; time: string } {
   const [day, time = ''] = (ts || '').split(' · ');
   return { day: day || 'Date inconnue', time };
 }
+
+const FR_MONTHS = ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 'sept', 'oct', 'nov', 'déc'];
+
+/**
+ * Valeur chronologique d'un libellé de date de l'interface, pour trier une colonne :
+ * « Aujourd’hui · 14 h 10 », « Hier · 19 h 02 », « Il y a 3 jours », « 13 nov. 2026 · 10 h 12 ».
+ * Renvoie `null` si le libellé n'est pas reconnu (la ligne reste alors en fin de liste).
+ */
+export function dateLabelRank(label: string, now: number = Date.now()): number | null {
+  if (!label) return null;
+  const text = label.trim().toLowerCase();
+  const day = new Date(now);
+  day.setHours(0, 0, 0, 0);
+  const time = /(\d{1,2})\s*h\s*(\d{2})/.exec(text);
+  const minutes = time ? Number(time[1]) * 60 + Number(time[2]) : 0;
+  const at = (start: number) => start + minutes * 60_000;
+  if (text.startsWith('aujourd')) return at(day.getTime());
+  if (text.startsWith('hier')) return at(day.getTime() - 86_400_000);
+  const ago = /il y a (\d+) jour/.exec(text);
+  if (ago) return day.getTime() - Number(ago[1]) * 86_400_000;
+  const full = /(\d{1,2})\s+([a-zéû]+)\.?\s+(\d{4})/.exec(text);
+  if (full) {
+    const month = FR_MONTHS.findIndex((m) => full[2].startsWith(m));
+    if (month >= 0) return at(new Date(Number(full[3]), month, Number(full[1])).getTime());
+  }
+  return null;
+}

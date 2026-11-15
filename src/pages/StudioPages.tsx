@@ -5,7 +5,8 @@
  */
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import type { CatalogType, StudioContent } from '../wireframeData';
+import { appendAuditLog, type CatalogType, type StudioContent } from '../wireframeData';
+import { catalogDetailRoute, CONTENT_ACTION_LABEL, contentActions, studioCatalogId, type ContentAction } from '../studioActions';
 import { ActionMenu, ConfirmDialog, EmptyState, ListCard, ListRow, PageHeader, type RowState, RowTitle, SearchField, StateTile, Tabs } from '../components/ui';
 import { contentStatus, formatUpdated, newStudioId, StudioShell, TYPE_LABEL, TypeIcon, type ContentBucket, type StudioProps } from './studio/shared';
 
@@ -29,6 +30,7 @@ export function StudioHomeView({ ext, updateExt, nav, setToast, user }: StudioPr
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const [toDelete, setToDelete] = useState<StudioContent | null>(null);
+  const [toUnpublish, setToUnpublish] = useState<StudioContent | null>(null);
 
   const createNew = (type: CatalogType) => {
     const id = newStudioId();
@@ -68,6 +70,59 @@ export function StudioHomeView({ ext, updateExt, nav, setToast, user }: StudioPr
     };
     updateExt((prev) => ({ ...prev, studioContents: [copy, ...prev.studioContents] }));
     setToast(`« ${c.title} » dupliqué`);
+  };
+
+  const actor = `${user?.name || 'Créateur'} (Créateur)`;
+
+  const unpublish = (c: StudioContent) => {
+    updateExt((prev) => ({
+      ...prev,
+      studioContents: prev.studioContents.map((x) =>
+        x.id === c.id ? { ...x, pubStatus: 'Brouillon', updatedAtMs: Date.now(), updatedAt: 'Dépublié' } : x
+      ),
+      auditLogs: appendAuditLog(prev.auditLogs, {
+        actor,
+        action: 'Dépublication',
+        target: c.title,
+        scope: `Studio · ${c.domain}`,
+        result: 'Succès',
+        justification: 'Contenu retiré de la bibliothèque par son auteur.'
+      })
+    }));
+    setToUnpublish(null);
+    setToast(`« ${c.title} » n’est plus visible des apprenants`);
+  };
+
+  const cancelReview = (c: StudioContent) => {
+    updateExt((prev) => ({
+      ...prev,
+      studioContents: prev.studioContents.map((x) =>
+        x.id === c.id ? { ...x, reviewStatus: 'Non soumise', updatedAtMs: Date.now(), updatedAt: 'Demande de validation annulée' } : x
+      ),
+      validationRequests: prev.validationRequests.filter(
+        (v) => !(v.contentId === c.id && (v.status === 'Soumise' || v.status === 'En examen'))
+      ),
+      auditLogs: appendAuditLog(prev.auditLogs, {
+        actor,
+        action: 'Demande de validation annulée',
+        target: `${c.title} (${c.version})`,
+        scope: `Studio · ${c.domain}`,
+        result: 'Succès',
+        justification: 'Demande retirée de la file de validation par son auteur.'
+      })
+    }));
+    setToast(`Demande de validation annulée pour « ${c.title} »`);
+  };
+
+  /** Ce que fait chaque action du menu d'un contenu. */
+  const runAction = (action: ContentAction, c: StudioContent) => {
+    if (action === 'publish' || action === 'publish-update' || action === 'resubmit') nav('studio-publish', c.id);
+    else if (action === 'view') nav(catalogDetailRoute(c.type), studioCatalogId(c.id));
+    else if (action === 'stats') nav('studio-stats');
+    else if (action === 'duplicate') duplicate(c);
+    else if (action === 'cancel-review') cancelReview(c);
+    else if (action === 'unpublish') setToUnpublish(c);
+    else setToDelete(c);
   };
 
   const remove = (c: StudioContent) => {
@@ -165,12 +220,11 @@ export function StudioHomeView({ ext, updateExt, nav, setToast, user }: StudioPr
                 <>
                   <ActionMenu
                     label={`Actions sur ${c.title || 'le contenu'}`}
-                    items={[
-                      { label: 'Publier…', onSelect: () => nav('studio-publish', c.id) },
-                      { label: 'Statistiques', onSelect: () => nav('studio-stats') },
-                      { label: 'Dupliquer', onSelect: () => duplicate(c) },
-                      { label: 'Supprimer', danger: true, onSelect: () => setToDelete(c) }
-                    ]}
+                    items={contentActions(c).map((action) => ({
+                      label: CONTENT_ACTION_LABEL[action],
+                      danger: action === 'delete',
+                      onSelect: () => runAction(action, c)
+                    }))}
                   />
                 </>
               }
@@ -179,6 +233,15 @@ export function StudioHomeView({ ext, updateExt, nav, setToast, user }: StudioPr
           })
         )}
       </ListCard>
+
+      <ConfirmDialog
+        open={Boolean(toUnpublish)}
+        title="Dépublier ce contenu ?"
+        text={`« ${toUnpublish?.title || 'Ce contenu'} » ne sera plus visible dans la bibliothèque des apprenants. Il redevient un brouillon que vous pourrez publier à nouveau.`}
+        confirmLabel="Dépublier"
+        onConfirm={() => toUnpublish && unpublish(toUnpublish)}
+        onCancel={() => setToUnpublish(null)}
+      />
 
       <ConfirmDialog
         open={Boolean(toDelete)}

@@ -218,7 +218,6 @@ export function StudioAiView({ updateExt, nav, setToast, user }: StudioProps) {
           title="Créer avec l’IA"
           subtitle="Collez votre explication : l’IA propose des sections, un quiz et une fiche pas à pas, que vous relisez avant d’enregistrer."
         />
-        {status === null && <p className="sx-note">Vérification du service…</p>}
         {status && !status.text && (
           <p className="sx-inline-status">
             <StatusDot tone="warn">Service indisponible pour le moment</StatusDot>

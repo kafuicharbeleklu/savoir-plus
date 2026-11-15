@@ -794,3 +794,80 @@ test('badges : les nouveaux badges s’obtiennent avec de vraies mesures', () =>
     assert.equal(some.find((b) => b.id === id)?.earned, true, id);
   }
 });
+
+test('statistiques du créateur : décomptes, taux et étapes calculés sur les progressions', async () => {
+  const { computeCreatorStats, computeModuleStat, hasQuestionGap, hasStepLoss, moduleInsights } = await import('../src/studioStats');
+  const { CATALOG_ITEMS } = await import('../src/wireframeData');
+  const mod = CATALOG_ITEMS.find((c) => c.id === 'phishing')!;
+  const done = { lessons: [0, 1, 2], answers: [1, 2, 0], submitted: true };
+  const failed = { lessons: [0, 1, 2], answers: [0, 2, 1], submitted: true };
+  const started = { lessons: [0], answers: [], submitted: false };
+  const untouched = { lessons: [], answers: [], submitted: false };
+  const stats = computeCreatorStats({
+    modules: [mod],
+    progressByUser: { a: { phishing: done }, b: { phishing: failed }, c: { phishing: started }, d: { phishing: untouched }, auteur: { phishing: done } },
+    excludeUserId: 'auteur'
+  });
+  const s = stats.modules[0];
+  // L'auteur et le membre qui n'a rien commencé ne comptent pas.
+  assert.equal(s.learners, 3);
+  assert.equal(s.validated, 1);
+  assert.equal(s.inProgress, 2);
+  assert.equal(s.submitted, 2);
+  assert.equal(s.passRate, 50);
+  assert.equal(s.reachRate, 67);
+  assert.deepEqual(s.steps.map((f) => f.count), [3, 2, 2, 1]);
+  assert.deepEqual(s.steps.map((f) => f.rate), [100, 67, 67, 33]);
+  assert.deepEqual(s.questions.map((q) => q.correctRate), [50, 100, 50]);
+  assert.deepEqual(s.questions.map((q) => q.correct), [1, 2, 1]);
+  assert.equal(stats.totals.learners, 3);
+  assert.equal(stats.totals.passRate, 50);
+  // Points à retenir : la plus forte perte, puis la question la moins réussie.
+  const notes = moduleInsights(s);
+  assert.equal(notes.length, 2);
+  assert.match(notes[0], /1 apprenant sur 3/);
+  assert.match(notes[1], /question 1 est la moins réussie : 50 %/);
+  assert.equal(hasStepLoss(s), true);
+  assert.equal(hasQuestionGap(s), true);
+  // Sans écart, pas de graphique : deux phrases suffisent.
+  const smooth = computeModuleStat(mod, [done, done]);
+  assert.equal(hasStepLoss(smooth), false);
+  assert.equal(hasQuestionGap(smooth), false);
+  assert.deepEqual(moduleInsights(smooth), [
+    'Les 2 apprenants sont allés au bout du module.',
+    'Aucune question ne pose de difficulté : toutes sont réussies.'
+  ]);
+  assert.match(moduleInsights(computeModuleStat(mod, [done]))[0], /Le seul apprenant est allé au bout/);
+  assert.deepEqual(moduleInsights(computeModuleStat(mod, [])), []);
+});
+
+test('tri des dates : les libellés français se classent dans l’ordre chronologique', async () => {
+  const { dateLabelRank } = await import('../src/governance');
+  const now = new Date(2026, 10, 15, 18, 0).getTime();
+  const labels = ['Il y a 6 jours', '13 nov. 2026 · 10 h 12', 'Hier · 19 h 02', 'Aujourd’hui · 09 h 05', 'Aujourd’hui · 14 h 10'];
+  const ranks = labels.map((label) => dateLabelRank(label, now));
+  assert.ok(ranks.every((rank) => typeof rank === 'number'));
+  assert.deepEqual([...ranks].sort((a, b) => (a as number) - (b as number)), ranks);
+  assert.equal(dateLabelRank('', now), null);
+  assert.equal(dateLabelRank('date inconnue', now), null);
+});
+
+test('menu d’un contenu du Studio : les actions suivent le statut', async () => {
+  const { contentActions, studioCatalogId, catalogDetailRoute } = await import('../src/studioActions');
+  const { initialExtendedState, studioSnapshot } = await import('../src/wireframeData');
+  const base = initialExtendedState().studioContents[0];
+  const draft = { ...base, type: 'module' as const, pubStatus: 'Brouillon' as const, reviewStatus: 'Non soumise' as const, published: undefined };
+  assert.deepEqual(contentActions(draft), ['publish', 'duplicate', 'delete']);
+  assert.deepEqual(contentActions({ ...draft, reviewStatus: 'En revue' }), ['cancel-review', 'duplicate', 'delete']);
+  assert.deepEqual(contentActions({ ...draft, reviewStatus: 'À corriger' }), ['resubmit', 'duplicate', 'delete']);
+  const live = { ...draft, pubStatus: 'Publié' as const };
+  const published = { ...live, published: studioSnapshot(live) };
+  assert.deepEqual(contentActions(published), ['view', 'stats', 'duplicate', 'unpublish', 'delete']);
+  // Une ressource publiée n'a pas de statistiques par apprenant.
+  assert.deepEqual(contentActions({ ...published, type: 'resource' }), ['view', 'duplicate', 'unpublish', 'delete']);
+  // Modifié depuis la publication : on propose d'abord de publier les modifications.
+  assert.equal(contentActions({ ...published, title: `${published.title} (révisé)` })[0], 'publish-update');
+  assert.equal(studioCatalogId('st-2'), 'reseaux');
+  assert.equal(studioCatalogId('st-9'), 'st-9');
+  assert.equal(catalogDetailRoute('path'), 'path-detail');
+});

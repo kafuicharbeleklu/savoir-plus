@@ -1132,3 +1132,141 @@ button.pf-suggest.is-link:hover .pf-suggest-name { color: var(--accent-brand); t
 .wf-detail-wrap .wf-card .li-post-media video { border: 0; border-radius: 0; max-height: 640px; }
 .feed-post-card .li-post-media figcaption { padding: 0 16px; }
 .wf-detail-wrap .wf-card .li-post-media figcaption { padding: 0 var(--space-8); }
+
+/* -- Studio › Statistiques : titre de section et choix du module ---------------------------- */
+.sx-stats-pick { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; }
+.sx-stats-pick h2 { margin: 0; font-size: 1rem; font-weight: 600; color: var(--fg-primary); }
+.sx-stats-pick .ui-select { min-width: 280px; }
+
+/* -- Tableaux : date sur une seule ligne, en-têtes triables, tableau des statistiques resserré -- */
+.gv-table .w-date { width: 184px; }
+.gv-table .is-date,
+.sx-table .is-date { white-space: nowrap; }
+.gv-table thead th .ui-sort { max-width: 100%; }
+.gv-table thead th .ui-sort > span { overflow: hidden; text-overflow: ellipsis; }
+.sx-table th,
+.sx-table td { padding: 0 12px; }
+.sx-table th:first-child,
+.sx-table td:first-child { padding-left: 16px; }
+.sx-table th:last-child,
+.sx-table td:last-child { padding-right: 16px; }
+.sx-table tbody th { max-width: 260px; }
+
+/* -- Studio › Statistiques : tableau avec jauges, ligne active, points à retenir ------------ */
+.sx-stats-table td.is-num { width: 132px; }
+.sx-stats-table td.is-num:nth-child(2),
+.sx-stats-table td.is-num:nth-child(3) { width: 184px; }
+.sx-stats-table tbody tr.is-active { background: var(--accent-brand-soft); }
+.sx-stats-table tbody tr.is-active .sx-table-link { color: var(--accent-brand); }
+.sx-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 12px 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--angle);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--fg-primary);
+  list-style: none;
+}
+
+/* -- Lien de pied de carte (colonne de droite) : pleine largeur, discret ----------------------- */
+.rail-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  align-self: stretch;
+  margin: 6px -16px -16px;
+  padding: 12px 16px;
+  border: 0;
+  border-top: 1px solid var(--border-hairline);
+  border-radius: 0 0 var(--angle) var(--angle);
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.rail-card-foot:hover { background: var(--bg-subtle); color: var(--fg-primary); }
+.rail-card-foot svg { transition: transform 160ms ease; }
+.rail-card-foot:hover svg { transform: translateX(3px); }
+
+/* -- Écran de lancement : le nom se compose, le « + » se pose, la barre se remplit ------------ */
+.splash-screen { transition: opacity 320ms ease; }
+.splash-screen.is-exiting { transform: none; }
+.splash-center { gap: 26px; animation: none; transition: transform 320ms cubic-bezier(0.4, 0, 1, 1), opacity 240ms ease; }
+.splash-screen.is-exiting .splash-center { opacity: 0; transform: translateY(-10px) scale(1.03); }
+.splash-wordmark { display: flex; align-items: baseline; font-size: clamp(2.25rem, 4.2vw, 3rem); }
+.splash-wordmark b { font-weight: inherit; }
+.splash-letter {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: splash-letter 560ms cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i) * 48ms + 90ms) forwards;
+}
+.splash-plus {
+  display: inline-block;
+  margin-left: 3px;
+  color: var(--accent-warm);
+  opacity: 0;
+  transform: scale(0.3) rotate(-135deg);
+  animation: splash-plus 620ms cubic-bezier(0.34, 1.56, 0.64, 1) 430ms forwards;
+}
+.splash-progress {
+  width: 136px;
+  height: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fg-primary) 10%, transparent);
+  overflow: hidden;
+  opacity: 0;
+  animation: splash-fade 320ms ease 380ms forwards;
+}
+.splash-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-brand);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: splash-fill calc(var(--splash-hold, 1550ms) - 480ms) cubic-bezier(0.65, 0, 0.35, 1) 420ms forwards;
+}
+.splash-footer { animation: splash-fade 520ms ease 520ms both; }
+
+@keyframes splash-letter { to { opacity: 1; transform: translateY(0); } }
+@keyframes splash-plus { to { opacity: 1; transform: scale(1) rotate(0deg); } }
+@keyframes splash-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes splash-fill {
+  0% { transform: scaleX(0); }
+  45% { transform: scaleX(0.62); }
+  75% { transform: scaleX(0.86); }
+  100% { transform: scaleX(1); }
+}
+
+.splash-screen.is-reduced .splash-letter,
+.splash-screen.is-reduced .splash-plus,
+.splash-screen.is-reduced .splash-progress,
+.splash-screen.is-reduced .splash-progress i,
+.splash-screen.is-reduced .splash-footer { opacity: 1; transform: none; animation: none; }
+.splash-screen.is-reduced .splash-center { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .splash-letter,
+  .splash-plus,
+  .splash-progress,
+  .splash-progress i,
+  .splash-footer { opacity: 1; transform: none; animation: none; }
+  .splash-center { transition: none; }
+}
+
+/* -- Largeur stable d'une page à l'autre : la place de la barre de défilement est réservée
+      (des deux côtés, pour que le contenu reste centré sous la barre du haut). ------------- */
+@media (min-width: 769px) {
+  .app-scroll-viewport,
+  .shell-scroll-viewport { scrollbar-gutter: stable both-edges; }
+  .landing .shell-scroll-viewport { scrollbar-gutter: auto; }
+}

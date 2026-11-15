@@ -6,7 +6,7 @@
  */
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowDown, ArrowLeft, ArrowUp, Award, Ban, BarChart3, BookOpen, Check, CheckCircle2, ChevronDown, Copy, Download, FileText, Flag, Layers, Link2, Minus, MoreHorizontal, Pencil, Search, Send, Settings, Sparkles, Trash2, User, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, ArrowUpDown, Award, Ban, BarChart3, BookOpen, Check, CheckCircle2, ChevronDown, Copy, Download, Eye, EyeOff, FileText, Flag, Layers, Link2, Minus, MoreHorizontal, Pencil, Search, Send, Settings, Sparkles, Trash2, Undo2, User, X } from 'lucide-react';
 
 /* ------------------------------------------------------------------ En-tête */
 
@@ -175,6 +175,10 @@ export type ActionMenuItem = {
 /** Icône usuelle d'une action d'après son libellé, pour que tous les menus se ressemblent. */
 function menuIcon(label: string): React.ReactNode {
   const rules: [RegExp, React.ReactNode][] = [
+    [/^voir|aperçu/i, <Eye size={20} aria-hidden="true" />],
+    [/dépublier|masquer/i, <EyeOff size={20} aria-hidden="true" />],
+    [/annuler/i, <Undo2 size={20} aria-hidden="true" />],
+    [/corriger/i, <Pencil size={20} aria-hidden="true" />],
     [/supprimer|retirer/i, <Trash2 size={20} aria-hidden="true" />],
     [/signaler/i, <Flag size={20} aria-hidden="true" />],
     [/bloquer|révoquer|suspendre/i, <Ban size={20} aria-hidden="true" />],
@@ -307,6 +311,104 @@ export function ActionMenu({
         </div>
       )}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ Tri des tableaux */
+
+export type SortRule<K extends string> = { key: K; dir: 'asc' | 'desc' };
+
+const compareValues = (a: string | number, b: string | number): number =>
+  typeof a === 'number' && typeof b === 'number'
+    ? a - b
+    : String(a).localeCompare(String(b), 'fr', { numeric: true, sensitivity: 'base' });
+
+/**
+ * Tri d'un tableau par ses en-têtes. Un clic : croissant, puis décroissant, puis sans tri.
+ * Maj + clic ajoute la colonne au tri (tri sur plusieurs colonnes). Les valeurs absentes
+ * restent toujours en fin de liste.
+ */
+export function useTableSort<K extends string>(initial: SortRule<K>[] = []) {
+  const [sort, setSort] = useState<SortRule<K>[]>(initial);
+
+  const toggle = (key: K, additive: boolean) =>
+    setSort((prev) => {
+      const found = prev.find((rule) => rule.key === key);
+      const nextDir: 'asc' | 'desc' | null = !found ? 'asc' : found.dir === 'asc' ? 'desc' : null;
+      if (!additive) return nextDir ? [{ key, dir: nextDir }] : [];
+      if (!found) return [...prev, { key, dir: 'asc' }];
+      return nextDir ? prev.map((rule) => (rule.key === key ? { key, dir: nextDir } : rule)) : prev.filter((rule) => rule.key !== key);
+    });
+
+  function apply<T>(rows: T[], accessors: Record<K, (row: T) => string | number | null | undefined>): T[] {
+    if (sort.length === 0) return rows;
+    return [...rows].sort((a, b) => {
+      for (const rule of sort) {
+        const va = accessors[rule.key](a);
+        const vb = accessors[rule.key](b);
+        const emptyA = va === null || va === undefined || va === '';
+        const emptyB = vb === null || vb === undefined || vb === '';
+        if (emptyA || emptyB) {
+          if (emptyA && emptyB) continue;
+          return emptyA ? 1 : -1;
+        }
+        const order = compareValues(va as string | number, vb as string | number);
+        if (order !== 0) return rule.dir === 'asc' ? order : -order;
+      }
+      return 0;
+    });
+  }
+
+  return { sort, toggle, apply };
+}
+
+/**
+ * En-tête de colonne triable : flèche double tant que la colonne n'est pas triée,
+ * flèche simple dans le sens du tri ensuite. En tri sur plusieurs colonnes, seules les
+ * colonnes suivantes portent leur rang (2, 3…) : la première n'affiche pas de « 1 ».
+ */
+export function SortTh<K extends string>({
+  sortKey,
+  sort,
+  onSort,
+  children,
+  className
+}: {
+  sortKey: K;
+  sort: SortRule<K>[];
+  onSort: (key: K, additive: boolean) => void;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const index = sort.findIndex((rule) => rule.key === sortKey);
+  const rule = index >= 0 ? sort[index] : null;
+  return (
+    <th scope="col" className={className} aria-sort={rule ? (rule.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button
+        type="button"
+        className={`ui-sort${rule ? ' is-on' : ''}`}
+        title={
+          rule
+            ? rule.dir === 'asc'
+              ? 'Tri croissant — cliquer pour inverser'
+              : 'Tri décroissant — cliquer pour retirer le tri'
+            : 'Trier — Maj + clic pour trier sur plusieurs colonnes'
+        }
+        onClick={(e) => onSort(sortKey, e.shiftKey)}
+      >
+        <span>{children}</span>
+        {rule ? (
+          rule.dir === 'asc' ? (
+            <ArrowUp size={14} aria-hidden="true" />
+          ) : (
+            <ArrowDown size={14} aria-hidden="true" />
+          )
+        ) : (
+          <ArrowUpDown size={14} className="ui-sort-idle" aria-hidden="true" />
+        )}
+        {rule && index > 0 && <sup className="ui-sort-rank tabular-nums">{index + 1}</sup>}
+      </button>
+    </th>
   );
 }
 
