@@ -107,7 +107,7 @@ import {
 import { TopBar } from './components/TopBar';
 import { MobileNav } from './components/MobileNav';
 import { Avatar, DifficultyMeter, ProfileIdentityCard, ProgressBar, VerifiedBadge } from './components/ProfileIdentityCard';
-import { CatalogContentCard, ContentTypeMark, XpBadgeInline } from './components/CatalogVisuals';
+import { CatalogCardBanner, CatalogContentCard, ContentTypeMark, XpBadgeInline } from './components/CatalogVisuals';
 import { MessagingDrawer } from './components/MessagingDrawer';
 import { SplashScreen } from './components/SplashScreen';
 import { FeedPostCard } from './components/FeedPostCard';
@@ -1326,44 +1326,50 @@ export default function App() {
             {/* Pedagogical Resume Card + Popular Carousel (All / Modules) */}
             <>
                 <article className="htb-card home-resume">
-                  <div className="between">
-                    <ContentTypeMark type="module" labelOverride="Reprise · Module" />
-                    <DifficultyMeter level={resumeCatalog.level} />
+                  <div className="home-resume-visual">
+                    <CatalogCardBanner item={resumeCatalog} />
                   </div>
-                  <h2>{resumeCatalog.title}</h2>
-                  <div className="htb-card-progress">
-                    <div className="between tiny tabular-nums">
-                      <span>
-                        {resumeNextIdx !== undefined
-                          ? `Prochaine section : 0${resumeNextIdx + 1} · ${MODULES_CONTENT[resumeModuleId]?.lessons[resumeNextIdx]?.title}`
-                          : resumeValidated
-                            ? 'Module validé — Révision libre disponible'
-                            : resumeProg.submitted
-                              ? 'Quiz à retenter pour valider le module'
-                              : 'Sections lues — Prêt pour le quiz final'}
-                      </span>
-                      <b>{resumePct}%</b>
+                  <div className="home-resume-body">
+                    <div className="between">
+                      <ContentTypeMark type="module" labelOverride="Reprise · Module" />
+                      <DifficultyMeter level={resumeCatalog.level} />
                     </div>
-                    <ProgressBar value={resumePct} label="Progression du module en cours" tone="htb" />
-                  </div>
-                  <div className="htb-meta-line">
-                    <XpBadgeInline amount={resumeCatalog.xpReward || 150} />
-                    <span aria-hidden="true">·</span>
-                    <span>{resumeCatalog.domain}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>{resumeCatalog.duration}</span>
-                  </div>
-                  <div className="wf-inline-actions">
-                    <button
-                      className="primary"
-                      onClick={() =>
-                        resumeProg.lessons.length >= (MODULES_CONTENT[resumeModuleId]?.lessons.length || 3) && !resumeValidated
-                          ? (setActiveStudyModuleId(resumeModuleId), nav('quiz-intro', resumeModuleId))
-                          : openReader(resumeModuleId)
-                      }
-                    >
-                      {resumePct === 0 ? 'Commencer le module' : resumePct === 100 ? 'Revoir le module' : 'Continuer'} <ArrowRight size={15} />
-                    </button>
+                    <h2>{resumeCatalog.title}</h2>
+                    <p className="home-resume-summary">{resumeCatalog.summary}</p>
+                    <div className="htb-card-progress">
+                      <div className="between tiny tabular-nums">
+                        <span>
+                          {resumeNextIdx !== undefined
+                            ? `Prochaine section : 0${resumeNextIdx + 1} · ${MODULES_CONTENT[resumeModuleId]?.lessons[resumeNextIdx]?.title}`
+                            : resumeValidated
+                              ? 'Module validé — Révision libre disponible'
+                              : resumeProg.submitted
+                                ? 'Quiz à retenter pour valider le module'
+                                : 'Sections lues — Prêt pour le quiz final'}
+                        </span>
+                        <b>{resumePct}%</b>
+                      </div>
+                      <ProgressBar value={resumePct} label="Progression du module en cours" tone="htb" />
+                    </div>
+                    <div className="htb-meta-line">
+                      <XpBadgeInline amount={resumeCatalog.xpReward || 150} />
+                      <span aria-hidden="true">·</span>
+                      <span>{resumeCatalog.domain}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{resumeCatalog.duration}</span>
+                    </div>
+                    <div className="wf-inline-actions">
+                      <button
+                        className="primary"
+                        onClick={() =>
+                          resumeProg.lessons.length >= (MODULES_CONTENT[resumeModuleId]?.lessons.length || 3) && !resumeValidated
+                            ? (setActiveStudyModuleId(resumeModuleId), nav('quiz-intro', resumeModuleId))
+                            : openReader(resumeModuleId)
+                        }
+                      >
+                        {resumePct === 0 ? 'Commencer le module' : resumePct === 100 ? 'Revoir le module' : 'Continuer'} <ArrowRight size={15} />
+                      </button>
+                    </div>
                   </div>
                 </article>
 

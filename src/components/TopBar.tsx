@@ -95,7 +95,6 @@ export function TopBar({
 
   const isCatalogActive = ['catalog', 'resource-detail', 'module-detail', 'path-detail'].includes(page);
   const isHomeActive = page === 'home' || page.startsWith('community');
-  const isLearningActive = ['learning', 'progression', 'catalog', 'resource-detail', 'module-detail', 'path-detail'].includes(page);
   const isNetworkActive = page === 'relations' || page === 'member';
   const isStudioActive = page.startsWith('studio');
   const isAdminActive = page.startsWith('admin') || page === 'moderation';
@@ -233,10 +232,6 @@ export function TopBar({
           <button className={isHomeActive ? 'active' : ''} onClick={() => nav('home')}>
             <Home size={18} />
             <span>Accueil</span>
-          </button>
-          <button className={isLearningActive ? 'active' : ''} onClick={() => nav('learning')}>
-            <BookOpen size={18} />
-            <span>Apprendre</span>
           </button>
           <button className={isNetworkActive ? 'active' : ''} onClick={() => nav('relations')}>
             <span className="top-icon">

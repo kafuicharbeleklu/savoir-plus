@@ -419,32 +419,7 @@ export function FeedPostCard({
         )}
       </div>
 
-      {/* Summary Counts Bar (replies & reposts only when present) */}
-      {(post.replies.length > 0 || repostedBy.length > 0) && (
-        <div className="li-engagement-summary">
-          <div className="li-eng-right">
-            {post.replies.length > 0 && (
-              <button
-                type="button"
-                className="li-eng-stat-btn"
-                aria-expanded={threadExpanded}
-                onClick={() => setThreadExpanded((v) => !v)}
-              >
-                {post.replies.length} {post.kind === 'question' ? 'réponse' : 'commentaire'}
-                {post.replies.length > 1 ? 's' : ''}
-              </button>
-            )}
-            {post.replies.length > 0 && repostedBy.length > 0 && <span aria-hidden="true">·</span>}
-            {repostedBy.length > 0 && (
-              <span>
-                {repostedBy.length} repartage{repostedBy.length > 1 ? 's' : ''}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 4-Button Icon + Count Action Bar */}
+      {/* Barre d'actions : icônes seules (les nombres restent annoncés aux lecteurs d'écran) */}
       <div className="li-action-bar" role="group" aria-label="Actions sur la contribution">
         <button
           type="button"
@@ -455,9 +430,6 @@ export function FeedPostCard({
           title="Utile"
         >
           <ThumbsUp size={17} aria-hidden="true" fill={hasLikedPost ? 'currentColor' : 'none'} />
-          {postHelpfulBy.length > 0 && (
-            <span className="li-action-count tabular-nums">{postHelpfulBy.length}</span>
-          )}
         </button>
 
         <button
@@ -472,9 +444,6 @@ export function FeedPostCard({
           title={post.kind === 'question' ? 'Répondre' : 'Commenter'}
         >
           <MessageSquare size={17} aria-hidden="true" />
-          {post.replies.length > 0 && (
-            <span className="li-action-count tabular-nums">{post.replies.length}</span>
-          )}
         </button>
 
         <div className="li-action-anchor">
@@ -490,9 +459,6 @@ export function FeedPostCard({
             }}
           >
             <Repeat2 size={17} aria-hidden="true" />
-            {repostedBy.length > 0 && (
-              <span className="li-action-count tabular-nums">{repostedBy.length}</span>
-            )}
           </button>
 
           {repostMenuOpen && (

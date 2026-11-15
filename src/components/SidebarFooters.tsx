@@ -1,5 +1,5 @@
-import React from 'react';
-import { NexusMark } from './NexusMark';
+import React, { useEffect, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 export type FooterInfoTopic = 'about' | 'privacy' | 'help' | 'accessibility' | 'hackathon';
 
@@ -86,41 +86,88 @@ export function RightRailShowcaseCard({
 
 export function SidebarCompactFooter({
   nav,
-  canCreate,
   onOpenInfoModal
 }: {
   nav: (page: any, id?: string) => void;
   canCreate: boolean;
   onOpenInfoModal: (topic: FooterInfoTopic) => void;
 }) {
+  // Pied de page façon LinkedIn : quelques liens discrets, les autres regroupés sous « Plus ».
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMoreOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [moreOpen]);
+
   return (
-    <footer className="linkedin-right-footer left-rail-footer" aria-label="Pied de page SAVOIR+ et Nexus">
-      <div className="lrf-row">
-        <button type="button" onClick={() => onOpenInfoModal('about')}>À propos</button>
-        <button type="button" onClick={() => onOpenInfoModal('accessibility')}>Accessibilité</button>
-        <button type="button" onClick={() => onOpenInfoModal('help')}>Aide &amp; Entraide</button>
-      </div>
-      <div className="lrf-row">
-        <button type="button" onClick={() => onOpenInfoModal('privacy')}>
-          Confidentialité &amp; Conditions
-        </button>
-        <button type="button" onClick={() => nav('settings')}>Sécurité</button>
-      </div>
-      <div className="lrf-row">
-        <button type="button" onClick={() => onOpenInfoModal('hackathon')}>Hackathon CREATE WITH AI</button>
-        <button type="button" onClick={() => onOpenInfoModal('hackathon')}>Forum Femmes &amp; IA</button>
-      </div>
-      <div className="lrf-row">
-        <button type="button" onClick={() => nav(canCreate ? 'studio' : 'catalog')}>
-          {canCreate ? 'Espace Créateur' : 'Bibliothèque'}
-        </button>
-        <button type="button" onClick={() => nav('relations')}>Réseau</button>
-        <button type="button" onClick={() => nav('settings')}>Plus</button>
-      </div>
-      <div className="lrf-signature">
-        <NexusMark width={18} height={13} />
-        <span>Nexus · SAVOIR+ © 2026</span>
-      </div>
+    <footer className="li-footer" aria-label="Pied de page SAVOIR+">
+      <ul className="li-footer-links">
+        <li>
+          <button type="button" onClick={() => onOpenInfoModal('about')}>À propos</button>
+        </li>
+        <li>
+          <button type="button" onClick={() => onOpenInfoModal('accessibility')}>Accessibilité</button>
+        </li>
+        <li>
+          <button type="button" onClick={() => onOpenInfoModal('help')}>Centre d’aide</button>
+        </li>
+        <li>
+          <button type="button" onClick={() => onOpenInfoModal('privacy')}>Confidentialité et conditions</button>
+        </li>
+        <li className="li-footer-more" ref={moreRef}>
+          <button
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={moreOpen}
+            onClick={() => setMoreOpen((v) => !v)}
+          >
+            Plus <ChevronDown size={12} aria-hidden="true" />
+          </button>
+          {moreOpen && (
+            <div className="li-footer-menu" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMoreOpen(false);
+                  nav('settings', 'security');
+                }}
+              >
+                Sécurité du compte
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMoreOpen(false);
+                  onOpenInfoModal('hackathon');
+                }}
+              >
+                Hackathon CREATE WITH AI
+              </button>
+            </div>
+          )}
+        </li>
+      </ul>
+      <p className="li-footer-signature">
+        <span className="li-footer-brand" aria-hidden="true">
+          SAVOIR<span>+</span>
+        </span>
+        <span>Nexus © 2026</span>
+      </p>
     </footer>
   );
 }
