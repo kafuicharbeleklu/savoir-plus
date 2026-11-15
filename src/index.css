@@ -7514,3 +7514,13 @@ button:focus-visible, a:focus-visible, [role="tab"]:focus-visible, [tabindex]:fo
 .wf-program-item b { font-size: 0.9375rem; }
 .wf-full-btn { width: 100%; min-height: 44px; }
 .back-link { margin-bottom: var(--space-4); }
+
+/* Progression : l'objectif hebdomadaire est une information, pas une erreur */
+.htb-streak-alert, [data-theme="dark"] .htb-streak-alert {
+  background: var(--accent-brand-soft);
+  color: var(--fg-primary);
+  border-color: color-mix(in srgb, var(--accent-brand) 25%, transparent);
+}
+.htb-streak-alert svg, [data-theme="dark"] .htb-streak-alert svg { color: var(--accent-brand); }
+.htb-streak-alert-em, [data-theme="dark"] .htb-streak-alert-em { color: var(--accent-brand); }
+.study-duration { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }

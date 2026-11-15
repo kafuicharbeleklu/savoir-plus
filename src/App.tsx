@@ -1690,6 +1690,11 @@ export default function App() {
       return (
         <div className="dashboard-grid">
           <div className="dashboard-main">
+            <header className="page-header">
+              <span className="eyebrow">Apprendre</span>
+              <h1>Mes apprentissages</h1>
+              <p>Vos modules en cours, ceux à commencer et ceux que vous avez validés.</p>
+            </header>
             <div className="md:hidden">
               <ProfileIdentityCard
                 user={user}
@@ -1824,6 +1829,11 @@ export default function App() {
       return (
         <div className="dashboard-grid">
           <div className="dashboard-main">
+            <header className="page-header">
+              <span className="eyebrow">Réseau</span>
+              <h1>Relations</h1>
+              <p>Suivez des membres pour voir leurs publications ; pour discuter en privé, envoyez une demande : l’échange s’ouvre seulement quand elle est acceptée.</p>
+            </header>
             <h1 className="sr-only">Relations</h1>
 
             <div className="catalog-tabs-underline" role="tablist" aria-label="Sections du réseau">
