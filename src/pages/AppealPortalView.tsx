@@ -59,7 +59,7 @@ export function AppealPortalView({
         <div className="appeal-banner">
           <ShieldAlert size={22} />
           <div>
-            <span className="eyebrow">SESSION LIMITÉE · CONFORMITÉ RECOURS</span>
+            <span className="eyebrow">Session limitée · conformité recours</span>
             <h1>Accès ordinaire temporairement suspendu</h1>
             <p>
               Compte concerné : <b>{user.name}</b> ({caps.accountStatus}). Conformément à la gouvernance SAVOIR+, vous

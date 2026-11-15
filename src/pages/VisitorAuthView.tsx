@@ -1,17 +1,6 @@
 import React, { useState } from 'react';
-import {
-  ArrowLeft,
-  ArrowRight,
-  BookOpen,
-  CheckCircle2,
-  ChevronRight,
-  KeyRound,
-  Layers,
-  Lock,
-  Mail,
-  ShieldCheck,
-  Users
-} from 'lucide-react';
+import { LandingVideo } from '../components/LandingVideo';
+import { ArrowLeft, ArrowRight, CheckCircle2, ChevronRight, KeyRound, Lock, Mail } from 'lucide-react';
 
 type AuthTab = 'login' | 'signup' | 'verify' | 'reset' | 'onboarding';
 
@@ -36,7 +25,7 @@ const DEMO_PERSONAS: {
     initials: 'KA',
     name: 'Kossi Agbo',
     role: 'Créateur & mentor',
-    preview: 'Créer un module avec le Studio IA et répondre aux apprenants.',
+    preview: 'Créer un module avec l’aide de l’IA et répondre aux apprenants.',
     tone: 'lavender'
   },
   {
@@ -48,6 +37,63 @@ const DEMO_PERSONAS: {
     tone: 'mint'
   }
 ];
+
+/** Champ de mot de passe : libellé relié au champ, action à droite du libellé, bouton Afficher / Masquer. */
+function PasswordField({
+  id,
+  label,
+  value,
+  onChange,
+  autoComplete,
+  minLength,
+  hint,
+  action
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  autoComplete: string;
+  minLength?: number;
+  hint?: string;
+  action?: React.ReactNode;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="lf-field">
+      <div className="lf-label-row">
+        <label htmlFor={id}>{label}</label>
+        {action}
+      </div>
+      <div className="lf-password">
+        <input
+          id={id}
+          type={visible ? 'text' : 'password'}
+          required
+          minLength={minLength}
+          autoComplete={autoComplete}
+          aria-describedby={hint ? `${id}-hint` : undefined}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <button
+          type="button"
+          className="lf-reveal"
+          aria-pressed={visible}
+          aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+          onClick={() => setVisible((v) => !v)}
+        >
+          {visible ? 'Masquer' : 'Afficher'}
+        </button>
+      </div>
+      {hint && (
+        <small id={`${id}-hint`} className="muted landing-hint">
+          {hint}
+        </small>
+      )}
+    </div>
+  );
+}
 
 export function VisitorAuthView({
   cloudConfigured,
@@ -86,11 +132,6 @@ export function VisitorAuthView({
     }
   };
 
-  const openAuth = (tab: AuthTab) => {
-    setAuthTab(tab);
-    document.getElementById('landing-auth')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   const isPrimaryTab = authTab === 'login' || authTab === 'signup';
 
   return (
@@ -99,117 +140,23 @@ export function VisitorAuthView({
         <div className="brand">
           SAVOIR<span className="brand-plus">+</span>
         </div>
-        <div className="visitor-top-actions">
-          <button className="secondary" onClick={() => openAuth('login')}>
-            Se connecter
-          </button>
-          <button className="primary" onClick={() => openAuth('signup')}>
-            Créer un compte
-          </button>
-        </div>
       </header>
 
       <div className="shell-scroll-viewport">
-        <main className="landing-grid">
-          <section className="landing-hero" aria-labelledby="landing-title">
-            <span className="eyebrow">Plateforme d’apprentissage et d’entraide</span>
-            <h1 id="landing-title">
-              Apprendre à son rythme.
-              <br />
-              Progresser ensemble.
-            </h1>
-            <p className="landing-lead">
-              Des modules courts et pratiques, un quiz corrigé, des XP pour garder l’élan, et des membres à qui demander
-              de l’aide quand on bloque. Les encadreurs transforment leurs explications en modules illustrés grâce au
-              Studio IA.
-            </p>
-
-            <div className="landing-cta">
-              <button className="primary landing-cta-main" onClick={() => onSelectPersona('afi')}>
-                Essayer la démo <ArrowRight size={16} />
-              </button>
-              <button className="secondary" onClick={() => onSelectPersona('kossi')}>
-                Je suis encadreur
-              </button>
-            </div>
-
-            <ul className="landing-values">
-              <li>
-                <span className="landing-value-icon" aria-hidden="true">
-                  <BookOpen size={18} />
-                </span>
-                <div>
-                  <b>Apprendre en pratiquant</b>
-                  <p>Sections courtes, atelier interactif et quiz corrigé : on comprend en faisant.</p>
-                </div>
-              </li>
-              <li>
-                <span className="landing-value-icon" aria-hidden="true">
-                  <Users size={18} />
-                </span>
-                <div>
-                  <b>Ne plus bloquer seul</b>
-                  <p>Invitez un membre et discutez après son accord, dans un cadre respectueux.</p>
-                </div>
-              </li>
-              <li>
-                <span className="landing-value-icon" aria-hidden="true">
-                  <Layers size={18} />
-                </span>
-                <div>
-                  <b>Transmettre avec l’IA</b>
-                  <p>Collez votre explication : l’IA propose module, quiz et fiche illustrée, que vous relisez.</p>
-                </div>
-              </li>
-            </ul>
-
-            <section className="landing-personas" aria-labelledby="landing-personas-title">
-              <div className="landing-personas-head">
-                <h2 id="landing-personas-title">Explorer avec un personnage de démonstration</h2>
-                <small className="muted">Personnages fictifs · données conservées dans votre navigateur</small>
-              </div>
-              <div className="landing-persona-list">
-                {DEMO_PERSONAS.map((p) => (
-                  <button key={p.id} type="button" className="landing-persona" onClick={() => onSelectPersona(p.id)}>
-                    <span className={`landing-persona-avatar tone-${p.tone}`} aria-hidden="true">
-                      {p.initials}
-                    </span>
-                    <span className="landing-persona-text">
-                      <b>{p.name}</b>
-                      <span className="landing-persona-role">{p.role}</span>
-                      <span className="landing-persona-preview">{p.preview}</span>
-                    </span>
-                    <ChevronRight size={18} className="landing-persona-chevron" aria-hidden="true" />
-                  </button>
-                ))}
-              </div>
+        <main className="lg-grid">
+          <div className="lg-left">
+            <section className="lg-intro" aria-labelledby="landing-title">
+              <h1 id="landing-title">
+                Apprendre à son rythme.
+                <br />
+                Progresser ensemble.
+              </h1>
+              <p className="lg-lead">
+                Des modules courts, un quiz corrigé et des membres pour vous aider quand vous bloquez.
+              </p>
             </section>
-          </section>
 
           <section id="landing-auth" className="landing-auth" aria-label="Connexion et inscription">
-            {isPrimaryTab && (
-              <div className="landing-segmented" role="tablist" aria-label="Choisir entre connexion et inscription">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={authTab === 'login'}
-                  className={authTab === 'login' ? 'selected' : ''}
-                  onClick={() => setAuthTab('login')}
-                >
-                  Connexion
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={authTab === 'signup'}
-                  className={authTab === 'signup' ? 'selected' : ''}
-                  onClick={() => setAuthTab('signup')}
-                >
-                  Inscription
-                </button>
-              </div>
-            )}
-
             {!isPrimaryTab && authTab !== 'onboarding' && (
               <button type="button" className="text-link landing-back" onClick={() => setAuthTab('login')}>
                 <ArrowLeft size={15} /> Retour à la connexion
@@ -230,11 +177,11 @@ export function VisitorAuthView({
               >
                 <div className="landing-form-head">
                   <h2>Se connecter</h2>
-                  <p className="muted">Avec votre compte SAVOIR+.</p>
                 </div>
-                <label>
-                  Adresse e-mail
+                <div className="lf-field">
+                  <label htmlFor="login-email">Adresse e-mail</label>
                   <input
+                    id="login-email"
                     type="email"
                     required
                     autoComplete="email"
@@ -242,22 +189,19 @@ export function VisitorAuthView({
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
-                </label>
-                <label>
-                  <span className="landing-label-row">
-                    Mot de passe
+                </div>
+                <PasswordField
+                  id="login-password"
+                  label="Mot de passe"
+                  value={password}
+                  onChange={setPassword}
+                  autoComplete="current-password"
+                  action={
                     <button type="button" className="text-link" onClick={() => setAuthTab('reset')}>
                       Mot de passe oublié ?
                     </button>
-                  </span>
-                  <input
-                    type="password"
-                    required
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </label>
+                  }
+                />
                 {error && (
                   <p className="modal-error" role="alert">
                     {error}
@@ -266,12 +210,12 @@ export function VisitorAuthView({
                 <button type="submit" className="primary landing-submit" disabled={busy}>
                   {busy ? 'Connexion…' : 'Se connecter'}
                 </button>
-                <div className="landing-divider">
-                  <span>ou</span>
-                </div>
-                <button type="button" className="secondary landing-submit" onClick={() => onSelectPersona('afi')}>
-                  Explorer sans compte
-                </button>
+                <p className="lf-switch">
+                  Nouveau sur SAVOIR+ ?{' '}
+                  <button type="button" className="text-link" onClick={() => setAuthTab('signup')}>
+                    Créer un compte
+                  </button>
+                </p>
               </form>
             )}
 
@@ -291,9 +235,10 @@ export function VisitorAuthView({
                   <h2>Créer un compte</h2>
                   <p className="muted">La vérification de l’adresse e-mail est requise avant de publier ou d’échanger.</p>
                 </div>
-                <label>
-                  Adresse e-mail
+                <div className="lf-field">
+                  <label htmlFor="signup-email">Adresse e-mail</label>
                   <input
+                    id="signup-email"
                     type="email"
                     required
                     autoComplete="email"
@@ -301,22 +246,16 @@ export function VisitorAuthView({
                     value={signupEmail}
                     onChange={(e) => setSignupEmail(e.target.value)}
                   />
-                </label>
-                <label>
-                  Mot de passe
-                  <input
-                    type="password"
-                    required
-                    minLength={8}
-                    autoComplete="new-password"
-                    aria-describedby="signup-password-hint"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                  />
-                  <small id="signup-password-hint" className="muted landing-hint">
-                    12 caractères ou plus recommandés.
-                  </small>
-                </label>
+                </div>
+                <PasswordField
+                  id="signup-password"
+                  label="Mot de passe"
+                  value={signupPassword}
+                  onChange={setSignupPassword}
+                  autoComplete="new-password"
+                  minLength={8}
+                  hint="8 caractères au minimum ; 12 ou plus recommandés."
+                />
                 <label className="check-inline landing-check">
                   <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} />
                   <span>J’accepte les conditions d’utilisation et la politique de confidentialité.</span>
@@ -336,6 +275,12 @@ export function VisitorAuthView({
                     </p>
                   </div>
                 )}
+                <p className="lf-switch">
+                  Déjà membre ?{' '}
+                  <button type="button" className="text-link" onClick={() => setAuthTab('login')}>
+                    Se connecter
+                  </button>
+                </p>
               </form>
             )}
 
@@ -394,18 +339,24 @@ export function VisitorAuthView({
                       : 'Personnalisez votre profil avant d’entrer dans votre espace.'}
                   </p>
                 </div>
-                <label>
-                  Nom d’affichage (facultatif)
-                  <input placeholder="Ex. Kofi A." value={signupName} onChange={(e) => setSignupName(e.target.value)} />
-                </label>
-                <label>
-                  Centres d’intérêt
+                <div className="lf-field">
+                  <label htmlFor="onboarding-name">Nom d’affichage (facultatif)</label>
                   <input
+                    id="onboarding-name"
+                    placeholder="Ex. Kofi A."
+                    value={signupName}
+                    onChange={(e) => setSignupName(e.target.value)}
+                  />
+                </div>
+                <div className="lf-field">
+                  <label htmlFor="onboarding-interests">Centres d’intérêt</label>
+                  <input
+                    id="onboarding-interests"
                     placeholder="Ex. Cybersécurité, Réseaux, Entraide"
                     value={signupInterests}
                     onChange={(e) => setSignupInterests(e.target.value)}
                   />
-                </label>
+                </div>
                 <button type="submit" className="primary landing-submit">
                   Accéder à mon espace <ArrowRight size={15} />
                 </button>
@@ -435,10 +386,10 @@ export function VisitorAuthView({
                     sessions ouvertes.
                   </p>
                 </div>
-                <label>
-                  Adresse e-mail du compte
-                  <input type="email" required autoComplete="email" placeholder="nom@exemple.test" />
-                </label>
+                <div className="lf-field">
+                  <label htmlFor="reset-email">Adresse e-mail du compte</label>
+                  <input id="reset-email" type="email" required autoComplete="email" placeholder="nom@exemple.test" />
+                </div>
                 <button type="submit" className="primary landing-submit">
                   <KeyRound size={15} /> Envoyer le lien
                 </button>
@@ -451,14 +402,34 @@ export function VisitorAuthView({
               </form>
             )}
 
-            <p className="landing-security">
-              <ShieldCheck size={14} aria-hidden="true" />
-              <span>
-                Compte connecté : droits et confidentialité contrôlés côté serveur. Démo : tout reste dans votre
-                navigateur.
-              </span>
-            </p>
           </section>
+
+            <section className="landing-personas" aria-labelledby="landing-personas-title">
+              <div className="landing-personas-head">
+                <h2 id="landing-personas-title">Ou essayez la démonstration</h2>
+                <small className="muted">Personnages fictifs · rien ne quitte votre navigateur</small>
+              </div>
+              <div className="landing-persona-list">
+                {DEMO_PERSONAS.map((p) => (
+                  <button key={p.id} type="button" className="landing-persona" onClick={() => onSelectPersona(p.id)}>
+                    <span className={`landing-persona-avatar tone-${p.tone}`} aria-hidden="true">
+                      {p.initials}
+                    </span>
+                    <span className="landing-persona-text">
+                      <b>{p.name}</b>
+                      <span className="landing-persona-role">{p.role}</span>
+                      <span className="landing-persona-preview">{p.preview}</span>
+                    </span>
+                    <ChevronRight size={18} className="landing-persona-chevron" aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <aside className="lg-right">
+            <LandingVideo />
+          </aside>
         </main>
 
         <footer className="landing-footer">

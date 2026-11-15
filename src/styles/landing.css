@@ -1,0 +1,159 @@
+/* ==========================================================================
+   Page de connexion — formulaire à gauche, film en boucle à droite
+   (à la manière de la page de connexion de Claude Code web).
+   ========================================================================== */
+
+.landing-topbar { background: transparent; backdrop-filter: none; border-bottom: 0; padding: 0 max(32px, calc((100vw - 1240px) / 2 + 32px)); }
+
+.lg-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+  gap: 64px;
+  align-items: start;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 8px 32px 40px;
+}
+.lg-left { display: flex; flex-direction: column; gap: 24px; min-width: 0; padding-top: 24px; }
+.lg-intro { display: flex; flex-direction: column; gap: 12px; }
+.lg-intro h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--fg-primary);
+}
+.lg-lead { margin: 0; font-size: 1rem; line-height: 1.5; color: var(--fg-muted); }
+
+/* Carte de connexion : sobre, sans ombre lourde */
+.landing .landing-auth {
+  position: static;
+  padding: 24px;
+  gap: 16px;
+  border: 1px solid var(--border-hairline);
+  border-radius: 12px;
+  box-shadow: none;
+  background: var(--bg-surface);
+}
+.landing .landing-form-head h2 { font-size: 1.25rem; font-weight: 600; letter-spacing: 0; }
+.landing .landing-submit { min-height: 44px; }
+.landing .landing-personas-head h2 { font-size: 1rem; font-weight: 600; letter-spacing: 0; }
+.landing .landing-persona-role { font-size: 0.75rem; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--accent-brand); }
+.landing .landing-step,
+.landing .landing-divider { text-transform: none; letter-spacing: 0; }
+.landing .landing-persona-text b { font-size: 0.875rem; font-weight: 600; }
+.landing .landing-footer { max-width: 1240px; margin: 0 auto; padding: 16px 32px 24px; border-top: 0; }
+
+/* Formulaire : champs hauts, libellés nets, un seul bouton principal */
+.landing .landing-form { gap: 16px; }
+.landing .landing-form-head { gap: 4px; }
+.lf-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.lf-field > label,
+.lf-label-row > label {
+  display: block;
+  min-height: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--fg-primary);
+}
+.lf-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.lf-label-row .text-link { min-height: 0; padding: 0; font-size: 0.875rem; font-weight: 600; }
+.landing .landing-form .lf-field input {
+  width: 100%;
+  height: 48px;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  font-size: 1rem;
+  color: var(--fg-primary);
+}
+.landing .landing-form .lf-field input:focus-visible {
+  border-color: var(--accent-brand);
+  box-shadow: 0 0 0 1px var(--accent-brand);
+}
+.lf-password { position: relative; }
+.landing .landing-form .lf-password input { padding-right: 96px; }
+.lf-reveal {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent-brand);
+  cursor: pointer;
+}
+.lf-reveal:hover { background: var(--accent-brand-soft); }
+.landing .landing-submit { min-height: 48px; border-radius: 999px; font-size: 1rem; font-weight: 600; }
+.lf-switch { margin: 0; text-align: center; font-size: 0.875rem; color: var(--fg-muted); }
+.lf-switch .text-link { display: inline; min-height: 0; padding: 0; font-size: inherit; font-weight: 600; }
+.landing .landing-back { min-height: 0; padding: 0; }
+.landing .landing-check { font-weight: 400; color: var(--fg-muted); }
+.landing .landing-personas { gap: 12px; padding-top: 0; }
+.landing .landing-persona-list { border-radius: 12px; }
+
+/* Colonne du visuel : reste visible pendant le défilement */
+.lg-right {
+  position: sticky;
+  top: 8px;
+  height: calc(100dvh - 64px - 40px);
+  min-height: 540px;
+  max-height: 820px;
+}
+
+/* ---------------------------------------------------------------- film d'accueil */
+.lv {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 20px;
+  /* Fond d'attente (et de secours si la vidéo ne se charge pas) */
+  background: linear-gradient(150deg, #173a2f 0%, #20503f 55%, #2f6f58 100%);
+  isolation: isolate;
+}
+.lv-clip {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1s ease;
+  pointer-events: none;
+}
+.lv.is-ready .lv-clip.is-active { opacity: 1; }
+/* Voile léger : unifie les deux plans et les accorde à la palette */
+.lv-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(16, 40, 32, 0) 55%, rgba(16, 40, 32, 0.5) 100%),
+    rgba(23, 58, 47, 0.1);
+  pointer-events: none;
+}
+.lv-credit {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  font-size: 0.6875rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Écrans étroits : le formulaire seul (le visuel est réservé aux grands écrans) */
+@media (max-width: 960px) {
+  .lg-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 8px 16px 32px; max-width: 520px; }
+  .lg-right { display: none; }
+  .lg-intro h1 { font-size: 2rem; }
+}

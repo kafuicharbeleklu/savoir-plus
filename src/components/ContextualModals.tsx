@@ -180,7 +180,7 @@ export function ContactRequestModal({
         <button type="button" className="icon-btn modal-close" aria-label="Fermer" onClick={onClose}>
           <X size={18} />
         </button>
-        <span className="eyebrow">DEMANDE DE DISCUSSION</span>
+        <span className="eyebrow">Demande de discussion</span>
         <div className="modal-author-row">
           <Avatar person={target} small />
           <div>
@@ -268,7 +268,7 @@ export function ReportDialog({
         <button type="button" className="icon-btn modal-close" aria-label="Fermer" onClick={onClose}>
           <X size={18} />
         </button>
-        <span className="eyebrow">SIGNALEMENT PRIVÉ & CONFIDENTIEL</span>
+        <span className="eyebrow">Signalement privé & confidentiel</span>
         <h2>Signaler un élément</h2>
         <p className="report-target-box">
           <Flag size={14} /> Élément ciblé : <b>{targetLabel}</b>
@@ -380,7 +380,7 @@ export function DemoAuthModal({
           <X size={18} />
         </button>
 
-        <span className="eyebrow">CHANGER DE RÔLE OU DE SESSION</span>
+        <span className="eyebrow">Changer de rôle ou de session</span>
         <h2>Comptes & Connexion</h2>
         <p>
           Explorez SAVOIR+ avec trois personnages de démonstration fictifs pour tester l’intégration contextuelle des espaces Apprenant,

@@ -114,7 +114,7 @@ export function PhishingInspectorLab() {
     <section className="phishing-lab" aria-label="Atelier pratique d’inspection d’e-mail">
       <div className="phishing-lab-head">
         <div>
-          <span className="eyebrow">EXERCICE INTERACTIF · INSPECTION GUIDÉE</span>
+          <span className="eyebrow">Exercice interactif · inspection guidée</span>
           <h3>Repérez les 3 signaux suspects dans ce message fictif</h3>
         </div>
         <span className="lab-counter tabular-nums">
@@ -238,7 +238,7 @@ export function ModuleInteractiveLab({
     <section className="phishing-lab" aria-label="Atelier pratique interactif">
       <div className="phishing-lab-head">
         <div>
-          <span className="eyebrow">ATELIER PRATIQUE · TERMINAL GUIDÉ</span>
+          <span className="eyebrow">Atelier pratique · terminal guidé</span>
           <h3>{title}</h3>
         </div>
         <span className="lab-counter tabular-nums">

@@ -1182,7 +1182,7 @@ export default function App() {
               <X size={15} /> Fermer la ressource
             </button>
             <div className="study-breadcrumb">
-              <span className="study-type-tag">RESSOURCE AUTONOME</span>
+              <span className="study-type-tag">Ressource</span>
             </div>
           </div>
         </header>
@@ -1418,7 +1418,7 @@ export default function App() {
                 <section className="wf-card home-recommended">
                   <div className="between wf-mb-sm">
                     <div>
-                      <span className="eyebrow">RECOMMANDÉ POUR VOUS</span>
+                      <span className="eyebrow">Recommandé pour vous</span>
                       <h2>Modules & Ressources populaires</h2>
                     </div>
                     <button className="text-link" onClick={() => nav('catalog')}>
@@ -1525,7 +1525,7 @@ export default function App() {
           {/* Right Rail (Desktop 3rd Column) */}
           <aside className="right-rail" aria-label="Repères et découvertes">
             <section className="rail-card">
-              <span className="eyebrow">VOTRE PROGRESSION</span>
+              <span className="eyebrow">Votre progression</span>
               <h3 className="tabular-nums">Niveau {lvl.level} · {totalXP} XP</h3>
               <ProgressBar value={lvl.percent} label="Expérience globale" tone="htb" />
               <div className="rail-stat-list tabular-nums">
@@ -1715,7 +1715,7 @@ export default function App() {
 
           <aside className="right-rail" aria-label="Repères de progression">
             <section className="rail-card">
-              <span className="eyebrow">RYTHME & ACQUIS</span>
+              <span className="eyebrow">Rythme & acquis</span>
               <h3 className="tabular-nums">Niveau {lvl.level} · {lvl.currentXp}/{lvl.targetXp} XP</h3>
               <ProgressBar value={lvl.percent} label="Progression niveau" tone="htb" />
               <div className="rail-stat-list tabular-nums">
@@ -1738,10 +1738,10 @@ export default function App() {
             </section>
 
             <section className="rail-card">
-              <span className="eyebrow">BIBLIOTHÈQUE</span>
+              <span className="eyebrow">Bibliothèque</span>
               <p className="tiny muted">Ajoutez de nouveaux modules à votre liste planifiée ou explorez les parcours.</p>
-              <button className="primary" onClick={() => nav('catalog')}>
-                Ouvrir le catalogue <ArrowRight size={14} />
+              <button className="secondary" onClick={() => nav('catalog')}>
+                Ouvrir la bibliothèque <ArrowRight size={14} />
               </button>
             </section>
           </aside>
@@ -2039,7 +2039,7 @@ export default function App() {
 
           <aside className="right-rail" aria-label="Repères réseau">
             <section className="rail-card">
-              <span className="eyebrow">RÉSEAU EN BREF</span>
+              <span className="eyebrow">Réseau en bref</span>
               <div className="rail-stat-list tabular-nums">
                 <div className="rail-stat-row">
                   <span>Comptes suivis</span>
@@ -2058,7 +2058,7 @@ export default function App() {
                   <b>{pendingIncoming.length}</b>
                 </div>
               </div>
-              <button className="primary" onClick={() => nav('messages')}>
+              <button className="secondary" onClick={() => nav('messages')}>
                 Ouvrir la messagerie
               </button>
               <button className="secondary" onClick={() => openSettingsTab('privacy')}>
@@ -2290,7 +2290,7 @@ export default function App() {
           <aside className="right-rail" aria-label="Repères de conversation et profil">
             {activeRel && other && (
               <section className="rail-card">
-                <span className="eyebrow">INTERLOCUTEUR ACTIF</span>
+                <span className="eyebrow">Interlocuteur actif</span>
                 <div className="connect-card-head">
                   <Avatar person={other} small />
                   <div>
@@ -2315,7 +2315,7 @@ export default function App() {
             )}
 
             <section className="rail-card">
-              <span className="eyebrow">MESSAGERIE & RÉSEAU</span>
+              <span className="eyebrow">Messagerie & réseau</span>
               <div className="rail-stat-list tabular-nums">
                 <div className="rail-stat-row">
                   <span>Contacts acceptés</span>
@@ -2335,7 +2335,7 @@ export default function App() {
             </section>
 
             <section className="rail-card">
-              <span className="eyebrow">VOTRE PROGRESSION</span>
+              <span className="eyebrow">Votre progression</span>
               <h3 className="tabular-nums">Niveau {lvl.level} · {totalXP} XP</h3>
               <ProgressBar value={lvl.percent} label="Expérience globale" tone="htb" />
               <div className="profile-quick-links">
@@ -2650,7 +2650,7 @@ export default function App() {
               <X size={18} />
             </button>
             <span className="eyebrow">
-              {infoModal === 'hackathon' ? 'NEXUS · HACKATHON CREATE WITH AI' : 'SAVOIR+ · INFORMATION'}
+              {infoModal === 'hackathon' ? 'Nexus · Hackathon CREATE WITH AI' : 'SAVOIR+ · Information'}
             </span>
             <h2>
               {infoModal === 'about'

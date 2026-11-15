@@ -309,7 +309,7 @@ export function CommunityFeedView({
 
       <aside className="right-rail" aria-label="Repères communauté">
         <section className="rail-card">
-          <span className="eyebrow">DOMAINES & TENDANCES</span>
+          <span className="eyebrow">Domaines & tendances</span>
           <h3>Explorer par sujet</h3>
           <div className="rail-quick-list">
             {domainCounts.map((dc) => (
@@ -330,7 +330,7 @@ export function CommunityFeedView({
         </section>
 
         <section className="rail-card">
-          <span className="eyebrow">BESOIN D’UN COUP DE MAIN ({openQuestions.length})</span>
+          <span className="eyebrow">Besoin d’un coup de main ({openQuestions.length})</span>
           <h3>Questions sans solution</h3>
           {openQuestions.length === 0 ? (
             <p className="tiny muted">Toutes les questions actuelles ont reçu une solution.</p>
@@ -354,7 +354,7 @@ export function CommunityFeedView({
         </section>
 
         <section className="rail-card">
-          <span className="eyebrow">ENTRAIDE ACTIVE</span>
+          <span className="eyebrow">Entraide active</span>
           <h3>Contributeurs récents</h3>
           <div className="rail-quick-list">
             {topContributors.map((c) => (
@@ -417,7 +417,7 @@ export function CommunityComposeView({ ext, updateExt, nav, user, setToast }: Co
       </button>
 
       <div className="page-heading">
-        <span className="eyebrow">NOUVELLE CONTRIBUTION</span>
+        <span className="eyebrow">Nouvelle contribution</span>
         <h1>{kind === 'question' ? 'Poser une question à la communauté' : 'Partager une astuce ou méthode'}</h1>
         <p>Audience : membres connectés autorisés. Évitez de partager des coordonnées ou secrets personnels.</p>
       </div>
@@ -468,7 +468,7 @@ export function CommunityComposeView({ ext, updateExt, nav, user, setToast }: Co
         ) : (
           <div className="wf-preview-box">
             <span className="eyebrow">
-              APERÇU · {kind === 'question' ? 'QUESTION' : 'PUBLICATION'} · {domain}
+              Aperçu · {kind === 'question' ? 'Question' : 'Publication'} · {domain}
             </span>
             <h3>{title || '(Sans titre)'}</h3>
             <p>{body || '(Aucun texte saisi)'}</p>

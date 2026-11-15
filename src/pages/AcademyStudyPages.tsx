@@ -81,7 +81,7 @@ function IllustratedSteps({
   return (
     <section className="ai-fiche" aria-label="Fiche illustrée pas à pas">
       <div className="between ai-fiche-head">
-        <span className="study-type-tag">FICHE PAS À PAS</span>
+        <span className="study-type-tag">Fiche pas à pas</span>
         {aiAssisted && (
           <span className="tiny muted">
             {steps.some((s) => s.imageUrl)
@@ -161,7 +161,7 @@ export function AcademyReaderView({
         <aside className={`study-toc-pane ${tocOpen ? 'open' : ''}`} aria-label="Sommaire du module">
           <div className="study-toc-head">
             <div className="study-toc-head-meta">
-              <span className="eyebrow">SOMMAIRE DU MODULE</span>
+              <span className="eyebrow">Sommaire du module</span>
               <b className="tabular-nums">
                 {points} / {maxXp} XP débloqués
               </b>
@@ -324,7 +324,7 @@ export function AcademyQuizIntroView({
       <div className="shell-scroll-viewport">
         <div className="study-centered-pane">
         <div className="quiz-intro-card">
-          <span className="eyebrow">ÉVALUATION FORMATIVE</span>
+          <span className="eyebrow">Évaluation formative</span>
           <h1>{moduleContent.quizTitle}</h1>
           <p>
             Consultez ces consignes avant de démarrer. Le simple affichage de cette page ne consomme aucune tentative.

@@ -463,58 +463,60 @@ export function PedagogicalProfileView({
         <div className="htb-about-grid">
           <div className="htb-about-left">
             {/* Summary */}
-            <section className="htb-section-block" aria-label="Résumé">
-              <h2 className="htb-block-heading">Résumé</h2>
-              <div className="htb-card">
-                {editingSummary && isOwnProfile ? (
-                  <form className="wf-form-stack" onSubmit={handleSaveInlineSummary}>
-                    <label>
-                      Présentation
-                      <textarea
-                        rows={3}
-                        value={bioDraft}
-                        onChange={(e) => setBioDraft(e.target.value)}
-                        placeholder="Présentez vos objectifs d’apprentissage et vos centres d’entraide..."
-                      />
-                    </label>
-                    <label>
-                      Centres d’intérêt (séparés par des virgules)
-                      <input
-                        value={interestsDraft}
-                        onChange={(e) => setInterestsDraft(e.target.value)}
-                      />
-                    </label>
-                    <div className="wf-inline-actions">
-                      <button type="submit" className="primary">
-                        Enregistrer
-                      </button>
-                      <button
-                        type="button"
-                        className="secondary"
-                        onClick={() => setEditingSummary(false)}
-                      >
-                        Annuler
-                      </button>
+            {!embedded && (
+              <section className="htb-section-block" aria-label="Résumé">
+                <h2 className="htb-block-heading">Résumé</h2>
+                <div className="htb-card">
+                  {editingSummary && isOwnProfile ? (
+                    <form className="wf-form-stack" onSubmit={handleSaveInlineSummary}>
+                      <label>
+                        Présentation
+                        <textarea
+                          rows={3}
+                          value={bioDraft}
+                          onChange={(e) => setBioDraft(e.target.value)}
+                          placeholder="Présentez vos objectifs d’apprentissage et vos centres d’entraide..."
+                        />
+                      </label>
+                      <label>
+                        Centres d’intérêt (séparés par des virgules)
+                        <input
+                          value={interestsDraft}
+                          onChange={(e) => setInterestsDraft(e.target.value)}
+                        />
+                      </label>
+                      <div className="wf-inline-actions">
+                        <button type="submit" className="primary">
+                          Enregistrer
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary"
+                          onClick={() => setEditingSummary(false)}
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="htb-centered-card-body">
+                      <p className="htb-card-copy">
+                        {bioText || 'Présentez votre parcours et vos objectifs d’apprentissage sur SAVOIR+.'}
+                      </p>
+                      {isOwnProfile && (
+                        <button
+                          type="button"
+                          className="htb-inline-cta"
+                          onClick={() => setEditingSummary(true)}
+                        >
+                          <Pencil size={13} /> Modifier le résumé
+                        </button>
+                      )}
                     </div>
-                  </form>
-                ) : (
-                  <div className="htb-centered-card-body">
-                    <p className="htb-card-copy">
-                      {bioText || 'Présentez votre parcours et vos objectifs d’apprentissage sur SAVOIR+.'}
-                    </p>
-                    {isOwnProfile && (
-                      <button
-                        type="button"
-                        className="htb-inline-cta"
-                        onClick={() => setEditingSummary(true)}
-                      >
-                        <Pencil size={13} /> Modifier le résumé
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </section>
+                  )}
+                </div>
+              </section>
+            )}
 
             {/* Level & Rank Card */}
             <section className="htb-card htb-rank-card" aria-label="Niveau et rang">
@@ -704,23 +706,25 @@ export function PedagogicalProfileView({
 
           {/* RIGHT SIDEBAR COLUMN */}
           <aside className="htb-about-right" aria-label="Repères latéraux">
-            <section className="htb-section-block">
-              <h2 className="htb-block-heading">Réseaux & Liens</h2>
-              <div className="htb-card">
-                <div className="htb-centered-card-body">
-                  <p className="htb-card-copy htb-url-line">
-                    <Globe size={14} aria-hidden="true" /> {profileUrl}
-                  </p>
-                  <button
-                    type="button"
-                    className="htb-inline-cta"
-                    onClick={copyProfileLink}
-                  >
-                    <Copy size={13} /> Copier le lien du profil
-                  </button>
+            {!embedded && (
+              <section className="htb-section-block">
+                <h2 className="htb-block-heading">Réseaux & Liens</h2>
+                <div className="htb-card">
+                  <div className="htb-centered-card-body">
+                    <p className="htb-card-copy htb-url-line">
+                      <Globe size={14} aria-hidden="true" /> {profileUrl}
+                    </p>
+                    <button
+                      type="button"
+                      className="htb-inline-cta"
+                      onClick={copyProfileLink}
+                    >
+                      <Copy size={13} /> Copier le lien du profil
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
 
             {/* Weekly Streak */}
             <section className="htb-section-block">
@@ -811,33 +815,35 @@ export function PedagogicalProfileView({
             </section>
 
             {/* Top Interests */}
-            <section className="htb-section-block">
-              <h2 className="htb-block-heading">Centres d’intérêt</h2>
-              <div className="htb-card">
-                <div className="htb-centered-card-body">
-                  {skillTags.length > 0 ? (
-                    <div className="htb-pill-list">
-                      {skillTags.map((tag) => (
-                        <span key={tag} className="htb-tag-chip">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="htb-card-copy">Indiquez vos thèmes favoris pour personnaliser vos repères.</p>
-                  )}
-                  {isOwnProfile && (
-                    <button
-                      type="button"
-                      className="htb-inline-cta"
-                      onClick={() => setEditingSummary(true)}
-                    >
-                      <Pencil size={13} /> Modifier les intérêts
-                    </button>
-                  )}
+            {!embedded && (
+              <section className="htb-section-block">
+                <h2 className="htb-block-heading">Centres d’intérêt</h2>
+                <div className="htb-card">
+                  <div className="htb-centered-card-body">
+                    {skillTags.length > 0 ? (
+                      <div className="htb-pill-list">
+                        {skillTags.map((tag) => (
+                          <span key={tag} className="htb-tag-chip">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="htb-card-copy">Indiquez vos thèmes favoris pour personnaliser vos repères.</p>
+                    )}
+                    {isOwnProfile && (
+                      <button
+                        type="button"
+                        className="htb-inline-cta"
+                        onClick={() => setEditingSummary(true)}
+                      >
+                        <Pencil size={13} /> Modifier les intérêts
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
 
             {/* Badges Preview Card */}
             <section className="htb-section-block">
@@ -917,21 +923,23 @@ export function PedagogicalProfileView({
             </section>
 
             {/* Languages */}
-            <section className="htb-section-block">
-              <h2 className="htb-block-heading">Langues</h2>
-              <div className="htb-card">
-                <div className="htb-centered-card-body">
-                  <div className="htb-pill-list">
-                    <span className="htb-tag-chip">{ext.appPrefs.language || 'Français'}</span>
+            {!embedded && (
+              <section className="htb-section-block">
+                <h2 className="htb-block-heading">Langues</h2>
+                <div className="htb-card">
+                  <div className="htb-centered-card-body">
+                    <div className="htb-pill-list">
+                      <span className="htb-tag-chip">{ext.appPrefs.language || 'Français'}</span>
+                    </div>
+                    {isOwnProfile && (
+                      <button type="button" className="htb-inline-cta" onClick={() => nav('settings')}>
+                        <Pencil size={13} /> Régler la langue
+                      </button>
+                    )}
                   </div>
-                  {isOwnProfile && (
-                    <button type="button" className="htb-inline-cta" onClick={() => nav('settings')}>
-                      <Pencil size={13} /> Régler la langue
-                    </button>
-                  )}
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
           </aside>
         </div>
       )}

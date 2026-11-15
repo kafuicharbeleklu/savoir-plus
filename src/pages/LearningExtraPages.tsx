@@ -12,6 +12,7 @@ import {
   Search,
   Target
 } from 'lucide-react';
+import { PageHeader } from '../components/ui';
 import {
   buildDynamicCatalog,
   CATALOG_ITEMS,
@@ -331,7 +332,7 @@ export function CatalogExtraView({
           }}
         >
           <span className="eyebrow">
-            {domain === 'Tous' ? 'PARCOURS CONSEILLÉ' : `ADAPTÉ · ${domain.toUpperCase()}`}
+            {domain === 'Tous' ? 'Parcours conseillé' : `Adapté · ${domain}`}
           </span>
           <h3>{recommendedItem.title}</h3>
           <p className="tiny muted">{recommendedItem.summary}</p>
@@ -352,7 +353,7 @@ export function CatalogExtraView({
 
 
         <section className="rail-card">
-          <span className="eyebrow">À COMMENCER ({plannedItems.length})</span>
+          <span className="eyebrow">À commencer ({plannedItems.length})</span>
           <h3>Votre liste planifiée</h3>
           {plannedItems.length === 0 ? (
             <p className="tiny muted">Ajoutez un module depuis sa fiche pour le retrouver ici.</p>
@@ -377,7 +378,7 @@ export function CatalogExtraView({
 
         <section className="rail-card">
           <span className="eyebrow">
-            {domain === 'Tous' ? 'ENTRAIDE RÉCENTE' : `DISCUSSIONS · ${domain.toUpperCase()}`}
+            {domain === 'Tous' ? 'Entraide récente' : `Discussions · ${domain}`}
           </span>
           <h3>Questions des apprenants</h3>
           {domainPosts.length === 0 ? (
@@ -810,8 +811,9 @@ export function ProgressionPage({
 
   return (
     <div className="htb-page-shell">
-      <h1 className="sr-only">Progression et badges</h1>
+      <PageHeader title="Progression" subtitle="Votre niveau, vos XP, vos badges et vos compétences." />
       <PedagogicalProfileView
+        embedded
         target={resolvedTarget}
         isOwnProfile={true}
         ext={safeExt}

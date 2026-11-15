@@ -6,5 +6,7 @@ import './styles/settings.css';
 import './styles/profile.css';
 import './styles/studio.css';
 import './styles/governance.css';
+import './styles/landing.css';
+import './styles/retouches.css';
 
 createRoot(document.getElementById('root')!).render(<App />);

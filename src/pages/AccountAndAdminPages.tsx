@@ -127,7 +127,7 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast 
       <aside className="right-rail" aria-label="Repères notifications">
 
         <section className="rail-card">
-          <span className="eyebrow">À TRAITER EN PRIORITÉ</span>
+          <span className="eyebrow">À traiter en priorité</span>
           <h3>{unreadCount > 0 ? `${unreadCount} alerte(s) non lue(s)` : 'Tout est à jour'}</h3>
           <div className="rail-quick-list">
             <button type="button" className="rail-quick-item" onClick={() => nav('report')}>
@@ -198,7 +198,7 @@ export function ReportView({ ext, updateExt, nav, reportTarget, setToast }: Acco
       </button>
 
       <div className="page-heading">
-        <span className="eyebrow">SIGNALEMENT & SUIVI PRIVÉ</span>
+        <span className="eyebrow">Signalement & suivi privé</span>
         <h1>Signaler un contenu ou un échange</h1>
         <p>
           Votre identité reste confidentielle vis-à-vis de la personne signalée. Le blocage reste une action
@@ -292,7 +292,7 @@ export function AuthFlowsView({ nav, setToast }: AccountAdminProps) {
       </button>
 
       <div className="page-heading">
-        <span className="eyebrow">PARCOURS D’ACCÈS & IDENTITÉ</span>
+        <span className="eyebrow">Parcours d’accès & identité</span>
         <h1>Accueil, inscription et récupération de compte</h1>
         <p>Aperçu interactif des écrans publics sans fermer votre session de démonstration actuelle.</p>
       </div>
@@ -322,7 +322,7 @@ export function AuthFlowsView({ nav, setToast }: AccountAdminProps) {
       <section className="wf-card wf-form-stack">
         {step === 'landing' && (
           <>
-            <span className="eyebrow">ACCUEIL PUBLIC</span>
+            <span className="eyebrow">Accueil public</span>
             <h2>Apprendre, pratiquer et s’entraider sur SAVOIR+</h2>
             <p className="wf-muted-text">
               Plateforme d’apprentissage structuré et d’entraide communautaire. Le mode démonstration ne publie pas
@@ -341,7 +341,7 @@ export function AuthFlowsView({ nav, setToast }: AccountAdminProps) {
 
         {step === 'signup' && (
           <>
-            <span className="eyebrow">CRÉER UN COMPTE</span>
+            <span className="eyebrow">Créer un compte</span>
             <label>
               Adresse e-mail
               <input value={emailInput} onChange={(e) => setEmailInput(e.target.value)} />
@@ -362,7 +362,7 @@ export function AuthFlowsView({ nav, setToast }: AccountAdminProps) {
 
         {step === 'verify' && (
           <>
-            <span className="eyebrow">VÉRIFICATION OBLIGATOIRE</span>
+            <span className="eyebrow">Vérification obligatoire</span>
             <h3>Vérifiez votre adresse e-mail</h3>
             <p className="wf-muted-text">
               Si cette adresse est éligible, un lien de confirmation temporaire lui a été envoyé. Tant que
@@ -381,7 +381,7 @@ export function AuthFlowsView({ nav, setToast }: AccountAdminProps) {
 
         {step === 'login' && (
           <>
-            <span className="eyebrow">CONNEXION & RÉCUPÉRATION</span>
+            <span className="eyebrow">Connexion & récupération</span>
             <label>
               Adresse e-mail
               <input value={emailInput} onChange={(e) => setEmailInput(e.target.value)} />
@@ -404,7 +404,7 @@ export function AuthFlowsView({ nav, setToast }: AccountAdminProps) {
 
         {step === 'reset' && (
           <>
-            <span className="eyebrow">DÉFINIR UN NOUVEAU MOT DE PASSE</span>
+            <span className="eyebrow">Définir un nouveau mot de passe</span>
             <label>
               Nouveau mot de passe
               <input type="password" defaultValue="NouveauSecret2026!" />
@@ -426,7 +426,7 @@ export function AuthFlowsView({ nav, setToast }: AccountAdminProps) {
 
         {step === 'onboarding' && (
           <>
-            <span className="eyebrow">PROFIL INITIAL</span>
+            <span className="eyebrow">Profil initial</span>
             <label>
               Nom d’affichage (facultatif)
               <input defaultValue="Afi Mensah" />
