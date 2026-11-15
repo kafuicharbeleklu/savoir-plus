@@ -1285,7 +1285,7 @@ export function StudioAiView({ ext, updateExt, nav, setToast, user }: StudioProp
         const reason = failures.find((r) => r?.error)?.error;
         setImgError(`${failures.length} illustration(s) indisponible(s)${reason ? ` : ${reason}` : '.'}`);
       }
-      setImgPhase('done');
+      setImgPhase(res.some((r) => r?.url) ? 'done' : 'idle');
     } catch (e: any) {
       setImgError(e?.message || 'Illustrations indisponibles.');
       setImgPhase('idle');
@@ -1638,7 +1638,7 @@ export function StudioAiView({ ext, updateExt, nav, setToast, user }: StudioProp
                     <figcaption className="wf-form-stack">
                       <textarea
                         aria-label={`Légende de l’étape ${i + 1}`}
-                        rows={2}
+                        rows={3}
                         value={s.caption}
                         onChange={(e) => patchStep(i, e.target.value)}
                       />

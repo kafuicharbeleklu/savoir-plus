@@ -278,6 +278,29 @@ export function evaluateStudioReadiness(
     quiz.passingScore <= totalPoints;
   const audienceOk = Boolean(content?.audience);
 
+  // Contenu du Studio IA : il porte son propre quiz, c'est lui qui est contrôlé (et non le quiz partagé).
+  const ownQuiz = content?.quiz;
+  const ownQuizValid = Boolean(
+    ownQuiz &&
+      ownQuiz.length > 0 &&
+      ownQuiz.every(
+        (q) =>
+          q.prompt.trim().length > 0 &&
+          q.options.filter((o) => o.trim().length > 0).length >= 2 &&
+          q.correctIndex >= 0 &&
+          q.correctIndex < q.options.length &&
+          q.explanation.trim().length > 0
+      )
+  );
+  const quizCheckOk = ownQuiz ? ownQuizValid : quizValid;
+  const quizCheckDetail = ownQuiz
+    ? ownQuizValid
+      ? `${ownQuiz.length} question(s) propres au contenu · seuil ${Math.max(1, Math.ceil(ownQuiz.length * 0.66))}/${ownQuiz.length}`
+      : 'Questions du contenu incomplètes'
+    : quizValid
+      ? `${quiz.questions.length} question(s) · seuil ${quiz.passingScore}/${totalPoints}`
+      : `Seuil (${quiz.passingScore}) > total (${totalPoints}) ou questions incomplètes`;
+
   const checks: StudioReadinessCheck[] = [
     {
       id: 'title-sources',
@@ -306,11 +329,9 @@ export function evaluateStudioReadiness(
     {
       id: 'quiz',
       label: 'Évaluation à choix unique',
-      ok: quizValid,
+      ok: quizCheckOk,
       blocking: content?.type === 'module',
-      detail: quizValid
-        ? `${quiz.questions.length} question(s) · seuil ${quiz.passingScore}/${totalPoints}`
-        : `Seuil (${quiz.passingScore}) > total (${totalPoints}) ou questions incomplètes`
+      detail: quizCheckDetail
     },
     {
       id: 'audience',

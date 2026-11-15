@@ -577,3 +577,15 @@ test('Studio IA : un contenu porte ses propres points clés, réflexe, quiz et f
   const legacy = resolveStudyContent('st-x', [{ ...studio[0], id: 'st-x', quiz: undefined }], shared);
   assert.equal(legacy.questions[0].text, 'Autre');
 });
+
+test('Préparation publication : un contenu Studio IA est contrôlé sur son propre quiz', async () => {
+  const { evaluateStudioReadiness } = await import('../src/personas');
+  const ext = initialExtendedState();
+  const brokenShared = { ...ext.studioQuiz, passingScore: 99 };
+  const base = { ...ext.studioContents[0], type: 'module' as const, title: 'Sauvegardes', sources: 'Explication de Kossi', audience: 'Membres autorisés' as const,
+    sections: [{ id: 's1', title: 'Règle 3-2-1', body: 'Trois copies.' }] };
+  const own = evaluateStudioReadiness({ ...base, quiz: [{ prompt: 'Combien ?', options: ['1', '3'], correctIndex: 1, explanation: 'Règle 3-2-1.' }] }, brokenShared, []);
+  assert.equal(own.checks.find((c) => c.id === 'quiz')?.ok, true);
+  const legacy = evaluateStudioReadiness(base, brokenShared, []);
+  assert.equal(legacy.checks.find((c) => c.id === 'quiz')?.ok, false);
+});
