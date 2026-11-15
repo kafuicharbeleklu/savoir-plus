@@ -284,12 +284,24 @@ export function resolveStudyContent(moduleId: string, studioContents?: StudioStu
   if (MODULES_CONTENT[moduleId]) return MODULES_CONTENT[moduleId];
   const fromStudio = studioContents?.find((s) => s.id === moduleId);
   if (fromStudio) {
-    const mappedLessons: StudyLesson[] = (fromStudio.sections.length ? fromStudio.sections : [{ id: 's1', title: 'Introduction', body: 'Contenu publié depuis Studio Créateur.' }]).slice(0, 3).map((sec, idx) => ({
+    const studioSections = (fromStudio.sections.length ? fromStudio.sections : [{ id: 's1', title: 'Introduction', body: 'Contenu publié depuis Studio Créateur.' }]).slice(0, 3);
+    const totalMinutes = parseInt(fromStudio.duration || '', 10);
+    const sectionMinutes = Number.isFinite(totalMinutes)
+      ? `${Math.max(2, Math.round(totalMinutes / Math.max(1, studioSections.length)))} min`
+      : '5 min';
+    const mappedLessons: StudyLesson[] = studioSections.map((sec, idx) => {
+      // Introduction = première phrase ; corps = le reste (évite d'afficher deux fois le même paragraphe).
+      const text = (sec.body || '').trim();
+      const cut = text.search(/[.!?…](\s|$)/);
+      const intro = cut >= 0 ? text.slice(0, cut + 1) : text;
+      const rest = cut >= 0 ? text.slice(cut + 1).trim() : '';
+      const sourceNote = idx === 0 && fromStudio.sources ? `Source déclarée : ${fromStudio.sources}` : '';
+      return {
       title: sec.title || `Section 0${idx + 1}`,
       label: `Domaine ${fromStudio.domain}`,
-      minutes: fromStudio.duration || '5 min',
-      intro: sec.body || 'Contenu pédagogique structuré.',
-      body: `${sec.body || ''}${fromStudio.sources ? ` · Source déclarée : ${fromStudio.sources}` : ''}`,
+      minutes: sectionMinutes,
+      intro: intro || 'Contenu pédagogique structuré.',
+      body: [rest, sourceNote].filter(Boolean).join(' · '),
       points: sec.keyPoints?.length
         ? sec.keyPoints
         : [
@@ -297,7 +309,8 @@ export function resolveStudyContent(moduleId: string, studioContents?: StudioStu
             'Vérifiez votre compréhension avant de passer à l’étape suivante.'
           ],
       tip: sec.tip || 'Relisez les notions clés ou posez une question dans la Communauté en cas de blocage.'
-    }));
+      };
+    });
     while (mappedLessons.length < 3) {
       mappedLessons.push({
         title: `Approfondissement ${mappedLessons.length + 1}`,

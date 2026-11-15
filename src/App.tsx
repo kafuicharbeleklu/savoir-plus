@@ -123,6 +123,8 @@ import {
 } from './components/ContextualModals';
 
 const DEMO_PERSONA_KEY = 'savoir-demo-persona';
+/** Pages d'étude dont l'identifiant d'URL désigne le module à ouvrir (liens profonds, R:4444). */
+const STUDY_DEEP_LINK_PAGES: string[] = ['reader', 'quiz-intro', 'quiz', 'result'];
 const DEMO_BANNER_KEY = 'savoir-demo-banner-hidden';
 
 const LESSON_COUNTS: Record<string, number> = Object.fromEntries(
@@ -266,7 +268,9 @@ export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState<string>('');
 
-  const [activeStudyModuleId, setActiveStudyModuleId] = useState<string>('phishing');
+  const [activeStudyModuleId, setActiveStudyModuleId] = useState<string>(() =>
+    STUDY_DEEP_LINK_PAGES.includes(initialRoute.page) && initialRoute.id ? initialRoute.id : 'phishing'
+  );
   const [lessonIndex, setLessonIndex] = useState<number>(0);
   const [answers, setAnswers] = useState<number[]>([]);
   // Brouillons de quiz non envoyés, par module (conservés pendant la session).
@@ -559,6 +563,13 @@ export default function App() {
   const activeStudyContent = resolveStudyContent(activeStudyModuleId, ext.studioContents, ext.studioQuiz);
   const activeStudyProgress = getModuleProgress(activeStudyModuleId);
   const activeModulePct = moduleProgressPercent(activeStudyProgress, activeStudyContent.lessons.length);
+
+  // Lien profond ou navigation arrière vers une page d'étude : ouvrir le module indiqué dans l'URL.
+  useEffect(() => {
+    if (STUDY_DEEP_LINK_PAGES.includes(page) && selectedId && selectedId !== activeStudyModuleId) {
+      setActiveStudyModuleId(selectedId);
+    }
+  }, [page, selectedId]);
 
   // Route guard: Studio / Governance pages typed in the URL fall back to home without the matching role.
   const routeAllowed = canAccessRoute(page, caps);

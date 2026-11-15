@@ -82,7 +82,13 @@ function IllustratedSteps({
     <section className="ai-fiche" aria-label="Fiche illustrée pas à pas">
       <div className="between ai-fiche-head">
         <span className="study-type-tag">FICHE PAS À PAS</span>
-        {aiAssisted && <span className="tiny muted">Structurée et illustrée avec l’IA, relue par l’auteur</span>}
+        {aiAssisted && (
+          <span className="tiny muted">
+            {steps.some((s) => s.imageUrl)
+              ? 'Structurée et illustrée avec l’IA, relue par l’auteur'
+              : 'Structurée avec l’IA, relue par l’auteur'}
+          </span>
+        )}
       </div>
       <ol className="ai-fiche-grid">
         {steps.map((s, i) => (
