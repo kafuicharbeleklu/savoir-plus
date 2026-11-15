@@ -537,6 +537,8 @@ export interface PlatformSettingsState {
   sanctionDurations: string[];
   domains: string[];
   validationRuleNote: string;
+  /** Nombre de signalements à partir duquel un contenu est traité en urgence. */
+  urgentReportThreshold: string;
   pendingChanges: PlatformSettingChange[];
 }
 
@@ -708,7 +710,7 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       domain: 'Numérique',
       version: 'v1',
       pubStatus: 'Brouillon',
-      reviewStatus: 'Non soumise',
+      reviewStatus: 'En revue',
       audience: 'Membres autorisés',
       duration: '5 min',
       sources: 'Support original du créateur · Licence pédagogique interne',
@@ -1190,7 +1192,7 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       domain: 'Numérique',
       version: 'v1',
       level: 'Validation pédagogique',
-      validator: 'Kossi Agbo',
+      validator: 'À affecter',
       submittedAt: 'Aujourd’hui · 09 h 15',
       status: 'En examen',
       decisionNote: ''
@@ -1306,6 +1308,7 @@ export const initialExtendedState = (): ExtendedDemoState => ({
     sanctionDurations: ['24 heures', '7 jours', '30 jours'],
     domains: ['Numérique', 'Communication', 'Gestion'],
     validationRuleNote: 'Toute validation pédagogique porte sur une version précise et exclut l’auto-approbation et la validation par IA seule.',
+    urgentReportThreshold: '3 signalements distincts',
     pendingChanges: [
       {
         id: 'SET-001',
@@ -1326,10 +1329,9 @@ export function appendAuditLog(
   entry: Omit<AuditLogEntry, 'id' | 'timestamp' | 'requestId'>
 ): AuditLogEntry[] {
   const now = new Date();
-  const timestamp = `${now.toLocaleDateString('fr-FR')} · ${now.toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })}`;
+  // Même format que les entrées d'origine : « 15 nov. 2026 · 12 h 05 ».
+  const day = now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  const timestamp = `${day} · ${String(now.getHours()).padStart(2, '0')} h ${String(now.getMinutes()).padStart(2, '0')}`;
   const next: AuditLogEntry = {
     id: `AUD-${100 + logs.length + 1}`,
     timestamp,

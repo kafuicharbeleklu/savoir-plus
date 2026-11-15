@@ -167,6 +167,7 @@ import {
   AppealView
 } from './pages/AccountAndAdminPages';
 import { SettingsView } from './pages/SettingsPage';
+import { GovernanceRail } from './pages/governance/shared';
 import { ProfilePage } from './pages/ProfilePage';
 import {
   StudioCreatorProfileView,
@@ -2524,59 +2525,7 @@ export default function App() {
             )}
 
             {activeSpace === 'admin' && (
-              <nav className="rail-nav-card" aria-label="Console Gouvernance">
-                <span className="left-rail-section-label">Console Gouvernance</span>
-                <div className="rail-role-select-wrap">
-                  <label className="tiny muted">Rôle actif</label>
-                  <select
-                    aria-label="Rôle actif en gouvernance"
-                    value={ext.adminActiveRole}
-                    onChange={(e) => {
-                      const nextRole = e.target.value as AdminRoleName;
-                      updateExt((prev) => ({ ...prev, adminActiveRole: nextRole }));
-                      setToast(`Vue gouvernance basculée : ${nextRole}`);
-                    }}
-                  >
-                    {ADMIN_ROLES.map((r) => (
-                      <option key={r} value={r}>{r}</option>
-                    ))}
-                  </select>
-                </div>
-                <button className={`rail-nav-btn ${page === 'admin' ? 'active' : ''}`} onClick={() => nav('admin')}>
-                  <span><ShieldCheck size={16} /> Tableau de bord</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'moderation' ? 'active' : ''}`} onClick={() => nav('moderation')}>
-                  <span><Flag size={16} /> File de modération</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'admin-users' ? 'active' : ''}`} onClick={() => nav('admin-users')}>
-                  <span><Users size={16} /> Utilisateurs</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'admin-roles' ? 'active' : ''}`} onClick={() => nav('admin-roles')}>
-                  <span><UserCheck size={16} /> Rôles & droits</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'admin-contents' ? 'active' : ''}`} onClick={() => nav('admin-contents')}>
-                  <span><BookOpen size={16} /> Contenus signalés</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'admin-validation' ? 'active' : ''}`} onClick={() => nav('admin-validation')}>
-                  <span><CheckCircle2 size={16} /> Validation péda</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'admin-audit' ? 'active' : ''}`} onClick={() => nav('admin-audit')}>
-                  <span><ClipboardList size={16} /> Journaux d’audit</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'admin-support' ? 'active' : ''}`} onClick={() => nav('admin-support')}>
-                  <span><HelpCircle size={16} /> Support</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'admin-settings' ? 'active' : ''}`} onClick={() => nav('admin-settings')}>
-                  <span><Sliders size={16} /> Paramètres</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'appeal' ? 'active' : ''}`} onClick={() => nav('appeal')}>
-                  <span><Settings size={16} /> Recours</span>
-                </button>
-                <div className="vous-divider" />
-                <button className="rail-nav-btn" onClick={() => nav('home')}>
-                  <span><Home size={16} /> Retour à l’accueil</span>
-                </button>
-              </nav>
+              <GovernanceRail ext={ext} updateExt={updateExt} nav={nav} page={page} setToast={setToast} />
             )}
 
             <SidebarCompactFooter

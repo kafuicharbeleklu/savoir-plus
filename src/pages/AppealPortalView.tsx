@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle2, Lock, LogOut, Scale, ShieldAlert } from 'lucide-react';
 import type { Profile } from '../data';
 import type { RoleCapabilities } from '../personas';
-import type { ExtendedDemoState } from '../wireframeData';
+import { appendAuditLog, type ExtendedDemoState } from '../wireframeData';
 
 export function AppealPortalView({
   user,
@@ -29,8 +29,16 @@ export function AppealPortalView({
       appeal: {
         submitted: true,
         explanation: explanation.trim(),
-        status: 'En examen'
-      }
+        status: 'Reçu'
+      },
+      auditLogs: appendAuditLog(prev.auditLogs, {
+        actor: user.name,
+        action: 'Recours déposé sur DEC-2026-001',
+        target: 'DEC-2026-001',
+        scope: 'Recours',
+        result: 'Succès',
+        justification: 'Recours transmis à un réviseur distinct du décideur initial.'
+      })
     }));
     setToast('Votre recours a été transmis pour réexamen indépendant.');
   };

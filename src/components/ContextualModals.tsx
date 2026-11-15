@@ -362,7 +362,7 @@ export function DemoAuthModal({
   const demoList = [
     { id: 'afi', title: 'Afi Mensah', subtitle: 'Apprenante · Parcours & Entraide' },
     { id: 'kossi', title: 'Kossi Agbo', subtitle: 'Créateur & Mentor · Studio pédagogique' },
-    { id: 'nadege', title: 'Nadège Koffi', subtitle: 'Modération & Gouvernance · Console' }
+    { id: 'nadege', title: 'Nadège Koffi', subtitle: 'Modération & Gouvernance' }
   ];
 
   return (

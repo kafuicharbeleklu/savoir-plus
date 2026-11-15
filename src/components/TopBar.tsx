@@ -337,7 +337,7 @@ export function TopBar({
                       nav('admin');
                     }}
                   >
-                    <ShieldCheck size={15} /> Console Gouvernance
+                    <ShieldCheck size={15} /> Gouvernance
                   </button>
                 )}
 

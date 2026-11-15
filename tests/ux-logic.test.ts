@@ -655,3 +655,32 @@ test('Profil : progression d’un membre calculée à un seul endroit (abonnés,
   assert.deepEqual(afi.passedQuizzes, []);
   assert.ok(afi.skills.length > 0 && afi.skills.every((s) => !s.validated));
 });
+
+test('Gouvernance : chaque vue ne voit et ne fait que ce que son rôle permet', async () => {
+  const { canApproveSettings, canExportAudit, canManageStatus, govAccess, govCounts, govInbox } = await import('../src/governance');
+  // Moindre privilège : agir, voir ou aucun accès.
+  assert.equal(govAccess('Support', 'admin-support'), 'act');
+  assert.equal(govAccess('Support', 'moderation'), 'none');
+  assert.equal(govAccess('Modérateur', 'moderation'), 'act');
+  assert.equal(govAccess('Modérateur', 'appeal'), 'none');
+  assert.equal(govAccess('Auditeur', 'moderation'), 'view');
+  assert.equal(govAccess('Auditeur', 'admin-audit'), 'view');
+  assert.equal(govAccess('Administrateur', 'admin-settings'), 'act');
+  assert.equal(canApproveSettings('Administrateur'), false);
+  assert.equal(canApproveSettings('Super administrateur'), true);
+  assert.equal(canExportAudit('Auditeur'), true);
+  assert.equal(canExportAudit('Modérateur'), false);
+  assert.equal(canManageStatus('Support'), false);
+
+  const ext = initialExtendedState();
+  const counts = govCounts(ext);
+  assert.equal(counts.moderation, ext.dossiers.length);
+  assert.equal(counts['admin-roles'], 1);
+  // La boîte « À traiter » ne liste que les files visibles avec la vue active.
+  assert.deepEqual(govInbox(ext, 'Support').map((r) => r.section), ['admin-support']);
+  assert.deepEqual(govInbox(ext, 'Modérateur').map((r) => r.section), ['moderation', 'admin-contents']);
+  assert.equal(govInbox(ext, 'Super administrateur').length, 7);
+  // Une décision soumise sort le dossier de la file.
+  ext.dossiers[0].status = 'Décision soumise';
+  assert.equal(govCounts(ext).moderation, ext.dossiers.length - 1);
+});

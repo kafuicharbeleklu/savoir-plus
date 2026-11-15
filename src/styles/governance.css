@@ -1,1 +1,173 @@
-/* Lot governance — styles propres à cet espace (chargés après ui.css). */
+/* ==========================================================================
+   Lot 4 — Gouvernance (chargé après ui.css)
+   Boîte « À traiter », files en liste + détail, tableaux sobres, menu groupé avec compteurs.
+   ========================================================================== */
+
+.gv-page { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.gv-page > .ui-page-header { margin-bottom: 4px; }
+.gv-narrow { max-width: 720px; margin: 0 auto; width: 100%; }
+.gv-note { margin: 0; font-size: 0.75rem; line-height: 1.33; color: var(--fg-muted); }
+.gv-text { margin: 0; font-size: 0.875rem; line-height: 1.5; color: var(--fg-primary); white-space: pre-line; }
+.gv-chevron { color: var(--fg-muted); }
+
+/* Compteur d'éléments en attente */
+.gv-count {
+  flex: 0 0 auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-brand-soft);
+  color: var(--accent-brand);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* -- Menu de la colonne ------------------------------------------------------------- */
+.gv-view {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+.gv-view select { flex: 1; min-width: 0; min-height: 32px; height: 32px; padding-top: 0; padding-bottom: 0; font-size: 0.8125rem; }
+.gv-view-desc { margin: 0; padding: 6px 12px 8px; font-size: 0.75rem; line-height: 1.33; color: var(--fg-muted); }
+.gv-rail-group { display: block; padding: 12px 12px 4px; font-size: 0.75rem; font-weight: 600; color: var(--fg-muted); }
+.gv-rail-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.gv-rail-btn > span { min-width: 0; }
+
+/* Sélecteurs « Rubrique » et « Vue » : uniquement sur petit écran */
+.gv-mobile-nav { display: none; }
+@media (max-width: 768px) {
+  .gv-mobile-nav { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .gv-mobile-nav label { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--fg-muted); }
+  .gv-mobile-nav select { width: 100%; min-height: 36px; }
+}
+
+/* -- Vue partagée : liste | détail --------------------------------------------------- */
+.gv-split { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 12px; align-items: start; }
+.gv-split-list,
+.gv-split-detail { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.gv-split-back { display: none; }
+@media (max-width: 900px) {
+  .gv-split { grid-template-columns: minmax(0, 1fr); }
+  .gv-split.has-selection .gv-split-list { display: none; }
+  .gv-split:not(.has-selection) .gv-split-detail { display: none; }
+  .gv-split-back { display: inline-flex; }
+}
+
+/* -- Détail ----------------------------------------------------------------------- */
+.gv-detail {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.gv-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+.gv-detail-head > div:first-child { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gv-detail-head h2 { margin: 0; font-size: 1rem; line-height: 1.5; font-weight: 600; color: var(--fg-primary); }
+.gv-detail-head p { margin: 0; font-size: 0.75rem; color: var(--fg-muted); }
+.gv-detail-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gv-block { display: flex; flex-direction: column; gap: 8px; padding: 16px 24px; border-bottom: 1px solid var(--border-hairline); }
+.gv-block:last-child { border-bottom: 0; }
+.gv-block > h3 { margin: 0; font-size: 0.75rem; line-height: 1.33; font-weight: 600; color: var(--fg-muted); letter-spacing: 0; }
+.ui-panel-body > .gv-block { padding: 0 0 16px; }
+.ui-panel-body > .gv-block:last-child { padding-bottom: 0; }
+
+/* Faits : libellé à gauche, valeur à droite */
+.gv-facts > div { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 16px; padding: 8px 0; }
+.gv-facts > div:first-child { padding-top: 0; }
+.gv-facts dt { flex: 0 0 auto; font-size: 0.875rem; }
+.gv-facts dd { text-align: right; min-width: 0; }
+
+/* Formulaires */
+.gv-form { display: flex; flex-direction: column; gap: 12px; }
+.gv-form-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.gv-form input,
+.gv-form select,
+.gv-form textarea,
+.gv-block .ui-field input,
+.gv-block .ui-field textarea,
+.gv-textarea { width: 100%; }
+.gv-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.gv-actions .gv-note { margin-right: auto; }
+.gv-inline { display: flex; flex-wrap: wrap; gap: 8px; }
+.gv-history { margin: 0; padding-left: 20px; list-style: decimal; display: flex; flex-direction: column; gap: 4px; font-size: 0.875rem; line-height: 1.5; color: var(--fg-primary); }
+
+/* -- Tableaux sobres ------------------------------------------------------------------ */
+.gv-table-wrap { overflow-x: auto; }
+.gv-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.gv-table th,
+.gv-table td {
+  height: 56px;
+  padding: 0 16px;
+  text-align: left;
+  vertical-align: middle;
+  border-top: 1px solid var(--border-hairline);
+  white-space: nowrap;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg-primary);
+}
+.gv-table thead th {
+  height: 40px;
+  border-top: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  background: transparent;
+}
+.gv-table tbody th { font-weight: 600; }
+.gv-table tbody tr.is-active { background: var(--accent-brand-soft); }
+.gv-table td small { display: block; font-size: 0.75rem; color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; }
+.gv-table .is-action { text-align: right; overflow: visible; }
+.gv-table-link { padding: 0; border: 0; background: none; text-align: left; font-size: 0.875rem; font-weight: 600; color: var(--fg-primary); cursor: pointer; }
+.gv-table-link:hover { color: var(--accent-brand); text-decoration: underline; }
+.gv-table .gv-day th { height: 32px; background: var(--bg-subtle); font-size: 0.75rem; font-weight: 600; color: var(--fg-muted); }
+.gv-table tbody:first-of-type .gv-day th { border-top: 1px solid var(--border-hairline); }
+
+/* Réglages : ligne non modifiable avec cette vue */
+.gv-static-row { cursor: default; }
+.gv-static-row:hover { background: none; }
+
+@media (max-width: 640px) {
+  .gv-detail-head,
+  .gv-block { padding-left: 16px; padding-right: 16px; }
+  .gv-form-row { grid-template-columns: minmax(0, 1fr); }
+  .gv-facts > div { flex-direction: column; gap: 2px; }
+  .gv-facts dd { text-align: left; }
+}
+
+/* Listes des files : seul le point de couleur reste à droite (le statut est écrit sous le titre) */
+.gv-split-list .ui-row-trailing .ui-status { font-size: 0; gap: 0; }
+.gv-text b { font-weight: 600; }
+
+/* Tableaux : colonnes à largeur fixe pour tenir dans la carte ; défilement interne sur petit écran */
+.gv-table { table-layout: fixed; min-width: 840px; }
+.gv-table th,
+.gv-table td { max-width: none; }
+.gv-table .w-xs { width: 92px; }
+.gv-table .w-sm { width: 124px; }
+.gv-table .w-md { width: 160px; }
+.gv-table .w-lg { width: 200px; }
