@@ -100,7 +100,8 @@ export function TopBar({
   const isAdminActive = page.startsWith('admin') || page === 'moderation';
 
   return (
-    <header className="topbar" role="banner">
+    // Préférences : barre réduite (logo + avatar), comme LinkedIn.
+    <header className={`topbar ${page === 'settings' ? 'is-minimal' : ''}`} role="banner">
       <div className="topbar-inner">
         <div className="topbar-left">
           <button className="brand" onClick={() => nav('home')} aria-label="SAVOIR+, retour à l’accueil">

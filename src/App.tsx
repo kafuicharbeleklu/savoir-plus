@@ -33,6 +33,7 @@ import {
   Settings,
   ShieldCheck,
   Sliders,
+  Sparkles,
   User,
   UserCheck,
   UserPlus,
@@ -163,9 +164,9 @@ import {
   ModerationView,
   NotificationsView,
   ReportView,
-  SettingsView,
   AppealView
 } from './pages/AccountAndAdminPages';
+import { SettingsView } from './pages/SettingsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import {
   StudioCreatorProfileView,
@@ -488,7 +489,7 @@ export default function App() {
 
   const openSettingsTab = (tab: 'prefs' | 'privacy' | 'security') => {
     setSettingsTab(tab);
-    nav('settings');
+    nav('settings', tab === 'prefs' ? 'account' : tab === 'privacy' ? 'visibility' : 'security');
   };
 
   // Multi-module progress helpers
@@ -744,6 +745,12 @@ export default function App() {
 
   const handleRequestContact = async (targetProfile: Profile) => {
     if (targetProfile.id === uid) return;
+    const policy = ext.profileDetails[targetProfile.id]?.contactPolicy || 'Membres autorisés';
+    const followsMe = (ext.followingIds?.[targetProfile.id] || []).includes(uid);
+    if (policy === 'Personne' || (policy === 'Personnes que je suis' && !followsMe)) {
+      setToast(`${targetProfile.name} n’accepte pas de demande de discussion de votre part.`);
+      return;
+    }
     setBusy(true);
     try {
       await requestContact(mode, uid, targetProfile.id);
@@ -1027,7 +1034,7 @@ export default function App() {
   const pendingIncoming = relations.filter((r) => r.recipient === uid && r.status === 'pending' && r.blockedBy.length === 0);
   const pendingOutgoing = relations.filter((r) => r.requester === uid && r.status === 'pending');
   const acceptedRelations = relations.filter((r) => r.status === 'accepted');
-  const unreadNotifs = notificationsFor(ext.notifications, uid).filter((n) => !n.read).length;
+  const unreadNotifs = notificationsFor(ext.notifications, uid, ext.notifPrefs).filter((n) => !n.read).length;
 
   const renderActiveScreen = () => {
   // Visitor portal
@@ -2364,7 +2371,22 @@ export default function App() {
 
     if (page === 'notifications') return <NotificationsView {...accountAdminProps} />;
     if (page === 'report') return <ReportView {...accountAdminProps} />;
-    if (page === 'settings') return <SettingsView {...accountAdminProps} />;
+    if (page === 'settings')
+      return (
+        <SettingsView
+          ext={ext}
+          updateExt={updateExt}
+          nav={nav}
+          user={user}
+          caps={caps}
+          relations={relations}
+          people={people}
+          onUnblock={handleToggleBlock}
+          setToast={setToast}
+          path={selectedId}
+          mode={mode}
+        />
+      );
     if (page === 'auth-flows') return <AuthFlowsView {...accountAdminProps} />;
     if (page === 'moderation') return <ModerationView {...accountAdminProps} />;
     if (page === 'appeal') return <AppealView {...accountAdminProps} />;
@@ -2469,35 +2491,31 @@ export default function App() {
               )}
 
             {activeSpace === 'studio' && (
-              <nav className="rail-nav-card" aria-label="Navigation Knowledge Studio">
-                <span className="left-rail-section-label">Knowledge Studio</span>
-                <button className={`rail-nav-btn ${page === 'studio' ? 'active' : ''}`} onClick={() => nav('studio')}>
-                  <span><Layers size={16} /> Mes contenus</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'studio-editor' ? 'active' : ''}`} onClick={() => nav('studio-editor')}>
-                  <span><Edit3 size={16} /> Éditeur structuré</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'studio-quiz' ? 'active' : ''}`} onClick={() => nav('studio-quiz')}>
-                  <span><CheckCircle2 size={16} /> Éditeur de quiz</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'studio-media' ? 'active' : ''}`} onClick={() => nav('studio-media')}>
-                  <span><ImageIcon size={16} /> Médias & droits</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'studio-path' ? 'active' : ''}`} onClick={() => nav('studio-path')}>
-                  <span><BookOpen size={16} /> Assemblage parcours</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'studio-publish' ? 'active' : ''}`} onClick={() => nav('studio-publish')}>
-                  <span><FileText size={16} /> Contrôle & publier</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'studio-ocr' ? 'active' : ''}`} onClick={() => nav('studio-ocr')}>
-                  <span><FileUp size={16} /> Studio IA</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'studio-stats' ? 'active' : ''}`} onClick={() => nav('studio-stats')}>
-                  <span><BarChart2 size={16} /> Statistiques</span>
-                </button>
-                <button className={`rail-nav-btn ${page === 'studio-profile' ? 'active' : ''}`} onClick={() => nav('studio-profile')}>
-                  <span><User size={16} /> Profil créateur</span>
-                </button>
+              <nav className="rail-nav-card" aria-label="Navigation du Studio">
+                <span className="left-rail-section-label">Studio</span>
+                {(() => {
+                  // Éditeur, quiz, publication et parcours sont des onglets d'un contenu : « Contenus » reste actif.
+                  const inContents = ['studio', 'studio-editor', 'studio-quiz', 'studio-publish', 'studio-path'].includes(page);
+                  const items: { id: RoutePage; label: string; icon: React.ReactNode; active: boolean }[] = [
+                    { id: 'studio', label: 'Contenus', icon: <Layers size={16} />, active: inContents },
+                    { id: 'studio-ocr', label: 'Créer avec l’IA', icon: <Sparkles size={16} />, active: page === 'studio-ocr' },
+                    { id: 'studio-media', label: 'Médias', icon: <ImageIcon size={16} />, active: page === 'studio-media' },
+                    { id: 'studio-stats', label: 'Statistiques', icon: <BarChart2 size={16} />, active: page === 'studio-stats' },
+                    { id: 'studio-profile', label: 'Profil créateur', icon: <User size={16} />, active: page === 'studio-profile' }
+                  ];
+                  return items.map((it) => (
+                    <button
+                      key={it.id}
+                      className={`rail-nav-btn ${it.active ? 'active' : ''}`}
+                      aria-current={it.active ? 'page' : undefined}
+                      onClick={() => nav(it.id)}
+                    >
+                      <span>
+                        {it.icon} {it.label}
+                      </span>
+                    </button>
+                  ));
+                })()}
                 <div className="vous-divider" />
                 <button className="rail-nav-btn" onClick={() => nav('home')}>
                   <span><Home size={16} /> Retour à l’accueil</span>
@@ -2577,7 +2595,7 @@ export default function App() {
         </div>
       </div>
 
-      {page !== 'messages' && (
+      {page !== 'messages' && page !== 'settings' && (
         <MessagingDrawer
           open={drawerOpen}
           setOpen={setDrawerOpen}

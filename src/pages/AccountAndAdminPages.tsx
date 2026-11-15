@@ -39,7 +39,6 @@ interface AccountAdminProps {
 }
 
 export function NotificationsView({ ext, updateExt, nav, people, user, setToast }: AccountAdminProps) {
-  const [showPrefs, setShowPrefs] = useState(false);
 
   const resolveActor = (n: NotificationItem): Profile => {
     const matched = n.actorId ? people.find((p) => p.id === n.actorId) : undefined;
@@ -54,7 +53,7 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast 
     };
   };
 
-  const items = notificationsFor(ext.notifications, user.id);
+  const items = notificationsFor(ext.notifications, user.id, ext.notifPrefs);
 
   const markAllRead = () => {
     updateExt((prev) => ({
@@ -82,8 +81,8 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast 
             <h1>Alertes</h1>
           </div>
           <div className="wf-inline-actions">
-            <button className="secondary" onClick={() => setShowPrefs(!showPrefs)}>
-              Préférences
+            <button className="secondary" onClick={() => nav('settings', 'notifications')}>
+              Gérer les notifications
             </button>
             <button className="primary" onClick={markAllRead}>
               <Check size={15} /> Tout marquer comme lu
@@ -91,35 +90,6 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast 
           </div>
         </div>
 
-        {showPrefs && (
-          <section className="wf-card wf-mb">
-            <h3>Préférences de notifications</h3>
-            <p className="tiny muted wf-mb-sm">
-              Les alertes essentielles de sécurité et décisions de compte restent toujours consultables.
-            </p>
-            <div className="wf-stack-sm">
-              {[
-                { key: 'learning', label: 'Activité pédagogique et reprises' },
-                { key: 'social', label: 'Demandes de relation et messages' },
-                { key: 'community', label: 'Réponses et solutions de la communauté' }
-              ].map((pref) => (
-                <label className="wf-check-row" key={pref.key}>
-                  <input
-                    type="checkbox"
-                    checked={(ext.notifPrefs as any)[pref.key]}
-                    onChange={(e) =>
-                      updateExt((prev) => ({
-                        ...prev,
-                        notifPrefs: { ...prev.notifPrefs, [pref.key]: e.target.checked }
-                      }))
-                    }
-                  />
-                  <span>{pref.label}</span>
-                </label>
-              ))}
-            </div>
-          </section>
-        )}
 
         {items.length === 0 ? (
           <div className="empty">
@@ -156,36 +126,6 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast 
       </div>
 
       <aside className="right-rail" aria-label="Repères notifications">
-        <section className="rail-card">
-          <span className="eyebrow">RÉGLAGES RAPIDES</span>
-          <h3>Alertes facultatives</h3>
-          <div className="wf-stack-sm">
-            {[
-              { key: 'learning', label: 'Apprentissage & reprises' },
-              { key: 'social', label: 'Relations & messages' },
-              { key: 'community', label: 'Entraide & solutions' }
-            ].map((pref) => (
-              <label className="wf-check-row tiny" key={pref.key}>
-                <input
-                  type="checkbox"
-                  checked={(ext.notifPrefs as any)[pref.key]}
-                  onChange={(e) => {
-                    const nextVal = e.target.checked;
-                    updateExt((prev) => ({
-                      ...prev,
-                      notifPrefs: { ...prev.notifPrefs, [pref.key]: nextVal }
-                    }));
-                    setToast('Préférence d’alerte mise à jour');
-                  }}
-                />
-                <span>{pref.label}</span>
-              </label>
-            ))}
-          </div>
-          <button className="secondary wf-full-btn" onClick={() => nav('settings')}>
-            Paramètres complets <ArrowRight size={15} />
-          </button>
-        </section>
 
         <section className="rail-card">
           <span className="eyebrow">À TRAITER EN PRIORITÉ</span>

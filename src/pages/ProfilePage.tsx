@@ -19,6 +19,7 @@ import {
   UserPlus,
   Users
 } from 'lucide-react';
+import { EmptyState } from '../components/ui';
 import type { Profile, Progress, Relation } from '../data';
 import { isQuizPassed, moduleProgressPercent } from '../domain.mjs';
 import { builtInAnswerKey } from '../content';
@@ -138,6 +139,12 @@ export function ProfilePage({
     ? relations.find((r) => r.members.includes(currentUser.id) && r.members.includes(target.id))
     : undefined;
   const isFollowed = myFollowing.includes(target.id);
+  // Préférences › Visibilité du membre consulté : demandes de discussion et progression.
+  const contactPolicy = details?.contactPolicy || 'Membres autorisés';
+  const targetFollowsMe = (ext.followingIds[target.id] || []).includes(currentUser.id);
+  const acceptsMyRequest =
+    contactPolicy === 'Membres autorisés' || (contactPolicy === 'Personnes que je suis' && targetFollowsMe);
+  const progressionHidden = !isOwnProfile && (details?.xpVisibility || 'Moi uniquement') !== 'Membres';
 
   const networkDirectory = resolveCommunityDirectory(people, ext);
   const suggestPeople = resolveAlgorithmicDiscoverProfiles(
@@ -234,7 +241,14 @@ export function ProfilePage({
         </button>
       </div>
 
-      {profileTab !== 'profile' ? (
+      {profileTab !== 'profile' && progressionHidden ? (
+        <section className="profile-section-card">
+          <EmptyState
+            title="Progression privée"
+            text={`${target.name} a choisi de ne pas afficher son niveau, ses XP ni ses badges.`}
+          />
+        </section>
+      ) : profileTab !== 'profile' ? (
         <PedagogicalProfileView
           key={`${target.id}-${profileTab}`}
           target={target}
@@ -422,7 +436,7 @@ export function ProfilePage({
                       </button>
                     ) : currentRel?.status === 'pending' ? (
                       <span className="status-tag warn">Demande en attente</span>
-                    ) : onRequestContact ? (
+                    ) : onRequestContact && acceptsMyRequest ? (
                       <button
                         type="button"
                         className="secondary"
@@ -430,6 +444,12 @@ export function ProfilePage({
                       >
                         <MessageCircle size={14} /> Demander à discuter
                       </button>
+                    ) : onRequestContact ? (
+                      <span className="tiny muted">
+                        {contactPolicy === 'Personne'
+                          ? 'Ce membre ne reçoit pas de demandes de discussion.'
+                          : 'Ce membre accepte les demandes des personnes qu’il suit.'}
+                      </span>
                     ) : null}
                     <button
                       type="button"

@@ -577,6 +577,8 @@ export interface ExtendedDemoState {
     soundEffects?: boolean;
     preferredFeedView?: 'Contributions les plus pertinentes' | 'Plus récentes';
     photoVisibility?: 'Tous les membres' | 'Mes relations';
+    /** Date (ms) de la demande d'archive de données, si faite. */
+    dataExportRequestedAt?: number;
   };
   sessions: { id: string; label: string; current: boolean; lastSeen: string }[];
   sentRequests: { id: string; recipientName: string; firstMessage: string; status: 'En attente' | 'Annulée' }[];
@@ -844,7 +846,7 @@ export const initialExtendedState = (): ExtendedDemoState => ({
   notifPrefs: {
     learning: true,
     social: true,
-    community: false
+    community: true
   },
   reports: [
     {
@@ -1406,6 +1408,21 @@ export function buildDynamicCatalog(ext: ExtendedDemoState): CatalogItem[] {
 }
 
 /** Notifications visibles par un personnage : les siennes et celles sans destinataire. */
-export function notificationsFor(list: NotificationItem[], uid: string): NotificationItem[] {
-  return list.filter((n) => !n.recipientId || n.recipientId === uid);
+/** Catégorie d'alerte → préférence (Préférences › Notifications). « Compte » est toujours envoyé. */
+const NOTIF_PREF_KEY: Partial<Record<NotificationItem['category'], 'learning' | 'social' | 'community'>> = {
+  Apprentissage: 'learning',
+  Relations: 'social',
+  Communauté: 'community'
+};
+
+export function notificationsFor(
+  list: NotificationItem[],
+  uid: string,
+  prefs?: { learning?: boolean; social?: boolean; community?: boolean }
+): NotificationItem[] {
+  return list.filter((n) => {
+    if (n.recipientId && n.recipientId !== uid) return false;
+    const key = NOTIF_PREF_KEY[n.category];
+    return !prefs || !key || prefs[key] !== false;
+  });
 }

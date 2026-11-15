@@ -118,6 +118,19 @@ export const logoutCloud = async () => {
   if (error) throw error;
 };
 
+/** Adresse e-mail du compte connecté (mode cloud) ; null hors session. */
+export const currentCloudEmail = async (): Promise<string | null> => {
+  const { data } = await db.auth.getUser();
+  return data.user?.email ?? null;
+};
+
+/** Envoie un lien de réinitialisation du mot de passe (mode cloud). */
+export const sendPasswordReset = async (email: string) => {
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) throw error;
+};
+
 export const observeAuth = (fn: (id: string | null) => void) => {
   const { data } = db.auth.onAuthStateChange((_event: string, session: { user: { id: string } } | null) =>
     fn(session?.user.id || null)
