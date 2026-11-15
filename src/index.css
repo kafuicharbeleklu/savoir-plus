@@ -7493,3 +7493,16 @@ button:focus-visible, a:focus-visible, [role="tab"]:focus-visible, [tabindex]:fo
 /* Barre de réactions sans filets au-dessus ni en dessous */
 .li-engagement-summary { border-bottom: 0; padding-bottom: 2px; }
 .li-comments-section { border-top: 0; padding-top: 4px; }
+
+/* Publications : bloc plus compact et plus « rectangulaire » (espacements verticaux resserrés) */
+.feed-post-card { gap: 6px; padding: 14px 18px 8px; }
+.li-post-header { padding-bottom: 2px; }
+.li-post-author-info { gap: 0; }
+.li-post-headline, .li-post-meta-sub { line-height: 1.3; }
+.li-post-content { gap: 2px; }
+.li-post-title { line-height: 1.3; }
+.li-post-body { line-height: 1.5; }
+.li-engagement-summary { padding: 0; min-height: 0; line-height: 1.3; }
+.li-action-bar { gap: 12px; margin: 0 -8px; padding-top: 0; }
+.li-action-btn { min-height: 34px; }
+.li-comments-section { gap: 10px; padding-top: 2px; padding-bottom: 6px; }
