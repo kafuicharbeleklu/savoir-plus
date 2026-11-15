@@ -39,6 +39,7 @@ import {
   aiStatus,
   generateModuleProposal,
   illustrateSteps,
+  type AiImageSize,
   type AiModuleProposal,
   type AiStatus
 } from '../ai';
@@ -1234,6 +1235,7 @@ export function StudioAiView({ ext, updateExt, nav, setToast, user }: StudioProp
   const [images, setImages] = useState<(string | undefined)[]>([]);
   const [imgPhase, setImgPhase] = useState<'idle' | 'loading' | 'done'>('idle');
   const [imgError, setImgError] = useState('');
+  const [imgSize, setImgSize] = useState<AiImageSize>(1024);
 
   useEffect(() => {
     let alive = true;
@@ -1273,10 +1275,16 @@ export function StudioAiView({ ext, updateExt, nav, setToast, user }: StudioProp
     setImgError('');
     setImgPhase('loading');
     try {
-      const res = await illustrateSteps(proposal.steps.map((s) => s.illustrationPrompt));
+      const res = await illustrateSteps(
+        proposal.steps.map((s) => s.illustrationPrompt),
+        imgSize
+      );
       setImages(proposal.steps.map((_, i) => res[i]?.url));
-      const failed = proposal.steps.filter((_, i) => !res[i]?.url).length;
-      if (failed) setImgError(`${failed} illustration(s) indisponible(s) : vous pouvez réessayer.`);
+      const failures = proposal.steps.map((_, i) => res[i]).filter((r) => !r?.url);
+      if (failures.length) {
+        const reason = failures.find((r) => r?.error)?.error;
+        setImgError(`${failures.length} illustration(s) indisponible(s)${reason ? ` : ${reason}` : '.'}`);
+      }
       setImgPhase('done');
     } catch (e: any) {
       setImgError(e?.message || 'Illustrations indisponibles.');
@@ -1438,7 +1446,7 @@ export function StudioAiView({ ext, updateExt, nav, setToast, user }: StudioProp
             <button className="primary" type="button" onClick={generate} disabled={!canGenerate || phase === 'generating'}>
               {phase === 'generating' ? (
                 <>
-                  <RefreshCw size={15} className="ai-spin" /> Structuration en cours… (≈ 10 s)
+                  <RefreshCw size={15} className="ai-spin" /> Structuration en cours… (≈ 15 s)
                 </>
               ) : (
                 <>
@@ -1578,6 +1586,18 @@ export function StudioAiView({ ext, updateExt, nav, setToast, user }: StudioProp
                 <h3>
                   <ImageIcon size={16} /> Fiche illustrée pas à pas
                 </h3>
+                <div className="ai-image-actions">
+                  <label className="ai-size-select">
+                    Résolution
+                    <select
+                      value={imgSize}
+                      onChange={(e) => setImgSize(Number(e.target.value) as AiImageSize)}
+                      disabled={imgPhase === 'loading'}
+                    >
+                      <option value={1024}>Standard · 1024 px</option>
+                      <option value={1536}>Haute résolution · 1536 px</option>
+                    </select>
+                  </label>
                 <button
                   className="secondary"
                   type="button"
@@ -1599,6 +1619,7 @@ export function StudioAiView({ ext, updateExt, nav, setToast, user }: StudioProp
                     </>
                   )}
                 </button>
+                </div>
               </div>
               {imgError && <p className="tiny ai-count-warn">{imgError}</p>}
               <div className="ai-steps-grid">

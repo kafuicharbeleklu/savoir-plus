@@ -7088,3 +7088,7 @@ ul.lesson-points + h3, .wf-muted-text + h3 { margin-top: 16px; }
 
 /* 4 entrées dans « Créer un contenu » depuis l’ajout du Studio IA */
 .wf-create-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+.ai-image-actions { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.ai-size-select { font-size: 0.75rem; font-weight: 600; gap: 4px; }
+.ai-size-select select { min-height: 36px; font-size: 0.8125rem; }

@@ -23,6 +23,9 @@ const IMAGE_MODEL = '@cf/black-forest-labs/flux-2-klein-9b';
 const BUCKET = 'ai-illustrations';
 const MAX_SOURCE_CHARS = 6000;
 const MAX_STEPS = 6;
+// Résolution des illustrations : 1024 px par défaut, 1536 px en « haute résolution » (repli sur 1024 si refusé).
+const IMAGE_SIZES = [1024, 1536];
+const DEFAULT_IMAGE_SIZE = 1024;
 const IMAGE_STYLE =
   'Clean educational line-art pictogram in the style of a medicine leaflet instruction: thin dark grey outlines, ' +
   'soft sage green and light grey flat fills, plain white background, no text, no letters, no numbers, ' +
@@ -221,24 +224,44 @@ async function storeImage(bytes: Uint8Array): Promise<string | null> {
   return `${SB_URL}/storage/v1/object/public/${BUCKET}/${path}`;
 }
 
-async function illustrate(prompt: string): Promise<{ url: string } | { error: string }> {
+async function renderImage(prompt: string, size: number): Promise<{ b64: string } | { status: number; message: string }> {
   const form = new FormData();
   form.append('prompt', IMAGE_STYLE + prompt);
-  form.append('width', '768');
-  form.append('height', '768');
+  form.append('width', String(size));
+  form.append('height', String(size));
+  const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/${IMAGE_MODEL}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${CF_TOKEN}` },
+    body: form,
+    signal: AbortSignal.timeout(90_000)
+  });
+  const data = await res.json().catch(() => ({}));
+  const b64: string | undefined = data?.result?.image;
+  if (res.ok && b64) return { b64 };
+  return { status: res.status, message: String(data?.errors?.[0]?.message ?? '') };
+}
+
+function isQuotaError(out: { status: number; message: string }): boolean {
+  return out.status === 429 || /daily free allocation|neurons/i.test(out.message);
+}
+
+async function illustrate(prompt: string, size: number): Promise<{ url: string; size: number } | { error: string }> {
   try {
-    const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT}/ai/run/${IMAGE_MODEL}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${CF_TOKEN}` },
-      body: form,
-      signal: AbortSignal.timeout(60_000)
-    });
-    const data = await res.json();
-    const b64: string | undefined = data?.result?.image;
-    if (!res.ok || !b64) return { error: `Illustration indisponible (${res.status})` };
-    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    let out = await renderImage(prompt, size);
+    // Haute résolution refusée par le modèle : repli sur la taille par défaut.
+    if ('status' in out && !isQuotaError(out) && size !== DEFAULT_IMAGE_SIZE) {
+      size = DEFAULT_IMAGE_SIZE;
+      out = await renderImage(prompt, size);
+    }
+    if ('status' in out) {
+      if (isQuotaError(out)) {
+        return { error: 'Quota d’illustrations du jour atteint (offre gratuite Cloudflare). Réessayez demain.' };
+      }
+      return { error: `Illustration indisponible (${out.status})` };
+    }
+    const bytes = Uint8Array.from(atob(out.b64), (c) => c.charCodeAt(0));
     const url = await storeImage(bytes);
-    return { url: url ?? `data:image/jpeg;base64,${b64}` };
+    return { url: url ?? `data:image/jpeg;base64,${out.b64}`, size };
   } catch (e) {
     return { error: `Illustration indisponible (${(e as Error).name})` };
   }
@@ -303,8 +326,10 @@ Deno.serve(async (req) => {
     if (!allow(`illustrate:${ip}`, LIMITS.illustrate)) {
       return json({ error: 'Trop de demandes d’illustration rapprochées. Réessayez dans quelques minutes.' }, 429, origin);
     }
-    const images = await Promise.all(prompts.map((p) => illustrate(p)));
-    return json({ model: IMAGE_MODEL, images }, 200, origin);
+    const requested = Number(body?.size);
+    const size = IMAGE_SIZES.includes(requested) ? requested : DEFAULT_IMAGE_SIZE;
+    const images = await Promise.all(prompts.map((p) => illustrate(p, size)));
+    return json({ model: IMAGE_MODEL, size, images }, 200, origin);
   }
 
   return json({ error: 'Action inconnue' }, 400, origin);

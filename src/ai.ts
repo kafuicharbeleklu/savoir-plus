@@ -80,10 +80,14 @@ export async function generateModuleProposal(
   return call({ method: 'POST', body: JSON.stringify({ action: 'module', source, titleHint }) }, 90_000);
 }
 
-export async function illustrateSteps(prompts: string[]): Promise<{ url?: string; error?: string }[]> {
+/** Résolutions proposées : 1024 px (standard) ou 1536 px (haute résolution, plus lente et plus coûteuse en quota). */
+export const AI_IMAGE_SIZES = [1024, 1536] as const;
+export type AiImageSize = (typeof AI_IMAGE_SIZES)[number];
+
+export async function illustrateSteps(prompts: string[], size: AiImageSize = 1024): Promise<{ url?: string; error?: string }[]> {
   const data = await call<{ images: { url?: string; error?: string }[] }>(
-    { method: 'POST', body: JSON.stringify({ action: 'illustrate', prompts }) },
-    120_000
+    { method: 'POST', body: JSON.stringify({ action: 'illustrate', prompts, size }) },
+    180_000
   );
   return data.images || [];
 }
