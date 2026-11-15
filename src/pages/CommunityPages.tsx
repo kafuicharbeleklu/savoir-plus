@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  BookOpen,
   ArrowLeft,
   ArrowRight,
   Bell,
@@ -14,6 +15,7 @@ import {
   Plus,
   ThumbsUp
 } from 'lucide-react';
+import { CATALOG_ITEMS } from '../wireframeData';
 import type { CommunityPost, ExtendedDemoState } from '../wireframeData';
 import type { Profile, Relation } from '../data';
 import { FeedPostCard } from '../components/FeedPostCard';
@@ -674,6 +676,24 @@ export function CommunityThreadView({
           <RichText text={post.body} />
         </p>
         {post.media && <PostMediaView media={post.media} title={post.title} />}
+        {(() => {
+          const shared = post.linkedItemId ? CATALOG_ITEMS.find((item) => item.id === post.linkedItemId) : undefined;
+          if (!shared || shared.type !== 'module') return null;
+          return (
+            <button type="button" className="li-post-shared" onClick={() => nav('module-detail', shared.id)}>
+              <span className="li-post-shared-icon" aria-hidden="true">
+                <BookOpen size={20} />
+              </span>
+              <span className="li-post-shared-text">
+                <b>{shared.title}</b>
+                <small>
+                  Module · {shared.domain} · {shared.duration} · {shared.level}
+                </small>
+              </span>
+              <ArrowRight size={16} aria-hidden="true" />
+            </button>
+          );
+        })()}
       </article>
 
       <div className="section-title">

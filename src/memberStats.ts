@@ -86,6 +86,17 @@ export function computeMemberStats({
       p.replies.filter((r) => r.helpfulBy.includes(target.id)).length,
     0
   );
+  const mediaPostsCount = ext.posts.filter((p) => p.authorId === target.id && Boolean(p.media)).length;
+  const helpfulReceivedCount = ext.posts.reduce(
+    (acc, p) =>
+      acc +
+      (p.authorId === target.id ? (p.helpfulBy || []).filter((id) => id !== target.id).length : 0) +
+      p.replies
+        .filter((r) => r.authorId === target.id)
+        .reduce((sum, r) => sum + r.helpfulBy.filter((id) => id !== target.id).length, 0),
+    0
+  );
+  const passedDomains = Array.from(new Set(moduleMetrics.filter((m) => m.passed).map((m) => m.mod.domain)));
   const followingCount = (isOwnProfile ? myFollowing : ext.followingIds[target.id] || []).length;
   /** Personnes qui suivent ce membre (abonnés). */
   const followersCount = Object.entries(ext.followingIds || {}).filter(
@@ -117,7 +128,11 @@ export function computeMemberStats({
     helpfulGivenCount,
     followingCount,
     acceptedRelationsCount,
-    streakWeeks: activity.streakWeeks
+    streakWeeks: activity.streakWeeks,
+    passedDomains,
+    mediaPostsCount,
+    helpfulReceivedCount,
+    followersCount
   });
 
   /** Compétences travaillées : celles des modules commencés ou validés, avec leur module d'origine. */

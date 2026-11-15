@@ -1,3 +1,17 @@
+import { EXTRA_CATALOG_MODULES, EXTRA_CATALOG_PATHS, EXTRA_CATALOG_RESOURCES } from './seedCatalog';
+import {
+  SEED_MEMBER_ACCOUNTS,
+  SEED_MEMBER_DETAILS,
+  SEED_MEMBER_FOLLOWING,
+  SEED_MEMBER_PROGRESS,
+  SEED_POSTS_MORNING,
+  SEED_POSTS_OLDER,
+  SEED_POSTS_RECENT
+} from './seedCommunity';
+
+/** Version des données de simulation : l'augmenter fait apparaître les nouveautés chez les visiteurs déjà venus. */
+export const SEED_VERSION = 2;
+
 export type CatalogType = 'module' | 'resource' | 'path';
 export type ReviewLevel = 'Communautaire' | 'Pédagogique' | 'Renforcée';
 export type DifficultyLevel = 'Débutant' | 'Intermédiaire' | 'Avancé';
@@ -258,7 +272,10 @@ export const CATALOG_ITEMS: CatalogItem[] = [
       { id: 'reseaux', title: '01 Comprendre les réseaux', version: 'v2', note: 'Voir le module', status: 'En cours' },
       { id: 'comptes', title: '02 Protéger ses comptes', version: 'v1', note: 'Voir le module', status: 'À commencer' }
     ]
-  }
+  },
+  ...EXTRA_CATALOG_MODULES,
+  ...EXTRA_CATALOG_RESOURCES,
+  ...EXTRA_CATALOG_PATHS
 ];
 
 export interface CommunityReply {
@@ -294,6 +311,8 @@ export interface CommunityPost {
   createdAt: string;
   /** Image ou vidéo jointe. */
   media?: PostMedia;
+  /** Module de la bibliothèque partagé avec la contribution. */
+  linkedItemId?: string;
   /** Publication programmée : heure prévue (en millisecondes). Absent une fois la contribution parue. */
   scheduledAtMs?: number;
   solutionReplyId?: string;
@@ -556,6 +575,8 @@ export interface PlatformSettingsState {
 }
 
 export interface ExtendedDemoState {
+  /** Version des données de simulation déjà intégrée à cet état. */
+  seedVersion?: number;
   plannedIds: string[];
   posts: CommunityPost[];
   /** Contributions programmées, pas encore parues : elles rejoignent `posts` à l'heure prévue. */
@@ -644,9 +665,26 @@ const SEED_NETWORK_QUIZ: NonNullable<StudioContent['quiz']> = [
   }
 ];
 
+const stripAccents = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+function toSeedAdminUser(account: (typeof SEED_MEMBER_ACCOUNTS)[number]): AdminUserRecord {
+  return {
+    ...account,
+    roles: account.roles as AdminUserRecord['roles'],
+    email: `${stripAccents(account.name).toLowerCase().replace(/\s+/g, '.')}@exemple.test`,
+    status: 'active',
+    sanctionsCount: 0,
+    reportsCount: 0,
+    openTicketsCount: 0,
+    exceptionalNote: 'Compte de démonstration actif ; aucune restriction enregistrée.'
+  };
+}
+
 export const initialExtendedState = (): ExtendedDemoState => ({
+  seedVersion: SEED_VERSION,
   plannedIds: ['comptes'],
   posts: [
+    ...SEED_POSTS_RECENT,
     {
       id: 'post-1',
       kind: 'question',
@@ -692,6 +730,7 @@ export const initialExtendedState = (): ExtendedDemoState => ({
         }
       ]
     },
+    ...SEED_POSTS_MORNING,
     {
       id: 'post-2',
       kind: 'publication',
@@ -715,7 +754,8 @@ export const initialExtendedState = (): ExtendedDemoState => ({
           helpfulBy: ['afi']
         }
       ]
-    }
+    },
+    ...SEED_POSTS_OLDER
   ],
   studioContents: [
     {
@@ -977,12 +1017,14 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       profileVisibility: 'Membres',
       xpVisibility: 'Moi uniquement',
       contactPolicy: 'Membres autorisés'
-    }
+    },
+    ...SEED_MEMBER_DETAILS
   },
   followingIds: {
     afi: ['kossi', 'maya'],
     kossi: ['afi'],
-    nadege: ['kossi']
+    nadege: ['kossi'],
+    ...SEED_MEMBER_FOLLOWING
   },
   moduleProgress: {
     afi: {
@@ -997,7 +1039,8 @@ export const initialExtendedState = (): ExtendedDemoState => ({
     nadege: {
       reseaux: { lessons: [], answers: [], submitted: false },
       comptes: { lessons: [], answers: [], submitted: false }
-    }
+    },
+    ...SEED_MEMBER_PROGRESS
   },
   requestMessages: {},
   appPrefs: {
@@ -1121,7 +1164,8 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       reportsCount: 0,
       openTicketsCount: 0,
       exceptionalNote: 'Demande de suppression personnelle en attente de traitement selon politique de conservation.'
-    }
+    },
+    ...SEED_MEMBER_ACCOUNTS.map(toSeedAdminUser)
   ],
   roleAssignments: [
     {
@@ -1356,15 +1400,38 @@ export function appendAuditLog(
   return [next, ...logs];
 }
 
+/**
+ * Données de simulation ajoutées depuis la dernière visite : les nouvelles publications et les nouveaux
+ * comptes rejoignent l'état enregistré, sans toucher à ce que le visiteur a lui-même écrit ou modifié.
+ */
+function mergeNewSeeds(parsed: any, base: ExtendedDemoState): Partial<ExtendedDemoState> {
+  if ((parsed?.seedVersion || 0) >= SEED_VERSION) return {};
+  const merged: Partial<ExtendedDemoState> = { seedVersion: SEED_VERSION };
+  if (Array.isArray(parsed?.posts)) {
+    const stored = parsed.posts as CommunityPost[];
+    const storedById = new Map(stored.map((p) => [p.id, p] as const));
+    const seedIds = new Set(base.posts.map((p) => p.id));
+    merged.posts = [...stored.filter((p) => !seedIds.has(p.id)), ...base.posts.map((p) => storedById.get(p.id) || p)];
+  }
+  if (Array.isArray(parsed?.adminUsers)) {
+    const stored = parsed.adminUsers as AdminUserRecord[];
+    const known = new Set(stored.map((u) => u.id));
+    merged.adminUsers = [...stored, ...base.adminUsers.filter((u) => !known.has(u.id))];
+  }
+  return merged;
+}
+
 export function readExtended(): ExtendedDemoState {
   try {
     const raw = localStorage.getItem(EXT_KEY);
     if (!raw) return initialExtendedState();
     const base = initialExtendedState();
     const parsed = JSON.parse(raw);
+    const seeded = mergeNewSeeds(parsed, base);
     return {
       ...base,
       ...parsed,
+      ...seeded,
       appeal: { ...base.appeal, ...(parsed?.appeal || {}) },
       appPrefs: { ...base.appPrefs, ...(parsed?.appPrefs || {}) },
       notifPrefs: { ...base.notifPrefs, ...(parsed?.notifPrefs || {}) },

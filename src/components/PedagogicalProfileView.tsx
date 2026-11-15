@@ -14,8 +14,12 @@ import {
   Edit3,
   Flame,
   Globe,
+  CalendarCheck,
+  HardDrive,
   Heart,
+  Image as ImageIcon,
   Lock,
+  Mail,
   MapPin,
   MessageCircle,
   MoreHorizontal,
@@ -26,7 +30,8 @@ import {
   Snowflake,
   Sparkles,
   Target,
-  Users
+  Users,
+  Wallet
 } from 'lucide-react';
 import type { Profile, Progress, Relation } from '../data';
 import { MODULES_CONTENT } from '../content';
@@ -107,6 +112,18 @@ function BadgeGlyph({ iconKey, size = 20 }: { iconKey: SavoirBadgeItem['iconKey'
       return <Heart size={size} aria-hidden="true" />;
     case 'flame':
       return <Flame size={size} aria-hidden="true" />;
+    case 'mail':
+      return <Mail size={size} aria-hidden="true" />;
+    case 'wallet':
+      return <Wallet size={size} aria-hidden="true" />;
+    case 'drive':
+      return <HardDrive size={size} aria-hidden="true" />;
+    case 'calendar':
+      return <CalendarCheck size={size} aria-hidden="true" />;
+    case 'image':
+      return <ImageIcon size={size} aria-hidden="true" />;
+    case 'globe':
+      return <Globe size={size} aria-hidden="true" />;
     case 'award':
     default:
       return <Award size={size} aria-hidden="true" />;

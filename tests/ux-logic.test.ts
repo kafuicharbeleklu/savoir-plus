@@ -381,7 +381,7 @@ test('resolveActiveLab prioritizes in-progress module for TopBar avatar', () => 
 
 test('resolveDefaultCommentPreview retracts comments unless latest top-level comment is from community', () => {
   const ext = initialExtendedState();
-  const post1Top = ext.posts[0].replies.filter((r) => !r.parentReplyId);
+  const post1Top = ext.posts.find((p) => p.id === 'post-1')!.replies.filter((r) => !r.parentReplyId);
 
   // Latest top reply on post-1 is by 'kossi'
   assert.equal(resolveDefaultCommentPreview([], ['kossi'], 'afi'), null);
@@ -510,7 +510,7 @@ test('Savoir rank, member handle, annual activity heatmap, and badges compute de
     acceptedRelationsCount: 1,
     streakWeeks: 2
   });
-  assert.equal(badges.length, 20);
+  assert.equal(badges.length, 30);
   assert.equal(badges.find((b) => b.id === 'mod-phishing')?.earned, true);
   assert.equal(badges.find((b) => b.id === 'mod-perfect')?.earned, true);
   assert.equal(badges.find((b) => b.id === 'mod-reseaux')?.earned, false);
@@ -637,7 +637,7 @@ test('Profil : progression d’un membre calculée à un seul endroit (abonnés,
     progress: { lessons: [0, 1, 2], answers: [0, 0, 0], submitted: true }
   });
   assert.deepEqual(kossi.passedQuizzes, ['reseaux']);
-  assert.equal(kossi.followersCount, 2, 'Afi et Nadège suivent Kossi');
+  assert.equal(kossi.followersCount, 6, 'Afi, Nadège, Maya, Ama, Fatou et Kodjo suivent Kossi');
   assert.ok(kossi.skills.length > 0 && kossi.skills.every((s) => s.validated));
   assert.equal(kossi.totalXp, kossi.moduleMetrics.reduce((acc, m) => acc + m.xpVal, 0));
 
@@ -650,7 +650,7 @@ test('Profil : progression d’un membre calculée à un seul endroit (abonnés,
     myFollowing: ['kossi', 'maya'],
     progress: empty
   });
-  assert.equal(afi.followersCount, 1, 'Kossi suit Afi');
+  assert.equal(afi.followersCount, 5, 'Kossi, Maya, Sam, Ama et Fatou suivent Afi');
   assert.equal(afi.followingCount, 2);
   assert.deepEqual(afi.passedQuizzes, []);
   assert.ok(afi.skills.length > 0 && afi.skills.every((s) => !s.validated));
@@ -724,4 +724,72 @@ test('publication programmée : seule la contribution arrivée à échéance rej
   assert.deepEqual((next.scheduledPosts || []).map((p) => p.id), ['later']);
   assert.equal(next.posts.length, base.posts.length + 1);
   assert.equal(promoteDuePosts(next, now), next);
+});
+
+test('catalogue étendu : chaque module interactif a ses leçons, son quiz et son emblème de parcours', async () => {
+  const { CATALOG_ITEMS } = await import('../src/wireframeData');
+  const { MODULES_CONTENT } = await import('../src/content');
+  const modules = CATALOG_ITEMS.filter((c) => c.type === 'module' && c.interactive);
+  assert.equal(modules.length, 7);
+  for (const mod of modules) {
+    const study = MODULES_CONTENT[mod.id];
+    assert.ok(study, `contenu manquant : ${mod.id}`);
+    assert.equal(study.lessons.length, 3);
+    assert.equal(study.questions.length, 3);
+    for (const q of study.questions) assert.ok(q.correctIndex >= 0 && q.correctIndex < q.answers.length);
+  }
+  for (const path of CATALOG_ITEMS.filter((c) => c.type === 'path')) {
+    for (const pm of path.pathModules || []) assert.ok(CATALOG_ITEMS.some((c) => c.id === pm.id), `module de parcours inconnu : ${pm.id}`);
+  }
+  assert.deepEqual([...new Set(CATALOG_ITEMS.map((c) => c.domain))].sort(), ['Communication', 'Gestion', 'Numérique']);
+});
+
+test('fil d’actualité : formats variés, auteurs variés et références valides', async () => {
+  const { initialExtendedState, CATALOG_ITEMS } = await import('../src/wireframeData');
+  const state = initialExtendedState();
+  const posts = state.posts;
+  assert.ok(posts.length >= 12);
+  assert.equal(new Set(posts.map((p) => p.id)).size, posts.length);
+  assert.ok(posts.some((p) => p.media?.kind === 'image'));
+  assert.ok(posts.some((p) => p.media?.kind === 'video'));
+  assert.ok(posts.some((p) => p.linkedItemId));
+  assert.ok(posts.some((p) => !p.media && !p.linkedItemId));
+  assert.ok(new Set(posts.map((p) => p.authorId)).size >= 8);
+  for (const p of posts) {
+    if (p.linkedItemId) assert.ok(CATALOG_ITEMS.some((c) => c.id === p.linkedItemId));
+    if (p.solutionReplyId) assert.ok(p.replies.some((r) => r.id === p.solutionReplyId));
+  }
+  assert.ok(state.adminUsers.some((u) => u.id === 'usr-ama' && u.email === 'ama.dossou@exemple.test'));
+  assert.ok(state.profileDetails.ines?.tagline);
+});
+
+test('badges : les nouveaux badges s’obtiennent avec de vraies mesures', () => {
+  const base = {
+    totalXp: 0,
+    level: 1,
+    completedModules: [],
+    passedQuizzes: [],
+    perfectQuizzes: [],
+    completedLessonsCount: 0,
+    postsCount: 0,
+    repliesCount: 0,
+    solutionsCount: 0,
+    helpfulGivenCount: 0,
+    followingCount: 0,
+    acceptedRelationsCount: 0,
+    streakWeeks: 0
+  };
+  const none = computeSavoirBadges(base);
+  assert.equal(none.filter((b) => b.earned).length, 0);
+  const some = computeSavoirBadges({
+    ...base,
+    passedQuizzes: ['email-pro', 'reunion', 'budget', 'sauvegarde'],
+    passedDomains: ['Numérique', 'Communication', 'Gestion'],
+    mediaPostsCount: 1,
+    helpfulReceivedCount: 3,
+    followersCount: 3
+  });
+  for (const id of ['mod-email', 'mod-budget', 'mod-sauvegarde', 'mod-reunion', 'mod-domains', 'mod-path-com', 'com-visual', 'com-appreciated', 'com-followed']) {
+    assert.equal(some.find((b) => b.id === id)?.earned, true, id);
+  }
 });

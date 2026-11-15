@@ -43,6 +43,8 @@ export interface StudioStudySource {
   published?: Partial<Omit<StudioStudySource, 'id' | 'published' | 'aiAssisted'>>;
 }
 
+import { EXTRA_MODULES_CONTENT } from './seedCatalog';
+
 export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
   phishing: {
     id: 'phishing',
@@ -276,7 +278,8 @@ export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
         explanation: 'Déconnectez-vous explicitement et révoquez la session côté serveur depuis votre appareil habituel.'
       }
     ]
-  }
+  },
+  ...EXTRA_MODULES_CONTENT
 };
 
 export const lessons = MODULES_CONTENT.phishing.lessons;

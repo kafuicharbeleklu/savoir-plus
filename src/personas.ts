@@ -479,15 +479,17 @@ export function resolveCommunityAuthor(
     hash = (hash * 31 + (authorId || authorName).charCodeAt(i)) % 997;
   }
   const color = FALLBACK_COLORS[hash % FALLBACK_COLORS.length];
+  // Membre de la communauté sans compte de démonstration : sa fiche enregistrée donne son titre et sa présentation.
+  const memberDetails = ext.profileDetails[authorId];
   const fallbackProfile: Profile = {
     id: authorId,
     name: authorName,
-    role: explicitRole || 'Membre communauté SAVOIR+',
+    role: memberDetails?.tagline || explicitRole || 'Membre communauté SAVOIR+',
     initials: computeInitials(authorName),
     color,
-    bio: ''
+    bio: memberDetails?.bio || ''
   };
-  const verified = resolveProfileVerified(authorId, ext.adminUsers, false);
+  const verified = resolveProfileVerified(authorId, ext.adminUsers, memberDetails?.verified ?? false);
   return {
     profile: fallbackProfile,
     headline: explicitRole || fallbackProfile.role,
@@ -929,7 +931,13 @@ export interface SavoirBadgeItem {
     | 'flame'
     | 'target'
     | 'book'
-    | 'sparkles';
+    | 'sparkles'
+    | 'mail'
+    | 'wallet'
+    | 'drive'
+    | 'calendar'
+    | 'image'
+    | 'globe';
   earned: boolean;
 }
 
@@ -947,6 +955,14 @@ export interface BadgeInputMetrics {
   followingCount: number;
   acceptedRelationsCount: number;
   streakWeeks: number;
+  /** Domaines dans lesquels au moins un module est validé. */
+  passedDomains?: string[];
+  /** Contributions publiées avec une image ou une vidéo. */
+  mediaPostsCount?: number;
+  /** Mentions « utile » reçues sur ses contributions et ses réponses. */
+  helpfulReceivedCount?: number;
+  /** Membres abonnés à ce profil. */
+  followersCount?: number;
 }
 
 export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
@@ -989,6 +1005,16 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
       earned: m.totalXp >= 450 || m.completedModules.length >= 3
     },
 
+    {
+      id: 'rank-expert',
+      title: 'Expert SAVOIR+',
+      description: 'Cumuler 750 XP ou valider cinq modules complets.',
+      track: 'learning',
+      category: 'rank',
+      iconKey: 'crown',
+      earned: m.totalXp >= 750 || m.completedModules.length >= 5
+    },
+
     // Category: Modules & Parcours (track: learning)
     {
       id: 'mod-phishing',
@@ -1016,6 +1042,42 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
       category: 'modules',
       iconKey: 'lock',
       earned: m.passedQuizzes.includes('comptes')
+    },
+    {
+      id: 'mod-email',
+      title: 'Plume Claire',
+      description: 'Valider le module « Écrire un e-mail professionnel clair ».',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'mail',
+      earned: m.passedQuizzes.includes('email-pro')
+    },
+    {
+      id: 'mod-budget',
+      title: 'Budget Maîtrisé',
+      description: 'Valider le module « Tenir un budget simple ».',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'wallet',
+      earned: m.passedQuizzes.includes('budget')
+    },
+    {
+      id: 'mod-sauvegarde',
+      title: 'Fichiers à l’Abri',
+      description: 'Valider le module « Sauvegarder ses fichiers : la règle 3-2-1 ».',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'drive',
+      earned: m.passedQuizzes.includes('sauvegarde')
+    },
+    {
+      id: 'mod-reunion',
+      title: 'Réunion Utile',
+      description: 'Valider le module « Préparer une réunion utile ».',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'calendar',
+      earned: m.passedQuizzes.includes('reunion')
     },
     {
       id: 'mod-perfect',
@@ -1063,6 +1125,25 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
       earned: m.passedQuizzes.length >= 3
     },
 
+    {
+      id: 'mod-domains',
+      title: 'Tour d’Horizon',
+      description: 'Valider un module dans chacun des trois domaines : Numérique, Communication et Gestion.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'globe',
+      earned: ['Numérique', 'Communication', 'Gestion'].every((d) => (m.passedDomains || []).includes(d))
+    },
+    {
+      id: 'mod-path-com',
+      title: 'Parcours Communication',
+      description: 'Valider les deux modules du parcours Communication professionnelle.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'path',
+      earned: ['email-pro', 'reunion'].every((id) => m.passedQuizzes.includes(id))
+    },
+
     // Category: Communauté & Entraide (track: community)
     {
       id: 'com-voice',
@@ -1099,6 +1180,34 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
       category: 'community',
       iconKey: 'heart',
       earned: m.helpfulGivenCount >= 2
+    },
+
+    {
+      id: 'com-visual',
+      title: 'Regard Partagé',
+      description: 'Publier une contribution accompagnée d’une image ou d’une vidéo.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'image',
+      earned: (m.mediaPostsCount || 0) >= 1
+    },
+    {
+      id: 'com-appreciated',
+      title: 'Voix Écoutée',
+      description: 'Recevoir trois mentions « utile » sur vos contributions ou vos réponses.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'heart',
+      earned: (m.helpfulReceivedCount || 0) >= 3
+    },
+    {
+      id: 'com-followed',
+      title: 'Référence',
+      description: 'Être suivi par au moins trois membres de la communauté.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'users',
+      earned: (m.followersCount || 0) >= 3
     },
 
     // Category: Régularité & Défis (track: community)

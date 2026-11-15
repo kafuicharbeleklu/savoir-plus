@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="t d" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif">
+  <title id="t">Le trajet d'une requête sur un réseau local</title>
+  <desc id="d">L'ordinateur envoie sa demande au routeur, qui sert de passerelle vers Internet, puis vers le site demandé.</desc>
+  <rect width="1200" height="675" fill="#F4F7F5"/>
+  <text x="80" y="104" font-size="44" font-weight="600" fill="#16201A">Le trajet d’une requête</text>
+  <text x="80" y="148" font-size="24" fill="#5A6B62">Du même bureau jusqu’à Internet : tout sort par la passerelle.</text>
+
+  <!-- liaisons -->
+  <g stroke="#1F4F3F" stroke-width="4" fill="none" stroke-linecap="round">
+    <path d="M300 370 H420"/>
+    <path d="M620 370 H740"/>
+    <path d="M940 370 H1010"/>
+  </g>
+  <g fill="#1F4F3F">
+    <path d="M420 370 l-16 -9 v18z"/>
+    <path d="M740 370 l-16 -9 v18z"/>
+    <path d="M1010 370 l-16 -9 v18z"/>
+  </g>
+
+  <!-- 1. ordinateur -->
+  <g>
+    <rect x="100" y="280" width="200" height="180" rx="8" fill="#FFFFFF" stroke="#D5DED9" stroke-width="2"/>
+    <rect x="150" y="318" width="100" height="66" rx="5" fill="none" stroke="#1F4F3F" stroke-width="5"/>
+    <path d="M134 402 H266" stroke="#1F4F3F" stroke-width="5" stroke-linecap="round"/>
+    <text x="200" y="440" font-size="20" font-weight="600" text-anchor="middle" fill="#16201A">Votre ordinateur</text>
+  </g>
+  <text x="200" y="500" font-size="19" text-anchor="middle" fill="#5A6B62">192.168.1.24</text>
+
+  <!-- 2. routeur / passerelle -->
+  <g>
+    <rect x="420" y="260" width="200" height="220" rx="8" fill="#1F4F3F"/>
+    <rect x="462" y="340" width="116" height="46" rx="6" fill="none" stroke="#FFFFFF" stroke-width="5"/>
+    <circle cx="488" cy="363" r="5" fill="#FFFFFF"/>
+    <circle cx="512" cy="363" r="5" fill="#FFFFFF"/>
+    <path d="M495 340 V306 M545 340 V306" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+    <text x="520" y="430" font-size="20" font-weight="600" text-anchor="middle" fill="#FFFFFF">Routeur</text>
+    <text x="520" y="456" font-size="17" text-anchor="middle" fill="#CFE3DA">passerelle par défaut</text>
+  </g>
+  <text x="520" y="520" font-size="19" text-anchor="middle" fill="#5A6B62">192.168.1.1</text>
+
+  <!-- 3. internet -->
+  <g>
+    <rect x="740" y="280" width="200" height="180" rx="8" fill="#FFFFFF" stroke="#D5DED9" stroke-width="2"/>
+    <circle cx="840" cy="352" r="38" fill="none" stroke="#1F4F3F" stroke-width="5"/>
+    <path d="M802 352 H878 M840 314 C820 334 820 370 840 390 M840 314 C860 334 860 370 840 390" fill="none" stroke="#1F4F3F" stroke-width="4"/>
+    <text x="840" y="440" font-size="20" font-weight="600" text-anchor="middle" fill="#16201A">Internet</text>
+  </g>
+  <text x="840" y="500" font-size="19" text-anchor="middle" fill="#5A6B62">d’autres réseaux</text>
+
+  <!-- 4. site -->
+  <g>
+    <rect x="1010" y="300" width="120" height="140" rx="8" fill="#FFFFFF" stroke="#D5DED9" stroke-width="2"/>
+    <path d="M1036 334 H1104 M1036 360 H1104 M1036 386 H1082" stroke="#1F4F3F" stroke-width="5" stroke-linecap="round"/>
+    <text x="1070" y="424" font-size="18" font-weight="600" text-anchor="middle" fill="#16201A">Site web</text>
+  </g>
+
+  <rect x="80" y="572" width="1040" height="2" fill="#D5DED9"/>
+  <text x="80" y="620" font-size="22" fill="#16201A">Même réseau : les appareils se parlent directement. Autre réseau : la passerelle fait le lien.</text>
+</svg>

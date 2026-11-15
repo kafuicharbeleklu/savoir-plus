@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
+  BookOpen,
   Check,
   CheckCircle2,
   Copy,
@@ -426,6 +427,24 @@ export function FeedPostCard({
               <RichText text={post.body} />
             </p>
             {post.media && <PostMediaView media={post.media} title={post.title} />}
+            {(() => {
+              const shared = post.linkedItemId ? CATALOG_ITEMS.find((item) => item.id === post.linkedItemId) : undefined;
+              if (!shared || shared.type !== 'module') return null;
+              return (
+                <button type="button" className="li-post-shared" onClick={() => onOpenModule(shared.id)}>
+                  <span className="li-post-shared-icon" aria-hidden="true">
+                    <BookOpen size={20} />
+                  </span>
+                  <span className="li-post-shared-text">
+                    <b>{shared.title}</b>
+                    <small>
+                      Module · {shared.domain} · {shared.duration} · {shared.level}
+                    </small>
+                  </span>
+                  <ArrowRight size={16} aria-hidden="true" />
+                </button>
+              );
+            })()}
           </>
         )}
       </div>

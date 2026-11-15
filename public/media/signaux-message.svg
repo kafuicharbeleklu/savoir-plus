@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="t d" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif">
+  <title id="t">Cinq signaux d'un message suspect</title>
+  <desc id="d">Urgence ou menace, expéditeur inhabituel, lien qui ne correspond pas, demande de mot de passe ou de code, pièce jointe inattendue.</desc>
+  <rect width="1200" height="675" fill="#1F4F3F"/>
+  <text x="80" y="110" font-size="46" font-weight="600" fill="#FFFFFF">5 signaux d’un message suspect</text>
+  <text x="80" y="154" font-size="24" fill="#CFE3DA">Un seul suffit pour s’arrêter et vérifier.</text>
+
+  <g font-size="27" fill="#16201A">
+    <g>
+      <rect x="80" y="200" width="1040" height="72" rx="8" fill="#FFFFFF"/>
+      <circle cx="126" cy="236" r="22" fill="#1F4F3F"/>
+      <text x="126" y="245" font-size="24" font-weight="600" text-anchor="middle" fill="#FFFFFF">1</text>
+      <text x="170" y="245" font-weight="600">Urgence ou menace</text>
+      <text x="1096" y="245" font-size="21" text-anchor="end" fill="#5A6B62">« Votre compte sera fermé dans 24 h »</text>
+    </g>
+    <g>
+      <rect x="80" y="284" width="1040" height="72" rx="8" fill="#FFFFFF"/>
+      <circle cx="126" cy="320" r="22" fill="#1F4F3F"/>
+      <text x="126" y="329" font-size="24" font-weight="600" text-anchor="middle" fill="#FFFFFF">2</text>
+      <text x="170" y="329" font-weight="600">Expéditeur inhabituel</text>
+      <text x="1096" y="329" font-size="21" text-anchor="end" fill="#5A6B62">adresse qui imite un nom connu</text>
+    </g>
+    <g>
+      <rect x="80" y="368" width="1040" height="72" rx="8" fill="#FFFFFF"/>
+      <circle cx="126" cy="404" r="22" fill="#1F4F3F"/>
+      <text x="126" y="413" font-size="24" font-weight="600" text-anchor="middle" fill="#FFFFFF">3</text>
+      <text x="170" y="413" font-weight="600">Lien qui ne correspond pas</text>
+      <text x="1096" y="413" font-size="21" text-anchor="end" fill="#5A6B62">le domaine réel est avant le premier « / »</text>
+    </g>
+    <g>
+      <rect x="80" y="452" width="1040" height="72" rx="8" fill="#FFFFFF"/>
+      <circle cx="126" cy="488" r="22" fill="#1F4F3F"/>
+      <text x="126" y="497" font-size="24" font-weight="600" text-anchor="middle" fill="#FFFFFF">4</text>
+      <text x="170" y="497" font-weight="600">Mot de passe ou code demandé</text>
+      <text x="1096" y="497" font-size="21" text-anchor="end" fill="#5A6B62">aucun service sérieux ne le fait</text>
+    </g>
+    <g>
+      <rect x="80" y="536" width="1040" height="72" rx="8" fill="#FFFFFF"/>
+      <circle cx="126" cy="572" r="22" fill="#1F4F3F"/>
+      <text x="126" y="581" font-size="24" font-weight="600" text-anchor="middle" fill="#FFFFFF">5</text>
+      <text x="170" y="581" font-weight="600">Pièce jointe inattendue</text>
+      <text x="1096" y="581" font-size="21" text-anchor="end" fill="#5A6B62">ne l’ouvrez pas avant d’avoir vérifié</text>
+    </g>
+  </g>
+</svg>

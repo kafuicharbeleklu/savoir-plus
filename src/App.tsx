@@ -1326,7 +1326,9 @@ export default function App() {
   // Determine active module to resume on Home hero
   const resumeModuleId =
     // Le module phishing (cœur du pitch) est proposé en premier tant qu'il n'est pas validé.
-    ['phishing', 'reseaux', 'comptes'].find((id) => {
+    Array.from(
+      new Set(['phishing', 'reseaux', 'comptes', ...dynamicCatalog.filter((c) => c.type === 'module').map((c) => c.id)])
+    ).find((id) => {
       const pct = modulePct(id);
       return pct > 0 && pct < 100;
     }) || 'phishing';
@@ -1419,10 +1421,7 @@ export default function App() {
                     <CatalogCardBanner item={resumeCatalog} />
                   </div>
                   <div className="home-resume-body">
-                    <div className="between">
-                      <ContentTypeMark type="module" labelOverride="Reprise · Module" />
-                      <DifficultyMeter level={resumeCatalog.level} />
-                    </div>
+                    <span className="home-resume-kicker">Reprise · Module</span>
                     <h2>
                       {/* Le titre est le bouton (clavier) ; le clic sur toute la carte remonte à l'article */}
                       <button
@@ -1434,28 +1433,23 @@ export default function App() {
                       </button>
                     </h2>
                     <p className="home-resume-summary">{resumeCatalog.summary}</p>
-                    <div className="htb-card-progress">
-                      <div className="between tiny tabular-nums">
-                        <span>
-                          {resumeNextIdx !== undefined
-                            ? `Prochaine section : 0${resumeNextIdx + 1} · ${MODULES_CONTENT[resumeModuleId]?.lessons[resumeNextIdx]?.title}`
-                            : resumeValidated
-                              ? 'Module validé — Révision libre disponible'
-                              : resumeProg.submitted
-                                ? 'Quiz à retenter pour valider le module'
-                                : 'Sections lues — Prêt pour le quiz final'}
-                        </span>
-                        <b>{resumePct}%</b>
-                      </div>
+                    <div className="home-resume-progress">
                       <ProgressBar value={resumePct} label="Progression du module en cours" tone="htb" />
+                      <b className="tabular-nums">{resumePct} %</b>
                     </div>
-                    <div className="htb-meta-line">
-                      <XpBadgeInline amount={resumeCatalog.xpReward || 150} />
-                      <span aria-hidden="true">·</span>
-                      <span>{resumeCatalog.domain}</span>
-                      <span aria-hidden="true">·</span>
-                      <span>{resumeCatalog.duration}</span>
-                    </div>
+                    <p className="home-resume-next">
+                      {resumeNextIdx !== undefined
+                        ? `Prochaine section : 0${resumeNextIdx + 1} · ${MODULES_CONTENT[resumeModuleId]?.lessons[resumeNextIdx]?.title}`
+                        : resumeValidated
+                          ? 'Module validé — révision libre'
+                          : resumeProg.submitted
+                            ? 'Quiz à retenter pour valider le module'
+                            : 'Sections lues — prêt pour le quiz final'}
+                    </p>
+                    <p className="home-resume-meta">
+                      {resumeCatalog.domain} · {resumeCatalog.duration} · {resumeCatalog.level} ·{' '}
+                      <span className="tabular-nums">{resumeCatalog.xpReward || 150} XP</span>
+                    </p>
                   </div>
                 </article>
 

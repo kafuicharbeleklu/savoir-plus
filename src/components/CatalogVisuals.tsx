@@ -1,16 +1,23 @@
 import React from 'react';
 import {
+  BookMarked,
   BookOpen,
+  CalendarCheck,
   Clock,
   Compass,
   FileCheck2,
   FileText,
+  HardDrive,
+  KeyRound,
   Layers,
   Link2,
   ListChecks,
   LockKeyhole,
+  Mail,
   Network,
   ShieldCheck,
+  Table2,
+  Wallet,
   Wrench
 } from 'lucide-react';
 import type { CatalogItem, CatalogType } from '../wireframeData';
@@ -84,6 +91,14 @@ export function BannerEmblem({ item, size = 28 }: { item: CatalogItem; size?: nu
   if (id.includes('phishing')) return <ShieldCheck size={size} strokeWidth={1.85} />;
   if (id.includes('reseau') && item.type === 'module') return <Network size={size} strokeWidth={1.85} />;
   if (id.includes('comptes')) return <LockKeyhole size={size} strokeWidth={1.85} />;
+  if (id.includes('email')) return <Mail size={size} strokeWidth={1.85} />;
+  if (id.includes('modele')) return <Table2 size={size} strokeWidth={1.85} />;
+  if (id.includes('budget')) return <Wallet size={size} strokeWidth={1.85} />;
+  if (id.includes('sauvegarde')) return <HardDrive size={size} strokeWidth={1.85} />;
+  if (id.includes('checklist')) return <ListChecks size={size} strokeWidth={1.85} />;
+  if (id.includes('reunion')) return <CalendarCheck size={size} strokeWidth={1.85} />;
+  if (id.includes('glossaire')) return <BookMarked size={size} strokeWidth={1.85} />;
+  if (id.includes('mots-de-passe')) return <KeyRound size={size} strokeWidth={1.85} />;
   if (id.includes('fiche')) return <FileCheck2 size={size} strokeWidth={1.85} />;
   if (id.includes('memo') || id.includes('lien')) return <Link2 size={size} strokeWidth={1.85} />;
   if (id.includes('support')) return <Wrench size={size} strokeWidth={1.85} />;
