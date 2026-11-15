@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, Lock, MoreHorizontal } from 'lucide-react';
-import type { Message, Profile } from '../data';
+import type { Message, Profile, Relation } from '../data';
 import { Avatar } from './ProfileIdentityCard';
 
 /** Deux messages d'une même personne à moins de 5 minutes d'écart sont regroupés (comme LinkedIn). */
@@ -252,4 +252,80 @@ export function normalizeSearch(v: string): string {
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim();
+}
+
+/** Bas de fenêtre quand la discussion n'est pas encore ouverte : demander, patienter ou répondre. */
+export function ConversationGate({
+  rel,
+  userId,
+  other,
+  busy,
+  onRequestContact,
+  onDecideContact
+}: {
+  rel?: Relation;
+  userId: string;
+  other: Profile;
+  busy: boolean;
+  onRequestContact: (p: Profile) => void;
+  onDecideContact: (r: Relation, decision: 'accepted' | 'declined') => void;
+}) {
+  if (rel?.status === 'pending' && rel.requester !== userId) {
+    return (
+      <div className="bubble-gate">
+        <p>{other.name} souhaite échanger avec vous en privé.</p>
+        <div className="bubble-gate-actions">
+          <button type="button" className="secondary" disabled={busy} onClick={() => onDecideContact(rel, 'declined')}>
+            Refuser
+          </button>
+          <button type="button" className="primary" disabled={busy} onClick={() => onDecideContact(rel, 'accepted')}>
+            Accepter
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (rel?.status === 'pending') {
+    return (
+      <div className="bubble-gate">
+        <p>Demande envoyée. La discussion s’ouvrira dès que {other.name.split(' ')[0]} l’aura acceptée.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="bubble-gate">
+      <p>Sur SAVOIR+, l’échange privé s’ouvre une fois votre demande acceptée.</p>
+      <div className="bubble-gate-actions">
+        <button type="button" className="primary" disabled={busy} onClick={() => onRequestContact(other)}>
+          Demander à discuter
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Deuxième ligne d'une discussion dans la liste : premier message d'une demande, sinon le titre. */
+export function contactStatusLabel(
+  rel: Relation | undefined,
+  userId: string,
+  headline: string,
+  preview?: string
+): string {
+  if (!rel) return headline;
+  if (rel.blockedBy.length) return 'Échange bloqué';
+  if (rel.status === 'pending') {
+    if (rel.requester === userId) return preview ? `Vous : ${preview}` : 'Demande envoyée · en attente';
+    return preview || 'Vous propose une discussion';
+  }
+  return headline;
+}
+
+/** Ajoute la relation complète à chaque contact ; discussions ouvertes d'abord. */
+export function withRelations<T extends { profile: Profile }>(contacts: T[], relations: Relation[], userId: string) {
+  return contacts
+    .map((c) => ({
+      ...c,
+      rel: relations.find((r) => r.members.includes(userId) && r.members.includes(c.profile.id) && r.status !== 'declined')
+    }))
+    .sort((a, b) => Number(b.rel?.status === 'accepted') - Number(a.rel?.status === 'accepted'));
 }

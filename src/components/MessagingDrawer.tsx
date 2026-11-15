@@ -4,6 +4,9 @@ import type { Message, Profile, Relation } from '../data';
 import { canSend } from '../domain.mjs';
 import { Avatar } from './ProfileIdentityCard';
 import {
+  contactStatusLabel,
+  withRelations,
+  ConversationGate,
   ConversationIntro,
   ConversationMenu,
   MessageComposer,
@@ -11,6 +14,9 @@ import {
   ThreadScroll,
   normalizeSearch
 } from './MessageThread';
+
+/** Personne avec qui une discussion existe (acceptée, ou demande envoyée / reçue avec son premier message). */
+export type DrawerContact = { profile: Profile; headline: string; preview?: string };
 
 export function MessagingDrawer({
   open,
@@ -30,7 +36,12 @@ export function MessagingDrawer({
   onOpenFullMessaging,
   onOpenRelations,
   onOpenProfile,
-  onOpenReport
+  onOpenReport,
+  bubblePeerId,
+  setBubblePeerId,
+  contacts,
+  onRequestContact,
+  onDecideContact
 }: {
   open: boolean;
   setOpen: (v: boolean) => void;
@@ -50,9 +61,15 @@ export function MessagingDrawer({
   onOpenRelations: () => void;
   onOpenProfile: (p: Profile) => void;
   onOpenReport: (targetLabel: string) => void;
+  /** Personne dont la fenêtre de discussion est ouverte ('' si aucune). */
+  bubblePeerId: string;
+  setBubblePeerId: (peerId: string) => void;
+  /** Personnes à qui on a déjà écrit ou qui nous ont écrit. */
+  contacts: DrawerContact[];
+  onRequestContact: (p: Profile) => void;
+  onDecideContact: (r: Relation, decision: 'accepted' | 'declined') => void;
 }) {
   const [query, setQuery] = useState('');
-  const [bubbleOpen, setBubbleOpen] = useState(false);
   const [bubbleMin, setBubbleMin] = useState(false);
 
   useEffect(() => {
@@ -64,26 +81,29 @@ export function MessagingDrawer({
     return () => window.removeEventListener('keydown', onKey);
   }, [open, setOpen]);
 
-  const acceptedRelations = relations.filter((r) => r.status === 'accepted');
-  const rows = acceptedRelations
-    .map((r) => ({ r, p: people.find((x) => x.id === r.members.find((id) => id !== user.id)) }))
-    .filter((x): x is { r: Relation; p: Profile } => Boolean(x.p));
+  // Personnes à qui on a déjà écrit, discussions ouvertes d'abord.
+  const rows = withRelations(contacts, relations, user.id);
   const q = normalizeSearch(query);
-  const visibleRows = q ? rows.filter((x) => normalizeSearch(x.p.name).includes(q)) : rows;
+  const visibleRows = q ? rows.filter((x) => normalizeSearch(x.profile.name).includes(q)) : rows;
 
-  const activeRel = relations.find((r) => r.id === selected);
-  const other = activeRel ? people.find((p) => p.id === activeRel.members.find((id) => id !== user.id)) : null;
-  const showBubble = Boolean(bubbleOpen && activeRel && other);
+  const bubbleContact = rows.find((x) => x.profile.id === bubblePeerId);
+  const other = bubbleContact?.profile;
+  const bubbleRel = bubbleContact?.rel;
+  const isAccepted = bubbleRel?.status === 'accepted';
 
-  const openThread = (relId: string) => {
-    setSelected(relId);
-    setBubbleOpen(true);
+  // La fenêtre charge le fil de la relation acceptée avec la personne ouverte.
+  useEffect(() => {
+    if (bubblePeerId && bubbleRel && isAccepted && selected !== bubbleRel.id) setSelected(bubbleRel.id);
+  }, [bubblePeerId, bubbleRel, isAccepted, selected, setSelected]);
+
+  const openPerson = (peerId: string) => {
+    setBubblePeerId(peerId);
     setBubbleMin(false);
   };
 
   return (
     <>
-      {showBubble && activeRel && other && (
+      {other && bubbleContact && (
         <section
           className={`message-bubble ${bubbleMin ? 'is-min' : ''}`}
           aria-label={`Discussion avec ${other.name}`}
@@ -99,7 +119,7 @@ export function MessagingDrawer({
               <Avatar person={other} small />
               <span className="bubble-id-text">
                 <b>{other.name}</b>
-                {!bubbleMin && <small>{other.role}</small>}
+                {!bubbleMin && <small>{bubbleContact.headline}</small>}
               </span>
             </button>
             {!bubbleMin && (
@@ -107,24 +127,30 @@ export function MessagingDrawer({
                 <ConversationMenu
                   items={[
                     { label: 'Voir le profil', onSelect: () => onOpenProfile(other) },
-                    { label: 'Signaler cet échange', onSelect: () => onOpenReport(`Échange privé avec ${other.name}`) },
-                    {
-                      label: activeRel.blockedBy.includes(user.id) ? 'Débloquer' : 'Bloquer',
-                      danger: true,
-                      disabled: busy,
-                      onSelect: () => onToggleBlock(activeRel)
-                    }
+                    ...(isAccepted && bubbleRel
+                      ? [
+                          { label: 'Signaler cet échange', onSelect: () => onOpenReport(`Échange privé avec ${other.name}`) },
+                          {
+                            label: bubbleRel.blockedBy.includes(user.id) ? 'Débloquer' : 'Bloquer',
+                            danger: true,
+                            disabled: busy,
+                            onSelect: () => onToggleBlock(bubbleRel)
+                          }
+                        ]
+                      : [])
                   ]}
                 />
-                <button
-                  type="button"
-                  className="li-icon-btn"
-                  aria-label="Ouvrir en pleine page"
-                  title="Ouvrir en pleine page"
-                  onClick={onOpenFullMessaging}
-                >
-                  <Maximize2 size={16} aria-hidden="true" />
-                </button>
+                {isAccepted && (
+                  <button
+                    type="button"
+                    className="li-icon-btn"
+                    aria-label="Ouvrir en pleine page"
+                    title="Ouvrir en pleine page"
+                    onClick={onOpenFullMessaging}
+                  >
+                    <Maximize2 size={16} aria-hidden="true" />
+                  </button>
+                )}
               </>
             )}
             <button
@@ -132,24 +158,37 @@ export function MessagingDrawer({
               className="li-icon-btn"
               aria-label="Fermer la discussion"
               title="Fermer la discussion"
-              onClick={() => setBubbleOpen(false)}
+              onClick={() => setBubblePeerId('')}
             >
               <X size={18} aria-hidden="true" />
             </button>
           </header>
           {!bubbleMin && (
             <>
-              <ThreadScroll className="bubble-scroll" watch={messages}>
+              <ThreadScroll className="bubble-scroll" watch={isAccepted ? messages : bubbleRel?.status}>
                 <ConversationIntro person={other} onOpenProfile={() => onOpenProfile(other)} />
-                <MessageThread messages={messages} people={[user, ...people.filter((p) => p.id !== user.id)]} />
+                {isAccepted && selected === bubbleRel?.id && (
+                  <MessageThread messages={messages} people={[user, other, ...people]} />
+                )}
               </ThreadScroll>
               {error && <div className="drawer-error">{error}</div>}
-              {canSend(activeRel, user.id) ? (
-                <MessageComposer draft={draft} setDraft={setDraft} onSend={onSend} busy={busy} compact />
+              {isAccepted && bubbleRel ? (
+                canSend(bubbleRel, user.id) ? (
+                  <MessageComposer draft={draft} setDraft={setDraft} onSend={onSend} busy={busy} compact />
+                ) : (
+                  <div className="chat-blocked">
+                    <Lock size={13} aria-hidden="true" /> Envoi suspendu suite à un blocage.
+                  </div>
+                )
               ) : (
-                <div className="chat-blocked">
-                  <Lock size={13} aria-hidden="true" /> Envoi suspendu suite à un blocage.
-                </div>
+                <ConversationGate
+                  rel={bubbleRel}
+                  userId={user.id}
+                  other={other}
+                  busy={busy}
+                  onRequestContact={onRequestContact}
+                  onDecideContact={onDecideContact}
+                />
               )}
             </>
           )}
@@ -186,7 +225,7 @@ export function MessagingDrawer({
 
         {open && (
           <div className="drawer-body">
-            {error && !showBubble && <div className="drawer-error">{error}</div>}
+            {error && !other && <div className="drawer-error">{error}</div>}
             <label className="li-search">
               <Search size={16} aria-hidden="true" />
               <input
@@ -200,26 +239,26 @@ export function MessagingDrawer({
             <div className="conversation-list" role="list">
               {rows.length === 0 ? (
                 <div className="conversation-empty">
-                  <p>Aucune discussion active pour le moment.</p>
-                  <button className="secondary" onClick={onOpenRelations}>
+                  <p>Aucune discussion pour le moment.</p>
+                  <button type="button" className="li-text-link" onClick={onOpenRelations}>
                     Découvrir des membres
                   </button>
                 </div>
               ) : visibleRows.length === 0 ? (
-                <p className="conversation-empty">Aucun contact ne correspond à « {query} ».</p>
+                <p className="conversation-empty">Aucune personne ne correspond à « {query} ».</p>
               ) : (
-                visibleRows.map(({ r, p }) => (
+                visibleRows.map(({ profile: p, headline, preview, rel }) => (
                   <button
-                    key={r.id}
+                    key={p.id}
                     type="button"
                     role="listitem"
-                    className={`conversation-row ${showBubble && selected === r.id ? 'active' : ''}`}
-                    onClick={() => openThread(r.id)}
+                    className={`conversation-row ${bubblePeerId === p.id ? 'active' : ''}`}
+                    onClick={() => openPerson(p.id)}
                   >
                     <Avatar person={p} />
                     <span className="conversation-row-text">
                       <b>{p.name}</b>
-                      <small>{r.blockedBy.length ? 'Échange bloqué' : p.role}</small>
+                      <small>{contactStatusLabel(rel, user.id, headline, preview)}</small>
                     </span>
                   </button>
                 ))

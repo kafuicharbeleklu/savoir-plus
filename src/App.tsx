@@ -111,6 +111,9 @@ import { Avatar, DifficultyMeter, ProfileIdentityCard, ProgressBar, VerifiedBadg
 import { CatalogCardBanner, CatalogContentCard, ContentTypeMark, XpBadgeInline } from './components/CatalogVisuals';
 import { MessagingDrawer } from './components/MessagingDrawer';
 import {
+  contactStatusLabel,
+  withRelations,
+  ConversationGate,
   ConversationIntro,
   ConversationMenu,
   MessageComposer,
@@ -275,6 +278,9 @@ export default function App() {
   const [relations, setRelations] = useState<Relation[]>([]);
   const [selectedRelId, setSelectedRelId] = useState<string>('');
   const [conversationQuery, setConversationQuery] = useState('');
+  /** Fenêtre de discussion flottante (tiroir) et personne ouverte dans la page Messagerie. */
+  const [drawerPeerId, setDrawerPeerId] = useState('');
+  const [messagesPeerId, setMessagesPeerId] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState<string>('');
 
@@ -607,11 +613,14 @@ export default function App() {
   // Messages: desktop opens the quick-chat drawer; at ≤768px the drawer is hidden, so open the full page.
   const openConversation = (relId: string) => {
     setSelectedRelId(relId);
-    if (window.matchMedia?.('(max-width: 768px)').matches) {
+    const peerId = relations.find((r) => r.id === relId)?.members.find((id) => id !== uid) || '';
+    if (window.matchMedia?.('(max-width: 768px)').matches || page === 'messages') {
       setDrawerOpen(false);
+      setMessagesPeerId(peerId);
       nav('messages');
     } else {
-      setDrawerOpen(true);
+      // Ouvre directement la fenêtre de discussion de la personne, comme sur LinkedIn.
+      setDrawerPeerId(peerId);
     }
   };
 
@@ -706,6 +715,17 @@ export default function App() {
   // Social helpers
   const networkDirectory = resolveCommunityDirectory(people, ext);
   const myFollowing = ext.followingIds?.[uid] || [];
+  // Messagerie : personnes à qui on a déjà écrit ou qui nous ont écrit (discussion acceptée,
+  // ou demande envoyée / reçue avec son premier message) — pas les simples abonnements.
+  const conversationContacts = relations
+    .filter((r) => r.status !== 'declined' && r.members.includes(uid))
+    .flatMap((r) => {
+      const peerId = r.members.find((id) => id !== uid) || '';
+      const profile = networkDirectory.find((p) => p.id === peerId) || people.find((p) => p.id === peerId);
+      if (!profile) return [];
+      const preview: string | undefined = ext.requestMessages?.[r.id];
+      return [{ profile, headline: ext.profileDetails[peerId]?.tagline || profile.role, preview }];
+    });
   const toggleFollowPerson = (targetId: string) => {
     if (targetId === uid) return;
     const already = myFollowing.includes(targetId);
@@ -1927,7 +1947,7 @@ export default function App() {
                 {myNetworkEntries.length === 0 ? (
                   <div className="empty">
                     <p>Vous ne suivez encore aucun compte et n’avez aucune relation active.</p>
-                    <button className="primary" onClick={() => setRelationsTab('discover')}>
+                    <button type="button" className="li-text-link" onClick={() => setRelationsTab('discover')}>
                       Découvrir des membres
                     </button>
                   </div>
@@ -2122,8 +2142,14 @@ export default function App() {
     }
 
     if (page === 'messages') {
-      const activeRel = relations.find((r) => r.id === selectedRelId);
-      const other = activeRel ? people.find((p) => p.id === activeRel.members.find((id) => id !== uid)) : null;
+      // Colonne de gauche : personnes à qui on a déjà écrit (comme le tiroir).
+      const msgContacts = withRelations(conversationContacts, relations, uid);
+      const selectedRel = relations.find((r) => r.id === selectedRelId);
+      const pagePeerId = messagesPeerId || selectedRel?.members.find((id) => id !== uid) || '';
+      const peerContact = msgContacts.find((c) => c.profile.id === pagePeerId);
+      const other = peerContact?.profile || null;
+      const activeRel = peerContact?.rel;
+      const isAccepted = activeRel?.status === 'accepted';
       const lvl = computeGlobalLevel(totalXP);
 
       return (
@@ -2153,32 +2179,36 @@ export default function App() {
                 </button>
               </header>
               <div className="conversation-list" role="list">
-                {acceptedRelations.length === 0 ? (
+                {msgContacts.length === 0 ? (
                   <div className="conversation-empty">
-                    Aucune discussion active. Acceptez ou envoyez une demande dans Relations.
+                    <p>Aucune discussion pour le moment.</p>
+                    <button type="button" className="li-text-link" onClick={() => nav('relations')}>
+                      Découvrir des membres
+                    </button>
                   </div>
                 ) : (
                   (() => {
                     const q = normalizeSearch(conversationQuery);
-                    const rows = acceptedRelations
-                      .map((r) => ({ r, p: people.find((x) => x.id === r.members.find((id) => id !== uid)) }))
-                      .filter((x) => x.p && (!q || normalizeSearch(x.p.name).includes(q)));
+                    const rows = q ? msgContacts.filter((c) => normalizeSearch(c.profile.name).includes(q)) : msgContacts;
                     if (rows.length === 0) {
-                      return <p className="conversation-empty">Aucun contact ne correspond à « {conversationQuery} ».</p>;
+                      return <p className="conversation-empty">Aucune personne ne correspond à « {conversationQuery} ».</p>;
                     }
-                    return rows.map(({ r, p }) => (
+                    return rows.map(({ profile: p, headline, preview, rel }) => (
                       <button
-                        key={r.id}
+                        key={p.id}
                         type="button"
                         role="listitem"
-                        className={`conversation-row ${selectedRelId === r.id ? 'active' : ''}`}
-                        aria-current={selectedRelId === r.id ? 'true' : undefined}
-                        onClick={() => setSelectedRelId(r.id)}
+                        className={`conversation-row ${pagePeerId === p.id ? 'active' : ''}`}
+                        aria-current={pagePeerId === p.id ? 'true' : undefined}
+                        onClick={() => {
+                          setMessagesPeerId(p.id);
+                          if (rel?.status === 'accepted') setSelectedRelId(rel.id);
+                        }}
                       >
-                        <Avatar person={p!} />
+                        <Avatar person={p} />
                         <span className="conversation-row-text">
-                          <b>{p!.name}</b>
-                          <small>{r.blockedBy.length ? 'Échange bloqué' : p!.role}</small>
+                          <b>{p.name}</b>
+                          <small>{contactStatusLabel(rel, uid, headline, preview)}</small>
                         </span>
                       </button>
                     ));
@@ -2187,45 +2217,62 @@ export default function App() {
               </div>
 
               <div className="chat-main">
-                {activeRel && other ? (
+                {other && peerContact ? (
                   <>
                     <div className="chat-header">
                       <button className="identity-link" onClick={() => nav('member', other.id)}>
                         <div>
                           <b>{other.name}</b>
-                          <small>{ext.profileDetails[other.id]?.tagline || other.role}</small>
+                          <small>{peerContact.headline}</small>
                         </div>
                       </button>
                       <ConversationMenu
                         items={[
                           { label: 'Voir le profil', onSelect: () => nav('member', other.id) },
-                          { label: 'Signaler cet échange', onSelect: () => setReportTarget(`Conversation avec ${other.name}`) },
-                          {
-                            label: activeRel.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer',
-                            danger: true,
-                            disabled: busy,
-                            onSelect: () => handleToggleBlock(activeRel)
-                          }
+                          ...(isAccepted && activeRel
+                            ? [
+                                { label: 'Signaler cet échange', onSelect: () => setReportTarget(`Conversation avec ${other.name}`) },
+                                {
+                                  label: activeRel.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer',
+                                  danger: true,
+                                  disabled: busy,
+                                  onSelect: () => handleToggleBlock(activeRel)
+                                }
+                              ]
+                            : [])
                         ]}
                       />
                     </div>
-                    <ThreadScroll className="chat-messages" watch={messages}>
+                    <ThreadScroll className="chat-messages" watch={isAccepted ? messages : activeRel?.status}>
                       <ConversationIntro person={other} onOpenProfile={() => nav('member', other.id)} />
-                      <MessageThread messages={messages} people={people} />
+                      {isAccepted && activeRel && selectedRelId === activeRel.id && (
+                        <MessageThread messages={messages} people={[user, other, ...people]} />
+                      )}
                     </ThreadScroll>
-                    {canSend(activeRel, uid) ? (
-                      <MessageComposer draft={draft} setDraft={setDraft} onSend={handleSendMessage} busy={busy} />
+                    {isAccepted && activeRel ? (
+                      canSend(activeRel, uid) ? (
+                        <MessageComposer draft={draft} setDraft={setDraft} onSend={handleSendMessage} busy={busy} />
+                      ) : (
+                        <div className="chat-blocked">
+                          <Lock size={14} /> Envoi impossible : un blocage est actif sur cette relation.
+                        </div>
+                      )
                     ) : (
-                      <div className="chat-blocked">
-                        <Lock size={14} /> Envoi impossible : un blocage est actif sur cette relation.
-                      </div>
+                      <ConversationGate
+                        rel={activeRel}
+                        userId={uid}
+                        other={other}
+                        busy={busy}
+                        onRequestContact={handleRequestContact}
+                        onDecideContact={handleDecideContact}
+                      />
                     )}
                   </>
                 ) : (
                   <div className="chat-welcome">
                     <MessageCircle size={32} />
                     <h3>Sélectionnez une discussion</h3>
-                    <p>Choisissez un contact à gauche ou ouvrez Relations pour démarrer un échange.</p>
+                    <p>Choisissez une personne à gauche pour reprendre l’échange.</p>
                   </div>
                 )}
               </div>
@@ -2250,8 +2297,8 @@ export default function App() {
                     </small>
                   </div>
                 </div>
-                <span className={`status-tag ${activeRel.blockedBy.length > 0 ? 'danger' : 'ok'}`}>
-                  {activeRel.blockedBy.length > 0 ? 'Échange bloqué' : 'Discussion acceptée'}
+                <span className={`status-tag ${activeRel.blockedBy.length > 0 ? 'danger' : isAccepted ? 'ok' : 'warn'}`}>
+                  {activeRel.blockedBy.length > 0 ? 'Échange bloqué' : isAccepted ? 'Discussion acceptée' : 'Demande en attente'}
                 </span>
                 <button className="secondary" onClick={() => nav('member', other.id)}>
                   Voir le profil complet
@@ -2547,9 +2594,13 @@ export default function App() {
           onSend={handleSendMessage}
           onToggleBlock={handleToggleBlock}
           onOpenFullMessaging={() => {
+            if (drawerPeerId) setMessagesPeerId(drawerPeerId);
+            setDrawerPeerId('');
             setDrawerOpen(false);
             nav('messages');
           }}
+          bubblePeerId={drawerPeerId}
+          setBubblePeerId={setDrawerPeerId}
           onOpenRelations={() => {
             setDrawerOpen(false);
             nav('relations');
@@ -2559,6 +2610,9 @@ export default function App() {
             nav('member', p.id);
           }}
           onOpenReport={(t) => setReportTarget(t)}
+          contacts={conversationContacts}
+          onRequestContact={handleRequestContact}
+          onDecideContact={handleDecideContact}
         />
       )}
 

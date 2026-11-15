@@ -8107,3 +8107,60 @@ input, select, textarea { font-size: 0.875rem; }
   .home-composer-shortcuts { flex-wrap: wrap; justify-content: flex-start; }
   .home-composer-shortcut-btn { min-height: 40px; }
 }
+
+/* ==========================================================================
+   Listes : toutes les lignes d'une même liste ont la même hauteur
+   (deuxième ligne sur une seule ligne, coupée par « … »)
+   ========================================================================== */
+.conversation-list .conversation-row { height: 88px; flex: 0 0 88px; align-items: center; }
+.drawer-body .conversation-list .conversation-row { height: 72px; flex-basis: 72px; }
+.conversation-list .conversation-row .avatar,
+.drawer-body .conversation-list .conversation-row .avatar { margin: 0; }
+.conversation-row-text { align-self: stretch; }
+.conversation-row-text small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-line-clamp: unset; }
+
+/* Notifications et « Mes relations » : titre, détail et ligne d'état sur une ligne chacun */
+.wf-notif-list .wf-notif-row { align-items: center; }
+.wf-notif-head { flex-wrap: nowrap; min-width: 0; }
+.wf-notif-head h3 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wf-notif-body > p, .wf-notif-body > .wf-notif-actor { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.relation-list-identity h3 { display: flex; max-width: 100%; }
+.relation-list-identity .wf-notif-body { min-width: 0; }
+
+/* Fenêtre de discussion : invitation quand l'échange n'est pas encore ouvert */
+.bubble-gate {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid var(--border-hairline);
+  background: var(--bg-surface);
+}
+.bubble-gate p { margin: 0; font-size: 0.875rem; line-height: 1.42857; color: var(--fg-muted); }
+.bubble-gate-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.bubble-gate-actions .primary, .bubble-gate-actions .secondary { min-height: 32px; padding: 0 16px; border-radius: 999px; font-size: 0.875rem; }
+.wf-notif-list .wf-notif-head h3 { height: 24px; line-height: 24px; }
+.wf-notif-list .wf-notif-head h3 .verified-badge { display: inline-flex; height: 16px; }
+
+/* Lien texte souligné (sans cadre de bouton), ex. « Découvrir des membres » */
+.li-text-link {
+  display: inline;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent-brand);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.li-text-link:hover { color: var(--fg-primary); background: none; }
+
+/* Même hauteur pour la dernière ligne (séparateur transparent au lieu d'absent) */
+.wf-notif-list .wf-notif-row:last-child { border-bottom: 1px solid transparent; }
+.conversation-list .li-text-link, .conversation-empty .li-text-link { display: inline; width: auto; padding: 0; border: 0; border-radius: 0; min-height: 0; }
+.conversation-list .li-text-link:hover { background: none; }
