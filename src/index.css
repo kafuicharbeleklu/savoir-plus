@@ -7639,3 +7639,101 @@ input, select, textarea { font-size: 0.875rem; }
 /* Libellés de navigation en graisse normale, demi-gras pour la page active (comme LinkedIn) */
 .top-navigation button span:last-child { font-weight: 400; }
 .top-navigation button.active span:last-child { font-weight: 600; }
+
+/* ==========================================================================
+   Dimensions et espacements de LinkedIn
+   Grille 225 | 555 | 300 px (24 px d'écart, conteneur 1128 px), barre du haut 52 px,
+   cartes à 8 px d'arrondi, filet fin sans ombre, 8 px entre les cartes, avatars 48 px.
+   ========================================================================== */
+.topbar { height: 52px; }
+.topbar-inner { max-width: calc(1128px + 48px); }
+.app-shell { max-width: calc(1128px + 48px); grid-template-columns: 225px minmax(0, 1fr); gap: 24px; padding-top: 24px; }
+.dashboard-grid { grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; }
+.left-rail, .right-rail, .dashboard-main { gap: 8px; }
+.dashboard-main .wf-stack { gap: 8px; }
+
+.wf-card, .htb-card, .sober-card, .profile-card, .home-composer-inline, .feed-post-card, .right-rail > section, .left-rail > section {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+/* Carte de profil (colonne gauche) : bannière 56 px, avatar 72 px qui la chevauche */
+.mini-profile-cover { height: 56px; }
+.profile-card:not(.profile-card-compact) .mini-profile-identity .avatar { width: 72px; height: 72px; font-size: 1.25rem; border: 2px solid var(--bg-surface); }
+.profile-card:not(.profile-card-compact) .mini-profile-identity { margin-top: -36px; padding: 0 12px 16px; }
+.mini-profile-text h3 { font-size: 1rem; line-height: 1.5; }
+.mini-profile-headline, .mini-profile-location { font-size: 0.75rem; line-height: 1.33; }
+
+/* Avatars : 48 px dans le fil (32 px pour les réponses) */
+.avatar { width: 48px; height: 48px; }
+.avatar.sm, .avatar.small { width: 32px; height: 32px; }
+
+/* Zone de publication : 12 px 16 px, avatar 48 px, champ arrondi de 48 px */
+.home-composer-inline { padding: 12px 16px 4px; gap: 4px; }
+.home-composer-trigger-row { gap: 8px; align-items: center; }
+.home-composer-inline .avatar { width: 48px; height: 48px; font-size: 0.9375rem; }
+.home-composer-prompt { min-height: 48px; border-radius: 35px; padding: 0 16px; text-align: left; }
+.home-composer-shortcuts { min-height: 48px; }
+
+/* Publications : marges internes 12 px 16 px */
+.feed-post-card { padding: 12px 16px 4px; gap: 8px; }
+.li-action-bar { margin: 0 -8px; min-height: 44px; }
+
+/* Colonne de droite : cartes 12 px 16 px */
+.right-rail > section { padding: 12px 16px; }
+
+/* ==========================================================================
+   « Reprise · Module » : l'illustration en fond de toute la carte, bord à bord,
+   emblème à gauche, texte à droite ; toute la carte est cliquable.
+   ========================================================================== */
+.home-resume {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  min-height: 232px;
+  grid-template-columns: 40% minmax(0, 1fr);
+  gap: 0;
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: box-shadow var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
+}
+.home-resume:hover { border-color: var(--border-strong); box-shadow: var(--shadow-hover); }
+.home-resume:has(.home-resume-link:focus-visible) { outline: 2px solid var(--accent-brand); outline-offset: 2px; }
+.home-resume-visual { position: absolute; inset: 0; z-index: 0; display: block; }
+.home-resume-visual .sober-card-banner {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  justify-content: flex-start;
+}
+.home-resume-visual .sober-emblem-ring { margin-left: calc(20% - 32px); transform: scale(1.6); }
+.home-resume-visual .sober-glow-a { width: 260px; height: 260px; top: -60px; left: -40px; }
+.home-resume-visual .sober-glow-b { width: 220px; height: 220px; }
+.home-resume-body { position: relative; z-index: 1; grid-column: 2; padding: 20px 20px 20px 0; gap: 10px; }
+.home-resume-body .between { position: relative; z-index: 3; }
+.home-resume h2 { margin: 0; }
+.home-resume-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.home-resume-link:focus-visible { outline: none; }
+.home-resume:hover .home-resume-link { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 760px) {
+  .home-resume { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .home-resume::before { content: ''; display: block; height: 112px; }
+  .home-resume-body { grid-column: 1; padding: 0 16px 16px; }
+  .home-resume-visual .sober-card-banner { align-items: flex-start; }
+  .home-resume-visual .sober-emblem-ring { margin: 28px 0 0 28px; transform: scale(1.15); }
+}
+
+/* Raccourcis de la zone de publication : une seule ligne, répartis comme sur LinkedIn */
+.home-composer-shortcuts { flex-wrap: nowrap; justify-content: space-around; gap: 4px; }
+.home-composer-shortcut-btn { flex: 0 1 auto; min-height: 48px; padding: 0 8px; white-space: nowrap; font-size: 0.875rem; }

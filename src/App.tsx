@@ -1325,7 +1325,14 @@ export default function App() {
 
             {/* Pedagogical Resume Card + Popular Carousel (All / Modules) */}
             <>
-                <article className="htb-card home-resume">
+                <article
+                  className="htb-card home-resume"
+                  onClick={() =>
+                    resumeProg.lessons.length >= (MODULES_CONTENT[resumeModuleId]?.lessons.length || 3) && !resumeValidated
+                      ? (setActiveStudyModuleId(resumeModuleId), nav('quiz-intro', resumeModuleId))
+                      : openReader(resumeModuleId)
+                  }
+                >
                   <div className="home-resume-visual">
                     <CatalogCardBanner item={resumeCatalog} />
                   </div>
@@ -1334,7 +1341,16 @@ export default function App() {
                       <ContentTypeMark type="module" labelOverride="Reprise · Module" />
                       <DifficultyMeter level={resumeCatalog.level} />
                     </div>
-                    <h2>{resumeCatalog.title}</h2>
+                    <h2>
+                      {/* Le titre est le bouton (clavier) ; le clic sur toute la carte remonte à l'article */}
+                      <button
+                        type="button"
+                        className="home-resume-link"
+                        aria-label={`${resumePct === 0 ? 'Commencer' : resumePct === 100 ? 'Revoir' : 'Reprendre'} le module ${resumeCatalog.title}`}
+                      >
+                        {resumeCatalog.title}
+                      </button>
+                    </h2>
                     <p className="home-resume-summary">{resumeCatalog.summary}</p>
                     <div className="htb-card-progress">
                       <div className="between tiny tabular-nums">
@@ -1357,18 +1373,6 @@ export default function App() {
                       <span>{resumeCatalog.domain}</span>
                       <span aria-hidden="true">·</span>
                       <span>{resumeCatalog.duration}</span>
-                    </div>
-                    <div className="wf-inline-actions">
-                      <button
-                        className="primary"
-                        onClick={() =>
-                          resumeProg.lessons.length >= (MODULES_CONTENT[resumeModuleId]?.lessons.length || 3) && !resumeValidated
-                            ? (setActiveStudyModuleId(resumeModuleId), nav('quiz-intro', resumeModuleId))
-                            : openReader(resumeModuleId)
-                        }
-                      >
-                        {resumePct === 0 ? 'Commencer le module' : resumePct === 100 ? 'Revoir le module' : 'Continuer'} <ArrowRight size={15} />
-                      </button>
                     </div>
                   </div>
                 </article>
