@@ -7476,3 +7476,16 @@ button:focus-visible, a:focus-visible, [role="tab"]:focus-visible, [tabindex]:fo
 .htb-streak-alert svg, [data-theme="dark"] .htb-streak-alert svg { color: var(--accent-brand); }
 .htb-streak-alert-em, [data-theme="dark"] .htb-streak-alert-em { color: var(--accent-brand); }
 .study-duration { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
+
+/* Réactions : icône pleine quand on a réagi (petit rebond), vide quand on retire sa réaction */
+.li-action-btn { padding: 4px 8px; min-height: 36px; border-radius: var(--radius-sm); }
+.li-action-btn:hover { background: var(--bg-subtle); }
+.li-action-btn svg, .li-comment-act svg { transition: transform var(--dur-fast) var(--ease-standard), fill var(--dur-fast) var(--ease-standard); }
+.li-action-btn:active svg, .li-comment-act:active:not(:disabled) svg { transform: scale(0.88); }
+.li-action-btn.is-active[aria-pressed="true"] svg,
+.li-comment-act.is-active svg { animation: savoir-reaction-pop 360ms var(--ease-enter); }
+@keyframes savoir-reaction-pop {
+  0% { transform: scale(0.7); }
+  55% { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}

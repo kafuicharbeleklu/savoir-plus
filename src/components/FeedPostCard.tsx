@@ -270,6 +270,7 @@ export function FeedPostCard({
               <button
                 type="button"
                 className={`li-comment-act ${rLiked ? 'is-active' : ''}`}
+                aria-pressed={rLiked}
                 disabled={isSelfReply}
                 onClick={() => onToggleReplyHelpful(post.id, reply.id, reply.authorId)}
                 aria-label={
@@ -279,7 +280,7 @@ export function FeedPostCard({
                 }
                 title={isSelfReply ? 'Vous ne pouvez pas voter pour votre propre réponse' : 'Utile'}
               >
-                <ThumbsUp size={13} aria-hidden="true" />
+                <ThumbsUp size={13} aria-hidden="true" fill={rLiked ? 'currentColor' : 'none'} />
                 {reply.helpfulBy.length > 0 && (
                   <span className="li-count-num tabular-nums">{reply.helpfulBy.length}</span>
                 )}
@@ -453,7 +454,7 @@ export function FeedPostCard({
           aria-label={hasLikedPost ? `Retirer Utile (${postHelpfulBy.length})` : `Utile (${postHelpfulBy.length})`}
           title="Utile"
         >
-          <ThumbsUp size={17} aria-hidden="true" />
+          <ThumbsUp size={17} aria-hidden="true" fill={hasLikedPost ? 'currentColor' : 'none'} />
           {postHelpfulBy.length > 0 && (
             <span className="li-action-count tabular-nums">{postHelpfulBy.length}</span>
           )}
