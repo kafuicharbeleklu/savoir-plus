@@ -124,7 +124,6 @@ import {
 const DEMO_PERSONA_KEY = 'savoir-demo-persona';
 /** Pages d'étude dont l'identifiant d'URL désigne le module à ouvrir (liens profonds, R:4444). */
 const STUDY_DEEP_LINK_PAGES: string[] = ['reader', 'quiz-intro', 'quiz', 'result'];
-const DEMO_BANNER_KEY = 'savoir-demo-banner-hidden';
 
 const LESSON_COUNTS: Record<string, number> = Object.fromEntries(
   Object.entries(MODULES_CONTENT).map(([id, mod]) => [id, mod.lessons.length])
@@ -247,13 +246,6 @@ export default function App() {
     }
     return resolveDemoPersona(window.location.search, stored);
   });
-  const [demoBannerHidden, setDemoBannerHidden] = useState<boolean>(() => {
-    try {
-      return window.sessionStorage.getItem(DEMO_BANNER_KEY) === '1';
-    } catch {
-      return false;
-    }
-  });
   const [cloudPreviewRole, setCloudPreviewRole] = useState<'learner' | 'creator' | 'admin'>('learner');
 
   // Première visite (aucun lien précis, aucun personnage choisi dans cet onglet) : page d'accueil visiteur.
@@ -287,7 +279,7 @@ export default function App() {
 
   const [topQuery, setTopQuery] = useState<string>('');
   const [catalogDomain, setCatalogDomain] = useState<string>('Tous');
-  const [homeFeedTab, setHomeFeedTab] = useState<HomeFeedTab>('all');
+  const homeFeedTab: HomeFeedTab = 'all'; // fil d'accueil : toutes les publications (plus de filtres)
   const [learningTab, setLearningTab] = useState<'En cours' | 'À commencer' | 'Terminés'>('En cours');
   const [relationsTab, setRelationsTab] = useState<'discover' | 'requests' | 'network'>('discover');
   const [settingsTab, setSettingsTab] = useState<'prefs' | 'privacy' | 'security'>('prefs');
@@ -601,15 +593,6 @@ export default function App() {
       // stockage indisponible : sans conséquence
     }
   }, [uid, mode, page]);
-
-  const hideDemoBanner = () => {
-    setDemoBannerHidden(true);
-    try {
-      window.sessionStorage.setItem(DEMO_BANNER_KEY, '1');
-    } catch {
-      // stockage indisponible : le bandeau réapparaîtra au rechargement
-    }
-  };
 
   // Messages: desktop opens the quick-chat drawer; at ≤768px the drawer is hidden, so open the full page.
   const openConversation = (relId: string) => {
@@ -1303,73 +1286,42 @@ export default function App() {
       return (
         <div className="dashboard-grid">
           <div className="dashboard-main">
-            <header className="home-hero">
-              <p className="home-hero-date">
-                {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </p>
-              <h1>Bonjour {user.name.split(' ')[0]}</h1>
-              <p className="home-hero-sub">
-                {resumeValidated
-                  ? 'Module validé : découvrez la suite de votre parcours.'
-                  : resumePct > 0
-                    ? 'Reprenez là où vous en étiez.'
-                    : 'Commencez par un module court : quelques minutes suffisent.'}
-              </p>
-            </header>
-
-            {mode === 'local' && !demoBannerHidden && page === 'home' && (() => {
-              const phishingPct = modulePct('phishing');
-              const startLabel = isModuleValidated('phishing')
-                ? 'Revoir le module phishing'
-                : phishingPct > 0
-                  ? 'Reprendre le module phishing'
-                  : 'Démarrer le module phishing (12 min)';
-              const otherId = uid === 'kossi' ? 'afi' : 'kossi';
-              const otherName = people.find((p) => p.id === otherId)?.name.split(' ')[0] || otherId;
-              return (
-                <section className="demo-banner" aria-label="Présentation de la démonstration">
-                  <div className="demo-banner-text">
-                    <span className="eyebrow">DÉMONSTRATION · HACKATHON CREATE WITH AI</span>
-                    <p className="demo-banner-pitch">
-                      <b>SAVOIR+</b> : apprendre par défis courts, progresser avec des XP et s’entraider entre membres.
-                    </p>
-                    <small className="tiny muted">
-                      Vous explorez en tant que <b>{user.name}</b> ({caps.roleLabel}). Démo locale — non synchronisée :
-                      personnages, publications et XP sont fictifs.
-                    </small>
-                  </div>
-                  <div className="demo-banner-actions">
-                    <button className="primary" onClick={() => openReader('phishing')}>
-                      {startLabel} <ArrowRight size={15} />
-                    </button>
-                    <div className="demo-persona-switch" role="group" aria-label="Changer de personnage de démo">
-                      {(['afi', 'kossi'] as const).map((id) => (
-                        <button
-                          key={id}
-                          type="button"
-                          aria-pressed={uid === id}
-                          className={uid === id ? 'active' : ''}
-                          onClick={() => uid !== id && handleSwitchPersona(id)}
-                        >
-                          {people.find((p) => p.id === id)?.name.split(' ')[0] || id}
-                        </button>
-                      ))}
-                    </div>
-                    <a
-                      className="text-link tiny"
-                      href={`${window.location.pathname}?as=${otherId}#relations`}
-                      target="_blank"
-                      rel="noopener"
-                    >
-                      Ouvrir {otherName} dans une 2ᵉ fenêtre
-                    </a>
-                  </div>
-                  <button className="icon-btn demo-banner-close" aria-label="Masquer la présentation" onClick={hideDemoBanner}>
-                    <X size={16} />
-                  </button>
-                </section>
-              );
-            })()}
+            {/* Inline LinkedIn-style Composer */}
+            <section className="home-composer-inline" aria-label="Créer une contribution">
+              <div className="home-composer-trigger-row">
+                <Avatar person={user} small />
+                <button
+                  type="button"
+                  className="home-composer-prompt"
+                  onClick={() => setComposerOpen(true)}
+                >
+                  Bonjour {user.name.split(' ')[0]}, partagez une astuce ou posez une question…
+                </button>
+              </div>
+              <div className="home-composer-shortcuts">
+                <button
+                  type="button"
+                  className="home-composer-shortcut-btn"
+                  onClick={() => nav('community-compose')}
+                >
+                  <HelpCircle size={15} /> Poser une question
+                </button>
+                <button
+                  type="button"
+                  className="home-composer-shortcut-btn"
+                  onClick={() => setComposerOpen(true)}
+                >
+                  <MessageSquare size={15} /> Partager une méthode
+                </button>
+                <button
+                  type="button"
+                  className="home-composer-shortcut-btn"
+                  onClick={() => nav('catalog')}
+                >
+                  <BookOpen size={15} /> Explorer les modules
+                </button>
+              </div>
+            </section>
 
             {/* Pedagogical Resume Card + Popular Carousel (All / Modules) */}
             <>
@@ -1476,77 +1428,16 @@ export default function App() {
 
             <div className="home-section-head">
               <h2>Fil d’entraide</h2>
-              <p className="muted">Questions, méthodes et réponses des membres que vous suivez.</p>
-            </div>
-
-            {/* Inline LinkedIn-style Composer */}
-            <section className="home-composer-inline" aria-label="Créer une contribution">
-              <div className="home-composer-trigger-row">
-                <Avatar person={user} small />
-                <button
-                  type="button"
-                  className="home-composer-prompt"
-                  onClick={() => setComposerOpen(true)}
-                >
-                  Bonjour {user.name.split(' ')[0]}, partagez une astuce ou posez une question…
-                </button>
-              </div>
-              <div className="home-composer-shortcuts">
-                <button
-                  type="button"
-                  className="home-composer-shortcut-btn"
-                  onClick={() => nav('community-compose')}
-                >
-                  <HelpCircle size={15} /> Poser une question
-                </button>
-                <button
-                  type="button"
-                  className="home-composer-shortcut-btn"
-                  onClick={() => setComposerOpen(true)}
-                >
-                  <MessageSquare size={15} /> Partager une méthode
-                </button>
-                <button
-                  type="button"
-                  className="home-composer-shortcut-btn"
-                  onClick={() => nav('catalog')}
-                >
-                  <BookOpen size={15} /> Explorer les modules
-                </button>
-              </div>
-            </section>
-
-            {/* Unified Feed Filter Bar */}
-            <div className="feed-filter-bar" role="tablist" aria-label="Filtrer le fil d’accueil">
-              {(
-                [
-                  { id: 'all', label: 'Tous' },
-                  { id: 'following', label: `Abonnements (${myFollowing.length})` },
-                  { id: 'open-questions', label: `Questions ouvertes (${openHelpPosts.length})` }
-                ] as const
-              ).map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={homeFeedTab === tab.id}
-                  className={homeFeedTab === tab.id ? 'selected' : ''}
-                  onClick={() => setHomeFeedTab(tab.id)}
-                >
-                  {tab.label}
-                </button>
-              ))}
+              <p className="muted">Questions, méthodes et réponses de la communauté.</p>
             </div>
 
             {/* Unified Community Stream */}
-            {homeFeedTab !== 'modules' && (
+            {(
               <section className="wf-stack" aria-label="Fil d’entraide et publications">
                 {visibleFeedPosts.length === 0 ? (
                   <div className="empty">
                     <p>
-                      {homeFeedTab === 'following'
-                        ? 'Aucune contribution récente de vos abonnements.'
-                        : 'Aucune question ouverte pour le moment.'}
+                      Aucune publication pour le moment.
                     </p>
                     <button className="primary" onClick={() => setComposerOpen(true)}>
                       <Plus size={15} /> Lancer une discussion

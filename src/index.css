@@ -6969,46 +6969,6 @@ ul.lesson-points + h3, .wf-muted-text + h3 { margin-top: 16px; }
   .result-review > div { flex-direction: column; gap: 8px; }
 }
 
-/* Bandeau de présentation de la démo (accueil, mode local) */
-.demo-banner {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px 20px;
-  padding: 16px 48px 16px 18px;
-  margin-bottom: 12px;
-  border-radius: 12px;
-  background: var(--accent-brand-soft);
-  border: 1px solid color-mix(in srgb, var(--accent-brand) 30%, transparent);
-}
-.demo-banner-text { display: flex; flex-direction: column; gap: 4px; flex: 1 1 320px; min-width: 0; }
-.demo-banner-pitch { margin: 0; font-size: 0.9375rem; line-height: 1.45; color: var(--fg-primary); }
-.demo-banner-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.demo-persona-switch {
-  display: inline-flex;
-  padding: 3px;
-  border-radius: 999px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-hairline);
-}
-.demo-persona-switch button {
-  min-height: 32px;
-  padding: 4px 14px;
-  border-radius: 999px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--fg-muted);
-  background: transparent;
-  border: 0;
-}
-.demo-persona-switch button.active { background: var(--accent-brand); color: var(--bg-surface); }
-.demo-banner-close { position: absolute; top: 8px; right: 8px; }
-@media (max-width: 768px) {
-  .demo-banner { padding: 14px 44px 14px 14px; }
-  .demo-banner-actions { width: 100%; }
-}
 
 /* ==========================================================================
    Studio IA (génération assistée) et fiche illustrée pas à pas
@@ -7460,15 +7420,7 @@ button:focus-visible, a:focus-visible, [role="tab"]:focus-visible, [tabindex]:fo
 /* ==========================================================================
    Accueil connecté (refonte v2)
    ========================================================================== */
-.home-hero { display: flex; flex-direction: column; gap: 2px; padding: var(--space-2) 0 var(--space-1); }
-.home-hero-date { font-size: 0.8125rem; font-weight: 600; color: var(--fg-subtle); }
-.home-hero-date::first-letter { text-transform: uppercase; }
-.home-hero h1 { font-size: clamp(1.75rem, 2.6vw, 2.25rem); letter-spacing: -0.03em; }
-.home-hero-sub { font-size: 1rem; color: var(--fg-muted); }
 
-/* Bandeau de démonstration plus discret */
-.demo-banner { padding: var(--space-4) 48px var(--space-4) var(--space-5); background: var(--bg-surface); border-color: var(--border-hairline); box-shadow: var(--shadow-card); border-left: 3px solid var(--accent-brand); }
-.demo-banner-pitch { font-size: 0.9375rem; }
 
 /* Carte de reprise : l'élément principal de la page */
 .home-resume {
