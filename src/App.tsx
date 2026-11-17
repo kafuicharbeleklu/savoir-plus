@@ -10,6 +10,7 @@ import {
   Award,
   BarChart2,
   BookOpen,
+  CalendarDays,
   Check,
   CheckCheck,
   CheckCircle2,
@@ -107,6 +108,15 @@ import {
   type CommunityPost,
   type ExtendedDemoState
 } from './wireframeData';
+import {
+  buildRevisionPlan,
+  demoCalendarState,
+  normalizeCalendarState,
+  resolveEvents,
+  todayDay,
+  type CalendarUserState,
+  type LinkedModuleState
+} from './calendar';
 
 import { TopBar } from './components/TopBar';
 import { MobileNav } from './components/MobileNav';
@@ -125,6 +135,7 @@ import {
   normalizeSearch
 } from './components/MessageThread';
 import { SplashScreen } from './components/SplashScreen';
+import { CalendarCard } from './components/CalendarMonth';
 import { FeedPostCard } from './components/FeedPostCard';
 import {
   SidebarCompactFooter,
@@ -161,6 +172,7 @@ import {
   ResourceReadView
 } from './pages/LearningExtraPages';
 import { CommunityComposeView, CommunityThreadView } from './pages/CommunityPages';
+import { CalendarPage } from './pages/CalendarPage';
 import {
   AuthFlowsView,
   ModerationView,
@@ -200,6 +212,7 @@ const VALID_PAGES = new Set<string>([
   'home',
   'catalog',
   'learning',
+  'calendar',
   'progression',
   'community',
   'community-compose',
@@ -585,6 +598,40 @@ export default function App() {
     const study = resolveStudyContent(modId, ext.studioContents, ext.studioQuiz);
     return sum + moduleXp(getModuleProgress(modId), study.lessons.length, answerKey(modId));
   }, 0);
+
+  // Calendrier et plan de révision : calculés sur l'appareil, pour le personnage en cours.
+  // Tant que le visiteur n'a rien modifié, il voit le calendrier de démonstration, daté du jour.
+  const today = todayDay();
+  const calendarState: CalendarUserState = ext.calendar?.[uid]
+    ? normalizeCalendarState(ext.calendar[uid])
+    : demoCalendarState(uid, today);
+  const calendarEvents = resolveEvents(calendarState);
+  const calendarModules = Object.fromEntries(
+    Array.from(new Set(calendarEvents.flatMap((e) => e.exam?.moduleIds || [])))
+      .filter((id) => playableModuleIds.includes(id))
+      .map((id) => {
+        const modProg = getModuleProgress(id);
+        const state: LinkedModuleState = isModuleValidated(id)
+          ? 'validated'
+          : modProg.submitted
+            ? 'failed'
+            : modProg.lessons.length > 0
+              ? 'started'
+              : 'new';
+        const title =
+          dynamicCatalog.find((c) => c.id === id)?.title || resolveStudyContent(id, ext.studioContents, ext.studioQuiz).title;
+        return [id, { title, state }] as const;
+      })
+  );
+  const revisionPlan = buildRevisionPlan({
+    events: calendarEvents,
+    settings: calendarState.settings,
+    log: calendarState.log,
+    today,
+    modules: calendarModules
+  });
+  const saveCalendar = (next: CalendarUserState) =>
+    updateExt((prev) => ({ ...prev, calendar: { ...(prev.calendar || {}), [uid]: next } }));
 
   const syncPopularScroll = () => {
     const el = popularTrackRef.current;
@@ -1084,6 +1131,7 @@ export default function App() {
           cloudConfigured={cloudConfigured}
           busy={busy}
           error={error}
+          tourReady={splashPhase === 'done'}
           onSelectPersona={(id) => handleSwitchPersona(id)}
           onLoginCloud={handleLoginCloud}
           onCompleteOnboarding={handleCompleteOnboarding}
@@ -1131,7 +1179,6 @@ export default function App() {
           busy={busy}
           onCompleteLesson={handleCompleteLesson}
           onOpenQuizIntro={() => nav('quiz-intro', activeStudyModuleId)}
-          tourReady={splashPhase === 'done'}
           onExit={() => nav(studyReturnTarget.page === 'visitor' ? 'home' : studyReturnTarget.page, studyReturnTarget.id || '')}
         />
         {toast && (
@@ -1572,6 +1619,14 @@ export default function App() {
 
           {/* Right Rail (Desktop 3rd Column) — masquée sur mobile : le fil d'actualité seul */}
           <aside className="right-rail home-rail" aria-label="Repères et découvertes">
+            <CalendarCard
+              today={today}
+              events={calendarEvents}
+              plan={revisionPlan}
+              log={calendarState.log}
+              onOpen={(day) => nav('calendar', day || '')}
+            />
+
             <section className="rail-card">
               <span className="eyebrow">Votre progression</span>
               <h3 className="tabular-nums">Niveau {lvl.level} · {totalXP} XP</h3>
@@ -2400,6 +2455,22 @@ export default function App() {
       );
     }
 
+    if (page === 'calendar') {
+      return (
+        <CalendarPage
+          state={calendarState}
+          events={calendarEvents}
+          plan={revisionPlan}
+          today={today}
+          initialTarget={selectedId}
+          moduleOptions={dynamicCatalog.filter((c) => c.type === 'module').map((c) => ({ id: c.id, title: c.title }))}
+          onChange={saveCalendar}
+          onOpenModule={(id) => nav('module-detail', id)}
+          setToast={setToast}
+        />
+      );
+    }
+
     if (page === 'catalog') return <CatalogExtraView {...extraProps} />;
     if (page === 'resource-detail') return <ResourceDetailView {...extraProps} />;
     if (page === 'module-detail') return <ModuleDetailView {...extraProps} />;
@@ -2513,6 +2584,9 @@ export default function App() {
                   <span className="left-rail-section-label">Apprentissage</span>
                   <button className={`rail-nav-btn ${page === 'learning' ? 'active' : ''}`} onClick={() => nav('learning')}>
                     <span><BookOpen size={16} /> Mes apprentissages</span>
+                  </button>
+                  <button className={`rail-nav-btn ${page === 'calendar' ? 'active' : ''}`} onClick={() => nav('calendar')}>
+                    <span><CalendarDays size={16} /> Calendrier</span>
                   </button>
                   <button className={`rail-nav-btn ${page === 'catalog' ? 'active' : ''}`} onClick={() => nav('catalog')}>
                     <span><Compass size={16} /> Bibliothèque</span>

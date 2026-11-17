@@ -11,6 +11,7 @@ import './styles/progression.css';
 import './styles/charts.css';
 import './styles/reader.css';
 import './styles/landing.css';
+import './styles/calendar.css';
 import './styles/retouches.css';
 import './styles/angles.css';
 

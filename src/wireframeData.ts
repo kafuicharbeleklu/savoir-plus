@@ -8,6 +8,7 @@ import {
   SEED_POSTS_OLDER,
   SEED_POSTS_RECENT
 } from './seedCommunity';
+import type { CalendarUserState } from './calendar';
 
 /** Version des données de simulation : l'augmenter fait apparaître les nouveautés chez les visiteurs déjà venus. */
 export const SEED_VERSION = 2;
@@ -19,6 +20,7 @@ export type AppPage =
   | 'home'
   | 'catalog'
   | 'learning'
+  | 'calendar'
   | 'progression'
   | 'community'
   | 'community-compose'
@@ -625,6 +627,8 @@ export interface ExtendedDemoState {
     coverDataUrl?: string;
   }>;
   followingIds: Record<string, string[]>;
+  /** Calendrier et plan de révision de chaque membre. Absent : calendrier de démonstration du personnage. */
+  calendar?: Record<string, CalendarUserState>;
   moduleProgress: Record<string, Record<string, { lessons: number[]; answers: number[]; submitted: boolean }>>;
   requestMessages: Record<string, string>;
   appPrefs: {

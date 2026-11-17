@@ -1,0 +1,218 @@
+/* ==========================================================================
+   Calendrier et plan de révision.
+   Les jours et les repères sont des conteneurs ronds : un pictogramme selon le
+   contexte (flamme, médaille, soleil…), le nombre en son centre, gris ou en
+   couleur selon l'état. Le reste suit les règles de l'application : lignes de
+   liste égales, statut = point + texte, aucune couleur propre à cet écran.
+   ========================================================================== */
+
+/* -- Pictogrammes des repères : le nombre se pose au centre du vide de chacun ------- */
+.cal-glyph { display: block; }
+.cal-gauge.is-flame { --cal-num-top: 61%; }
+.cal-gauge.is-pad { --cal-num-top: 57%; }
+.cal-gauge.is-page { --cal-num-top: 60%; }
+.cal-gauge.is-alert { --cal-num-top: 63%; }
+
+/* -- Grille d'un mois : des ronds sobres, sans point ni pictogramme ------------------
+      aujourd'hui : rond plein · examen : rond plein terre cuite · séance faite : fond doux
+      séance prévue : fin cercle gris · congés : teinte légère · repère : fin cercle de couleur */
+.cal-grid { display: flex; flex-direction: column; gap: 2px; }
+.cal-grid-head,
+.cal-grid-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cal-grid-head span {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+
+.cal-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--fg-primary);
+  font: inherit;
+  cursor: pointer;
+}
+.cal-day-disc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 0.875rem;
+  line-height: 1;
+  transition: background-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+}
+.cal-day:hover .cal-day-disc { background: var(--bg-subtle); }
+.cal-day.is-outside { opacity: 0.4; }
+
+.cal-day.is-break .cal-day-disc { background: var(--accent-brand-soft); }
+.cal-day.is-planned .cal-day-disc { box-shadow: inset 0 0 0 1px var(--border-strong); }
+.cal-day.is-marker .cal-day-disc { box-shadow: inset 0 0 0 1.5px var(--accent-brand); }
+.cal-day.is-done .cal-day-disc { background: var(--accent-warm-soft); color: var(--accent-warm); font-weight: 600; }
+.cal-day.is-exam .cal-day-disc { background: var(--accent-warm); color: var(--badge-warm-ink, #fff); font-weight: 600; }
+.cal-day.is-today .cal-day-disc { background: var(--accent-brand); color: var(--accent-brand-ink); font-weight: 600; }
+.cal-day.is-break:hover .cal-day-disc { background: color-mix(in srgb, var(--accent-brand) 16%, var(--bg-surface)); }
+.cal-day.is-done:hover .cal-day-disc { background: color-mix(in srgb, var(--accent-warm) 18%, var(--bg-surface)); }
+.cal-day.is-exam:hover .cal-day-disc { background: var(--accent-warm); }
+.cal-day.is-today:hover .cal-day-disc { background: var(--accent-brand); }
+/* Jour choisi : anneau détaché */
+.cal-day.is-selected .cal-day-disc { box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 3.5px var(--accent-brand); }
+
+/* Version resserrée pour la carte de l'accueil */
+.cal-grid.is-compact { gap: 0; }
+.cal-grid.is-compact .cal-grid-head span { padding: 2px 0 4px; font-size: 0.6875rem; }
+.cal-grid.is-compact .cal-day { min-height: 34px; padding: 2px 0; }
+.cal-grid.is-compact .cal-day-disc { width: 28px; height: 28px; font-size: 0.75rem; }
+/* Dans la carte, les séances prévues ne sont pas cerclées : les repères du dessous les comptent déjà. */
+.cal-grid.is-compact .cal-day.is-planned:not(.is-selected) .cal-day-disc { box-shadow: none; }
+
+/* -- Carte « Calendrier » de l'accueil --------------------------------------------- */
+.cal-card { gap: 10px; }
+.cal-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.cal-card-month { font-size: 0.75rem; color: var(--fg-muted); white-space: nowrap; }
+
+/* -- Repères ronds de la carte : série, séances du jour, prochain examen, retard --------- */
+.cal-gauges { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 0; }
+.cal-gauge {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  box-shadow: none;
+  color: var(--fg-subtle);
+  cursor: pointer;
+  transition: box-shadow var(--dur-fast) var(--ease-standard);
+}
+.cal-gauge .cal-glyph { width: 38px; height: 38px; }
+.cal-gauge b {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--cal-num-top, 58%);
+  transform: translateY(-50%);
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.cal-gauge.is-alert b { font-size: 0.75rem; }
+.cal-gauge.is-off .cal-glyph { opacity: 0.6; }
+.cal-gauge.is-brand { background: var(--accent-brand-soft); color: var(--accent-brand); }
+.cal-gauge.is-warm { background: var(--accent-warm-soft); color: var(--accent-warm); }
+.cal-gauge.is-danger { background: var(--accent-danger-soft); color: var(--accent-danger); }
+.cal-gauge:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
+
+/* -- Page : mois affiché --------------------------------------------------------------- */
+.cal-page .ui-tabs { margin-bottom: 4px; }
+.cal-month {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--angle);
+}
+.cal-month-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
+.cal-month-head h2 { margin: 0; font-size: 1rem; font-weight: 600; color: var(--fg-primary); }
+.cal-month-nav { display: flex; align-items: center; gap: 4px; }
+.cal-month-nav .li-text-link { margin-right: 8px; }
+
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 4px 0 0;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--border-hairline);
+  list-style: none;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
+}
+.cal-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.cal-legend-disc { flex: none; width: 12px; height: 12px; border-radius: 50%; }
+.cal-legend-disc.is-planned { box-shadow: inset 0 0 0 1px var(--border-strong); }
+.cal-legend-disc.is-done { background: var(--accent-warm-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-warm) 35%, transparent); }
+.cal-legend-disc.is-exam { background: var(--accent-warm); }
+.cal-legend-disc.is-break { background: var(--accent-brand-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-brand) 20%, transparent); }
+
+.cal-page .ui-section-title { margin-top: 12px; }
+.cal-source { margin: 0; font-size: 0.75rem; line-height: 1.45; color: var(--fg-muted); }
+
+/* -- Vignette de date ------------------------------------------------------------------- */
+.cal-date-tile {
+  flex: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--angle);
+  background: var(--bg-subtle);
+  color: var(--fg-primary);
+  line-height: 1;
+}
+.cal-date-tile b { font-size: 1rem; font-weight: 600; line-height: 1.1; }
+.cal-date-tile small { font-size: 0.625rem; line-height: 1.2; color: var(--fg-muted); }
+.cal-date-tile.is-brand { background: var(--accent-brand-soft); color: var(--accent-brand); }
+.cal-date-tile.is-warm { background: var(--accent-warm-soft); color: var(--accent-warm); }
+.cal-date-tile.is-brand small,
+.cal-date-tile.is-warm small { color: inherit; }
+
+/* -- Fenêtres : formulaires et explications ------------------------------------------- */
+.cal-form { display: flex; flex-direction: column; gap: 16px; }
+.cal-form input,
+.cal-form .ui-select { width: 100%; }
+.cal-form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.cal-form-row.is-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cal-form-note { margin: 0; font-size: 0.875rem; line-height: 1.45; color: var(--fg-muted); }
+.cal-form-error { margin: 0; font-size: 0.75rem; line-height: 1.45; color: var(--accent-danger); }
+.cal-form input[aria-invalid='true'] { border-color: var(--accent-danger); }
+.cal-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-hairline);
+}
+.cal-form-section h3 { margin: 0; font-size: 1rem; font-weight: 600; color: var(--fg-primary); }
+@media (max-width: 560px) {
+  .cal-form-row,
+  .cal-form-row.is-three { grid-template-columns: minmax(0, 1fr); }
+}
+
+.cal-detail-head { display: flex; align-items: center; gap: 12px; }
+.cal-detail-head > div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cal-detail-head b { font-size: 0.875rem; font-weight: 600; color: var(--fg-primary); }
+.cal-detail-head span { font-size: 0.75rem; color: var(--fg-muted); }
+.cal-reasons {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: disc;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--fg-primary);
+}
+.cal-progress { display: flex; flex-direction: column; gap: 6px; }
