@@ -12,7 +12,7 @@ import type { Profile, Relation } from '../data';
 import { currentCloudEmail, sendPasswordReset } from '../data';
 import { resolveProfileVerified, type RoleCapabilities } from '../personas';
 import { Avatar } from '../components/ProfileIdentityCard';
-import { EmptyState, RadioList, SavedIndicator, StatusDot, Toggle, useIsNarrow } from '../components/ui';
+import { ConfirmDialog, EmptyState, RadioList, SavedIndicator, StatusDot, Toggle, useIsNarrow } from '../components/ui';
 
 type SectionId = 'account' | 'security' | 'visibility' | 'data' | 'notifications';
 
@@ -55,6 +55,8 @@ export interface SettingsViewProps {
   path: string;
   /** Mode cloud (Supabase) ou démonstration locale. */
   mode: 'local' | 'cloud';
+  /** Remet la démonstration locale dans son état de départ. */
+  onResetDemo?: () => void;
 }
 
 /* ------------------------------------------------------------------ briques */
@@ -108,8 +110,10 @@ function Detail({
 
 /* ------------------------------------------------------------------ page */
 
-export function SettingsView({ ext, updateExt, nav, user, caps, relations, people, onUnblock, setToast, path, mode }: SettingsViewProps) {
+export function SettingsView({ ext, updateExt, nav, user, caps, relations, people, onUnblock, setToast, path, mode, onResetDemo }: SettingsViewProps) {
   const narrow = useIsNarrow();
+  const [confirmReset, setConfirmReset] = useState(false);
+  const canReset = mode === 'local' && Boolean(onResetDemo);
   const parsed = parseSettingsPath(path);
   const section: SectionId | null = parsed.section || (narrow ? null : 'account');
   const detail = parsed.detail;
@@ -404,6 +408,32 @@ export function SettingsView({ ext, updateExt, nav, user, caps, relations, peopl
             {mode !== 'cloud' && <p className="st-note">Démonstration : aucune archive n’est générée.</p>}
           </Detail>
         );
+      case 'data/reset':
+        if (!canReset) return null;
+        return (
+          <Detail
+            title="Réinitialiser la démonstration"
+            description="Tout ce qui a été fait sur cet appareil est effacé : progression, publications, calendrier, classes et réglages. Les sept personnages reviennent à leur état de départ."
+            onBack={back}
+          >
+            <button type="button" className="secondary ui-btn-sm danger" onClick={() => setConfirmReset(true)}>
+              Réinitialiser
+            </button>
+            <ConfirmDialog
+              open={confirmReset}
+              danger
+              title="Réinitialiser la démonstration ?"
+              text="Cette action efface les données de démonstration enregistrées sur cet appareil. Elle ne peut pas être annulée."
+              confirmLabel="Réinitialiser"
+              onCancel={() => setConfirmReset(false)}
+              onConfirm={() => {
+                setConfirmReset(false);
+                onResetDemo?.();
+                back();
+              }}
+            />
+          </Detail>
+        );
       case 'notifications/learning':
       case 'notifications/social':
       case 'notifications/community': {
@@ -477,6 +507,7 @@ export function SettingsView({ ext, updateExt, nav, user, caps, relations, peopl
           <Group title="Utilisation de vos données">
             <Row label="Comment SAVOIR+ utilise vos données" onClick={() => go(s, 'usage')} />
             <Row label="Télécharger vos données" value={exportAt ? 'Demandé' : undefined} onClick={() => go(s, 'export')} />
+            {canReset && <Row label="Réinitialiser la démonstration" onClick={() => go(s, 'reset')} />}
           </Group>
         );
       case 'notifications':

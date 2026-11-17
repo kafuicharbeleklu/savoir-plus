@@ -1173,21 +1173,16 @@ export default function App() {
       onClose={() => setAuthModalOpen(false)}
       uid={uid}
       mode={mode}
-      cloudConfigured={cloudConfigured}
       people={people}
-      ext={ext}
-      busy={busy}
-      error={error}
       onSwitchPerson={handleSwitchPersona}
-      onLoginCloud={handleLoginCloud}
-      onLogoutCloud={handleLogoutCloud}
-      onResetDemo={handleResetDemo}
-      onEnterVisitor={() => {
-        setAuthModalOpen(false);
-        nav('visitor');
-      }}
     />
   );
+
+  /** « Se déconnecter » : ferme aussi la session Supabase, puis revient à l'accueil visiteur. */
+  const signOut = () => {
+    if (mode === 'cloud') void handleLogoutCloud();
+    nav('visitor');
+  };
 
   const renderActiveScreen = () => {
   // Visitor portal
@@ -1222,7 +1217,7 @@ export default function App() {
           caps={caps}
           ext={ext}
           updateExt={updateExt}
-          onExitToVisitor={() => nav('visitor')}
+          onExitToVisitor={signOut}
           setToast={setToast}
         />
         {toast && (
@@ -1247,7 +1242,7 @@ export default function App() {
             setToast(`Compte ouvert : bienvenue, ${user.name.split(' ')[0]} !`);
             nav('home');
           }}
-          onExit={() => nav('visitor')}
+          onExit={signOut}
           onSwitchAccount={() => setAuthModalOpen(true)}
         />
         {authModal}
@@ -1441,7 +1436,7 @@ export default function App() {
     relations,
     people,
     onUnblock: handleToggleBlock,
-    onEnterVisitor: () => nav('visitor'),
+    onEnterVisitor: signOut,
     reportTarget: reportTarget || 'Élément général',
     settingsTab,
     setSettingsTab,
@@ -2594,6 +2589,7 @@ export default function App() {
           setToast={setToast}
           path={selectedId}
           mode={mode}
+          onResetDemo={handleResetDemo}
         />
       );
     if (page === 'auth-flows') return <AuthFlowsView {...accountAdminProps} />;
@@ -2638,7 +2634,7 @@ export default function App() {
         topQuery={topQuery}
         setTopQuery={setTopQuery}
         onOpenAuthModal={() => setAuthModalOpen(true)}
-        onEnterVisitor={() => nav('visitor')}
+        onEnterVisitor={signOut}
         onOpenMessaging={() => {
           setDrawerOpen(false);
           nav('messages');
@@ -2800,7 +2796,7 @@ export default function App() {
         unreadNotifs={unreadNotifs}
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onOpenComposer={caps.canPublish ? () => setComposerOpen(true) : undefined}
-        onEnterVisitor={() => nav('visitor')}
+        onEnterVisitor={signOut}
       />
 
       <PostComposerModal

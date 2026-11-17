@@ -792,40 +792,22 @@ export function ReportDialog({
   );
 }
 
+/** Fenêtre « Changer de compte » : le choix d'un personnage de démonstration, rien d'autre. */
 export function DemoAuthModal({
   open,
   onClose,
   uid,
   mode,
-  cloudConfigured,
   people,
-  busy,
-  error,
-  onSwitchPerson,
-  onLoginCloud,
-  onLogoutCloud,
-  onResetDemo,
-  onEnterVisitor
+  onSwitchPerson
 }: {
   open: boolean;
   onClose: () => void;
   uid: string;
   mode: string;
-  cloudConfigured: boolean;
   people: Profile[];
-  ext: ExtendedDemoState;
-  busy: boolean;
-  error: string;
   onSwitchPerson: (id: string) => void;
-  onLoginCloud: (email: string, password: string) => void;
-  onLogoutCloud: () => void;
-  onResetDemo: () => void;
-  onEnterVisitor: () => void;
 }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmReset, setConfirmReset] = useState(false);
-
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -852,7 +834,7 @@ export function DemoAuthModal({
       className="modal-backdrop"
       role="dialog"
       aria-modal="true"
-      aria-label="Comptes de démonstration et connexion"
+      aria-label="Changer de compte"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -862,8 +844,7 @@ export function DemoAuthModal({
           <X size={18} />
         </button>
 
-        <span className="eyebrow">Changer de rôle ou de session</span>
-        <h2>Comptes & Connexion</h2>
+        <h2>Changer de compte</h2>
         <p>
           Explorez SAVOIR+ avec sept personnages fictifs : une apprenante, deux élèves, un parent, un enseignant, un établissement
           et la gouvernance. Chacun voit ce que son profil autorise.
@@ -881,103 +862,13 @@ export function DemoAuthModal({
             };
             const selected = mode === 'local' && uid === d.id;
             return (
-              <button
-                key={d.id}
-                type="button"
-                className={selected ? 'selected' : ''}
-                onClick={() => onSwitchPerson(d.id)}
-              >
+              <button key={d.id} type="button" className={selected ? 'selected' : ''} aria-pressed={selected} onClick={() => onSwitchPerson(d.id)}>
                 <Avatar person={p} small />
                 <b>{d.title}</b>
                 <span>{d.subtitle}</span>
               </button>
             );
           })}
-        </div>
-
-        <div className="modal-visitor-bar">
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => {
-              onClose();
-              onEnterVisitor();
-            }}
-          >
-            <User size={15} /> Ouvrir l’accueil visiteur / Parcours d’inscription
-          </button>
-
-          {!confirmReset ? (
-            <button type="button" className="text-link" onClick={() => setConfirmReset(true)}>
-              <RotateCcw size={14} /> Réinitialiser la démo locale
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="primary"
-              onClick={() => {
-                onResetDemo();
-                setConfirmReset(false);
-              }}
-            >
-              Confirmer la réinitialisation
-            </button>
-          )}
-        </div>
-
-        <div className="cloud-form">
-          <h3>
-            <Cloud size={17} /> Connexion Supabase {cloudConfigured ? '(configurée)' : '(non configurée)'}
-          </h3>
-          {mode === 'cloud' ? (
-            <div className="supabase-note">
-              <CheckCircle2 size={16} />
-              <span>Session Supabase active. Vos progressions et échanges sont synchronisés en temps réel.</span>
-              <button type="button" className="secondary" disabled={busy} onClick={onLogoutCloud}>
-                Se déconnecter
-              </button>
-            </div>
-          ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                onLoginCloud(email, password);
-              }}
-            >
-              <div className="cloud-inputs">
-                <label>
-                  Adresse e-mail
-                  <input
-                    type="email"
-                    required
-                    placeholder="membre@exemple.test"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </label>
-                <label>
-                  Mot de passe
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </label>
-              </div>
-              {error && (
-                <p className="modal-error">
-                  <AlertCircle size={14} /> {error}
-                </p>
-              )}
-              <div className="modal-actions">
-                <button type="submit" className="primary" disabled={busy || !cloudConfigured}>
-                  <Lock size={14} /> Se connecter via Supabase
-                </button>
-              </div>
-            </form>
-          )}
         </div>
       </div>
     </div>
