@@ -1,6 +1,8 @@
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import { installTooltips } from './tooltips';
+// Police de lecture du lecteur de modules, servie avec le site (aucun appel extérieur).
+import '@fontsource-variable/inter';
 import './index.css';
 import './styles/ui.css';
 import './styles/settings.css';

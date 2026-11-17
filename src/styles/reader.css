@@ -4,6 +4,11 @@
    ========================================================================== */
 
 .rd-shell {
+  /* Le lecteur a sa propre police de lecture et la hauteur de sa barre, dont dépendent les panneaux. */
+  --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-sans);
+  --rd-top: 68px;
+  font-family: var(--font-sans);
   display: flex;
   flex-direction: column;
   height: 100dvh;
@@ -11,6 +16,9 @@
   background: var(--bg-canvas);
   color: var(--fg-primary);
 }
+
+/* Les titres suivent la police de lecture (ailleurs dans l'application, ils ont la leur). */
+.rd-shell :is(h1, h2, h3, h4) { font-family: var(--font-sans); }
 
 /* -- Barre du haut --------------------------------------------------------------------------- */
 .rd-top {
@@ -20,8 +28,8 @@
   flex: none;
   align-items: center;
   gap: 12px;
-  height: 56px;
-  padding: 0 16px 0 8px;
+  height: var(--rd-top);
+  padding: 0 16px 0 12px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-hairline);
 }
@@ -40,23 +48,11 @@
 }
 .rd-top-btn:hover { background: var(--bg-subtle); color: var(--fg-primary); }
 .rd-top-title { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; line-height: 1.3; }
-.rd-top-title b { font-size: 0.9375rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rd-top-title span { font-size: 0.75rem; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rd-top-pct { flex: none; font-size: 0.8125rem; font-weight: 600; color: var(--fg-muted); }
+.rd-top-title b { font-size: 1rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-top-title span { font-size: 0.875rem; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rd-top-outline { display: none; }
-.rd-top-progress { position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; }
-.rd-top-progress i { display: block; height: 100%; background: var(--accent-brand); transition: width 320ms ease; }
 
 /* -- Mise en page ------------------------------------------------------------------------------ */
-.rd-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 24px;
-  align-items: start;
-  max-width: 1128px;
-  margin: 0 auto;
-  padding: 24px 24px 64px;
-}
 .rd-center { display: flex; flex-direction: column; gap: 12px; max-width: 760px; margin: 0 auto; padding: 24px 24px 64px; }
 .rd-card { background: var(--bg-surface); border: 1px solid var(--border-hairline); border-radius: var(--angle); }
 
@@ -68,15 +64,10 @@
 .rd-quiz-head h1,
 .rd-result-text h1 { margin: 0; font-size: 1.75rem; font-weight: 600; line-height: 1.25; letter-spacing: 0; color: var(--fg-primary); }
 .rd-lead { margin: 12px 0 0; font-size: 1.125rem; line-height: 1.6; color: var(--fg-primary); }
-.rd-body { margin: 16px 0 0; font-size: 1rem; line-height: 1.7; color: var(--fg-primary); }
-.rd-block { margin-top: 36px; }
-.rd-block h2 { margin: 0 0 12px; font-size: 1.125rem; font-weight: 600; line-height: 1.35; letter-spacing: 0; color: var(--fg-primary); }
 .rd-note { margin: 12px 0 0; font-size: 0.75rem; color: var(--fg-muted); }
 
-/* Points à retenir : liste numérotée, séparée par des filets */
-.rd-points,
+/* Fiche illustrée d’un contenu du Studio : liste numérotée, séparée par des filets */
 .rd-fiche { margin: 0; padding: 0; list-style: none; }
-.rd-points li,
 .rd-fiche li {
   display: flex;
   align-items: baseline;
@@ -86,17 +77,11 @@
   font-size: 1rem;
   line-height: 1.55;
 }
-.rd-points li:last-child,
 .rd-fiche li:last-child { border-bottom: 1px solid var(--border-hairline); }
 .rd-point-num { flex: none; width: 20px; font-size: 0.875rem; font-weight: 600; color: var(--accent-brand); }
 .rd-fiche li > div { display: flex; flex: 1 1 auto; flex-direction: column; gap: 10px; min-width: 0; }
 .rd-fiche img { display: block; width: 100%; max-width: 420px; border: 1px solid var(--border-hairline); border-radius: var(--angle); }
 .rd-fiche p { margin: 0; }
-
-/* Réflexe clé : une citation, pas un encadré */
-.rd-reflex { margin: 36px 0 0; padding: 2px 0 2px 20px; border-left: 3px solid var(--accent-brand); }
-.rd-reflex span { display: block; margin-bottom: 4px; font-size: 0.8125rem; font-weight: 600; color: var(--accent-brand); }
-.rd-reflex p { margin: 0; font-size: 1.0625rem; line-height: 1.55; color: var(--fg-primary); }
 
 /* Pied : précédent à gauche, suite à droite */
 .rd-nav {
@@ -131,27 +116,11 @@
 .rd-nav .primary,
 .rd-nav .secondary { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 
-/* Exercice : plus de cadre dans le cadre, plus de police à chasse fixe */
-.rd-article .phishing-lab { padding: 0; border: 0; background: none; }
-.rd-article .phishing-lab-head .eyebrow { display: none; }
-.rd-article .phishing-lab-head h3 { margin: 0; font-size: 0.9375rem; font-weight: 400; line-height: 1.5; color: var(--fg-primary); }
-.rd-article .lab-counter { font-family: inherit; color: var(--fg-muted); }
-.rd-article .simulated-mail-bar,
-.rd-article .simulated-mail-bars,
-.rd-article .link-preview,
-.rd-article .clue-hotspot,
-.rd-article .clue-link-btn { font-family: inherit; }
-.rd-article .simulated-mail-bar,
-.rd-article .simulated-mail-bars { background: var(--bg-subtle); }
-
 /* -- Sommaire en étapes ------------------------------------------------------------------------ */
-.rd-outline { position: sticky; top: 24px; }
 .rd-outline-card { padding: 16px 0 8px; }
 .rd-outline-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px 10px; }
 .rd-outline-head h2 { margin: 0; font-size: 1rem; font-weight: 600; letter-spacing: 0; color: var(--fg-primary); }
 .rd-outline-head > span { margin-left: auto; font-size: 0.75rem; color: var(--fg-muted); }
-.rd-outline-close { display: none; }
-.rd-scrim { display: none; }
 .rd-steps { margin: 0; padding: 0; list-style: none; }
 .rd-step button {
   position: relative;
@@ -304,23 +273,8 @@
 
 /* -- Écrans étroits : le sommaire devient un panneau ----------------------------------------- */
 @media (max-width: 960px) {
-  .rd-layout { grid-template-columns: minmax(0, 1fr); padding: 16px 16px 48px; }
   .rd-center { padding: 16px 16px 48px; }
   .rd-top-outline { display: grid; }
-  .rd-outline {
-    position: fixed;
-    top: 56px;
-    right: 0;
-    bottom: 0;
-    z-index: 40;
-    width: min(320px, 88vw);
-    transform: translateX(100%);
-    transition: transform 220ms ease;
-  }
-  .rd-outline.is-open { transform: none; }
-  .rd-outline-card { height: 100%; overflow-y: auto; border-width: 0 0 0 1px; border-radius: 0; }
-  .rd-outline-close { display: grid; }
-  .rd-scrim { position: fixed; inset: 56px 0 0; z-index: 39; display: block; border: 0; background: var(--scrim); cursor: default; }
 }
 @media (max-width: 640px) {
   .rd-article { padding: 24px 20px 20px; }
@@ -338,4 +292,347 @@
   .rd-quiz-head { flex-direction: column; align-items: flex-start; gap: 4px; }
   .rd-facts > div { flex-direction: column; gap: 2px; }
   .rd-facts dd { text-align: left; }
+}
+
+/* ==========================================================================
+   Chapitre — la leçon se lit comme un texte : une colonne sur fond uni, des
+   titres francs, des listes, une figure légendée, de rares encadrés à pastille.
+   Pas de carte autour du texte ; le sommaire se range derrière un bouton.
+   ========================================================================== */
+
+.rd-shell.is-chapter { background: var(--bg-surface); }
+
+/* -- Barre du haut : retour, titre du module, avancement ------------------------------------- */
+.rd-top-meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+.rd-ring { flex: none; width: 16px; height: 16px; transform: rotate(-90deg); }
+.rd-ring circle { fill: none; stroke-width: 3; }
+.rd-ring-track { stroke: var(--border-strong); }
+.rd-ring-value { stroke: var(--accent-brand); stroke-linecap: round; transition: stroke-dashoffset 320ms ease; }
+
+/* -- Mise en page : le bouton du sommaire à gauche, la colonne de lecture au centre ---------- */
+/* `position: relative` : les textes masqués (réservés aux lecteurs d'écran) restent dans la zone qui défile. */
+.rd-chapter { position: relative; display: grid; grid-template-columns: 92px minmax(0, 1fr) 92px; align-items: start; }
+.rd-chapter-side { position: sticky; top: 0; padding: 28px 0 0 24px; }
+.rd-toc-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--angle);
+  background: var(--accent-brand-soft);
+  box-shadow: none;
+  color: var(--accent-brand);
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+}
+.rd-toc-btn:hover { background: var(--accent-brand); color: var(--accent-brand-ink); }
+.rd-article.rd-chapter-main { --measure: 608px; --inset: max(0px, calc((100% - var(--measure)) / 2)); width: 100%; max-width: 720px; margin: 0 auto; padding: 40px 0 96px; }
+
+/* -- Le texte ----------------------------------------------------------------------------------
+   Les mesures suivent ce que montrent les études de lecture à l'écran :
+   - corps de 18 px : lisibilité et compréhension progressent avec la taille (Rello et al., CHI 2016) ;
+   - interligne de 1,6 : au-dessus du minimum de 1,5 retenu par le W3C (WCAG 1.4.12) ;
+   - lignes d'environ 75 caractères : confort entre 50 et 75, 80 au plus (Baymard ; WCAG 1.4.8) ;
+   - un intertitre plus proche du texte qu'il annonce que de celui qui précède (loi de proximité).
+   Les figures et l'exercice débordent un peu de la colonne de texte, les encadrés la suivent. */
+.rd-chapter-main h1 { margin: 0 var(--inset); font-size: 2.25rem; font-weight: 700; line-height: 2.75rem; letter-spacing: -0.015em; color: var(--fg-primary); }
+.rd-chapter-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 8px var(--inset) 0; font-size: 0.875rem; line-height: 1.375rem; color: var(--fg-muted); }
+.rd-chapter-meta .rd-done { align-items: center; gap: 4px; font-weight: 600; }
+
+.rd-chapter-body { margin-top: 28px; font-size: 1.125rem; line-height: 1.8125rem; color: var(--fg-primary); }
+/* Le texte est un peu plus étroit que les figures et les encadrés, qui prennent toute la colonne. */
+.rd-chapter-body > :not(.rd-wide) { margin-right: var(--inset); margin-left: var(--inset); }
+.rd-chapter-body > p { margin-top: 0; margin-bottom: 20px; }
+/* Un intertitre appartient au texte qui le suit : trois à quatre fois plus d'air au-dessus qu'au-dessous. */
+.rd-chapter-body > h2 { margin-top: 44px; margin-bottom: 12px; font-size: 1.625rem; font-weight: 700; line-height: 2.125rem; letter-spacing: -0.01em; color: var(--fg-primary); }
+.rd-chapter-body ul,
+.rd-chapter-body ol { margin-top: 0; margin-bottom: 20px; padding-left: 36px; }
+.rd-chapter-body ul { list-style: disc; }
+.rd-chapter-body ol { list-style: decimal; }
+.rd-chapter-body li { margin-bottom: 8px; padding-left: 0; }
+.rd-chapter-body li:last-child { margin-bottom: 0; }
+.rd-chapter-body strong { font-weight: 700; }
+
+/* -- Encadrés à pastille : « i » (à savoir), « ? » (la question de l'élève) ------------------- */
+.rd-aside { position: relative; margin: 28px var(--inset); padding: 14px 24px 14px 32px; border-radius: 16px; background: var(--accent-brand-soft); }
+.rd-aside.is-question { background: var(--bg-subtle); }
+.rd-aside-badge {
+  position: absolute;
+  top: -9px;
+  left: -10px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--accent-brand);
+  color: var(--accent-brand-ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1;
+}
+/* La petite pointe qui fait de la pastille une bulle. */
+.rd-aside-badge::after { content: ''; position: absolute; right: 1px; bottom: 1px; z-index: -1; width: 9px; height: 9px; border-radius: 0 0 2px; background: inherit; }
+.rd-aside.is-question .rd-aside-badge { background: var(--fg-primary); color: var(--bg-surface); font-style: normal; }
+.rd-aside p { margin: 0; }
+.rd-chapter-body .rd-aside ul { margin: 6px 0 0; padding-left: 28px; }
+.rd-chapter-body .rd-aside li { margin-bottom: 4px; }
+
+/* -- Figure : la scène au centre, sa légende dessous ----------------------------------------- */
+.rd-figure { margin: 28px 0; }
+.rd-figure-stage { display: flex; justify-content: center; }
+.rd-figure figcaption { width: fit-content; max-width: 80%; margin: 16px auto 0; padding: 8px 32px 0; border-top: 1px solid var(--border-hairline); font-size: 0.8125rem; line-height: 1.5; text-align: center; color: var(--fg-muted); }
+/* Dans une figure, le gras devient un surlignage : c'est ce que l'œil doit attraper. */
+.rd-figure strong { padding: 1px 3px; border-radius: 3px; background: var(--accent-warm-soft); box-shadow: inset 0 -2px 0 var(--accent-warm); font-weight: 600; }
+
+/* Un message, tel qu'il s'affiche */
+.rd-msg { width: 100%; max-width: 440px; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 14px; background: var(--bg-surface); font-size: 1rem; line-height: 1.55; }
+.rd-msg-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-subtle); }
+.rd-msg-icon { display: grid; flex: none; place-items: center; width: 32px; height: 32px; border-radius: 999px; background: var(--bg-surface); color: var(--fg-muted); }
+.rd-msg-from { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.rd-msg-from b { font-size: 0.9375rem; font-weight: 600; color: var(--fg-primary); overflow-wrap: anywhere; }
+.rd-msg-from small { font-size: 0.75rem; color: var(--fg-muted); }
+.rd-msg-details { display: grid; gap: 6px; margin: 0; padding: 12px 14px; border-bottom: 1px solid var(--border-hairline); font-size: 0.875rem; line-height: 1.45; }
+.rd-msg-details > div { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 10px; }
+.rd-msg-details dt { color: var(--fg-muted); }
+.rd-msg-details dd { margin: 0; color: var(--fg-primary); overflow-wrap: anywhere; }
+.rd-msg-body { display: grid; gap: 8px; padding: 16px 14px; color: var(--fg-primary); }
+.rd-msg-body p { margin: 0; overflow-wrap: anywhere; }
+.rd-msg.is-sms { max-width: 380px; }
+.rd-msg.is-sms .rd-msg-body { justify-items: start; gap: 6px; }
+.rd-msg.is-sms .rd-msg-body p { max-width: 94%; padding: 10px 14px; border-radius: 16px 16px 16px 4px; background: var(--bg-subtle); }
+
+/* Une situation, moment après moment */
+.rd-chapter-body .rd-timeline { width: 100%; max-width: 560px; margin: 0; padding: 0; list-style: none; }
+.rd-chapter-body .rd-timeline li { position: relative; margin: 0; padding: 0 0 18px 30px; line-height: 1.55; }
+.rd-chapter-body .rd-timeline li:last-child { padding-bottom: 0; }
+.rd-timeline li::before { content: ''; position: absolute; top: 8px; left: 3px; box-sizing: border-box; width: 11px; height: 11px; border: 2px solid var(--accent-brand); border-radius: 999px; background: var(--bg-surface); }
+.rd-timeline li:not(:last-child)::after { content: ''; position: absolute; top: 23px; bottom: -4px; left: 8px; width: 1px; background: var(--border-strong); }
+
+/* Un tableau */
+.rd-table { width: 100%; overflow: hidden; border: 1px solid var(--border-strong); border-radius: var(--angle); border-collapse: separate; border-spacing: 0; font-size: 1rem; line-height: 1.6; }
+.rd-table th { padding: 12px 16px; border-bottom: 1px solid var(--border-strong); background: var(--bg-subtle); font-weight: 700; text-align: left; color: var(--fg-primary); }
+.rd-table td { padding: 12px 16px; border-top: 1px solid var(--border-hairline); vertical-align: top; color: var(--fg-primary); }
+.rd-table tbody tr:first-child td { border-top: 0; }
+.rd-table th + th,
+.rd-table td + td { border-left: 1px solid var(--border-hairline); }
+.rd-figure .rd-table strong { padding: 0; background: none; box-shadow: none; font-weight: 700; }
+
+/* -- Exercice et pied de chapitre ------------------------------------------------------------ */
+.rd-practice { margin: 0; }
+.rd-chapter-main .rd-nav { margin: 48px var(--inset) 0; padding-top: 24px; }
+
+/* -- Sommaire : un panneau qui glisse depuis la gauche ---------------------------------------- */
+.rd-outline {
+  position: fixed;
+  top: var(--rd-top);
+  bottom: 0;
+  left: 0;
+  z-index: 40;
+  width: min(340px, 88vw);
+  transform: translateX(-100%);
+  transition: transform 220ms ease;
+}
+.rd-outline.is-open { transform: none; }
+.rd-outline-card { height: 100%; overflow-y: auto; border-right: 1px solid var(--border-hairline); background: var(--bg-surface); }
+.rd-outline-close { display: grid; }
+.rd-scrim { position: fixed; inset: var(--rd-top) 0 0; z-index: 39; display: block; border: 0; border-radius: 0; background: var(--scrim); cursor: default; }
+
+@media (max-width: 960px) {
+  .rd-chapter { grid-template-columns: minmax(0, 1fr); padding: 0 20px; }
+  .rd-chapter-side { display: none; }
+  .rd-article.rd-chapter-main { padding: 28px 0 64px; }
+}
+@media (max-width: 640px) {
+  .rd-chapter-main h1 { font-size: 1.75rem; line-height: 2.125rem; }
+  .rd-chapter-body { font-size: 1.0625rem; line-height: 1.6875rem; }
+  .rd-chapter-body > h2 { margin-top: 36px; font-size: 1.375rem; line-height: 1.8125rem; }
+  .rd-aside { margin-left: 8px; padding: 12px 18px 12px 24px; }
+  .rd-practice { padding: 0; }
+  .rd-figure figcaption { max-width: 100%; }
+  .rd-table { font-size: 0.9375rem; }
+  .rd-table th,
+  .rd-table td { padding: 10px 12px; }
+}
+
+/* ==========================================================================
+   Illustrations — un seul style : trait sombre de 2 px, aplats pastel aux deux
+   teintes de la marque, coins arrondis, ombre portée décalée. Tout passe par
+   ces variables, pour que les deux thèmes restent cohérents.
+   ========================================================================== */
+.rd-shell.is-chapter {
+  --art-ink: var(--fg-primary);
+  --art-paper: var(--bg-surface);
+  --art-ground: var(--bg-subtle);
+  --art-a: var(--accent-brand);
+  --art-a-soft: var(--accent-brand-soft);
+  --art-b: var(--accent-warm);
+  --art-b-soft: var(--accent-warm-soft);
+}
+
+/* -- Bandeau d'ouverture ----------------------------------------------------------------------- */
+/* Seul élément purement décoratif de la leçon : il reste bas, pour ne pas disputer l'attention au texte. */
+.rd-banner { position: relative; display: grid; place-items: center; height: 144px; margin: 0 0 28px; overflow: hidden; border-radius: 16px; background: var(--art-ground); }
+.rd-banner-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.art-fill-a { fill: var(--art-a-soft); }
+.art-line-b { fill: none; stroke: var(--art-b); stroke-width: 9; }
+.art-dot { fill: var(--border-strong); }
+.art-ring { fill: none; stroke-width: 16; }
+.art-ring-1 { stroke: var(--art-a); }
+.art-ring-2 { stroke: var(--art-b); }
+.art-ring-3 { stroke: var(--art-a-soft); }
+.art-ring-4 { stroke: var(--art-b-soft); }
+.art-spark { fill: var(--art-ink); }
+.rd-banner-window { position: relative; width: 264px; border: 2px solid var(--art-ink); border-radius: 12px; background: var(--art-paper); box-shadow: 6px 6px 0 var(--art-a); }
+.rd-banner-dots { display: flex; gap: 5px; padding: 7px 12px; border-bottom: 2px solid var(--art-ink); }
+.rd-banner-dots i { width: 7px; height: 7px; border-radius: 999px; background: var(--art-ink); opacity: 0.28; }
+.rd-banner-row { display: flex; align-items: center; gap: 14px; padding: 12px 16px; }
+.rd-banner-icon { display: grid; flex: none; place-items: center; width: 48px; height: 48px; border: 2px solid var(--art-ink); border-radius: 999px; background: var(--art-b-soft); color: var(--art-ink); }
+.rd-banner-lines { display: grid; flex: 1 1 auto; gap: 8px; }
+.rd-banner-lines i { height: 8px; border-radius: 999px; background: var(--art-ground); }
+.rd-banner-lines i:first-child { width: 78%; background: var(--art-a); opacity: 0.85; }
+.rd-banner-lines i:nth-child(2) { width: 100%; }
+.rd-banner-lines i:last-child { width: 56%; }
+
+/* -- Schéma en chaîne ---------------------------------------------------------------------------- */
+.rd-figure { container-type: inline-size; }
+.rd-chapter-body .rd-flow { display: flex; align-items: flex-start; justify-content: center; width: 100%; margin: 0; padding: 8px 0 0; list-style: none; }
+.rd-chapter-body .rd-flow li { margin: 0; padding: 0; }
+.rd-flow-node { display: flex; flex: 0 1 124px; flex-direction: column; align-items: center; min-width: 0; text-align: center; }
+.rd-flow-icon { display: grid; place-items: center; width: 60px; height: 60px; margin-bottom: 12px; border: 2px solid var(--art-ink); border-radius: 999px; background: var(--art-a-soft); box-shadow: 4px 4px 0 var(--art-a); color: var(--art-ink); }
+.rd-flow-node:nth-of-type(4n + 3) .rd-flow-icon { background: var(--art-b-soft); box-shadow: 4px 4px 0 var(--art-b); }
+.rd-flow-node b { font-size: 0.9375rem; font-weight: 700; line-height: 1.3; color: var(--fg-primary); }
+.rd-flow-node small { margin-top: 2px; font-size: 0.8125rem; line-height: 1.35; color: var(--fg-muted); }
+.rd-flow-link { position: relative; display: grid; flex: 1 1 88px; place-items: center; min-width: 72px; max-width: 128px; height: 60px; }
+.rd-flow-link::before { content: ''; position: absolute; top: 50%; right: 6px; left: 2px; height: 2px; margin-top: -1px; background: var(--art-ink); }
+.rd-flow-link::after { content: ''; position: absolute; top: 50%; right: 4px; width: 9px; height: 9px; margin-top: -5px; border-top: 2px solid var(--art-ink); border-right: 2px solid var(--art-ink); transform: rotate(45deg); }
+.rd-flow-pill { position: relative; z-index: 1; padding: 2px 10px; border: 2px solid var(--art-ink); border-radius: 999px; background: var(--art-paper); font-size: 0.75rem; font-weight: 600; line-height: 1.4; white-space: nowrap; color: var(--fg-primary); }
+@container (max-width: 560px) {
+  .rd-chapter-body .rd-flow { flex-direction: column; align-items: center; }
+  .rd-flow-node { flex: none; }
+  .rd-flow-link { flex: none; width: 60px; max-width: none; height: 52px; }
+  .rd-flow-link::before { top: 2px; right: auto; bottom: 6px; left: 50%; width: 2px; height: auto; margin: 0 0 0 -1px; }
+  .rd-flow-link::after { top: auto; right: auto; bottom: 4px; left: 50%; margin: 0 0 0 -5px; transform: rotate(135deg); }
+}
+
+/* -- Répartition --------------------------------------------------------------------------------- */
+.rd-split { width: 100%; max-width: 560px; }
+.rd-split-bar { display: flex; height: 48px; overflow: hidden; border: 2px solid var(--art-ink); border-radius: 12px; box-shadow: 5px 5px 0 var(--art-a-soft); }
+.rd-split-bar span { display: grid; flex-basis: 0; place-items: center; min-width: 0; font-size: 0.9375rem; font-weight: 700; }
+.rd-split-bar span + span { border-left: 2px solid var(--art-ink); }
+.rd-split .is-a { background: var(--art-a); color: var(--accent-brand-ink); }
+.rd-split .is-b { background: var(--art-b-soft); color: var(--fg-primary); }
+.rd-split .is-c { background: var(--art-a-soft); color: var(--fg-primary); }
+.rd-split .is-d { background: var(--art-ground); color: var(--fg-primary); }
+.rd-chapter-body .rd-split-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 20px; margin: 20px 0 0; padding: 0; list-style: none; }
+.rd-chapter-body .rd-split-legend li { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 0; }
+.rd-split-legend i { flex: none; width: 14px; height: 14px; margin-top: 5px; border: 2px solid var(--art-ink); border-radius: 4px; }
+.rd-split-legend span { display: flex; flex-direction: column; min-width: 0; }
+.rd-split-legend b { font-size: 0.9375rem; font-weight: 700; line-height: 1.4; color: var(--fg-primary); }
+.rd-split-legend small { font-size: 0.8125rem; line-height: 1.4; color: var(--fg-muted); }
+
+/* ==========================================================================
+   Exercice — une scène à inspecter. Les zones ressemblent à ce qu'elles sont
+   (une adresse, un objet, un bouton) ; trouvées, elles portent un numéro.
+   ========================================================================== */
+.rd-lab-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin: 0 var(--inset) 16px; }
+.rd-lab-head p { margin: 0; font-size: 1.125rem; line-height: 1.8125rem; color: var(--fg-primary); }
+.rd-lab-count { flex: none; padding: 3px 12px; border-radius: 999px; background: var(--bg-subtle); font-size: 0.8125rem; font-weight: 600; line-height: 1.5; white-space: nowrap; color: var(--fg-primary); }
+
+.rd-lab-scene { overflow: hidden; border: 1px solid var(--border-strong); border-radius: 14px; background: var(--bg-surface); }
+.rd-lab-zone {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.rd-lab-zone:hover { background: var(--bg-subtle); }
+.rd-lab-zone.is-found,
+.rd-lab-zone.is-found:hover { background: var(--accent-warm-soft); }
+.rd-lab-zone:focus-visible { outline: 2px solid var(--accent-brand); outline-offset: -2px; }
+.rd-lab-num { display: inline-grid; flex: none; place-items: center; width: 24px; height: 24px; border-radius: 999px; background: var(--accent-warm); font-size: 0.75rem; font-weight: 700; line-height: 1; color: var(--bg-surface); }
+.rd-lab-zone > .rd-lab-num { position: absolute; top: 50%; right: 14px; margin-top: -12px; }
+
+/* L'e-mail */
+.rd-lab-zone.is-sender { display: flex; align-items: center; gap: 12px; padding: 14px 52px 14px 18px; border-bottom: 1px solid var(--border-hairline); }
+.rd-lab-avatar { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border-radius: 999px; background: var(--accent-brand-soft); font-size: 0.875rem; font-weight: 700; color: var(--accent-brand); }
+.rd-lab-from { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.rd-lab-from b { font-size: 1rem; font-weight: 600; color: var(--fg-primary); }
+.rd-lab-from small { font-size: 0.875rem; color: var(--fg-muted); overflow-wrap: anywhere; }
+.rd-lab-zone.is-subject { padding: 16px 52px 6px 18px; font-size: 1.1875rem; font-weight: 700; line-height: 1.35; color: var(--fg-primary); }
+.rd-lab-mail-body { padding: 8px 18px 20px; font-size: 1rem; line-height: 1.65; color: var(--fg-primary); }
+.rd-lab-mail-body p { margin: 0 0 10px; }
+.rd-lab-zone.is-inline { display: inline; width: auto; border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.rd-lab-zone.is-inline.is-found { box-shadow: inset 0 -2px 0 var(--accent-warm); }
+.rd-lab-zone.is-inline > .rd-lab-num { position: static; display: inline-grid; width: 20px; height: 20px; margin: 0 0 0 6px; vertical-align: 2px; }
+.rd-lab-zone.is-cta { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: auto; margin-top: 6px; padding: 8px 48px 8px 8px; border-radius: 10px; }
+.rd-lab-cta { display: inline-block; padding: 9px 18px; border-radius: var(--angle); background: var(--accent-brand); font-size: 0.9375rem; font-weight: 600; line-height: 1.4; color: var(--accent-brand-ink); }
+.rd-lab-zone.is-cta small { font-size: 0.8125rem; line-height: 1.4; color: var(--fg-muted); overflow-wrap: anywhere; }
+
+/* L'écran de réglages */
+.rd-lab-panel-title { margin: 0; padding: 12px 18px; border-bottom: 1px solid var(--border-hairline); background: var(--bg-subtle); font-size: 0.875rem; font-weight: 600; line-height: 1.4; color: var(--fg-primary); }
+.rd-lab-zone.is-row { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: 4px 16px; align-items: baseline; padding: 14px 52px 14px 18px; font-size: 1rem; line-height: 1.5; }
+.rd-lab-zone.is-row + .rd-lab-zone.is-row { border-top: 1px solid var(--border-hairline); }
+.rd-lab-row-label { color: var(--fg-muted); }
+.rd-lab-row-value { font-weight: 600; color: var(--fg-primary); overflow-wrap: anywhere; }
+
+/* Passer un écran en revue n'est pas chercher des fautes : la teinte reste celle de la marque. */
+.rd-lab.is-review .rd-lab-zone.is-found,
+.rd-lab.is-review .rd-lab-zone.is-found:hover { background: var(--accent-brand-soft); }
+.rd-lab.is-review .rd-lab-num { background: var(--accent-brand); color: var(--accent-brand-ink); }
+
+.rd-lab-foot { margin: 10px 0 0; font-size: 0.8125rem; line-height: 1.4; color: var(--fg-muted); }
+
+/* Les indices trouvés */
+.rd-chapter-body .rd-lab-findings { display: grid; gap: 14px; margin: 24px 0 0; padding: 0; list-style: none; }
+.rd-chapter-body .rd-lab-findings li { display: flex; align-items: flex-start; gap: 12px; margin: 0; padding: 0; animation: savoir-fade-in 220ms ease both; }
+.rd-lab-findings .rd-lab-num { margin-top: 2px; }
+.rd-lab-findings b { display: block; font-size: 1rem; font-weight: 700; line-height: 1.45; color: var(--fg-primary); }
+.rd-lab-findings p { margin: 2px 0 0; font-size: 1rem; line-height: 1.6; color: var(--fg-primary); }
+.rd-lab-done { display: flex; align-items: flex-start; gap: 10px; margin: 24px 0 0; padding: 14px 18px; border-radius: 14px; background: var(--accent-brand-soft); font-size: 1rem; font-weight: 600; line-height: 1.5; color: var(--fg-primary); animation: savoir-fade-in 220ms ease both; }
+.rd-lab-done svg { flex: none; margin-top: 3px; color: var(--accent-brand); }
+
+/* ==========================================================================
+   Sommaire — déroulé d'office à gauche sur grand écran, repliable ; sur écran
+   étroit, il redevient un panneau qui glisse.
+   ========================================================================== */
+.rd-outline-part { display: flex; flex-direction: column; gap: 2px; margin: 0 12px 10px; padding: 10px 12px; border-radius: var(--angle); background: var(--accent-brand-soft); }
+.rd-outline-part small { font-size: 0.75rem; font-weight: 600; line-height: 1.3; color: var(--accent-brand); }
+.rd-outline-part b { font-size: 0.9375rem; font-weight: 700; line-height: 1.35; color: var(--fg-primary); }
+
+@media (min-width: 961px) {
+  .rd-chapter { grid-template-columns: auto minmax(0, 1fr); }
+  .rd-chapter-side { width: 92px; }
+  .rd-chapter.has-outline .rd-chapter-side { display: none; }
+  .rd-outline { position: sticky; top: 0; bottom: auto; left: auto; z-index: 1; display: none; align-self: start; width: 300px; height: calc(100dvh - var(--rd-top)); transform: none; transition: none; }
+  .rd-outline.is-open { display: block; }
+  .rd-scrim { display: none; }
+  .rd-article.rd-chapter-main { padding-right: 32px; padding-left: 32px; max-width: 784px; }
+}
+
+@media (max-width: 640px) {
+  .rd-banner { height: 120px; margin-bottom: 24px; }
+  .rd-banner-window { width: 216px; box-shadow: 5px 5px 0 var(--art-a); }
+  .rd-banner-row { padding: 12px; gap: 12px; }
+  .rd-banner-icon { width: 46px; height: 46px; }
+  .rd-lab-head { flex-direction: column; gap: 8px; }
+  .rd-lab-head p { font-size: 1.0625rem; line-height: 1.6875rem; }
+  .rd-lab-zone.is-row { grid-template-columns: minmax(0, 1fr); }
+  .rd-lab-zone.is-subject { font-size: 1.0625rem; }
 }

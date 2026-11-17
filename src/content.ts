@@ -1,11 +1,103 @@
+/** Pictogrammes des illustrations de leçon (bandeau, schémas). */
+export type LessonArt =
+  | 'alert'
+  | 'search'
+  | 'shield'
+  | 'devices'
+  | 'laptop'
+  | 'switch'
+  | 'router'
+  | 'globe'
+  | 'server'
+  | 'route'
+  | 'key'
+  | 'phone'
+  | 'sessions'
+  | 'mail'
+  | 'list'
+  | 'send'
+  | 'wallet'
+  | 'chart'
+  | 'calendar'
+  | 'drive'
+  | 'cloud'
+  | 'restore'
+  | 'people'
+  | 'agenda'
+  | 'done';
+
+/** Un message reçu (SMS, e-mail), montré comme il apparaît à l'écran. */
+export interface LessonMessageFigure {
+  kind: 'message';
+  channel: 'sms' | 'email';
+  /** Le nom affiché de l'expéditeur. */
+  from: string;
+  /** Lignes d'en-tête : adresse réelle, objet… */
+  details?: { label: string; value: string }[];
+  /** Le texte du message ; **le gras** y surligne les passages à remarquer. */
+  body: string[];
+}
+
+/** Une situation racontée moment après moment. */
+export interface LessonTimelineFigure {
+  kind: 'timeline';
+  steps: string[];
+}
+
+/** Un tableau : une ligne d'en-tête, puis les lignes. */
+export interface LessonTableFigure {
+  kind: 'table';
+  head: string[];
+  rows: string[][];
+}
+
+/** Un schéma en chaîne : des éléments reliés par des flèches ; `links[i]` nomme la flèche qui suit `nodes[i]`. */
+export interface LessonFlowFigure {
+  kind: 'flow';
+  nodes: { art: LessonArt; label: string; sub?: string }[];
+  links: string[];
+}
+
+/** Un tout découpé en parts (des pourcentages qui font 100). */
+export interface LessonSplitFigure {
+  kind: 'split';
+  parts: { label: string; percent: number; note: string }[];
+}
+
+export type LessonFigure = LessonMessageFigure | LessonTimelineFigure | LessonTableFigure | LessonFlowFigure | LessonSplitFigure;
+
+/**
+ * Une leçon rédigée se lit comme un chapitre : un bandeau illustré, une entrée en matière, les
+ * objectifs, le cours en parties titrées, un exemple illustré par une figure légendée, la question
+ * que se pose l'élève, puis le résumé (`points`) et le réflexe à garder (`tip`).
+ * Les textes acceptent **le gras**.
+ */
+export interface LessonRich {
+  /** Le pictogramme du bandeau d'illustration. */
+  art: LessonArt;
+  /** L'entrée en matière : une situation concrète, en un court paragraphe. */
+  scene: string;
+  /** « À la fin de cette section, vous saurez : » — deux ou trois objectifs, à l'infinitif. */
+  goals: string[];
+  /** Le cours : des parties titrées, faites de paragraphes et, au besoin, d'une liste. */
+  sections: { title: string; text: string[]; items?: string[]; ordered?: boolean; after?: string }[];
+  /** L'exemple : une partie à part, avec sa figure, sa légende et ce qu'il faut y voir. */
+  example: { title: string; intro?: string; figure: LessonFigure; caption: string; notes: string[] };
+  /** La question que se pose l'élève, et la réponse. */
+  question: { ask: string; answer: string[] };
+}
+
 export interface StudyLesson {
   title: string;
   label: string;
   minutes: string;
   intro: string;
+  /** Paragraphe unique des contenus créés dans le Studio ; une leçon rédigée déroule `rich.sections` à la place. */
   body: string;
   points: string[];
   tip: string;
+  /** Présent : la leçon est rédigée, avec exemple et question. */
+  rich?: LessonRich;
 }
 
 export interface StudyQuestion {
@@ -44,6 +136,7 @@ export interface StudioStudySource {
 }
 
 import { EXTRA_MODULES_CONTENT } from './seedCatalog';
+import { LESSONS_RICH } from './lessonsRich';
 
 export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
   phishing: {
@@ -59,11 +152,11 @@ export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
         intro: 'Un e-mail inquiétant n’est pas forcément un e-mail urgent. Prenez quelques secondes pour regarder ce qu’il vous demande vraiment.',
         body: 'Le phishing cherche à vous faire agir sans réfléchir : communiquer un mot de passe, ouvrir une pièce jointe ou payer une facture. L’urgence, une menace et une récompense inhabituelle sont des signaux à examiner.',
         points: [
-          'Une menace : « Votre compte sera fermé dans 24 h. »',
-          'Une demande sensible : mot de passe, code de connexion ou coordonnées bancaires.',
-          'Une action inattendue : ouvrir une pièce jointe ou payer immédiatement.'
+          'Un message de phishing cherche à vous faire agir avant de réfléchir.',
+          'Trois signaux le trahissent : la pression, la demande sensible, l’action inattendue.',
+          'Un seul de ces signaux suffit pour s’arrêter et vérifier.'
         ],
-        tip: 'Le bon réflexe : faire une pause. L’urgence du message ne doit pas devenir la vôtre.'
+        tip: 'Faites une pause. L’urgence du message ne doit pas devenir la vôtre.'
       },
       {
         title: 'Vérifier la source',
@@ -281,6 +374,13 @@ export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
   },
   ...EXTRA_MODULES_CONTENT
 };
+
+// Les leçons rédigées au format complet reçoivent leur contenu enrichi, section par section.
+for (const [moduleId, richLessons] of Object.entries(LESSONS_RICH)) {
+  MODULES_CONTENT[moduleId]?.lessons.forEach((lesson, index) => {
+    if (richLessons[index]) lesson.rich = richLessons[index];
+  });
+}
 
 export const lessons = MODULES_CONTENT.phishing.lessons;
 export const questions = MODULES_CONTENT.phishing.questions;

@@ -1,14 +1,15 @@
 /**
  * Lecteur d'un module : sections, consignes du quiz, quiz, résultat.
- * Une barre fine en haut (titre, étape, avancement), une colonne de lecture,
- * et le sommaire en étapes à droite. Les quatre écrans partagent ce cadre.
+ * Une barre fine en haut (retour, titre, avancement) commune aux quatre écrans.
+ * La leçon se lit comme un chapitre, sur une colonne ; le sommaire s'ouvre à gauche.
  */
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, Award, Check, List, RotateCcw, X } from 'lucide-react';
 import type { Progress } from '../data';
 import { MODULES_CONTENT, type ModuleStudyContent } from '../content';
 import { isQuizPassed, moduleProgressPercent, moduleXp, quizPassThreshold, scoreAnswers } from '../domain.mjs';
-import { ModuleInteractiveLab } from '../components/PhishingInspectorLab';
+import { ModuleInteractiveLab } from '../components/LessonLab';
+import { LessonArticle } from '../components/LessonArticle';
 import { ProgressBar } from '../components/ProfileIdentityCard';
 import { computeGlobalLevel } from '../personas';
 
@@ -30,18 +31,22 @@ function ReaderTopBar({
   outlineOpen?: boolean;
   onToggleOutline?: () => void;
 }) {
+  const ring = 2 * Math.PI * 6;
   return (
     <header className="rd-top">
       <button type="button" className="rd-top-btn" onClick={onExit} title="Quitter le module" aria-label="Quitter le module">
-        <X size={20} aria-hidden="true" />
+        <ArrowLeft size={20} aria-hidden="true" />
       </button>
       <div className="rd-top-title">
         <b>{title}</b>
-        <span>{step}</span>
+        <span className="rd-top-meta tabular-nums">
+          <svg className="rd-ring" viewBox="0 0 16 16" role="progressbar" aria-label="Avancement du module" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
+            <circle className="rd-ring-track" cx="8" cy="8" r="6" />
+            <circle className="rd-ring-value" cx="8" cy="8" r="6" strokeDasharray={ring} strokeDashoffset={ring * (1 - pct / 100)} />
+          </svg>
+          {pct} % de progression · {step}
+        </span>
       </div>
-      <span className="rd-top-pct tabular-nums" aria-hidden="true">
-        {pct} %
-      </span>
       {onToggleOutline && (
         <button
           type="button"
@@ -54,16 +59,6 @@ function ReaderTopBar({
           <List size={20} aria-hidden="true" />
         </button>
       )}
-      <span
-        className="rd-top-progress"
-        role="progressbar"
-        aria-label="Avancement du module"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={pct}
-      >
-        <i style={{ width: `${pct}%` }} />
-      </span>
     </header>
   );
 }
@@ -134,10 +129,16 @@ export function AcademyReaderView({
   onOpenQuizIntro: () => void;
   onExit: () => void;
 }) {
-  const [outlineOpen, setOutlineOpen] = useState(false);
+  // Sur grand écran, le sommaire est déroulé d'office dans une colonne ; sur écran étroit, c'est un
+  // panneau que l'on ouvre et qui se referme dès qu'on a choisi.
+  const isWide = () => typeof window !== 'undefined' && window.matchMedia('(min-width: 961px)').matches;
+  const [outlineOpen, setOutlineOpen] = useState(isWide);
+  const closeIfNarrow = () => {
+    if (!isWide()) setOutlineOpen(false);
+  };
 
   useEffect(() => {
-    if (!outlineOpen) return;
+    if (!outlineOpen || isWide()) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOutlineOpen(false);
     };
@@ -156,11 +157,14 @@ export function AcademyReaderView({
   const done = progress.lessons.includes(index);
   const quizPassed = isQuizPassed(progress, answerKey);
 
+  // L'exercice n'apparaît qu'une fois, dans la section qui donne de quoi le réussir : après la
+  // lecture de l'adresse et du lien pour le phishing, en fin de module pour les autres.
+  const labSection = moduleContent.labType === 'phishing' ? Math.min(1, last) : last;
   const practice = moduleContent.steps?.length ? (
     index === 0 ? (
       <IllustratedSteps steps={moduleContent.steps} aiAssisted={moduleContent.aiAssisted} />
     ) : null
-  ) : index === 0 || index === 1 ? (
+  ) : index === labSection ? (
     <ModuleInteractiveLab labType={moduleContent.labType} />
   ) : null;
 
@@ -168,7 +172,7 @@ export function AcademyReaderView({
   const nextHint = [index < last ? lessons[index + 1].title : 'Quiz final', done ? '' : '+25 XP'].filter(Boolean).join(' · ');
 
   return (
-    <div className="rd-shell">
+    <div className="rd-shell is-chapter">
       <ReaderTopBar
         title={moduleContent.title}
         step={`Section ${index + 1} sur ${lessons.length}`}
@@ -179,74 +183,28 @@ export function AcademyReaderView({
       />
 
       <div className="shell-scroll-viewport">
-        <div className="rd-layout">
-          <article key={index} className="rd-card rd-article">
-            <p className="rd-overline tabular-nums">
-              Section {index + 1} sur {lessons.length} · {current.minutes} de lecture
-              {done && (
-                <span className="rd-done" title="Section terminée">
-                  <Check size={14} aria-hidden="true" />
-                  <span className="sr-only">Section terminée</span>
-                </span>
-              )}
-            </p>
-            <h1>{current.title}</h1>
-            <p className="rd-lead">{current.intro}</p>
-            <p className="rd-body">{current.body}</p>
+        <div className={`rd-chapter${outlineOpen ? ' has-outline' : ''}`}>
+          <div className="rd-chapter-side">
+            <button type="button" className="rd-toc-btn" aria-expanded={outlineOpen} title="Sommaire" aria-label="Sommaire du module" onClick={() => setOutlineOpen(true)}>
+              <List size={20} aria-hidden="true" />
+            </button>
+          </div>
 
-            {practice && (
-              <section className="rd-block" aria-label="Mise en pratique">
-                <h2>Mise en pratique</h2>
-                {practice}
-              </section>
-            )}
-
-            <section className="rd-block" aria-label="À retenir">
-              <h2>À retenir</h2>
-              <ol className="rd-points">
-                {current.points.map((point, i) => (
-                  <li key={point}>
-                    <span className="rd-point-num tabular-nums" aria-hidden="true">
-                      {i + 1}
-                    </span>
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ol>
-            </section>
-
-            <blockquote className="rd-reflex">
-              <span>Réflexe clé</span>
-              <p>{current.tip}</p>
-            </blockquote>
-
-            <footer className="rd-nav">
-              {index > 0 ? (
-                <BackLink label="Précédent" title={lessons[index - 1].title} onClick={() => setLessonIndex(index - 1)} />
-              ) : (
-                <span />
-              )}
-              <div className="rd-nav-next">
-                <small>{nextHint}</small>
-                <button type="button" className="primary" disabled={busy} onClick={onCompleteLesson}>
-                  {nextLabel} <ArrowRight size={16} aria-hidden="true" />
-                </button>
-              </div>
-            </footer>
-          </article>
-
-          {outlineOpen && <button type="button" className="rd-scrim" aria-label="Fermer le sommaire" onClick={() => setOutlineOpen(false)} />}
-          <aside className={`rd-outline${outlineOpen ? ' is-open' : ''}`} aria-label="Sommaire du module">
-            <div className="rd-card rd-outline-card">
+          <aside className={`rd-outline${outlineOpen ? ' is-open' : ''}`} aria-label="Sommaire du module" inert={!outlineOpen}>
+            <div className="rd-outline-card">
               <header className="rd-outline-head">
                 <h2>Sommaire</h2>
                 <span className="tabular-nums">
                   {points} / {maxXp} XP
                 </span>
-                <button type="button" className="rd-top-btn rd-outline-close" aria-label="Fermer le sommaire" onClick={() => setOutlineOpen(false)}>
+                <button type="button" className="rd-top-btn rd-outline-close" title="Replier le sommaire" aria-label="Replier le sommaire" onClick={() => setOutlineOpen(false)}>
                   <X size={18} aria-hidden="true" />
                 </button>
               </header>
+              <p className="rd-outline-part">
+                <small>Module</small>
+                <b>{moduleContent.title}</b>
+              </p>
               <ol className="rd-steps">
                 {lessons.map((lesson, i) => {
                   const isDone = progress.lessons.includes(i);
@@ -258,7 +216,7 @@ export function AcademyReaderView({
                         aria-current={isCurrent ? 'step' : undefined}
                         onClick={() => {
                           setLessonIndex(i);
-                          setOutlineOpen(false);
+                          closeIfNarrow();
                         }}
                       >
                         <span className="rd-step-mark tabular-nums" aria-hidden="true">
@@ -279,7 +237,7 @@ export function AcademyReaderView({
                   <button
                     type="button"
                     onClick={() => {
-                      setOutlineOpen(false);
+                      closeIfNarrow();
                       onOpenQuizIntro();
                     }}
                   >
@@ -298,8 +256,42 @@ export function AcademyReaderView({
               </ol>
             </div>
           </aside>
+
+          <article key={index} className="rd-article rd-chapter-main">
+            <LessonArticle
+              lesson={current}
+              practice={practice}
+              meta={
+                <p className="rd-chapter-meta tabular-nums">
+                  Section {index + 1} sur {lessons.length} · {current.minutes} de lecture
+                  {done && (
+                    <span className="rd-done">
+                      <Check size={14} aria-hidden="true" />
+                      Terminée
+                    </span>
+                  )}
+                </p>
+              }
+            />
+
+            <footer className="rd-nav">
+              {index > 0 ? (
+                <BackLink label="Précédent" title={lessons[index - 1].title} onClick={() => setLessonIndex(index - 1)} />
+              ) : (
+                <span />
+              )}
+              <div className="rd-nav-next">
+                <small>{nextHint}</small>
+                <button type="button" className="primary" disabled={busy} onClick={onCompleteLesson}>
+                  {nextLabel} <ArrowRight size={16} aria-hidden="true" />
+                </button>
+              </div>
+            </footer>
+          </article>
         </div>
       </div>
+
+      {outlineOpen && <button type="button" className="rd-scrim" aria-label="Fermer le sommaire" onClick={() => setOutlineOpen(false)} />}
     </div>
   );
 }
