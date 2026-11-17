@@ -58,7 +58,7 @@ import {
   Toggle
 } from '../components/ui';
 
-type TabId = 'agenda' | 'plan';
+type TabId = 'agenda' | 'plan' | 'timetable';
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
@@ -413,7 +413,8 @@ export function CalendarPage({
   moduleOptions,
   onChange,
   onOpenModule,
-  setToast
+  setToast,
+  timetable
 }: {
   state: CalendarUserState;
   events: CalendarEvent[];
@@ -425,9 +426,13 @@ export function CalendarPage({
   onChange: (next: CalendarUserState) => void;
   onOpenModule: (moduleId: string) => void;
   setToast: (message: string) => void;
+  /** Emploi du temps de l'élève ou de l'enseignant ; absent s'il n'a pas de classe. */
+  timetable?: React.ReactNode;
 }) {
   const startDay = initialTarget && isValidDay(initialTarget) ? initialTarget : today;
-  const [tab, setTab] = useState<TabId>(initialTarget === 'plan' ? 'plan' : 'agenda');
+  const [tab, setTab] = useState<TabId>(
+    initialTarget === 'plan' ? 'plan' : initialTarget === 'timetable' && timetable ? 'timetable' : 'agenda'
+  );
   const [selected, setSelected] = useState<Day>(startDay);
   const [cursor, setCursor] = useState({ year: Number(startDay.slice(0, 4)), month: Number(startDay.slice(5, 7)) - 1 });
   const [editing, setEditing] = useState<{ event: CalendarEvent | null } | null>(null);
@@ -598,7 +603,8 @@ export function CalendarPage({
           onChange={setTab}
           items={[
             { id: 'agenda', label: 'Agenda' },
-            { id: 'plan', label: 'Plan de révision', count: remaining > 0 ? remaining : undefined }
+            { id: 'plan', label: 'Plan de révision', count: remaining > 0 ? remaining : undefined },
+            ...(timetable ? [{ id: 'timetable' as const, label: 'Emploi du temps' }] : [])
           ]}
         />
 
@@ -686,6 +692,15 @@ export function CalendarPage({
               )}
             </ListCard>
             {state.showSchool && <p className="cal-source">{SCHOOL_CALENDAR.label}. {SCHOOL_CALENDAR.source}</p>}
+          </>
+        )}
+
+        {tab === 'timetable' && timetable && (
+          <>
+            {timetable}
+            <p className="cal-source">
+              Le plan de révision tient compte de cet emploi du temps : les jours de six heures de cours ou plus, il prévoit moitié moins de séances.
+            </p>
           </>
         )}
 

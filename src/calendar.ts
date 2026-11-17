@@ -415,21 +415,37 @@ export interface PlanInput {
   log: SessionLog[];
   today: Day;
   modules?: Record<string, { title: string; state: LinkedModuleState }>;
+  /** Jours de la semaine très chargés en cours (0 = dimanche … 6 = samedi) : le plan y met moitié moins de séances. */
+  heavyWeekdays?: number[];
 }
+
+/** À partir de six heures de cours dans la journée, le jour est tenu pour chargé. */
+export const HEAVY_CLASS_MINUTES = 360;
 
 /** Les séances se resserrent un peu à l'approche de l'examen (1 = répartition régulière). */
 const RAMP = 1.25;
 
 /** Nombre de séances possibles un jour donné. */
-export function daySlots(day: Day, settings: PlanSettings, breaks: CalendarEvent[], examDays: ReadonlySet<Day>): number {
+const NO_WEEKDAY: ReadonlySet<number> = new Set<number>();
+
+export function daySlots(
+  day: Day,
+  settings: PlanSettings,
+  breaks: CalendarEvent[],
+  examDays: ReadonlySet<Day>,
+  heavyWeekdays: ReadonlySet<number> = NO_WEEKDAY
+): number {
   if (examDays.has(day)) return 0;
   if (settings.restDay !== null && settings.restDay === weekdayOf(day)) return 0;
   let minutes = isWeekend(day) ? settings.weekendMinutes : settings.weekdayMinutes;
-  if (breaks.some((b) => eventCovers(b, day))) {
+  const inBreak = breaks.some((b) => eventCovers(b, day));
+  if (inBreak) {
     if (settings.breakMode === 'rest') return 0;
     if (settings.breakMode === 'boost') minutes = Math.max(settings.weekdayMinutes, settings.weekendMinutes);
   }
-  return Math.max(0, Math.floor(minutes / Math.max(15, settings.sessionMinutes)));
+  const slots = Math.max(0, Math.floor(minutes / Math.max(15, settings.sessionMinutes)));
+  // Jour de cours chargé (hors congés, où il n'y a pas cours) : moitié moins de séances.
+  return !inBreak && heavyWeekdays.has(weekdayOf(day)) ? Math.floor(slots / 2) : slots;
 }
 
 const kindAt = (ordinal: number, total: number): SessionKind => {
@@ -465,8 +481,9 @@ type Work = {
  * veille de l'épreuve, dans les créneaux que laissent le rythme choisi, le jour de repos, les congés
  * et les jours d'épreuve. Une séance non faite n'est pas perdue : elle est replacée.
  */
-export function buildRevisionPlan({ events, settings, log, today, modules = {} }: PlanInput): RevisionPlan {
+export function buildRevisionPlan({ events, settings, log, today, modules = {}, heavyWeekdays = [] }: PlanInput): RevisionPlan {
   const breaks = events.filter((e) => e.kind === 'break');
+  const heavy: ReadonlySet<number> = new Set(heavyWeekdays);
   const examDays = new Set<Day>();
   for (const e of events) {
     if (e.kind !== 'exam') continue;
@@ -530,7 +547,7 @@ export function buildRevisionPlan({ events, settings, log, today, modules = {} }
   const free = new Map<Day, number>();
   const doneToday = log.filter((entry) => entry.day === today).length;
   for (let d = today; d <= horizon; d = addDays(d, 1)) {
-    free.set(d, Math.max(0, daySlots(d, settings, breaks, examDays) - (d === today ? doneToday : 0)));
+    free.set(d, Math.max(0, daySlots(d, settings, breaks, examDays, heavy) - (d === today ? doneToday : 0)));
   }
   const take = (d: Day): boolean => {
     const left = free.get(d) || 0;
@@ -615,6 +632,7 @@ export function buildRevisionPlan({ events, settings, log, today, modules = {} }
       if (catchUp) reasons.push('Séance de rattrapage : elle était attendue plus tôt et n’a pas été faite.');
       const inBreak = breakTitle(day);
       if (inBreak) reasons.push(`${inBreak} : réglage « ${BREAK_MODE_LABEL[settings.breakMode].toLowerCase()} » pendant les congés.`);
+      else if (heavy.has(weekdayOf(day))) reasons.push('Journée de cours chargée : le plan y prévoit moitié moins de séances.');
       sessions.push({
         key: `${w.event.id}:${ordinal}`,
         examId: w.event.id,
@@ -756,6 +774,50 @@ const onWeekday = (day: Day): Day => (weekdayOf(day) === 6 ? addDays(day, 2) : w
  */
 export function demoCalendarState(uid: string, today: Day): CalendarUserState {
   const state = emptyCalendarState();
+  if (uid === 'elom') {
+    // Élève de Terminale D : il prépare le BAC II et les compositions du trimestre, deux séances par soir.
+    const planned = addDays(today, -6);
+    return {
+      ...state,
+      nationalExam: 'bac2',
+      settings: { ...state.settings, weekdayMinutes: 90, weekendMinutes: 180 },
+      events: [
+        {
+          id: 'demo-elom-maths',
+          kind: 'exam',
+          title: 'Composition · Mathématiques',
+          start: onWeekday(addDays(today, 12)),
+          source: 'user',
+          createdOn: planned,
+          exam: { subject: 'Mathématiques', difficulty: 3, level: 2, goal: 'pass' }
+        },
+        {
+          id: 'demo-elom-pc',
+          kind: 'exam',
+          title: 'Composition · Physique-chimie',
+          start: onWeekday(addDays(today, 14)),
+          source: 'user',
+          createdOn: planned,
+          exam: { subject: 'Physique-chimie', difficulty: 2, level: 1, goal: 'pass' }
+        },
+        {
+          id: 'demo-elom-svt',
+          kind: 'exam',
+          title: 'Composition · SVT',
+          start: onWeekday(addDays(today, 16)),
+          source: 'user',
+          createdOn: addDays(today, -1),
+          exam: { subject: 'SVT', difficulty: 2, level: 3, goal: 'pass' }
+        }
+      ],
+      log: [
+        { examId: 'demo-elom-maths', day: addDays(today, -3), minutes: 45, kind: 'learn' },
+        { examId: 'demo-elom-maths', day: addDays(today, -2), minutes: 45, kind: 'learn' },
+        { examId: 'demo-elom-maths', day: addDays(today, -1), minutes: 45, kind: 'learn' },
+        { examId: 'demo-elom-pc', day: addDays(today, -2), minutes: 45, kind: 'learn' }
+      ]
+    };
+  }
   if (uid !== 'afi') return state;
   const createdOn = addDays(today, -5);
   return {

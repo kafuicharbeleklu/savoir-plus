@@ -3,6 +3,7 @@ import {
   Bell,
   BookOpen,
   ChevronDown,
+  ClipboardList,
   Home,
   Layers,
   LogOut,
@@ -12,6 +13,7 @@ import {
   Settings,
   ShieldCheck,
   User,
+  UserCheck,
   Users,
   X
 } from 'lucide-react';
@@ -316,6 +318,42 @@ export function TopBar({
                 >
                   <User size={15} /> Mon profil
                 </button>
+
+                {caps.canManageFamily && (
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setVousOpen(false);
+                      nav('family');
+                    }}
+                  >
+                    <Users size={15} /> Espace famille
+                  </button>
+                )}
+
+                {caps.canTeach && (
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setVousOpen(false);
+                      nav('teaching');
+                    }}
+                  >
+                    <UserCheck size={15} /> Espace encadrant
+                  </button>
+                )}
+
+                {caps.canManageInstitution && (
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setVousOpen(false);
+                      nav('institution');
+                    }}
+                  >
+                    <ClipboardList size={15} /> Mon établissement
+                  </button>
+                )}
 
                 {caps.canCreate && (
                   <button

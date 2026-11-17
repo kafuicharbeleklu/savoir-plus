@@ -51,6 +51,11 @@ interface LearningExtraProps {
   domain: string;
   setDomain: (d: string) => void;
   setToast: (msg: string) => void;
+  /**
+   * Contenu payant non acquis : renvoie le prix à afficher (absent pour un mineur, à qui on ne montre
+   * pas de prix) et l'action d'achat s'il peut acheter lui-même. Renvoie `null` si l'accès est ouvert.
+   */
+  paywall?: (itemId: string) => { priceLabel: string | null; buyLabel?: string; onBuy?: () => void } | null;
 }
 
 function resolveModProg(
@@ -561,10 +566,12 @@ export function ModuleDetailView({
   progress,
   userId = 'afi',
   getModuleProgress,
-  setToast
+  setToast,
+  paywall
 }: LearningExtraProps) {
   const catalog = buildDynamicCatalog(ext);
   const item = catalog.find((c) => c.id === selectedItemId && c.type === 'module') || catalog[0];
+  const wall = paywall?.(item.id) || null;
   const isInteractive = !!item.interactive;
   const modProg = resolveModProg(item.id, progress, ext, userId, getModuleProgress);
   const studyLessons = MODULES_CONTENT[item.id]?.lessons.length || Math.max(1, (item.sections?.length || 4) - 1);
@@ -668,10 +675,25 @@ export function ModuleDetailView({
               : 'Module de démonstration.'}
           </p>
 
-          <button className="primary wf-full-btn" onClick={() => openReader(item.id)}>
-            {pct === 100 ? 'Revoir le module' : pct > 0 ? 'Continuer le module' : 'Commencer le module'}{' '}
-            <ArrowRight size={16} />
-          </button>
+          {wall ? (
+            <>
+              <p className="tiny muted">
+                {wall.priceLabel
+                  ? `Contenu payant : ${wall.priceLabel}. Démonstration : aucun paiement réel.`
+                  : 'Contenu payant. Demande à ton parent ou tuteur de l’ajouter depuis son espace famille.'}
+              </p>
+              {wall.onBuy && (
+                <button className="primary wf-full-btn" onClick={wall.onBuy}>
+                  {wall.buyLabel || 'Acheter'}
+                </button>
+              )}
+            </>
+          ) : (
+            <button className="primary wf-full-btn" onClick={() => openReader(item.id)}>
+              {pct === 100 ? 'Revoir le module' : pct > 0 ? 'Continuer le module' : 'Commencer le module'}{' '}
+              <ArrowRight size={16} />
+            </button>
+          )}
 
           <button className="secondary wf-full-btn" onClick={togglePlanned}>
             {isPlanned ? 'Ajouté · Retirer de ma liste' : 'Ajouter à mes apprentissages'}

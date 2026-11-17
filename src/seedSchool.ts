@@ -5,10 +5,10 @@
  *
  * Les dates sont relatives au jour de la visite, pour que la démonstration reste vivante.
  */
-import { addDays, type Day } from './calendar';
+import { addDays, todayDay, type Day } from './calendar';
 import { MODULES_CONTENT } from './content';
 import type { Profile, Progress } from './data';
-import type { AccountRecord, Membership, SchoolState, TimetableSlot } from './school';
+import { normalizeSchoolState, type AccountRecord, type Membership, type SchoolState, type TimetableSlot } from './school';
 
 /** Personnages jouables ajoutés à ceux d'origine (Afi, Kossi, Nadège). */
 export const SCHOOL_PERSONAS: Profile[] = [
@@ -254,6 +254,14 @@ export function initialSchoolState(today: Day): SchoolState {
       { id: 'KYC-002', userId: 'akouvi', document: 'cni', submittedOn: addDays(today, -41), status: 'verified' },
       { id: 'KYC-001', userId: 'kossi', document: 'passeport', submittedOn: addDays(today, -72), status: 'verified' }
     ],
-    prices: { budget: 1500, reunion: 1000, 'modele-budget': 500 }
+    prices: { budget: 1500, reunion: 1000 }
   };
+}
+
+/**
+ * Vie scolaire telle que l'application la lit : l'état enregistré s'il existe, complété par l'état
+ * de départ du jour ; sinon l'état de départ seul.
+ */
+export function schoolOf(ext: { school?: SchoolState }, today: Day = todayDay()): SchoolState {
+  return normalizeSchoolState(ext.school, initialSchoolState(today));
 }

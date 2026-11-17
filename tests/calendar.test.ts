@@ -172,6 +172,31 @@ test('créneaux d’une journée : rythme, jour de repos, congés et jour d’é
   assert.equal(daySlots('2026-12-28', { ...settings, breakMode: 'boost' }, noel, none), 2);
 });
 
+test('emploi du temps : un jour de cours chargé reçoit moitié moins de séances, sauf pendant les congés', () => {
+  const settings: PlanSettings = { ...DEFAULT_PLAN_SETTINGS, weekdayMinutes: 90 };
+  const none = new Set<Day>();
+  const heavy = new Set([1]); // lundi : six heures de cours
+  assert.equal(daySlots('2026-11-23', settings, [], none), 2);
+  assert.equal(daySlots('2026-11-23', settings, [], none, heavy), 1, 'lundi chargé');
+  assert.equal(daySlots('2026-11-24', settings, [], none, heavy), 2, 'mardi inchangé');
+  assert.equal(daySlots('2026-11-23', DEFAULT_PLAN_SETTINGS, [], none, heavy), 0, 'une seule séance possible : le jour chargé devient un jour sans séance');
+  // Lundi 28 décembre, pendant les congés de Noël : il n'y a pas cours, le jour n'est pas chargé.
+  const noel = SCHOOL_CALENDAR.entries.filter((e) => e.id === 'sc-noel');
+  assert.equal(daySlots('2026-12-28', settings, noel, none, heavy), 2);
+
+  const events = [exam('maths', '2026-12-08', { difficulty: 3, level: 2, goal: 'high' })];
+  const plain = buildRevisionPlan({ events, settings, log: [], today: TODAY });
+  const aware = buildRevisionPlan({ events, settings, log: [], today: TODAY, heavyWeekdays: [1, 4] });
+  const perDay = (plan: typeof plain, day: Day) => plan.sessions.filter((s) => s.day === day).length;
+  for (const session of aware.sessions) {
+    const limit = [1, 4].includes(weekdayOf(session.day)) ? 1 : weekdayOf(session.day) === 0 || weekdayOf(session.day) === 6 ? 2 : 2;
+    assert.ok(perDay(aware, session.day) <= limit, `${session.day} dépasse la limite d’un jour chargé`);
+  }
+  assert.equal(aware.exams[0].planned, plain.exams[0].planned, 'les séances sont déplacées, pas perdues');
+  const heavySession = aware.sessions.find((s) => [1, 4].includes(weekdayOf(s.day)));
+  assert.ok(heavySession?.reasons.some((r) => r.startsWith('Journée de cours chargée')));
+});
+
 test('plan de révision : toutes les séances avant l’examen, relecture légère la veille', () => {
   const events = [exam('maths', '2026-12-02')]; // dans 15 jours
   const plan = buildRevisionPlan({ events, settings: DEFAULT_PLAN_SETTINGS, log: [], today: TODAY });
@@ -423,4 +448,19 @@ test('démonstration : le plan d’Afi est vivant et tient quel que soit le jour
   }
   // Les autres personnages partent d'un calendrier vide (calendrier scolaire seulement).
   assert.equal(demoCalendarState('kossi', TODAY).events.length, 0);
+});
+
+test('démonstration : l’élève de Terminale prépare le BAC II et ses compositions, sans charge impossible', () => {
+  for (let offset = 0; offset < 7; offset += 1) {
+    const today = addDays(TODAY, offset);
+    const state = demoCalendarState('elom', today);
+    const events = resolveEvents(state);
+    assert.ok(events.some((e) => e.id === 'sc-bac2'), 'le BAC II figure dans son calendrier');
+    assert.ok(events.some((e) => e.id === 'sc-insc-bac2'), 'la clôture des inscriptions aussi');
+    const plan = buildRevisionPlan({ events, settings: state.settings, log: state.log, today });
+    assert.equal(plan.exams.length, 3, 'trois compositions ; le BAC II reste un repère sans séances');
+    assert.ok(plan.exams.every((e) => e.unplaced === 0), `charge trop forte en partant du ${today}`);
+    assert.equal(plan.exams.find((e) => e.examId === 'demo-elom-pc')!.status, 'late');
+    assert.equal(planGauges(plan, events, state.log, today).streak, 3);
+  }
 });

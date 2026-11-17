@@ -110,6 +110,7 @@ import {
   type ExtendedDemoState
 } from './wireframeData';
 import {
+  HEAVY_CLASS_MINUTES,
   buildRevisionPlan,
   demoCalendarState,
   normalizeCalendarState,
@@ -120,8 +121,20 @@ import {
 } from './calendar';
 import {
   CONTACT_REFUSAL_MESSAGE,
+  PURCHASE_MESSAGE,
+  busyMinutes,
+  buyItem,
+  canSeePrices,
+  childrenOf,
+  classesOfStudent,
+  classesOfTeacher,
   contactRefusal,
+  formatPrice,
+  hasAccess,
+  learnersOf,
   normalizeSchoolState,
+  priceOf,
+  slotsFor,
   visibleInSuggestions,
   type SchoolState
 } from './school';
@@ -183,6 +196,10 @@ import {
 import { CommunityComposeView, CommunityThreadView } from './pages/CommunityPages';
 import { CalendarPage } from './pages/CalendarPage';
 import { GuardianGate } from './pages/school/GuardianGate';
+import { FamilyPage } from './pages/school/FamilyPage';
+import { TeachingPage } from './pages/school/TeachingPage';
+import { InstitutionPage } from './pages/school/InstitutionPage';
+import { TimetableList } from './pages/school/shared';
 import {
   AuthFlowsView,
   ModerationView,
@@ -192,6 +209,7 @@ import {
 } from './pages/AccountAndAdminPages';
 import { SettingsView } from './pages/SettingsPage';
 import { GovernanceRail } from './pages/governance/shared';
+import { AdminIdentityView } from './pages/governance/Identity';
 import { ProfilePage } from './pages/ProfilePage';
 import {
   StudioCreatorProfileView,
@@ -223,6 +241,9 @@ const VALID_PAGES = new Set<string>([
   'catalog',
   'learning',
   'calendar',
+  'family',
+  'teaching',
+  'institution',
   'progression',
   'community',
   'community-compose',
@@ -256,6 +277,7 @@ const VALID_PAGES = new Set<string>([
   'admin-roles',
   'admin-contents',
   'admin-validation',
+  'admin-identity',
   'admin-audit',
   'admin-support',
   'admin-settings',
@@ -616,36 +638,39 @@ export default function App() {
     return sum + moduleXp(getModuleProgress(modId), study.lessons.length, answerKey(modId));
   }, 0);
 
-  // Calendrier et plan de révision : calculés sur l'appareil, pour le personnage en cours.
-  // Tant que le visiteur n'a rien modifié, il voit le calendrier de démonstration, daté du jour.
-  const calendarState: CalendarUserState = ext.calendar?.[uid]
-    ? normalizeCalendarState(ext.calendar[uid])
-    : demoCalendarState(uid, today);
-  const calendarEvents = resolveEvents(calendarState);
-  const calendarModules = Object.fromEntries(
-    Array.from(new Set(calendarEvents.flatMap((e) => e.exam?.moduleIds || [])))
-      .filter((id) => playableModuleIds.includes(id))
-      .map((id) => {
-        const modProg = getModuleProgress(id);
-        const state: LinkedModuleState = isModuleValidated(id)
-          ? 'validated'
-          : modProg.submitted
-            ? 'failed'
-            : modProg.lessons.length > 0
-              ? 'started'
-              : 'new';
-        const title =
-          dynamicCatalog.find((c) => c.id === id)?.title || resolveStudyContent(id, ext.studioContents, ext.studioQuiz).title;
-        return [id, { title, state }] as const;
-      })
-  );
-  const revisionPlan = buildRevisionPlan({
-    events: calendarEvents,
-    settings: calendarState.settings,
-    log: calendarState.log,
-    today,
-    modules: calendarModules
-  });
+  // Calendrier et plan de révision : calculés sur l'appareil. Tant que rien n'a été modifié,
+  // chaque personnage voit son calendrier de démonstration, daté du jour.
+  const calendarOf = (target: string) => {
+    const state: CalendarUserState = ext.calendar?.[target]
+      ? normalizeCalendarState(ext.calendar[target])
+      : demoCalendarState(target, today);
+    const events = resolveEvents(state);
+    const progressFor = (id: string): Progress =>
+      target === uid ? getModuleProgress(id) : ext.moduleProgress?.[target]?.[id] || emptyProgress();
+    const modules = Object.fromEntries(
+      Array.from(new Set(events.flatMap((e) => e.exam?.moduleIds || [])))
+        .filter((id) => playableModuleIds.includes(id))
+        .map((id) => {
+          const modProg = progressFor(id);
+          const linkedState: LinkedModuleState = isQuizPassed(modProg, answerKey(id))
+            ? 'validated'
+            : modProg.submitted
+              ? 'failed'
+              : modProg.lessons.length > 0
+                ? 'started'
+                : 'new';
+          const title =
+            dynamicCatalog.find((c) => c.id === id)?.title || resolveStudyContent(id, ext.studioContents, ext.studioQuiz).title;
+          return [id, { title, state: linkedState }] as const;
+        })
+    );
+    // Emploi du temps de l'élève : les jours de six heures de cours ou plus reçoivent moitié moins de séances.
+    const slots = mode === 'local' ? slotsFor(school, target) : [];
+    const heavyWeekdays = [1, 2, 3, 4, 5, 6].filter((weekday) => busyMinutes(slots, weekday) >= HEAVY_CLASS_MINUTES);
+    const plan = buildRevisionPlan({ events, settings: state.settings, log: state.log, today, modules, heavyWeekdays });
+    return { state, events, plan, log: state.log, slots };
+  };
+  const { state: calendarState, events: calendarEvents, plan: revisionPlan, slots: timetableSlots } = calendarOf(uid);
   const saveCalendar = (next: CalendarUserState) =>
     updateExt((prev) => ({ ...prev, calendar: { ...(prev.calendar || {}), [uid]: next } }));
 
@@ -740,7 +765,15 @@ export default function App() {
     }
   }, [page, activeStudyModuleId]);
 
+  /** Contenu payant non acquis par le membre (démonstration locale ; les achats sont simulés). */
+  const isLocked = (itemId: string) => mode === 'local' && !hasAccess(school, uid, itemId);
+
   const openReader = (moduleId = activeStudyModuleId || 'phishing', sectionIdx?: number) => {
+    if (isLocked(moduleId)) {
+      setToast('Contenu payant : sa fiche indique comment l’obtenir.');
+      nav('module-detail', moduleId);
+      return;
+    }
     const study = resolveStudyContent(moduleId, ext.studioContents, ext.studioQuiz);
     const modProg = getModuleProgress(moduleId);
     const nextIncomplete = [0, 1, 2].find((i) => i < study.lessons.length && !modProg.lessons.includes(i));
@@ -1382,6 +1415,8 @@ export default function App() {
   const studioNav = isStudioRoute(page);
   const govNav = isGovernanceRoute(page);
   const activeSpace = resolveActiveSpace(page, caps.canModerate || caps.canAdmin);
+  // Un parent ou tuteur et un établissement n'ont ni apprentissages, ni calendrier, ni progression propres.
+  const learnsHere = caps.accountKind === 'learner' || caps.accountKind === 'educator';
   const isFullWidth =
     page === 'messages' ||
     page === 'auth-flows' ||
@@ -1404,7 +1439,29 @@ export default function App() {
     setQuery: setTopQuery,
     domain: catalogDomain,
     setDomain: setCatalogDomain,
-    setToast
+    setToast,
+    // Contenu payant : le prix n'est montré qu'à un adulte ; un parent achète depuis son espace famille.
+    paywall: (itemId: string) => {
+      if (!isLocked(itemId)) return null;
+      if (!canSeePrices(school, uid, today)) return { priceLabel: null };
+      const priceLabel = formatPrice(priceOf(school, itemId));
+      if (caps.accountKind === 'guardian') {
+        return { priceLabel, buyLabel: 'Acheter pour un enfant', onBuy: () => nav('family') };
+      }
+      return {
+        priceLabel,
+        buyLabel: `Acheter · ${priceLabel} (simulé)`,
+        onBuy: () => {
+          const result = buyItem(school, uid, uid, itemId, today);
+          if (result.ok === false) {
+            setToast(PURCHASE_MESSAGE[result.reason]);
+            return;
+          }
+          saveSchool(result.school);
+          setToast(`Achat simulé enregistré · reçu ${result.purchase.id}`);
+        }
+      };
+    }
   };
 
   const communityProps = {
@@ -1709,14 +1766,75 @@ export default function App() {
 
           {/* Right Rail (Desktop 3rd Column) — masquée sur mobile : le fil d'actualité seul */}
           <aside className="right-rail home-rail" aria-label="Repères et découvertes">
-            <CalendarCard
-              today={today}
-              events={calendarEvents}
-              plan={revisionPlan}
-              log={calendarState.log}
-              onOpen={(day) => nav('calendar', day || '')}
-            />
+            {/* Résumé de l'espace propre au profil : famille, classes, établissement */}
+            {caps.canManageFamily && (
+              <section className="rail-card" aria-label="Mes enfants">
+                <h2 className="discover-feed-title">Mes enfants</h2>
+                <div className="rail-stat-list">
+                  {childrenOf(school, uid).length === 0 ? (
+                    <p className="tiny muted">Aucun enfant rattaché pour le moment.</p>
+                  ) : (
+                    childrenOf(school, uid).map((childId) => (
+                      <div key={childId} className="rail-stat-row">
+                        <span>{people.find((p) => p.id === childId)?.name || 'Enfant'}</span>
+                        <b>{classesOfStudent(school, childId)[0]?.name || 'Sans classe'}</b>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <button type="button" className="rail-card-foot" onClick={() => nav('family')}>
+                  Ouvrir l’espace famille <ArrowRight size={16} aria-hidden="true" />
+                </button>
+              </section>
+            )}
+            {caps.canManageInstitution && (
+              <section className="rail-card" aria-label="Mon établissement">
+                <h2 className="discover-feed-title">Mon établissement</h2>
+                <div className="rail-stat-list tabular-nums">
+                  <div className="rail-stat-row">
+                    <span>Demandes en attente</span>
+                    <b>{school.memberships.filter((m) => m.institutionId === school.accounts[uid]?.institutionId && m.status === 'pending').length}</b>
+                  </div>
+                  <div className="rail-stat-row">
+                    <span>Classes</span>
+                    <b>{school.classes.filter((c) => c.institutionId === school.accounts[uid]?.institutionId).length}</b>
+                  </div>
+                </div>
+                <button type="button" className="rail-card-foot" onClick={() => nav('institution')}>
+                  Ouvrir mon établissement <ArrowRight size={16} aria-hidden="true" />
+                </button>
+              </section>
+            )}
+            {caps.canTeach && (
+              <section className="rail-card" aria-label="Mes classes">
+                <h2 className="discover-feed-title">Mes classes</h2>
+                <div className="rail-stat-list tabular-nums">
+                  <div className="rail-stat-row">
+                    <span>Classes</span>
+                    <b>{classesOfTeacher(school, uid).length}</b>
+                  </div>
+                  <div className="rail-stat-row">
+                    <span>Apprenants suivis</span>
+                    <b>{learnersOf(school, uid).length}</b>
+                  </div>
+                </div>
+                <button type="button" className="rail-card-foot" onClick={() => nav('teaching')}>
+                  Ouvrir l’espace encadrant <ArrowRight size={16} aria-hidden="true" />
+                </button>
+              </section>
+            )}
 
+            {learnsHere && (
+              <CalendarCard
+                today={today}
+                events={calendarEvents}
+                plan={revisionPlan}
+                log={calendarState.log}
+                onOpen={(day) => nav('calendar', day || '')}
+              />
+            )}
+
+            {learnsHere && (
             <section className="rail-card">
               <span className="eyebrow">Votre progression</span>
               <h3 className="tabular-nums">Niveau {lvl.level} · {totalXP} XP</h3>
@@ -1739,6 +1857,7 @@ export default function App() {
                 Ma progression détaillée <ArrowRight size={16} aria-hidden="true" />
               </button>
             </section>
+            )}
 
             <section className="rail-card">
               <h2 className="discover-feed-title">Ajouter à votre fil d’actualité</h2>
@@ -2551,8 +2670,32 @@ export default function App() {
           onChange={saveCalendar}
           onOpenModule={(id) => nav('module-detail', id)}
           setToast={setToast}
+          timetable={
+            timetableSlots.length > 0 ? (
+              <TimetableList slots={timetableSlots} school={school} showClass={caps.accountKind === 'educator'} />
+            ) : undefined
+          }
         />
       );
+    }
+
+    if (page === 'family' || page === 'teaching' || page === 'institution') {
+      const schoolProps = {
+        school,
+        saveSchool,
+        ext,
+        user,
+        // L'annuaire de la communauté : il porte aussi les membres qui n'ont pas de personnage jouable.
+        people: networkDirectory,
+        today,
+        catalog: dynamicCatalog,
+        selectedId,
+        nav,
+        setToast
+      };
+      if (page === 'family') return <FamilyPage {...schoolProps} calendarOf={calendarOf} />;
+      if (page === 'teaching') return <TeachingPage {...schoolProps} />;
+      return <InstitutionPage {...schoolProps} />;
     }
 
     if (page === 'catalog') return <CatalogExtraView {...extraProps} />;
@@ -2590,6 +2733,9 @@ export default function App() {
           path={selectedId}
           mode={mode}
           onResetDemo={handleResetDemo}
+          school={mode === 'local' ? school : undefined}
+          saveSchool={saveSchool}
+          today={today}
         />
       );
     if (page === 'auth-flows') return <AuthFlowsView {...accountAdminProps} />;
@@ -2611,6 +2757,7 @@ export default function App() {
     if (page === 'admin-roles') return <AdminRolesView {...adminProps} />;
     if (page === 'admin-contents') return <AdminFlaggedContentsView {...adminProps} />;
     if (page === 'admin-validation') return <AdminValidationView {...adminProps} />;
+    if (page === 'admin-identity') return <AdminIdentityView {...adminProps} people={networkDirectory} today={today} />;
     if (page === 'admin-audit') return <AdminAuditView {...adminProps} />;
     if (page === 'admin-support') return <AdminSupportView {...adminProps} />;
     if (page === 'admin-settings') return <AdminSettingsView {...adminProps} />;
@@ -2666,19 +2813,48 @@ export default function App() {
                       <div className="vous-divider" />
                     </>
                   )}
+                  {/* Espace propre au type de compte : famille, encadrant, établissement */}
+                  {(caps.canManageFamily || caps.canTeach || caps.canManageInstitution) && (
+                    <>
+                      <span className="left-rail-section-label">Mon espace</span>
+                      {caps.canManageFamily && (
+                        <button className={`rail-nav-btn ${page === 'family' ? 'active' : ''}`} onClick={() => nav('family')}>
+                          <span><Users size={16} /> Espace famille</span>
+                        </button>
+                      )}
+                      {caps.canTeach && (
+                        <button className={`rail-nav-btn ${page === 'teaching' ? 'active' : ''}`} onClick={() => nav('teaching')}>
+                          <span><UserCheck size={16} /> Espace encadrant</span>
+                        </button>
+                      )}
+                      {caps.canManageInstitution && (
+                        <button className={`rail-nav-btn ${page === 'institution' ? 'active' : ''}`} onClick={() => nav('institution')}>
+                          <span><ClipboardList size={16} /> Mon établissement</span>
+                        </button>
+                      )}
+                      <div className="vous-divider" />
+                    </>
+                  )}
                   <span className="left-rail-section-label">Apprentissage</span>
-                  <button className={`rail-nav-btn ${page === 'learning' ? 'active' : ''}`} onClick={() => nav('learning')}>
-                    <span><BookOpen size={16} /> Mes apprentissages</span>
-                  </button>
-                  <button className={`rail-nav-btn ${page === 'calendar' ? 'active' : ''}`} onClick={() => nav('calendar')}>
-                    <span><CalendarDays size={16} /> Calendrier</span>
-                  </button>
+                  {/* Un parent ou un établissement consulte la bibliothèque ; il n'a ni apprentissages ni calendrier propres. */}
+                  {learnsHere && (
+                    <button className={`rail-nav-btn ${page === 'learning' ? 'active' : ''}`} onClick={() => nav('learning')}>
+                      <span><BookOpen size={16} /> Mes apprentissages</span>
+                    </button>
+                  )}
+                  {learnsHere && (
+                    <button className={`rail-nav-btn ${page === 'calendar' ? 'active' : ''}`} onClick={() => nav('calendar')}>
+                      <span><CalendarDays size={16} /> Calendrier</span>
+                    </button>
+                  )}
                   <button className={`rail-nav-btn ${page === 'catalog' ? 'active' : ''}`} onClick={() => nav('catalog')}>
                     <span><Compass size={16} /> Bibliothèque</span>
                   </button>
-                  <button className={`rail-nav-btn ${page === 'progression' ? 'active' : ''}`} onClick={() => nav('progression')}>
-                    <span><Award size={16} /> Progression & Badges</span>
-                  </button>
+                  {learnsHere && (
+                    <button className={`rail-nav-btn ${page === 'progression' ? 'active' : ''}`} onClick={() => nav('progression')}>
+                      <span><Award size={16} /> Progression & Badges</span>
+                    </button>
+                  )}
                   {(caps.canCreate || caps.canModerate || caps.canAdmin) && (
                     <>
                       <div className="vous-divider" />

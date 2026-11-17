@@ -3,11 +3,13 @@
  * la structure du menu et les compteurs des files à traiter.
  */
 import type { AccountStatus, AdminRoleName, ExtendedDemoState } from './wireframeData';
+import { schoolOf } from './seedSchool';
 
 export type GovSection =
   | 'admin'
   | 'moderation'
   | 'admin-validation'
+  | 'admin-identity'
   | 'appeal'
   | 'admin-support'
   | 'admin-users'
@@ -22,6 +24,7 @@ export const GOV_LABEL: Record<GovSection, string> = {
   admin: 'À traiter',
   moderation: 'Signalements',
   'admin-validation': 'Validations',
+  'admin-identity': 'Identités',
   appeal: 'Recours',
   'admin-support': 'Support',
   'admin-users': 'Utilisateurs',
@@ -32,7 +35,7 @@ export const GOV_LABEL: Record<GovSection, string> = {
 };
 
 export const GOV_NAV: { group: string; items: GovSection[] }[] = [
-  { group: 'Files', items: ['moderation', 'admin-validation', 'appeal', 'admin-support'] },
+  { group: 'Files', items: ['moderation', 'admin-validation', 'admin-identity', 'appeal', 'admin-support'] },
   { group: 'Administration', items: ['admin-users', 'admin-roles', 'admin-contents', 'admin-settings'] },
   { group: 'Traçabilité', items: ['admin-audit'] }
 ];
@@ -51,6 +54,7 @@ const MATRIX: Record<GovSection, string> = {
   admin: 'vvvvvv',
   moderation: 'aaaa-v',
   'admin-validation': 'aaa--v',
+  'admin-identity': 'aaa--v',
   appeal: 'aaa--v',
   'admin-support': 'aa--av',
   'admin-users': 'aaavvv',
@@ -109,6 +113,7 @@ export function govCounts(ext: ExtendedDemoState): Record<GovSection, number> {
     admin: 0,
     moderation: ext.dossiers.filter((d) => d.status !== 'Décision soumise').length,
     'admin-validation': ext.validationRequests.filter((v) => v.status === 'Soumise' || v.status === 'En examen').length,
+    'admin-identity': schoolOf(ext).identityRequests.filter((r) => r.status === 'pending').length,
     appeal: ext.appeal.submitted && (ext.appeal.status === 'Reçu' || ext.appeal.status === 'En examen') ? 1 : 0,
     'admin-support': ext.supportTickets.filter((t) => t.status === 'nouveau' || t.status === 'ouvert').length,
     'admin-users': 0,
@@ -128,6 +133,7 @@ export function govInbox(ext: ExtendedDemoState, role: AdminRoleName): { section
       return `${plural(counts.moderation, 'dossier ouvert', 'dossiers ouverts')}${unassigned ? ` · ${plural(unassigned, 'non affecté', 'non affectés')}` : ''}`;
     })(),
     'admin-validation': plural(counts['admin-validation'], 'demande à examiner', 'demandes à examiner'),
+    'admin-identity': plural(counts['admin-identity'], 'identité à vérifier', 'identités à vérifier'),
     appeal: plural(counts.appeal, 'recours à examiner', 'recours à examiner'),
     'admin-support': (() => {
       const high = ext.supportTickets.filter((t) => (t.status === 'nouveau' || t.status === 'ouvert') && t.priority === 'Haute').length;
@@ -137,7 +143,7 @@ export function govInbox(ext: ExtendedDemoState, role: AdminRoleName): { section
     'admin-contents': plural(counts['admin-contents'], 'contenu signalé encore accessible', 'contenus signalés encore accessibles'),
     'admin-settings': plural(counts['admin-settings'], 'changement à approuver', 'changements à approuver')
   };
-  return (['moderation', 'admin-validation', 'appeal', 'admin-support', 'admin-roles', 'admin-contents', 'admin-settings'] as GovSection[])
+  return (['moderation', 'admin-validation', 'admin-identity', 'appeal', 'admin-support', 'admin-roles', 'admin-contents', 'admin-settings'] as GovSection[])
     .filter((s) => govAccess(role, s) !== 'none')
     .map((section) => ({ section, count: counts[section], detail: counts[section] === 0 ? 'Rien à traiter' : detail[section] || '' }));
 }

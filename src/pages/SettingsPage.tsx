@@ -13,6 +13,9 @@ import { currentCloudEmail, sendPasswordReset } from '../data';
 import { resolveProfileVerified, type RoleCapabilities } from '../personas';
 import { Avatar } from '../components/ProfileIdentityCard';
 import { ConfirmDialog, EmptyState, RadioList, SavedIndicator, StatusDot, Toggle, useIsNarrow } from '../components/ui';
+import type { Day } from '../calendar';
+import { IDENTITY_LABEL, accountOf, type SchoolState } from '../school';
+import { IdentityPanel } from './school/IdentityPanel';
 
 type SectionId = 'account' | 'security' | 'visibility' | 'data' | 'notifications';
 
@@ -57,6 +60,10 @@ export interface SettingsViewProps {
   mode: 'local' | 'cloud';
   /** Remet la démonstration locale dans son état de départ. */
   onResetDemo?: () => void;
+  /** Profils et vie scolaire (démonstration locale) : sert à la vérification d'identité simulée. */
+  school?: SchoolState;
+  saveSchool?: (next: SchoolState) => void;
+  today?: Day;
 }
 
 /* ------------------------------------------------------------------ briques */
@@ -110,7 +117,23 @@ function Detail({
 
 /* ------------------------------------------------------------------ page */
 
-export function SettingsView({ ext, updateExt, nav, user, caps, relations, people, onUnblock, setToast, path, mode, onResetDemo }: SettingsViewProps) {
+export function SettingsView({
+  ext,
+  updateExt,
+  nav,
+  user,
+  caps,
+  relations,
+  people,
+  onUnblock,
+  setToast,
+  path,
+  mode,
+  onResetDemo,
+  school,
+  saveSchool,
+  today
+}: SettingsViewProps) {
   const narrow = useIsNarrow();
   const [confirmReset, setConfirmReset] = useState(false);
   const canReset = mode === 'local' && Boolean(onResetDemo);
@@ -190,6 +213,14 @@ export function SettingsView({ ext, updateExt, nav, user, caps, relations, peopl
           </Detail>
         );
       case 'account/verification':
+        // Démonstration locale : la vérification d'identité est simulée de bout en bout.
+        if (school && saveSchool && today) {
+          return (
+            <Detail title="Vérification d’identité" description={`Rôle sur SAVOIR+ : ${caps?.roleLabel || 'Membre'}.`} onBack={back}>
+              <IdentityPanel school={school} saveSchool={saveSchool} userId={user.id} today={today} setToast={setToast} />
+            </Detail>
+          );
+        }
         return (
           <Detail title="Vérification" onBack={back}>
             <StatusDot tone={isVerified ? 'ok' : 'neutral'}>{isVerified ? 'Compte vérifié' : 'Compte non vérifié'}</StatusDot>
@@ -462,7 +493,11 @@ export function SettingsView({ ext, updateExt, nav, user, caps, relations, peopl
             <Group title="Informations du profil">
               <Row label="Nom, lieu et titre" value={details?.location || user.name} onClick={() => go(s, 'profile')} />
               <Row label="Centres d’intérêt" value={details?.interests} onClick={() => go(s, 'interests')} />
-              <Row label="Vérification" value={isVerified ? 'Compte vérifié' : 'Non vérifié'} onClick={() => go(s, 'verification')} />
+              <Row
+                label="Vérification d’identité"
+                value={school ? IDENTITY_LABEL[accountOf(school, user.id).identity] : isVerified ? 'Compte vérifié' : 'Non vérifié'}
+                onClick={() => go(s, 'verification')}
+              />
             </Group>
             <Group title="Affichage">
               <Row label="Mode sombre" value={THEME_LABEL[theme] || theme} onClick={() => go(s, 'theme')} />

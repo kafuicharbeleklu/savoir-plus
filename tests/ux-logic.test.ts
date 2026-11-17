@@ -680,7 +680,12 @@ test('Gouvernance : chaque vue ne voit et ne fait que ce que son rôle permet', 
   // La boîte « À traiter » ne liste que les files visibles avec la vue active.
   assert.deepEqual(govInbox(ext, 'Support').map((r) => r.section), ['admin-support']);
   assert.deepEqual(govInbox(ext, 'Modérateur').map((r) => r.section), ['moderation', 'admin-contents']);
-  assert.equal(govInbox(ext, 'Super administrateur').length, 7);
+  // Huit files depuis l'ajout de « Identités » (vérifications d'identité simulées).
+  assert.equal(govInbox(ext, 'Super administrateur').length, 8);
+  assert.equal(counts['admin-identity'], 2, 'deux demandes d’identité en attente dans la démonstration');
+  assert.equal(govAccess('Responsable de modération', 'admin-identity'), 'act');
+  assert.equal(govAccess('Support', 'admin-identity'), 'none');
+  assert.equal(govAccess('Auditeur', 'admin-identity'), 'view');
   // Une décision soumise sort le dossier de la file.
   ext.dossiers[0].status = 'Décision soumise';
   assert.equal(govCounts(ext).moderation, ext.dossiers.length - 1);

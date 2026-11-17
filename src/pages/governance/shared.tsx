@@ -5,6 +5,7 @@
 import React from 'react';
 import {
   ArrowLeft,
+  BadgeCheck,
   CheckCircle2,
   EyeOff,
   Flag,
@@ -42,6 +43,7 @@ const ICONS: Record<GovSection, React.ReactNode> = {
   admin: <Inbox size={16} aria-hidden="true" />,
   moderation: <Flag size={16} aria-hidden="true" />,
   'admin-validation': <CheckCircle2 size={16} aria-hidden="true" />,
+  'admin-identity': <BadgeCheck size={16} aria-hidden="true" />,
   appeal: <Scale size={16} aria-hidden="true" />,
   'admin-support': <LifeBuoy size={16} aria-hidden="true" />,
   'admin-users': <Users size={16} aria-hidden="true" />,
