@@ -7603,7 +7603,6 @@ input, select, textarea { font-size: 0.875rem; }
   cursor: pointer;
 }
 .home-resume-link:focus-visible { outline: none; }
-.home-resume:hover .home-resume-link { text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 760px) {
   .home-resume { grid-template-columns: minmax(0, 1fr); min-height: 0; }
   .home-resume::before { content: ''; display: block; height: 112px; }

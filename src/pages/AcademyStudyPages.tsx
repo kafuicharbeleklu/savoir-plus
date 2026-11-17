@@ -1,5 +1,5 @@
 /**
- * Lecteur d'un module : lecture, consignes du quiz, quiz, résultat.
+ * Lecteur d'un module : la lecture et le quiz sur une même page, puis le résultat.
  * Une barre fine en haut (titre, partie en cours, avancement) commune aux quatre écrans.
  * Le module se lit sur une seule page, comme un chapitre ; le sommaire est à gauche.
  */
@@ -10,6 +10,7 @@ import { MODULES_CONTENT, type ModuleStudyContent } from '../content';
 import { isQuizPassed, moduleProgressPercent, moduleXp, quizPassThreshold, scoreAnswers } from '../domain.mjs';
 import { ModuleInteractiveLab } from '../components/LessonLab';
 import { LessonPart, ModuleOpening } from '../components/LessonArticle';
+import { ArtBadge } from '../components/LessonArt';
 import { ProgressBar } from '../components/ProfileIdentityCard';
 import { computeGlobalLevel } from '../personas';
 
@@ -126,9 +127,13 @@ export function AcademyReaderView({
   domain,
   progress,
   lessonIndex,
+  startAtQuiz = false,
+  answers,
+  setAnswers,
   busy,
   onFinishReading,
-  onOpenQuizIntro,
+  onSubmitQuiz,
+  onOpenResult,
   onExit
 }: {
   moduleContent?: ModuleStudyContent;
@@ -138,9 +143,15 @@ export function AcademyReaderView({
   progress: Progress;
   /** La partie sur laquelle arriver à l'ouverture (reprise, ou « revoir cette section »). */
   lessonIndex: number;
+  /** Arriver directement sur le quiz, au bas de la page. */
+  startAtQuiz?: boolean;
+  answers: number[];
+  setAnswers: (a: number[]) => void;
   busy: boolean;
   onFinishReading: () => void;
-  onOpenQuizIntro: () => void;
+  onSubmitQuiz: () => void;
+  /** Rouvrir la correction du dernier envoi. */
+  onOpenResult: () => void;
   onExit: () => void;
 }) {
   // Sur grand écran, le sommaire est déroulé d'office dans une colonne ; sur écran étroit, c'est un
@@ -153,6 +164,7 @@ export function AcademyReaderView({
   const viewportRef = useRef<HTMLDivElement>(null);
   const partEls = useRef<(HTMLHeadingElement | null)[]>([]);
   const practiceEl = useRef<HTMLHeadingElement | null>(null);
+  const quizEl = useRef<HTMLHeadingElement | null>(null);
   const [currentPart, setCurrentPart] = useState(0);
 
   useEffect(() => {
@@ -173,7 +185,11 @@ export function AcademyReaderView({
   const quizPassed = isQuizPassed(progress, answerKey);
   const unread = lessons.filter((_, i) => !progress.lessons.includes(i)).length;
   const minutes = lessons.reduce((sum, lesson) => sum + (parseInt(lesson.minutes, 10) || 0), 0);
+  // Le quiz est la dernière étape de la page : il compte comme une partie pour le sommaire.
+  const onQuiz = currentPart > last;
   const current = Math.max(0, Math.min(currentPart, last));
+  const passThreshold = quizPassThreshold(moduleContent.questions.length);
+  const lastScore = progress.submitted ? scoreAnswers(progress.answers || [], answerKey) : null;
 
   const scrollToPart = (index: number, smooth: boolean) => {
     const viewport = viewportRef.current;
@@ -208,6 +224,7 @@ export function AcademyReaderView({
       partEls.current.forEach((el, i) => {
         if (el && el.getBoundingClientRect().top <= line) found = i;
       });
+      if (quizEl.current && quizEl.current.getBoundingClientRect().top <= line) found = lessons.length;
       setCurrentPart(found);
     };
     const onScroll = () => {
@@ -223,9 +240,9 @@ export function AcademyReaderView({
 
   // À l'ouverture, on arrive sur la partie demandée.
   useEffect(() => {
-    const frame = requestAnimationFrame(() => scrollToPart(lessonIndex, false));
+    const frame = requestAnimationFrame(() => (startAtQuiz ? scrollToHeading(quizEl.current, 'auto') : scrollToPart(lessonIndex, false)));
     return () => cancelAnimationFrame(frame);
-  }, [lessonIndex, moduleContent.id]);
+  }, [lessonIndex, startAtQuiz, moduleContent.id]);
 
   // L'exercice n'apparaît qu'une fois, dans la partie qui donne de quoi le réussir : après la
   // lecture de l'adresse et du lien pour le phishing, à la fin pour les autres modules.
@@ -244,7 +261,7 @@ export function AcademyReaderView({
     <div className="rd-shell is-chapter">
       <ReaderTopBar
         title={moduleContent.title}
-        step={lessons[current]?.title || ''}
+        step={onQuiz ? 'Quiz final' : lessons[current]?.title || ''}
         pct={pct}
         onExit={onExit}
         outlineOpen={outlineOpen}
@@ -273,7 +290,7 @@ export function AcademyReaderView({
               <ol className="rd-steps">
                 {lessons.map((lesson, i) => {
                   const isDone = progress.lessons.includes(i);
-                  const isCurrent = i === current;
+                  const isCurrent = !onQuiz && i === current;
                   return (
                     <React.Fragment key={lesson.title}>
                     <li className={`rd-step${isDone ? ' is-done' : ''}${isCurrent ? ' is-current' : ''}`}>
@@ -319,12 +336,13 @@ export function AcademyReaderView({
                     </React.Fragment>
                   );
                 })}
-                <li className={`rd-step${quizPassed ? ' is-done' : ''}`}>
+                <li className={`rd-step${quizPassed ? ' is-done' : ''}${onQuiz ? ' is-current' : ''}`}>
                   <button
                     type="button"
+                    aria-current={onQuiz ? 'location' : undefined}
                     onClick={() => {
+                      scrollToHeading(quizEl.current);
                       closeIfNarrow();
-                      onOpenQuizIntro();
                     }}
                   >
                     <span className="rd-step-mark tabular-nums" aria-hidden="true">
@@ -371,17 +389,36 @@ export function AcademyReaderView({
                   }}
                 />
               ))}
-            </div>
 
-            <footer className="rd-nav">
-              <span />
-              <div className="rd-nav-next">
-                <small>{unread > 0 ? `Quiz final · +${unread * 25} XP` : 'Quiz final'}</small>
-                <button type="button" className="primary" disabled={busy} onClick={onFinishReading}>
-                  {unread > 0 ? 'Terminer et passer au quiz' : 'Passer au quiz'} <ArrowRight size={16} aria-hidden="true" />
-                </button>
-              </div>
-            </footer>
+              {unread > 0 && (
+                <div className="rd-checkpoint rd-wide">
+                  <p>
+                    <b>Vous avez tout lu ?</b> Déclarez votre lecture pour faire avancer le module.
+                  </p>
+                  <button type="button" className="secondary" disabled={busy} onClick={onFinishReading}>
+                    Marquer comme lu · +{unread * 25} XP
+                  </button>
+                </div>
+              )}
+
+              <h2 id="quiz" ref={quizEl} className="rd-part-title" tabIndex={-1}>
+                <ArtBadge art="done" />
+                <span>Quiz final</span>
+              </h2>
+              <p>
+                {moduleContent.quizTitle} : {moduleContent.questions.length} questions à choix unique, sans limite de temps. Il faut {passThreshold} bonnes réponses sur{' '}
+                {moduleContent.questions.length} pour valider le module. La correction détaillée s’affiche après l’envoi.
+              </p>
+              {lastScore !== null && (
+                <p className="rd-quiz-last tabular-nums">
+                  Dernier envoi : {lastScore} / {moduleContent.questions.length}. Un nouvel envoi remplace ce résultat.{' '}
+                  <button type="button" className="rd-link" onClick={onOpenResult}>
+                    Revoir ma correction
+                  </button>
+                </p>
+              )}
+              <QuizBlock moduleContent={moduleContent} answers={answers} setAnswers={setAnswers} busy={busy} onSubmit={onSubmitQuiz} />
+            </div>
           </article>
         </div>
       </div>
@@ -391,181 +428,92 @@ export function AcademyReaderView({
   );
 }
 
-/* ------------------------------------------------------------------ consignes du quiz */
-
-export function AcademyQuizIntroView({
-  moduleContent = MODULES_CONTENT.phishing,
-  progress,
-  onStartQuiz,
-  onBackToReader,
-  onExit
-}: {
-  moduleContent?: ModuleStudyContent;
-  progress: Progress;
-  onStartQuiz: () => void;
-  onBackToReader: () => void;
-  onExit: () => void;
-}) {
-  const pct = moduleProgressPercent(
-    progress,
-    moduleContent.lessons.length,
-    moduleContent.questions.map((q) => q.correctIndex)
-  );
-  const qLen = moduleContent.questions.length;
-  const passThreshold = quizPassThreshold(qLen);
-
-  return (
-    <div className="rd-shell">
-      <ReaderTopBar title={moduleContent.title} step="Quiz final" pct={pct} onExit={onExit} />
-      <div className="shell-scroll-viewport">
-        <div className="rd-center">
-          <section className="rd-card rd-article">
-            <p className="rd-overline">Quiz final</p>
-            <h1>{moduleContent.quizTitle}</h1>
-            <p className="rd-lead">Prenez connaissance des consignes : ouvrir cette page ne consomme aucune tentative.</p>
-
-            <dl className="rd-facts tabular-nums">
-              <div>
-                <dt>Format</dt>
-                <dd>{qLen} questions à choix unique</dd>
-              </div>
-              <div>
-                <dt>Seuil conseillé</dt>
-                <dd>
-                  {passThreshold} bonnes réponses sur {qLen}
-                </dd>
-              </div>
-              <div>
-                <dt>Durée</dt>
-                <dd>Sans limite de temps</dd>
-              </div>
-              <div>
-                <dt>Correction</dt>
-                <dd>Explications détaillées après l’envoi</dd>
-              </div>
-            </dl>
-
-            <footer className="rd-nav">
-              <BackLink label="Revenir aux sections" onClick={onBackToReader} />
-              <button type="button" className="primary" onClick={onStartQuiz}>
-                {progress.submitted ? 'Nouvelle tentative' : 'Commencer le quiz'} <ArrowRight size={16} aria-hidden="true" />
-              </button>
-            </footer>
-          </section>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ------------------------------------------------------------------ quiz */
 
-export function AcademyQuizView({
-  moduleContent = MODULES_CONTENT.phishing,
-  progress,
+/** Le quiz final, au bas de la page du module : les questions, puis une confirmation avant l'envoi. */
+function QuizBlock({
+  moduleContent,
   answers,
   setAnswers,
   busy,
-  onSubmit,
-  onExit
+  onSubmit
 }: {
-  moduleContent?: ModuleStudyContent;
-  progress: Progress;
+  moduleContent: ModuleStudyContent;
   answers: number[];
   setAnswers: (a: number[]) => void;
   busy: boolean;
   onSubmit: () => void;
-  onExit: () => void;
 }) {
   const [reviewOpen, setReviewOpen] = useState(false);
   const qList = moduleContent.questions;
   const qLen = qList.length;
-  const answeredCount = answers.slice(0, qLen).filter((a) => a !== undefined && a !== null).length;
+  const answeredCount = answers.slice(0, qLen).filter((a) => a !== undefined && a !== null && a >= 0).length;
   const missing = qLen - answeredCount;
-  const pct = moduleProgressPercent(
-    progress,
-    moduleContent.lessons.length,
-    qList.map((q) => q.correctIndex)
-  );
 
   return (
-    <div className="rd-shell">
-      <ReaderTopBar title={moduleContent.title} step="Quiz final" pct={pct} onExit={onExit} />
-
-      <div className="shell-scroll-viewport">
-        <div className="rd-center">
-          <header className="rd-quiz-head">
-            <div>
-              <p className="rd-overline">Quiz final</p>
-              <h1>{moduleContent.quizTitle}</h1>
+    <>
+      {qList.map((q, qi) => (
+        <div className="rd-card rd-question-card" key={q.text}>
+          <fieldset className="rd-question">
+            <legend>
+              <span className="rd-overline tabular-nums">
+                Question {qi + 1} sur {qLen}
+              </span>
+              <span className="rd-question-text">{q.text}</span>
+            </legend>
+            <div className="rd-options">
+              {q.answers.map((option, oi) => {
+                const chosen = answers[qi] === oi;
+                return (
+                  <label key={option} className={`rd-option${chosen ? ' is-chosen' : ''}`}>
+                    <input
+                      type="radio"
+                      name={`q-${qi}`}
+                      checked={chosen}
+                      onChange={() => {
+                        const next = [...answers];
+                        next[qi] = oi;
+                        setAnswers(next);
+                      }}
+                    />
+                    <span className="rd-option-mark" aria-hidden="true" />
+                    <span>{option}</span>
+                  </label>
+                );
+              })}
             </div>
-            <span className="rd-quiz-count tabular-nums" aria-live="polite">
-              {answeredCount} / {qLen} réponses
-            </span>
-          </header>
-
-          {qList.map((q, qi) => (
-            <div className="rd-card rd-question-card" key={q.text}>
-              <fieldset className="rd-question">
-                <legend>
-                  <span className="rd-overline tabular-nums">
-                    Question {qi + 1} sur {qLen}
-                  </span>
-                  <span className="rd-question-text">{q.text}</span>
-                </legend>
-                <div className="rd-options">
-                  {q.answers.map((option, oi) => {
-                    const chosen = answers[qi] === oi;
-                    return (
-                      <label key={option} className={`rd-option${chosen ? ' is-chosen' : ''}`}>
-                        <input
-                          type="radio"
-                          name={`q-${qi}`}
-                          checked={chosen}
-                          onChange={() => {
-                            const next = [...answers];
-                            next[qi] = oi;
-                            setAnswers(next);
-                          }}
-                        />
-                        <span className="rd-option-mark" aria-hidden="true" />
-                        <span>{option}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </fieldset>
-            </div>
-          ))}
-
-          {!reviewOpen ? (
-            <footer className="rd-nav is-bare">
-              <BackLink label="Quitter et garder mes réponses" onClick={onExit} />
-              <button type="button" className="primary" onClick={() => setReviewOpen(true)}>
-                Vérifier et envoyer <ArrowRight size={16} aria-hidden="true" />
-              </button>
-            </footer>
-          ) : (
-            <section className={`rd-card rd-confirm${missing > 0 ? ' has-missing' : ''}`} role="region" aria-label="Récapitulatif avant envoi">
-              <h2>Envoyer vos réponses ?</h2>
-              <p className="tabular-nums">
-                {missing > 0
-                  ? `Vous avez répondu à ${answeredCount} question${answeredCount > 1 ? 's' : ''} sur ${qLen}. ${
-                      missing > 1 ? `Les ${missing} questions sans réponse compteront` : 'La question sans réponse comptera'
-                    } pour 0.`
-                  : `Vous avez répondu aux ${qLen} questions.`}
-              </p>
-              <footer className="rd-nav is-bare">
-                <BackLink label="Continuer à répondre" onClick={() => setReviewOpen(false)} />
-                <button type="button" className="primary" disabled={busy} onClick={onSubmit}>
-                  Confirmer et envoyer
-                </button>
-              </footer>
-            </section>
-          )}
+          </fieldset>
         </div>
-      </div>
-    </div>
+      ))}
+
+      {!reviewOpen ? (
+        <footer className="rd-nav is-bare">
+          <span className="rd-quiz-count tabular-nums" aria-live="polite">
+            {answeredCount} / {qLen} réponses
+          </span>
+          <button type="button" className="primary" onClick={() => setReviewOpen(true)}>
+            Vérifier et envoyer <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        </footer>
+      ) : (
+        <section className={`rd-card rd-confirm${missing > 0 ? ' has-missing' : ''}`} role="region" aria-label="Récapitulatif avant envoi">
+          <h3>Envoyer vos réponses ?</h3>
+          <p className="tabular-nums">
+            {missing > 0
+              ? `Vous avez répondu à ${answeredCount} question${answeredCount > 1 ? 's' : ''} sur ${qLen}. ${
+                  missing > 1 ? `Les ${missing} questions sans réponse compteront` : 'La question sans réponse comptera'
+                } pour 0.`
+              : `Vous avez répondu aux ${qLen} questions.`}
+          </p>
+          <footer className="rd-nav is-bare">
+            <BackLink label="Continuer à répondre" onClick={() => setReviewOpen(false)} />
+            <button type="button" className="primary" disabled={busy} onClick={onSubmit}>
+              Confirmer et envoyer
+            </button>
+          </footer>
+        </section>
+      )}
+    </>
   );
 }
 

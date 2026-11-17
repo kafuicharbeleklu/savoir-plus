@@ -615,3 +615,15 @@
   .rd-lab-zone.is-row { grid-template-columns: minmax(0, 1fr); }
   .rd-lab-zone.is-subject { font-size: 1.0625rem; }
 }
+
+/* -- Fin de la lecture et quiz, au bas de la page du module ------------------------------------- */
+.rd-checkpoint { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin: 44px var(--inset) 0; padding: 14px 18px; border-radius: 14px; background: var(--bg-subtle); }
+.rd-checkpoint p { margin: 0; font-size: 1rem; line-height: 1.5; color: var(--fg-primary); }
+.rd-checkpoint b { font-weight: 600; }
+.rd-checkpoint .secondary { flex: none; white-space: nowrap; }
+.rd-chapter-body > .rd-quiz-last { font-size: 0.9375rem; line-height: 1.5; color: var(--fg-muted); }
+.rd-chapter-body > .rd-question-card { margin-bottom: 12px; font-size: 1rem; line-height: 1.5; }
+.rd-chapter-body > .rd-confirm { margin-top: 16px; }
+.rd-chapter-body > .rd-confirm h3 { margin: 0 0 6px; font-size: 1.0625rem; font-weight: 600; letter-spacing: 0; }
+.rd-chapter-body > .rd-nav.is-bare { margin-top: 16px; }
+.rd-chapter-body .rd-quiz-count { font-size: 0.875rem; color: var(--fg-muted); }

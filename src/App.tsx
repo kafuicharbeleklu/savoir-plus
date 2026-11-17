@@ -184,8 +184,6 @@ const LESSON_COUNTS: Record<string, number> = Object.fromEntries(
 import { VisitorAuthView } from './pages/VisitorAuthView';
 import { AppealPortalView } from './pages/AppealPortalView';
 import {
-  AcademyQuizIntroView,
-  AcademyQuizView,
   AcademyReaderView,
   AcademyResultView
 } from './pages/AcademyStudyPages';
@@ -766,7 +764,7 @@ export default function App() {
 
   // Sync quiz draft answers when opening study module
   useEffect(() => {
-    if (page === 'quiz') {
+    if (page === 'reader' || page === 'quiz-intro' || page === 'quiz') {
       const draft = quizDraftsRef.current[activeStudyModuleId];
       setAnswers(draft ?? (activeStudyProgress.answers || []));
     }
@@ -824,6 +822,8 @@ export default function App() {
       );
       await saveModuleProgress(activeStudyModuleId, {
         ...activeStudyProgress,
+        // Envoyer le quiz vaut aussi déclaration de lecture : toutes les parties sont notées lues.
+        lessons: activeStudyContent.lessons.map((_, i) => i),
         answers: normalized,
         submitted: true
       });
@@ -1281,7 +1281,7 @@ export default function App() {
   }
 
   // Focused Study Routes (Auto HTB Dark)
-  if (page === 'reader') {
+  if (page === 'reader' || page === 'quiz-intro' || page === 'quiz') {
     return (
       <>
         <AcademyReaderView
@@ -1291,52 +1291,17 @@ export default function App() {
           progress={activeStudyProgress}
           lessonIndex={lessonIndex}
           busy={busy}
-          onFinishReading={handleFinishReading}
-          onOpenQuizIntro={() => nav('quiz-intro', activeStudyModuleId)}
-          onExit={() => nav(studyReturnTarget.page === 'visitor' ? 'home' : studyReturnTarget.page, studyReturnTarget.id || '')}
-        />
-        {toast && (
-          <div className="toast" role="status" aria-live="polite">
-            {toast}
-          </div>
-        )}
-      </>
-    );
-  }
-
-  if (page === 'quiz-intro') {
-    return (
-      <>
-        <AcademyQuizIntroView
-          moduleContent={activeStudyContent}
-          progress={activeStudyProgress}
-          onStartQuiz={() => nav('quiz', activeStudyModuleId)}
-          onBackToReader={() => nav('reader', activeStudyModuleId)}
-          onExit={() => nav(studyReturnTarget.page === 'visitor' ? 'home' : studyReturnTarget.page, studyReturnTarget.id || '')}
-        />
-        {toast && (
-          <div className="toast" role="status" aria-live="polite">
-            {toast}
-          </div>
-        )}
-      </>
-    );
-  }
-
-  if (page === 'quiz') {
-    return (
-      <>
-        <AcademyQuizView
-          moduleContent={activeStudyContent}
-          progress={activeStudyProgress}
+          startAtQuiz={page !== 'reader'}
           answers={answers}
-          setAnswers={setAnswers}
-          busy={busy}
-          onSubmit={handleSubmitQuiz}
-          onExit={() => {
-            quizDraftsRef.current[activeStudyModuleId] = answers;
-            nav('quiz-intro', activeStudyModuleId);
+          setAnswers={(next) => {
+            // Le brouillon suit chaque réponse : quitter la page ne fait rien perdre.
+            quizDraftsRef.current[activeStudyModuleId] = next;
+            setAnswers(next);
           }}
+          onFinishReading={handleFinishReading}
+          onSubmitQuiz={handleSubmitQuiz}
+          onOpenResult={() => nav('result', activeStudyModuleId)}
+          onExit={() => nav(studyReturnTarget.page === 'visitor' ? 'home' : studyReturnTarget.page, studyReturnTarget.id || '')}
         />
         {toast && (
           <div className="toast" role="status" aria-live="polite">
