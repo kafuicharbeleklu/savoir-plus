@@ -1,5 +1,5 @@
 /**
- * Leçons rédigées : pour chaque section, l'entrée en matière, les objectifs, le cours en parties
+ * Leçons rédigées : pour chaque partie d'un module, l'entrée en matière, le cours en sous-parties
  * titrées, un exemple avec sa figure, et la question que se pose l'élève. Une entrée par module,
  * une par section, dans l'ordre des sections. Les noms et adresses des exemples sont inventés
  * (domaines en « .test »). **Le gras** marque les mots clés ; dans une figure, il surligne.
@@ -13,7 +13,6 @@ const PHISHING: LessonRich[] = [
     art: 'alert',
     scene:
       'Lundi matin, votre téléphone vibre : « Votre compte sera bloqué dans 24 h. Cliquez ici pour le réactiver. » Le cœur s’accélère, le doigt est déjà sur le lien. C’est exactement l’effet recherché.',
-    goals: ['dire ce que cherche un message de phishing ;', 'repérer les trois signaux qui doivent vous faire ralentir.'],
     sections: [
       {
         title: 'Comprenez ce que cherche le message',
@@ -61,7 +60,6 @@ const PHISHING: LessonRich[] = [
     art: 'search',
     scene:
       'Le message est signé « Service Sécurité » et porte le logo de votre banque. Tout semble en ordre. Pourtant, le nom affiché et le logo se choisissent librement : seule l’adresse réelle dit qui écrit.',
-    goals: ['lire l’adresse réelle d’un expéditeur ;', 'voir où mène un lien sans l’ouvrir ;', 'vérifier une demande par un chemin que vous connaissez.'],
     sections: [
       {
         title: 'Lisez l’adresse, pas le nom affiché',
@@ -121,7 +119,6 @@ const PHISHING: LessonRich[] = [
     art: 'shield',
     scene:
       'Akossiwa vient de saisir son mot de passe sur une page qui ressemblait à celle de sa banque. Un doute lui vient. Ce qu’elle fera dans les cinq prochaines minutes compte plus que l’erreur elle-même.',
-    goals: ['réagir devant un message douteux ;', 'limiter les dégâts si vous avez déjà répondu ;', 'signaler pour protéger les autres.'],
     sections: [
       {
         title: 'Réagissez devant un message douteux',
@@ -176,6 +173,17 @@ const PHISHING: LessonRich[] = [
     }
   }
 ];
+
+/** « À la fin de ce module, vous saurez : » — les objectifs de chaque module, en tête de page. */
+export const MODULE_GOALS: Record<string, string[]> = {
+  phishing: ['repérer les signaux d’un message frauduleux ;', 'vérifier l’adresse d’un expéditeur et la destination d’un lien ;', 'réagir, et limiter les dégâts si vous avez déjà répondu.'],
+  reseaux: ['nommer les équipements d’un réseau et leur rôle ;', 'lire une adresse IP et dire par où passe un paquet ;', 'décrire l’ouverture d’une page web, du nom de domaine à la réponse.'],
+  comptes: ['créer des mots de passe longs et uniques ;', 'ajouter un second facteur à vos comptes importants ;', 'surveiller et couper les sessions ouvertes.'],
+  'email-pro': ['écrire un objet qui dit le sujet et l’action attendue ;', 'construire un message autour d’une seule demande ;', 'relire le ton, la pièce jointe et les destinataires avant d’envoyer.'],
+  budget: ['relever vos dépenses et les regrouper par postes ;', 'répartir un revenu entre besoins, envies et épargne ;', 'tenir votre budget avec un point de dix minutes par semaine.'],
+  sauvegarde: ['dire ce qui menace un fichier gardé en un seul endroit ;', 'appliquer la règle 3-2-1 ;', 'vérifier qu’une sauvegarde se restaure vraiment.'],
+  reunion: ['décider si une réunion est le bon format ;', 'préparer un ordre du jour qui cadre ;', 'conclure par des décisions, des responsables et un compte rendu.']
+};
 
 export const LESSONS_RICH: Record<string, LessonRich[]> = {
   phishing: PHISHING,

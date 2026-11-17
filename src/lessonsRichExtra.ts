@@ -9,7 +9,6 @@ const EMAIL_PRO: LessonRich[] = [
     art: 'mail',
     scene:
       'Mme Agbéko reçoit quatre-vingts e-mails par jour. Dans la liste, le vôtre s’intitule « Question ». Celui d’à côté : « Validation du devis Kossi avant vendredi ». Devinez lequel sera ouvert en premier.',
-    goals: ['écrire un objet qui annonce le sujet et l’action attendue ;', 'le faire tenir en quelques mots.'],
     sections: [
       {
         title: 'Annoncez le sujet et l’action',
@@ -54,7 +53,6 @@ const EMAIL_PRO: LessonRich[] = [
     art: 'list',
     scene:
       'Vous écrivez un long message : le contexte d’abord, les détails ensuite, et la demande tout à la fin. Votre destinataire lit les deux premières lignes entre deux réunions, pense avoir compris, et ne répond pas à ce que vous attendiez.',
-    goals: ['placer la demande au début du message ;', 'organiser un e-mail en trois courts paragraphes ;', 'numéroter plusieurs éléments attendus.'],
     sections: [
       {
         title: 'Commencez par la demande',
@@ -110,7 +108,6 @@ const EMAIL_PRO: LessonRich[] = [
     art: 'send',
     scene:
       'Le message est parti. Trois secondes plus tard, vous relisez la phrase « vous trouverez le document ci-joint »… sans document joint. Et votre réponse à tous, qui ne concernait qu’une personne, vient d’arriver chez quarante collègues.',
-    goals: ['vérifier le ton d’un message ;', 'contrôler la pièce jointe et les destinataires ;', 'choisir entre « Répondre » et « Répondre à tous ».'],
     sections: [
       {
         title: 'Relisez pour le ton',
@@ -166,7 +163,6 @@ const BUDGET: LessonRich[] = [
     art: 'wallet',
     scene:
       'Le 20 du mois, Yao n’a plus rien. Il ne comprend pas : il n’a fait aucune grosse dépense. Les 300 F de crédit par-ci, les 500 F de beignets par-là, il ne les a simplement jamais comptés.',
-    goals: ['relever vos dépenses pendant un mois ;', 'les regrouper en quelques postes ;', 'repérer les petites dépenses qui pèsent.'],
     sections: [
       {
         title: 'Notez chaque dépense, le jour même',
@@ -217,7 +213,6 @@ const BUDGET: LessonRich[] = [
     art: 'chart',
     scene:
       'Ama reçoit 60 000 F le premier du mois. Elle se promet d’épargner « ce qui restera ». Le 30, il ne reste rien, comme le mois dernier. Le problème n’est pas sa volonté : c’est l’ordre dans lequel elle s’y prend.',
-    goals: ['répartir un revenu entre besoins, envies et épargne ;', 'mettre l’épargne de côté en premier ;', 'adapter la répartition à votre situation.'],
     sections: [
       {
         title: 'Partez du revenu réel',
@@ -271,7 +266,6 @@ const BUDGET: LessonRich[] = [
     art: 'calendar',
     scene:
       'En janvier, Koffi a fait un beau budget. En mars, il ne sait plus où est la feuille. Un budget que l’on ne regarde pas est une prévision oubliée : il ne protège de rien.',
-    goals: ['faire un point hebdomadaire en dix minutes ;', 'comparer le prévu et le réel ;', 'ajuster une prévision sans abandonner le budget.'],
     sections: [
       {
         title: 'Fixez un rendez-vous court',
@@ -324,7 +318,6 @@ const SAUVEGARDE: LessonRich[] = [
     art: 'drive',
     scene:
       'La veille de la soutenance, la clé USB d’Edem refuse de s’ouvrir. Son mémoire de quatre-vingts pages n’existait que là. Il n’y a rien à réparer : ce qui n’existait qu’à un endroit n’existe plus.',
-    goals: ['citer les quatre causes de perte de données ;', 'distinguer une sauvegarde d’une synchronisation ;', 'choisir ce qu’il faut sauvegarder d’abord.'],
     sections: [
       {
         title: 'Connaissez les quatre causes de perte',
@@ -380,7 +373,6 @@ const SAUVEGARDE: LessonRich[] = [
     art: 'cloud',
     scene:
       'Edem a retenu la leçon : il copie désormais son mémoire sur une seconde clé USB, rangée dans le même sac que la première. Un vol de sac, et les deux copies partent ensemble. Copier ne suffit pas : il faut copier **ailleurs**.',
-    goals: ['énoncer la règle 3-2-1 ;', 'choisir deux supports différents ;', 'placer une copie hors de chez vous.'],
     sections: [
       {
         title: 'Retenez la règle en trois chiffres',
@@ -428,7 +420,6 @@ const SAUVEGARDE: LessonRich[] = [
     art: 'restore',
     scene:
       'Depuis deux ans, le disque externe d’Abla clignote chaque soir : la sauvegarde tourne. Le jour où son ordinateur rend l’âme, elle branche le disque. Le dossier est là, mais la dernière copie date de quatorze mois.',
-    goals: ['tester une sauvegarde en restaurant un fichier ;', 'contrôler la date de la dernière copie ;', 'protéger la sauvegarde elle-même.'],
     sections: [
       {
         title: 'Restaurez un fichier pour de vrai',
@@ -484,7 +475,6 @@ const REUNION: LessonRich[] = [
     art: 'people',
     scene:
       'Huit personnes sont réunies une heure pour écouter un collègue lire un document. À la sortie, rien n’a été décidé. Huit heures de travail sont parties pour une information qui tenait dans un message.',
-    goals: ['dire quand une réunion est le bon format ;', 'écrire l’objectif d’une réunion en une phrase ;', 'choisir qui inviter.'],
     sections: [
       {
         title: 'Informer ou décider : choisissez le format',
@@ -536,7 +526,6 @@ const REUNION: LessonRich[] = [
     art: 'agenda',
     scene:
       'L’invitation dit seulement : « Réunion d’équipe, mardi 10 h ». Chacun arrive avec son idée de ce dont on va parler. Au bout d’une heure, trois sujets ont été effleurés, aucun n’est réglé, et le plus important n’a pas été abordé.',
-    goals: ['construire un ordre du jour point par point ;', 'envoyer les documents à l’avance ;', 'placer le sujet principal au bon moment.'],
     sections: [
       {
         title: 'Donnez quatre informations par point',
@@ -590,7 +579,6 @@ const REUNION: LessonRich[] = [
     art: 'done',
     scene:
       'Trois semaines après la réunion, personne n’a commandé le matériel. « Je croyais que c’était toi. » Tout le monde se souvient qu’on en a parlé ; personne ne se souvient de qui devait le faire.',
-    goals: ['formuler une décision avec un responsable et une date ;', 'rédiger un compte rendu en quelques lignes ;', 'l’envoyer au bon moment.'],
     sections: [
       {
         title: 'Relisez les décisions avant de partir',

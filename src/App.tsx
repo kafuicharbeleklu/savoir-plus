@@ -788,40 +788,25 @@ export default function App() {
     nav('reader', moduleId);
   };
 
-  const scrollStudyToTop = () => {
-    const behavior = ext.appPrefs.reducedMotion ? 'auto' : 'smooth';
-    document.querySelector('.shell-scroll-viewport')?.scrollTo({ top: 0, behavior });
-    window.scrollTo({ top: 0, behavior });
-  };
-
-  const goToLesson = (idx: number) => {
-    setLessonIndex(idx);
-    scrollStudyToTop();
-  };
-
-  // Primary reader action: records the reading once (if not already done), then always moves forward —
-  // to the next section, or to the quiz rules after the last one (R:645: navigation ≠ declared reading).
-  const handleCompleteLesson = async () => {
-    const lessonCount = activeStudyContent.lessons.length;
-    const alreadyDone = activeStudyProgress.lessons.includes(lessonIndex);
-    if (!alreadyDone) {
+  // Le module se lit sur une seule page. L'action principale, en bas, déclare la lecture une fois
+  // (toutes les parties sont alors notées lues), puis mène aux consignes du quiz. Faire défiler la
+  // page ou passer par le sommaire n'enregistre rien (R:645 : naviguer n'est pas déclarer avoir lu).
+  const handleFinishReading = async () => {
+    const allParts = activeStudyContent.lessons.map((_, i) => i);
+    const unread = allParts.filter((i) => !activeStudyProgress.lessons.includes(i)).length;
+    if (unread > 0) {
       setBusy(true);
       try {
-        const nextLessons = [...new Set([...activeStudyProgress.lessons, lessonIndex])].sort((a, b) => a - b);
-        await saveModuleProgress(activeStudyModuleId, { ...activeStudyProgress, lessons: nextLessons });
-        setToast(`Section « ${activeStudyContent.lessons[lessonIndex]?.title} » terminée · +25 XP`);
+        await saveModuleProgress(activeStudyModuleId, { ...activeStudyProgress, lessons: allParts });
+        setToast(`Lecture terminée · +${unread * 25} XP`);
       } catch (e: any) {
         setToast(e?.message || 'Erreur lors de la sauvegarde');
-        return; // stay on the section so the learner can retry
+        return; // on reste sur la page, pour pouvoir réessayer
       } finally {
         setBusy(false);
       }
     }
-    if (lessonIndex < lessonCount - 1) {
-      goToLesson(lessonIndex + 1);
-    } else {
-      nav('quiz-intro', activeStudyModuleId);
-    }
+    nav('quiz-intro', activeStudyModuleId);
   };
 
   const handleSubmitQuiz = async () => {
@@ -1296,9 +1281,8 @@ export default function App() {
           moduleContent={activeStudyContent}
           progress={activeStudyProgress}
           lessonIndex={lessonIndex}
-          setLessonIndex={goToLesson}
           busy={busy}
-          onCompleteLesson={handleCompleteLesson}
+          onFinishReading={handleFinishReading}
           onOpenQuizIntro={() => nav('quiz-intro', activeStudyModuleId)}
           onExit={() => nav(studyReturnTarget.page === 'visitor' ? 'home' : studyReturnTarget.page, studyReturnTarget.id || '')}
         />

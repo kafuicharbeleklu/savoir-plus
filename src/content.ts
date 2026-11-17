@@ -67,18 +67,16 @@ export interface LessonSplitFigure {
 export type LessonFigure = LessonMessageFigure | LessonTimelineFigure | LessonTableFigure | LessonFlowFigure | LessonSplitFigure;
 
 /**
- * Une leçon rédigée se lit comme un chapitre : un bandeau illustré, une entrée en matière, les
- * objectifs, le cours en parties titrées, un exemple illustré par une figure légendée, la question
- * que se pose l'élève, puis le résumé (`points`) et le réflexe à garder (`tip`).
+ * Une leçon rédigée est une partie du module, qui se lit d'un trait : une entrée en matière, le
+ * cours en sous-parties titrées, un exemple illustré par une figure légendée, la question que se
+ * pose l'élève, puis le résumé (`points`) et le réflexe à garder (`tip`).
  * Les textes acceptent **le gras**.
  */
 export interface LessonRich {
-  /** Le pictogramme du bandeau d'illustration. */
+  /** Le pictogramme de la partie (celui de la première sert au bandeau du module). */
   art: LessonArt;
   /** L'entrée en matière : une situation concrète, en un court paragraphe. */
   scene: string;
-  /** « À la fin de cette section, vous saurez : » — deux ou trois objectifs, à l'infinitif. */
-  goals: string[];
   /** Le cours : des parties titrées, faites de paragraphes et, au besoin, d'une liste. */
   sections: { title: string; text: string[]; items?: string[]; ordered?: boolean; after?: string }[];
   /** L'exemple : une partie à part, avec sa figure, sa légende et ce qu'il faut y voir. */
@@ -112,6 +110,8 @@ export interface ModuleStudyContent {
   title: string;
   quizTitle: string;
   labType: 'phishing' | 'reseaux' | 'comptes' | 'generic';
+  /** « À la fin de ce module, vous saurez : » — trois objectifs, à l'infinitif. */
+  goals?: string[];
   lessons: StudyLesson[];
   questions: StudyQuestion[];
   /** Fiche illustrée pas à pas (contenus créés avec le Studio IA). */
@@ -136,7 +136,7 @@ export interface StudioStudySource {
 }
 
 import { EXTRA_MODULES_CONTENT } from './seedCatalog';
-import { LESSONS_RICH } from './lessonsRich';
+import { LESSONS_RICH, MODULE_GOALS } from './lessonsRich';
 
 export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
   phishing: {
@@ -380,6 +380,9 @@ for (const [moduleId, richLessons] of Object.entries(LESSONS_RICH)) {
   MODULES_CONTENT[moduleId]?.lessons.forEach((lesson, index) => {
     if (richLessons[index]) lesson.rich = richLessons[index];
   });
+}
+for (const [moduleId, goals] of Object.entries(MODULE_GOALS)) {
+  if (MODULES_CONTENT[moduleId]) MODULES_CONTENT[moduleId].goals = goals;
 }
 
 export const lessons = MODULES_CONTENT.phishing.lessons;

@@ -1,15 +1,15 @@
 /**
- * Lecteur d'un module : sections, consignes du quiz, quiz, résultat.
- * Une barre fine en haut (retour, titre, avancement) commune aux quatre écrans.
- * La leçon se lit comme un chapitre, sur une colonne ; le sommaire s'ouvre à gauche.
+ * Lecteur d'un module : lecture, consignes du quiz, quiz, résultat.
+ * Une barre fine en haut (titre, partie en cours, avancement) commune aux quatre écrans.
+ * Le module se lit sur une seule page, comme un chapitre ; le sommaire est à gauche.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Award, Check, List, RotateCcw, X } from 'lucide-react';
 import type { Progress } from '../data';
 import { MODULES_CONTENT, type ModuleStudyContent } from '../content';
 import { isQuizPassed, moduleProgressPercent, moduleXp, quizPassThreshold, scoreAnswers } from '../domain.mjs';
 import { ModuleInteractiveLab } from '../components/LessonLab';
-import { LessonArticle } from '../components/LessonArticle';
+import { LessonPart, ModuleOpening } from '../components/LessonArticle';
 import { ProgressBar } from '../components/ProfileIdentityCard';
 import { computeGlobalLevel } from '../personas';
 
@@ -24,29 +24,25 @@ function ReaderTopBar({
   onToggleOutline
 }: {
   title: string;
-  /** Où l'on se trouve : « Section 1 sur 3 », « Quiz final », « Résultat ». */
+  /** Où l'on se trouve : la partie en cours de lecture, « Quiz final », « Résultat ». */
   step: string;
   pct: number;
   onExit: () => void;
   outlineOpen?: boolean;
   onToggleOutline?: () => void;
 }) {
-  const ring = 2 * Math.PI * 6;
   return (
     <header className="rd-top">
       <button type="button" className="rd-top-btn" onClick={onExit} title="Quitter le module" aria-label="Quitter le module">
-        <ArrowLeft size={20} aria-hidden="true" />
+        <X size={20} aria-hidden="true" />
       </button>
       <div className="rd-top-title">
         <b>{title}</b>
-        <span className="rd-top-meta tabular-nums">
-          <svg className="rd-ring" viewBox="0 0 16 16" role="progressbar" aria-label="Avancement du module" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
-            <circle className="rd-ring-track" cx="8" cy="8" r="6" />
-            <circle className="rd-ring-value" cx="8" cy="8" r="6" strokeDasharray={ring} strokeDashoffset={ring * (1 - pct / 100)} />
-          </svg>
-          {pct} % de progression · {step}
-        </span>
+        <span>{step}</span>
       </div>
+      <span className="rd-top-pct tabular-nums" aria-hidden="true">
+        {pct} %
+      </span>
       {onToggleOutline && (
         <button
           type="button"
@@ -59,6 +55,16 @@ function ReaderTopBar({
           <List size={20} aria-hidden="true" />
         </button>
       )}
+      <span
+        className="rd-top-progress"
+        role="progressbar"
+        aria-label="Avancement du module"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct}
+      >
+        <i style={{ width: `${pct}%` }} />
+      </span>
     </header>
   );
 }
@@ -108,24 +114,27 @@ function IllustratedSteps({
   );
 }
 
-/* ------------------------------------------------------------------ sections */
+/* ------------------------------------------------------------------ lecture */
 
+/**
+ * La lecture d'un module : une seule page, les parties à la suite. Le sommaire fait défiler jusqu'à
+ * la partie voulue ; la lecture se déclare une fois, en bas, par le bouton qui mène au quiz.
+ */
 export function AcademyReaderView({
   moduleContent = MODULES_CONTENT.phishing,
   progress,
   lessonIndex,
-  setLessonIndex,
   busy,
-  onCompleteLesson,
+  onFinishReading,
   onOpenQuizIntro,
   onExit
 }: {
   moduleContent?: ModuleStudyContent;
   progress: Progress;
+  /** La partie sur laquelle arriver à l'ouverture (reprise, ou « revoir cette section »). */
   lessonIndex: number;
-  setLessonIndex: (i: number) => void;
   busy: boolean;
-  onCompleteLesson: () => void;
+  onFinishReading: () => void;
   onOpenQuizIntro: () => void;
   onExit: () => void;
 }) {
@@ -136,6 +145,9 @@ export function AcademyReaderView({
   const closeIfNarrow = () => {
     if (!isWide()) setOutlineOpen(false);
   };
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const partEls = useRef<(HTMLHeadingElement | null)[]>([]);
+  const [currentPart, setCurrentPart] = useState(0);
 
   useEffect(() => {
     if (!outlineOpen || isWide()) return;
@@ -148,41 +160,85 @@ export function AcademyReaderView({
 
   const lessons = moduleContent.lessons;
   const last = lessons.length - 1;
-  const index = Math.max(0, Math.min(lessonIndex, last));
-  const current = lessons[index] || lessons[0];
   const answerKey = moduleContent.questions.map((q) => q.correctIndex);
   const pct = moduleProgressPercent(progress, lessons.length, answerKey);
   const points = moduleXp(progress, lessons.length, answerKey);
   const maxXp = lessons.length * 25 + 75;
-  const done = progress.lessons.includes(index);
   const quizPassed = isQuizPassed(progress, answerKey);
+  const unread = lessons.filter((_, i) => !progress.lessons.includes(i)).length;
+  const minutes = lessons.reduce((sum, lesson) => sum + (parseInt(lesson.minutes, 10) || 0), 0);
+  const current = Math.max(0, Math.min(currentPart, last));
 
-  // L'exercice n'apparaît qu'une fois, dans la section qui donne de quoi le réussir : après la
-  // lecture de l'adresse et du lien pour le phishing, en fin de module pour les autres.
-  const labSection = moduleContent.labType === 'phishing' ? Math.min(1, last) : last;
-  const practice = moduleContent.steps?.length ? (
-    index === 0 ? (
-      <IllustratedSteps steps={moduleContent.steps} aiAssisted={moduleContent.aiAssisted} />
-    ) : null
-  ) : index === labSection ? (
-    <ModuleInteractiveLab labType={moduleContent.labType} />
-  ) : null;
+  const scrollToPart = (index: number, smooth: boolean) => {
+    const viewport = viewportRef.current;
+    const heading = partEls.current[index];
+    if (!viewport) return;
+    const calm = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const behavior: ScrollBehavior = smooth && !calm ? 'smooth' : 'auto';
+    // La première partie se lit depuis le haut de la page : titre du module, bandeau, objectifs.
+    if (index <= 0 || !heading) {
+      viewport.scrollTo({ top: 0, behavior });
+      return;
+    }
+    const top = heading.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop - 24;
+    viewport.scrollTo({ top, behavior });
+  };
 
-  const nextLabel = index < last ? (done ? 'Section suivante' : 'Terminer et continuer') : done ? 'Passer au quiz' : 'Terminer et passer au quiz';
-  const nextHint = [index < last ? lessons[index + 1].title : 'Quiz final', done ? '' : '+25 XP'].filter(Boolean).join(' · ');
+  // Repère la partie en cours de lecture, pour le sommaire et la barre du haut.
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const line = viewport.getBoundingClientRect().top + 140;
+      let found = 0;
+      partEls.current.forEach((el, i) => {
+        if (el && el.getBoundingClientRect().top <= line) found = i;
+      });
+      setCurrentPart(found);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    viewport.addEventListener('scroll', onScroll, { passive: true });
+    update();
+    return () => {
+      viewport.removeEventListener('scroll', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [moduleContent.id, lessons.length]);
+
+  // À l'ouverture, on arrive sur la partie demandée.
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => scrollToPart(lessonIndex, false));
+    return () => cancelAnimationFrame(frame);
+  }, [lessonIndex, moduleContent.id]);
+
+  // L'exercice n'apparaît qu'une fois, dans la partie qui donne de quoi le réussir : après la
+  // lecture de l'adresse et du lien pour le phishing, à la fin pour les autres modules.
+  const labPart = moduleContent.labType === 'phishing' ? Math.min(1, last) : last;
+  const practiceOf = (index: number) =>
+    moduleContent.steps?.length ? (
+      index === 0 ? (
+        <IllustratedSteps steps={moduleContent.steps} aiAssisted={moduleContent.aiAssisted} />
+      ) : null
+    ) : index === labPart ? (
+      <ModuleInteractiveLab labType={moduleContent.labType} />
+    ) : null;
 
   return (
     <div className="rd-shell is-chapter">
       <ReaderTopBar
         title={moduleContent.title}
-        step={`Section ${index + 1} sur ${lessons.length}`}
+        step={lessons[current]?.title || ''}
         pct={pct}
         onExit={onExit}
         outlineOpen={outlineOpen}
         onToggleOutline={() => setOutlineOpen(!outlineOpen)}
       />
 
-      <div className="shell-scroll-viewport">
+      <div className="shell-scroll-viewport" ref={viewportRef}>
         <div className={`rd-chapter${outlineOpen ? ' has-outline' : ''}`}>
           <div className="rd-chapter-side">
             <button type="button" className="rd-toc-btn" aria-expanded={outlineOpen} title="Sommaire" aria-label="Sommaire du module" onClick={() => setOutlineOpen(true)}>
@@ -201,21 +257,17 @@ export function AcademyReaderView({
                   <X size={18} aria-hidden="true" />
                 </button>
               </header>
-              <p className="rd-outline-part">
-                <small>Module</small>
-                <b>{moduleContent.title}</b>
-              </p>
               <ol className="rd-steps">
                 {lessons.map((lesson, i) => {
                   const isDone = progress.lessons.includes(i);
-                  const isCurrent = i === index;
+                  const isCurrent = i === current;
                   return (
                     <li key={lesson.title} className={`rd-step${isDone ? ' is-done' : ''}${isCurrent ? ' is-current' : ''}`}>
                       <button
                         type="button"
-                        aria-current={isCurrent ? 'step' : undefined}
+                        aria-current={isCurrent ? 'location' : undefined}
                         onClick={() => {
-                          setLessonIndex(i);
+                          scrollToPart(i, true);
                           closeIfNarrow();
                         }}
                       >
@@ -226,7 +278,7 @@ export function AcademyReaderView({
                           <b>{lesson.title}</b>
                           <small>
                             {lesson.minutes}
-                            {isDone && <span className="sr-only"> — terminée</span>}
+                            {isDone && <span className="sr-only"> — lue</span>}
                           </small>
                         </span>
                       </button>
@@ -257,33 +309,39 @@ export function AcademyReaderView({
             </div>
           </aside>
 
-          <article key={index} className="rd-article rd-chapter-main">
-            <LessonArticle
-              lesson={current}
-              practice={practice}
-              meta={
-                <p className="rd-chapter-meta tabular-nums">
-                  Section {index + 1} sur {lessons.length} · {current.minutes} de lecture
-                  {done && (
-                    <span className="rd-done">
-                      <Check size={14} aria-hidden="true" />
-                      Terminée
-                    </span>
-                  )}
-                </p>
-              }
-            />
+          <article key={moduleContent.id} className="rd-article rd-chapter-main">
+            <h1>{moduleContent.title}</h1>
+            <p className="rd-chapter-meta tabular-nums">
+              {minutes} min de lecture
+              {unread === 0 && (
+                <span className="rd-done">
+                  <Check size={14} aria-hidden="true" />
+                  Lu
+                </span>
+              )}
+            </p>
+
+            <div className="rd-chapter-body">
+              <ModuleOpening art={lessons[0]?.rich?.art} goals={moduleContent.goals} />
+              {lessons.map((lesson, i) => (
+                <LessonPart
+                  key={lesson.title}
+                  lesson={lesson}
+                  index={i}
+                  practice={practiceOf(i)}
+                  headingRef={(el) => {
+                    partEls.current[i] = el;
+                  }}
+                />
+              ))}
+            </div>
 
             <footer className="rd-nav">
-              {index > 0 ? (
-                <BackLink label="Précédent" title={lessons[index - 1].title} onClick={() => setLessonIndex(index - 1)} />
-              ) : (
-                <span />
-              )}
+              <span />
               <div className="rd-nav-next">
-                <small>{nextHint}</small>
-                <button type="button" className="primary" disabled={busy} onClick={onCompleteLesson}>
-                  {nextLabel} <ArrowRight size={16} aria-hidden="true" />
+                <small>{unread > 0 ? `Quiz final · +${unread * 25} XP` : 'Quiz final'}</small>
+                <button type="button" className="primary" disabled={busy} onClick={onFinishReading}>
+                  {unread > 0 ? 'Terminer et passer au quiz' : 'Passer au quiz'} <ArrowRight size={16} aria-hidden="true" />
                 </button>
               </div>
             </footer>

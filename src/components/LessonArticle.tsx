@@ -1,13 +1,14 @@
 /**
- * Le texte d'une leçon, mis en page comme un chapitre : une colonne, des titres francs, des listes,
- * une figure légendée et de rares encadrés à pastille (« i » pour ce qu'il faut savoir, « ? » pour la
- * question que se pose l'élève). Une leçon sans contenu rédigé (créée dans le Studio) garde le même
- * cadre, avec son seul paragraphe.
+ * Le texte d'un module, mis en page comme un chapitre qui se lit d'un trait : une ouverture (bandeau,
+ * objectifs), puis les parties à la suite. Chaque partie a son titre, son cours en sous-parties, un
+ * exemple avec sa figure légendée, la question que se pose l'élève (encadré « ? »), son résumé et le
+ * réflexe à garder (encadré « i »). Une partie sans contenu rédigé (créée dans le Studio) garde le
+ * même cadre, avec son seul paragraphe.
  */
 import React from 'react';
 import { Mail, MessageSquare } from 'lucide-react';
-import type { LessonFigure, StudyLesson } from '../content';
-import { FlowFigure, LessonBanner, SplitFigure } from './LessonArt';
+import type { LessonArt, LessonFigure, StudyLesson } from '../content';
+import { ArtBadge, FlowFigure, LessonBanner, SplitFigure } from './LessonArt';
 import { RichText } from './RichText';
 
 /** Encadré à pastille : « i » (à savoir) ou « ? » (la question de l'élève). */
@@ -23,6 +24,9 @@ function Aside({ kind, label, children }: { kind: 'info' | 'question'; label: st
 }
 
 function FigureView({ figure }: { figure: LessonFigure }) {
+  if (figure.kind === 'flow') return <FlowFigure figure={figure} />;
+  if (figure.kind === 'split') return <SplitFigure figure={figure} />;
+
   if (figure.kind === 'message') {
     return (
       <div className={`rd-msg is-${figure.channel}`}>
@@ -57,9 +61,6 @@ function FigureView({ figure }: { figure: LessonFigure }) {
       </div>
     );
   }
-
-  if (figure.kind === 'flow') return <FlowFigure figure={figure} />;
-  if (figure.kind === 'split') return <SplitFigure figure={figure} />;
 
   if (figure.kind === 'timeline') {
     return (
@@ -112,101 +113,114 @@ function List({ items, ordered }: { items: string[]; ordered?: boolean }) {
   );
 }
 
-export function LessonArticle({
+/** L'ouverture du module : le bandeau illustré, puis ce que l'on saura faire à la fin. */
+export function ModuleOpening({ art, goals }: { art?: LessonArt; goals?: string[] }) {
+  return (
+    <>
+      {art && <LessonBanner art={art} />}
+      {goals && goals.length > 0 && (
+        <Aside kind="info" label="Objectifs du module">
+          <p>À la fin de ce module, vous saurez :</p>
+          <List items={goals} />
+        </Aside>
+      )}
+    </>
+  );
+}
+
+/**
+ * Une partie du module. Ses blocs sont posés à plat dans la colonne de lecture (pas d'enveloppe) :
+ * le titre de la partie sert d'ancre au sommaire.
+ */
+export function LessonPart({
   lesson,
-  meta,
-  practice
+  index,
+  practice,
+  headingRef
 }: {
   lesson: StudyLesson;
-  /** Ligne de repère sous le titre : « Section 1 sur 3 · 3 min de lecture ». */
-  meta: React.ReactNode;
-  /** L'exercice de la section, s'il y en a un. */
-  practice: React.ReactNode;
+  index: number;
+  /** L'exercice, si c'est dans cette partie qu'il se place. */
+  practice?: React.ReactNode;
+  headingRef?: (el: HTMLHeadingElement | null) => void;
 }) {
   const rich = lesson.rich;
   return (
     <>
-      <h1>{lesson.title}</h1>
-      {meta}
+      <h2 id={`partie-${index + 1}`} ref={headingRef} className="rd-part-title" tabIndex={-1}>
+        {rich && <ArtBadge art={rich.art} />}
+        <span>{lesson.title}</span>
+      </h2>
+      <p>{lesson.intro}</p>
 
-      <div className="rd-chapter-body">
-        {rich && <LessonBanner art={rich.art} />}
-        <p className="rd-chapter-lead">{lesson.intro}</p>
-
-        {rich ? (
-          <>
-            <p>
-              <RichText text={rich.scene} />
-            </p>
-
-            <Aside kind="info" label="Objectifs de la section">
-              <p>À la fin de cette section, vous saurez :</p>
-              <List items={rich.goals} />
-            </Aside>
-
-            {rich.sections.map((section) => (
-              <React.Fragment key={section.title}>
-                <h2>{section.title}</h2>
-                {section.text.map((paragraph) => (
-                  <p key={paragraph}>
-                    <RichText text={paragraph} />
-                  </p>
-                ))}
-                {section.items && <List items={section.items} ordered={section.ordered} />}
-                {section.after && (
-                  <p>
-                    <RichText text={section.after} />
-                  </p>
-                )}
-              </React.Fragment>
-            ))}
-
-            <h2>{rich.example.title}</h2>
-            {rich.example.intro && (
-              <p>
-                <RichText text={rich.example.intro} />
-              </p>
-            )}
-            <figure className={`rd-figure rd-wide is-${rich.example.figure.kind}`}>
-              <div className="rd-figure-stage">
-                <FigureView figure={rich.example.figure} />
-              </div>
-              <figcaption>{rich.example.caption}</figcaption>
-            </figure>
-            <p>Ce qu’il faut y voir :</p>
-            <List items={rich.example.notes} ordered />
-
-            <Aside kind="question" label="Question">
-              <p>
-                <RichText text={rich.question.ask} />
-              </p>
-            </Aside>
-            {rich.question.answer.map((paragraph) => (
-              <p key={paragraph}>
-                <RichText text={paragraph} />
-              </p>
-            ))}
-          </>
-        ) : (
-          <p>{lesson.body}</p>
-        )}
-
-        {practice && (
-          <>
-            <h2>À vous de jouer</h2>
-            <div className="rd-practice rd-wide">{practice}</div>
-          </>
-        )}
-
-        <h2>En résumé</h2>
-        <List items={lesson.points} />
-
-        <Aside kind="info" label="Réflexe à garder">
+      {rich ? (
+        <>
           <p>
-            <strong>Le réflexe à garder.</strong> {lesson.tip}
+            <RichText text={rich.scene} />
           </p>
-        </Aside>
-      </div>
+
+          {rich.sections.map((section) => (
+            <React.Fragment key={section.title}>
+              <h3>{section.title}</h3>
+              {section.text.map((paragraph) => (
+                <p key={paragraph}>
+                  <RichText text={paragraph} />
+                </p>
+              ))}
+              {section.items && <List items={section.items} ordered={section.ordered} />}
+              {section.after && (
+                <p>
+                  <RichText text={section.after} />
+                </p>
+              )}
+            </React.Fragment>
+          ))}
+
+          <h3>{rich.example.title}</h3>
+          {rich.example.intro && (
+            <p>
+              <RichText text={rich.example.intro} />
+            </p>
+          )}
+          <figure className={`rd-figure rd-wide is-${rich.example.figure.kind}`}>
+            <div className="rd-figure-stage">
+              <FigureView figure={rich.example.figure} />
+            </div>
+            <figcaption>{rich.example.caption}</figcaption>
+          </figure>
+          <p>Ce qu’il faut y voir :</p>
+          <List items={rich.example.notes} ordered />
+
+          <Aside kind="question" label="Question">
+            <p>
+              <RichText text={rich.question.ask} />
+            </p>
+          </Aside>
+          {rich.question.answer.map((paragraph) => (
+            <p key={paragraph}>
+              <RichText text={paragraph} />
+            </p>
+          ))}
+        </>
+      ) : (
+        <p>{lesson.body}</p>
+      )}
+
+      {practice && (
+        <>
+          <h3>À vous de jouer</h3>
+          <div className="rd-practice rd-wide">{practice}</div>
+        </>
+      )}
+
+      <h3>En résumé</h3>
+      <List items={lesson.points} />
+
+      <Aside kind="info" label="Réflexe à garder">
+        <p>
+          <strong>Le réflexe à garder.</strong> {lesson.tip}
+        </p>
+      </Aside>
     </>
   );
 }

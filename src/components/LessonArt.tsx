@@ -103,6 +103,16 @@ export function LessonBanner({ art }: { art: LessonArt }) {
   );
 }
 
+/** Pastille illustrée : le pictogramme d'une partie, à côté de son titre. */
+export function ArtBadge({ art }: { art: LessonArt }) {
+  const Icon = ART_ICONS[art];
+  return (
+    <span className="rd-art-badge" aria-hidden="true">
+      <Icon size={22} strokeWidth={1.75} />
+    </span>
+  );
+}
+
 /** Schéma en chaîne : des éléments reliés par des flèches nommées. */
 export function FlowFigure({ figure }: { figure: LessonFlowFigure }) {
   return (

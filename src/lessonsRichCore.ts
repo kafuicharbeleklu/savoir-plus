@@ -9,7 +9,6 @@ const RESEAUX: LessonRich[] = [
     art: 'switch',
     scene:
       'Dans la salle informatique du lycée, vingt postes partagent la même imprimante et la même connexion à Internet. Aucun fil ne relie pourtant deux postes entre eux : tout passe par quelques boîtiers, chacun avec un rôle précis.',
-    goals: ['nommer les équipements d’un réseau local ;', 'distinguer le commutateur du routeur.'],
     sections: [
       {
         title: 'Découvrez les postes : clients et serveurs',
@@ -62,7 +61,6 @@ const RESEAUX: LessonRich[] = [
     art: 'route',
     scene:
       'Votre ordinateur affiche l’adresse 192.168.1.24. Celui de votre voisine, 192.168.1.37. Ces numéros ne sont pas choisis au hasard : ils disent à quel réseau chaque poste appartient, et par où passer pour en sortir.',
-    goals: ['lire une adresse IP et son masque ;', 'dire si un destinataire est local ou distant ;', 'expliquer le rôle de la passerelle par défaut.'],
     sections: [
       {
         title: 'Lisez une adresse IP',
@@ -115,7 +113,6 @@ const RESEAUX: LessonRich[] = [
     art: 'globe',
     scene:
       'Vous tapez « exemple.edu » dans votre navigateur et la page s’affiche en une seconde. Pendant cette seconde, votre appareil a posé une question, reçu une réponse, puis ouvert une connexion. Rien de tout cela ne s’est vu.',
-    goals: ['expliquer à quoi sert le DNS ;', 'décrire les étapes d’un échange web ;', 'distinguer une panne de DNS d’une coupure de connexion.'],
     sections: [
       {
         title: 'Traduisez un nom en adresse avec le DNS',
@@ -170,7 +167,6 @@ const COMPTES: LessonRich[] = [
     art: 'key',
     scene:
       'Kodjo utilise le même mot de passe partout depuis le lycée. Un petit forum où il s’était inscrit se fait pirater. Le soir même, quelqu’un essaie ce mot de passe sur sa messagerie, et il fonctionne.',
-    goals: ['expliquer pourquoi un mot de passe ne se réutilise pas ;', 'construire une phrase secrète longue ;', 'confier vos mots de passe à un gestionnaire.'],
     sections: [
       {
         title: 'Un service, un mot de passe',
@@ -222,7 +218,6 @@ const COMPTES: LessonRich[] = [
     art: 'phone',
     scene:
       'Il est 23 h. Votre téléphone affiche : « Tentative de connexion à votre compte. Est-ce bien vous ? » Vous êtes dans votre lit, vous n’avez rien demandé. Quelqu’un connaît donc votre mot de passe, et une seule chose l’arrête : cette question.',
-    goals: ['expliquer ce qu’ajoute un second facteur ;', 'choisir une méthode de validation ;', 'réagir à une demande que vous n’avez pas déclenchée.'],
     sections: [
       {
         title: 'Ajoutez une seconde preuve',
@@ -275,7 +270,6 @@ const COMPTES: LessonRich[] = [
     art: 'sessions',
     scene:
       'Au cybercafé, Afi consulte sa messagerie, puis s’en va en fermant simplement la fenêtre. Le client suivant rouvre le navigateur : la boîte d’Afi s’affiche, toujours connectée.',
-    goals: ['expliquer ce qu’est une session ;', 'retrouver la liste des appareils connectés à votre compte ;', 'couper une session à distance.'],
     sections: [
       {
         title: 'Comprenez ce qu’est une session',

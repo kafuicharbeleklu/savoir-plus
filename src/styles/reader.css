@@ -7,7 +7,7 @@
   /* Le lecteur a sa propre police de lecture et la hauteur de sa barre, dont dépendent les panneaux. */
   --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif;
   --font-display: var(--font-sans);
-  --rd-top: 68px;
+  --rd-top: 56px;
   font-family: var(--font-sans);
   display: flex;
   flex-direction: column;
@@ -29,7 +29,7 @@
   align-items: center;
   gap: 12px;
   height: var(--rd-top);
-  padding: 0 16px 0 12px;
+  padding: 0 16px 0 8px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-hairline);
 }
@@ -48,9 +48,12 @@
 }
 .rd-top-btn:hover { background: var(--bg-subtle); color: var(--fg-primary); }
 .rd-top-title { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; line-height: 1.3; }
-.rd-top-title b { font-size: 1rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rd-top-title span { font-size: 0.875rem; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-top-title b { font-size: 0.9375rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-top-title span { font-size: 0.75rem; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-top-pct { flex: none; font-size: 0.8125rem; font-weight: 600; color: var(--fg-muted); }
 .rd-top-outline { display: none; }
+.rd-top-progress { position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; }
+.rd-top-progress i { display: block; height: 100%; background: var(--accent-brand); transition: width 320ms ease; }
 
 /* -- Mise en page ------------------------------------------------------------------------------ */
 .rd-center { display: flex; flex-direction: column; gap: 12px; max-width: 760px; margin: 0 auto; padding: 24px 24px 64px; }
@@ -302,13 +305,6 @@
 
 .rd-shell.is-chapter { background: var(--bg-surface); }
 
-/* -- Barre du haut : retour, titre du module, avancement ------------------------------------- */
-.rd-top-meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
-.rd-ring { flex: none; width: 16px; height: 16px; transform: rotate(-90deg); }
-.rd-ring circle { fill: none; stroke-width: 3; }
-.rd-ring-track { stroke: var(--border-strong); }
-.rd-ring-value { stroke: var(--accent-brand); stroke-linecap: round; transition: stroke-dashoffset 320ms ease; }
-
 /* -- Mise en page : le bouton du sommaire à gauche, la colonne de lecture au centre ---------- */
 /* `position: relative` : les textes masqués (réservés aux lecteurs d'écran) restent dans la zone qui défile. */
 .rd-chapter { position: relative; display: grid; grid-template-columns: 92px minmax(0, 1fr) 92px; align-items: start; }
@@ -346,8 +342,13 @@
 /* Le texte est un peu plus étroit que les figures et les encadrés, qui prennent toute la colonne. */
 .rd-chapter-body > :not(.rd-wide) { margin-right: var(--inset); margin-left: var(--inset); }
 .rd-chapter-body > p { margin-top: 0; margin-bottom: 20px; }
-/* Un intertitre appartient au texte qui le suit : trois à quatre fois plus d'air au-dessus qu'au-dessous. */
-.rd-chapter-body > h2 { margin-top: 44px; margin-bottom: 12px; font-size: 1.625rem; font-weight: 700; line-height: 2.125rem; letter-spacing: -0.01em; color: var(--fg-primary); }
+/* Le titre d'une partie ouvre un nouveau morceau du module : un filet, de l'air, son pictogramme. */
+.rd-chapter-body > h2 { display: flex; align-items: center; gap: 14px; margin-top: 56px; margin-bottom: 16px; padding-top: 44px; border-top: 1px solid var(--border-hairline); font-size: 1.75rem; font-weight: 700; line-height: 2.25rem; letter-spacing: -0.015em; color: var(--fg-primary); }
+.rd-chapter-body > h2:focus { outline: none; }
+.rd-art-badge { display: grid; flex: none; place-items: center; width: 44px; height: 44px; border: 2px solid var(--art-ink); border-radius: 999px; background: var(--art-b-soft); box-shadow: 3px 3px 0 var(--art-b); color: var(--art-ink); }
+.rd-chapter-body > h2:nth-of-type(even) .rd-art-badge { background: var(--art-a-soft); box-shadow: 3px 3px 0 var(--art-a); }
+/* Un intertitre appartient au texte qui le suit : quatre fois plus d'air au-dessus qu'au-dessous. */
+.rd-chapter-body > h3 { margin-top: 36px; margin-bottom: 8px; font-size: 1.3125rem; font-weight: 700; line-height: 1.75rem; letter-spacing: -0.01em; color: var(--fg-primary); }
 .rd-chapter-body ul,
 .rd-chapter-body ol { margin-top: 0; margin-bottom: 20px; padding-left: 36px; }
 .rd-chapter-body ul { list-style: disc; }
@@ -451,7 +452,9 @@
 @media (max-width: 640px) {
   .rd-chapter-main h1 { font-size: 1.75rem; line-height: 2.125rem; }
   .rd-chapter-body { font-size: 1.0625rem; line-height: 1.6875rem; }
-  .rd-chapter-body > h2 { margin-top: 36px; font-size: 1.375rem; line-height: 1.8125rem; }
+  .rd-chapter-body > h2 { margin-top: 40px; padding-top: 32px; font-size: 1.5rem; line-height: 1.9375rem; }
+  .rd-chapter-body > h3 { margin-top: 28px; font-size: 1.1875rem; line-height: 1.625rem; }
+  .rd-art-badge { width: 38px; height: 38px; }
   .rd-aside { margin-left: 8px; padding: 12px 18px 12px 24px; }
   .rd-practice { padding: 0; }
   .rd-figure figcaption { max-width: 100%; }
@@ -612,9 +615,6 @@
    Sommaire — déroulé d'office à gauche sur grand écran, repliable ; sur écran
    étroit, il redevient un panneau qui glisse.
    ========================================================================== */
-.rd-outline-part { display: flex; flex-direction: column; gap: 2px; margin: 0 12px 10px; padding: 10px 12px; border-radius: var(--angle); background: var(--accent-brand-soft); }
-.rd-outline-part small { font-size: 0.75rem; font-weight: 600; line-height: 1.3; color: var(--accent-brand); }
-.rd-outline-part b { font-size: 0.9375rem; font-weight: 700; line-height: 1.35; color: var(--fg-primary); }
 
 @media (min-width: 961px) {
   .rd-chapter { grid-template-columns: auto minmax(0, 1fr); }

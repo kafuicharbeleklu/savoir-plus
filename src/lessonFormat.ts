@@ -19,7 +19,6 @@ function textsOf(rich: LessonRich): string[] {
             : figure.parts.flatMap((p) => [p.label, p.note]);
   return [
     rich.scene,
-    ...rich.goals,
     ...rich.sections.flatMap((s) => [s.title, ...s.text, ...(s.items || []), s.after || '']),
     rich.example.title,
     rich.example.intro || '',
@@ -31,22 +30,30 @@ function textsOf(rich: LessonRich): string[] {
   ];
 }
 
+/**
+ * Défauts de forme des objectifs d'un module. Ils complètent « vous saurez : », en liste : une
+ * minuscule au début, « ; » à la fin de chacun et « . » à la fin du dernier.
+ */
+export function goalsIssues(goals: string[]): string[] {
+  const issues: string[] = [];
+  if (goals.length < 2 || goals.length > 4) issues.push('objectifs : de deux à quatre');
+  goals.forEach((goal, i) => {
+    const end = i === goals.length - 1 ? '.' : ' ;';
+    if (!goal.trim()) issues.push(`objectif ${i + 1} vide`);
+    else {
+      if (goal[0] !== goal[0].toLowerCase()) issues.push(`objectif ${i + 1} : sans majuscule, il complète « vous saurez »`);
+      if (!goal.endsWith(end)) issues.push(`objectif ${i + 1} : doit finir par « ${end.trim()} »`);
+      if (goal.includes("'")) issues.push(`objectif ${i + 1} : apostrophe droite`);
+    }
+  });
+  return issues;
+}
+
 /** Défauts de forme d'une leçon. Une liste vide : la leçon est affichable telle quelle. */
 export function lessonIssues(rich: LessonRich): string[] {
   const issues: string[] = [];
 
   if (!rich.scene.trim()) issues.push('entrée en matière vide');
-
-  // Les objectifs complètent « vous saurez : », en liste : minuscule au début, « ; » puis « . » à la fin.
-  if (rich.goals.length < 2 || rich.goals.length > 3) issues.push('objectifs : deux ou trois');
-  rich.goals.forEach((goal, i) => {
-    const end = i === rich.goals.length - 1 ? '.' : ' ;';
-    if (!goal.trim()) issues.push(`objectif ${i + 1} vide`);
-    else {
-      if (goal[0] !== goal[0].toLowerCase()) issues.push(`objectif ${i + 1} : sans majuscule, il complète « vous saurez »`);
-      if (!goal.endsWith(end)) issues.push(`objectif ${i + 1} : doit finir par « ${end.trim()} »`);
-    }
-  });
 
   if (rich.sections.length < 2 || rich.sections.length > 4) issues.push('cours : de 2 à 4 parties');
   rich.sections.forEach((section, i) => {
