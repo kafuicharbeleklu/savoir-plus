@@ -372,6 +372,19 @@ label.pc-chip {
 .mobile-bottom-nav button i,
 .gv-count { border-radius: 999px; }
 
+/* -- Barre du haut : la pastille de compteur reste dans la barre. Avec une barre de 52 px,
+      l'ancien décalage (-7 px, 18 px de haut) la collait au bord de l'écran. ---------------- */
+.top-navigation .top-icon i,
+.topbar-right .top-icon i {
+  top: -4px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 0.6875rem;
+  line-height: 1;
+}
+
 /* -- Publications et réponses : les retours à la ligne saisis sont conservés -------------- */
 .li-post-body,
 .wf-thread-body,
