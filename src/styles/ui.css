@@ -485,3 +485,58 @@ label.ui-radio {
 
 /* Boutons d'icône désactivés (ex. « Monter » sur la première ligne) */
 .li-icon-btn:disabled { opacity: 0.3; cursor: not-allowed; background: transparent; }
+
+/* -- Visite guidée : la page s'assombrit, l'élément montré reste clair, une bulle l'explique.
+      Au-dessus des fenêtres (95), sous l'écran de lancement (100). ----------------------- */
+.tour-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 96;
+  animation: savoir-fade-in var(--dur-base) var(--ease-standard) both;
+}
+/* Le voile est l'ombre portée de la zone claire : pas de calque à découper. */
+.tour-spot {
+  position: fixed;
+  border-radius: var(--angle);
+  box-shadow: 0 0 0 9999px var(--scrim, rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+}
+.tour-bubble {
+  position: fixed;
+  width: min(320px, calc(100vw - 24px));
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg-elevated, var(--bg-surface));
+  border-radius: var(--angle);
+  box-shadow: var(--shadow-elevated);
+  outline: none;
+}
+/* Pointe vers l'élément montré */
+.tour-bubble::before {
+  content: '';
+  position: absolute;
+  left: var(--tour-arrow-x, 50%);
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  transform: translateX(-50%) rotate(45deg);
+}
+.tour-bubble.is-below::before { top: -6px; }
+.tour-bubble.is-above::before { bottom: -6px; }
+.tour-bubble h2 { margin: 0; font-size: 1rem; line-height: 1.4; font-weight: 600; color: var(--fg-primary); }
+.tour-bubble p { margin: 0; font-size: 0.875rem; line-height: 1.45; color: var(--fg-muted); }
+.tour-actions { display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin-top: 10px; }
+.tour-skip {
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.tour-skip:hover { color: var(--fg-primary); }

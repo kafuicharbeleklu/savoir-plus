@@ -295,9 +295,10 @@ export function ProfilePage({
     <svg viewBox="0 0 804 201" preserveAspectRatio="none">
       <defs>
         <linearGradient id="pfCoverGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#173A30" />
-          <stop offset="60%" stopColor="#24594A" />
-          <stop offset="100%" stopColor="#3B7A62" />
+          {/* Les variables ne sont définies qu'en thème clair ; le thème sombre garde les valeurs de repli. */}
+          <stop offset="0%" style={{ stopColor: 'var(--pf-cover-1, #173A30)' }} />
+          <stop offset="60%" style={{ stopColor: 'var(--pf-cover-2, #24594A)' }} />
+          <stop offset="100%" style={{ stopColor: 'var(--pf-cover-3, #3B7A62)' }} />
         </linearGradient>
       </defs>
       <rect width="804" height="201" fill="url(#pfCoverGrad)" />

@@ -22,8 +22,9 @@ export function NexusMark({
     >
       <defs>
         <linearGradient id={gradId} x1="2" y1="18" x2="26" y2="2" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#4CA982" />
-          <stop offset="100%" stopColor="#E09168" />
+          {/* Les variables ne sont définies qu'en thème clair ; le thème sombre garde les valeurs de repli. */}
+          <stop offset="0%" style={{ stopColor: 'var(--nexus-a, #4CA982)' }} />
+          <stop offset="100%" style={{ stopColor: 'var(--nexus-b, #E09168)' }} />
         </linearGradient>
       </defs>
       <path
@@ -33,8 +34,8 @@ export function NexusMark({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="8" cy="10" r="1.6" fill="#4CA982" />
-      <circle cx="20" cy="10" r="1.6" fill="#E09168" />
+      <circle cx="8" cy="10" r="1.6" style={{ fill: 'var(--nexus-a, #4CA982)' }} />
+      <circle cx="20" cy="10" r="1.6" style={{ fill: 'var(--nexus-b, #E09168)' }} />
     </svg>
   );
 }

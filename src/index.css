@@ -19,27 +19,28 @@
 
 :root {
   color-scheme: light;
-  --bg-canvas: #F4F2EE;
+  /* Thème clair : indigo encre, terre cuite et fond coquille d'œuf (le thème sombre a ses propres valeurs plus bas) */
+  --bg-canvas: #F6F3EA;
   --bg-surface: #FFFFFF;
   --bg-elevated: #FFFFFF;
-  --bg-subtle: #EDF0EA;
-  --fg-primary: #19231D;
-  --fg-muted: #59665B;
-  --border-hairline: #DCE1D8;
-  --accent-brand: #1D4D3B;
+  --bg-subtle: #F1EEE4;
+  --fg-primary: #1F2033;
+  --fg-muted: #585A70;
+  --border-hairline: #E7E3D8;
+  --accent-brand: #393C74;
   --accent-brand-ink: #FFFFFF;
-  --accent-brand-soft: #E8F1EC;
-  --accent-warm: #B85029;
-  --accent-warm-soft: #FBF1EB;
+  --accent-brand-soft: #EBEBF5;
+  --accent-warm: #C0543A;
+  --accent-warm-soft: #FBEFEA;
   --badge-warm-ink: #FFFFFF;
   --accent-danger: #B42318;
   --accent-danger-soft: #FEF3F2;
   --accent-ok: #146C43;
   --accent-ok-soft: #E9F6EF;
-  --cover-gradient: linear-gradient(135deg, #1D4D3B 0%, #2B6B53 100%);
-  --shadow-card: 0 1px 2px rgba(25, 35, 29, 0.05);
-  --shadow-elevated: 0 8px 24px rgba(25, 35, 29, 0.12);
-  --scrim: rgba(15, 23, 20, 0.48);
+  --cover-gradient: linear-gradient(135deg, #2C2E5A 0%, #4A4E8C 100%);
+  --shadow-card: 0 1px 2px rgba(31, 32, 51, 0.05);
+  --shadow-elevated: 0 8px 24px rgba(31, 32, 51, 0.12);
+  --scrim: rgba(20, 21, 36, 0.5);
   --ease-ui: cubic-bezier(0.22, 1, 0.36, 1);
   --dur-ui: 160ms;
   --text-2xs: 0.6875rem;
@@ -606,7 +607,7 @@
 
 .top-active-lab-arc {
   fill: none;
-  stroke: #18804E;
+  stroke: #393C74;
   stroke-width: 2.75;
   stroke-linecap: round;
   transition: stroke-dashoffset 280ms var(--ease-ui);
@@ -1321,7 +1322,7 @@
 .type-mark-label { color: var(--fg-muted); }
 .type-mark-extra { font-family: var(--font-sans); color: var(--fg-muted); font-weight: 500; text-transform: none; letter-spacing: 0; }
 
-.type-mark.type-module .type-mark-icon { color: #0f766e; }
+.type-mark.type-module .type-mark-icon { color: #393C74; }
 .type-mark.type-resource .type-mark-icon { color: #0369a1; }
 .type-mark.type-path .type-mark-icon { color: #b45309; }
 
@@ -1407,7 +1408,7 @@
 .sober-card-banner.compact { height: 124px; }
 
 .sober-card-banner.type-module {
-  background: linear-gradient(135deg, #e3eee8 0%, #eef3ec 55%, #e6ece9 100%);
+  background: linear-gradient(135deg, #e6e7f2 0%, #eeeef6 55%, #e8e8f1 100%);
 }
 .sober-card-banner.type-resource {
   background: linear-gradient(135deg, #e4edf5 0%, #edf2f7 55%, #e7eef2 100%);
@@ -1448,8 +1449,8 @@
   right: -16px;
 }
 
-.sober-card-banner.type-module .sober-glow-a { background: rgba(15, 118, 110, 0.24); }
-.sober-card-banner.type-module .sober-glow-b { background: rgba(29, 77, 59, 0.18); }
+.sober-card-banner.type-module .sober-glow-a { background: rgba(57, 60, 116, 0.22); }
+.sober-card-banner.type-module .sober-glow-b { background: rgba(90, 94, 156, 0.16); }
 .sober-card-banner.type-resource .sober-glow-a { background: rgba(3, 105, 161, 0.22); }
 .sober-card-banner.type-resource .sober-glow-b { background: rgba(56, 189, 248, 0.16); }
 .sober-card-banner.type-path .sober-glow-a { background: rgba(180, 83, 9, 0.22); }
@@ -1480,7 +1481,7 @@
   height: 56px;
 }
 
-.sober-emblem-ring.type-module { border-color: rgba(15, 118, 110, 0.55); color: #0f766e; }
+.sober-emblem-ring.type-module { border-color: rgba(57, 60, 116, 0.55); color: #393C74; }
 .sober-emblem-ring.type-resource { border-color: rgba(3, 105, 161, 0.55); color: #0369a1; }
 .sober-emblem-ring.type-path { border-color: rgba(180, 83, 9, 0.55); color: #b45309; }
 
@@ -7062,13 +7063,13 @@ ul.lesson-points + h3, .wf-muted-text + h3 { margin-top: 16px; }
 
 :root {
   /* Couleurs : fond légèrement plus clair et plus neutre, filets plus discrets, texte secondaire plus lisible */
-  --bg-canvas: #F6F5F1;
-  --bg-subtle: #F0F1EC;
-  --border-hairline: #E3E5DF;
-  --border-strong: #C9CFC6;
-  --fg-primary: #16201A;
-  --fg-muted: #56625A;
-  --fg-subtle: #6B766E;
+  --bg-canvas: #F6F3EA;
+  --bg-subtle: #F1EEE4;
+  --border-hairline: #E7E3D8;
+  --border-strong: #CDC9BD;
+  --fg-primary: #1F2033;
+  --fg-muted: #585A70;
+  --fg-subtle: #686A80;
 
   /* Espacements (grille de 4 px) */
   --space-1: 4px;
@@ -7090,9 +7091,9 @@ ul.lesson-points + h3, .wf-muted-text + h3 { margin-top: 16px; }
   --radius-pill: var(--angle);
 
   /* Élévation : très douce, la structure repose surtout sur les filets */
-  --shadow-card: 0 1px 2px rgba(22, 32, 26, 0.04);
-  --shadow-hover: 0 8px 24px -12px rgba(22, 32, 26, 0.22);
-  --shadow-elevated: 0 18px 48px -18px rgba(22, 32, 26, 0.32);
+  --shadow-card: 0 1px 2px rgba(31, 32, 51, 0.04);
+  --shadow-hover: 0 8px 24px -12px rgba(31, 32, 51, 0.22);
+  --shadow-elevated: 0 18px 48px -18px rgba(31, 32, 51, 0.32);
 
   /* Mouvement */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);

@@ -941,7 +941,7 @@ button.pf-suggest.is-link:hover .pf-suggest-name { color: var(--accent-brand); t
   border: 0;
   border-radius: var(--angle);
   background: var(--bg-elevated, var(--bg-surface));
-  box-shadow: 0 0 0 1px rgba(22, 32, 26, 0.1), 0 8px 24px rgba(22, 32, 26, 0.16);
+  box-shadow: 0 0 0 1px rgba(31, 32, 51, 0.1), 0 8px 24px rgba(31, 32, 51, 0.16);
 }
 [data-theme='dark'] .li-menu-list,
 [data-theme='dark'] .vous-menu,
@@ -997,8 +997,8 @@ button.pf-suggest.is-link:hover .pf-suggest-name { color: var(--accent-brand); t
   max-width: 280px;
   padding: 6px 10px;
   border-radius: var(--angle);
-  background: #16201a;
-  color: #f4f7f6;
+  background: #1f2033;
+  color: #f6f5f8;
   font-size: 0.75rem;
   font-weight: 400;
   line-height: 1.4;
@@ -1059,7 +1059,7 @@ button.pf-suggest.is-link:hover .pf-suggest-name { color: var(--accent-brand); t
   overflow-y: auto;
   border-radius: var(--angle);
   background: var(--bg-elevated, var(--bg-surface));
-  box-shadow: 0 0 0 1px rgba(22, 32, 26, 0.1), 0 8px 24px rgba(22, 32, 26, 0.16);
+  box-shadow: 0 0 0 1px rgba(31, 32, 51, 0.1), 0 8px 24px rgba(31, 32, 51, 0.16);
   animation: savoir-menu-in var(--dur-fast, 0.12s) var(--ease-standard, ease);
 }
 [data-theme='dark'] .ui-select-list { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14), 0 8px 24px rgba(0, 0, 0, 0.5); }
@@ -1197,70 +1197,27 @@ button.pf-suggest.is-link:hover .pf-suggest-name { color: var(--accent-brand); t
 .rail-card-foot svg { transition: transform 160ms ease; }
 .rail-card-foot:hover svg { transform: translateX(3px); }
 
-/* -- Écran de lancement : le nom se compose, le « + » se pose, la barre se remplit ------------ */
+/* -- Écran de lancement : le nom apparaît en fondu, sans barre ni lettres animées ------------- */
 .splash-screen { transition: opacity 320ms ease; }
 .splash-screen.is-exiting { transform: none; }
-.splash-center { gap: 26px; animation: none; transition: transform 320ms cubic-bezier(0.4, 0, 1, 1), opacity 240ms ease; }
-.splash-screen.is-exiting .splash-center { opacity: 0; transform: translateY(-10px) scale(1.03); }
-.splash-wordmark { display: flex; align-items: baseline; font-size: clamp(2.25rem, 4.2vw, 3rem); }
+.splash-center { animation: none; }
+.splash-wordmark {
+  display: flex;
+  align-items: baseline;
+  font-size: clamp(2.25rem, 4.2vw, 3rem);
+  animation: splash-fade 520ms ease 80ms both;
+}
 .splash-wordmark b { font-weight: inherit; }
-.splash-letter {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(16px);
-  animation: splash-letter 560ms cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i) * 48ms + 90ms) forwards;
-}
-.splash-plus {
-  display: inline-block;
-  margin-left: 3px;
-  color: var(--accent-warm);
-  opacity: 0;
-  transform: scale(0.3) rotate(-135deg);
-  animation: splash-plus 620ms cubic-bezier(0.34, 1.56, 0.64, 1) 430ms forwards;
-}
-.splash-progress {
-  width: 136px;
-  height: 3px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--fg-primary) 10%, transparent);
-  overflow: hidden;
-  opacity: 0;
-  animation: splash-fade 320ms ease 380ms forwards;
-}
-.splash-progress i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--accent-brand);
-  transform: scaleX(0);
-  transform-origin: left center;
-  animation: splash-fill calc(var(--splash-hold, 1550ms) - 480ms) cubic-bezier(0.65, 0, 0.35, 1) 420ms forwards;
-}
-.splash-footer { animation: splash-fade 520ms ease 520ms both; }
+.splash-plus { margin-left: 3px; color: var(--accent-warm); }
+.splash-footer { animation: splash-fade 520ms ease 260ms both; }
 
-@keyframes splash-letter { to { opacity: 1; transform: translateY(0); } }
-@keyframes splash-plus { to { opacity: 1; transform: scale(1) rotate(0deg); } }
 @keyframes splash-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes splash-fill {
-  0% { transform: scaleX(0); }
-  45% { transform: scaleX(0.62); }
-  75% { transform: scaleX(0.86); }
-  100% { transform: scaleX(1); }
-}
 
-.splash-screen.is-reduced .splash-letter,
-.splash-screen.is-reduced .splash-plus,
-.splash-screen.is-reduced .splash-progress,
-.splash-screen.is-reduced .splash-progress i,
-.splash-screen.is-reduced .splash-footer { opacity: 1; transform: none; animation: none; }
-.splash-screen.is-reduced .splash-center { transition: none; }
+.splash-screen.is-reduced .splash-wordmark,
+.splash-screen.is-reduced .splash-footer { opacity: 1; animation: none; }
 @media (prefers-reduced-motion: reduce) {
-  .splash-letter,
-  .splash-plus,
-  .splash-progress,
-  .splash-progress i,
-  .splash-footer { opacity: 1; transform: none; animation: none; }
-  .splash-center { transition: none; }
+  .splash-wordmark,
+  .splash-footer { opacity: 1; animation: none; }
 }
 
 /* -- Largeur stable d'une page à l'autre : la place de la barre de défilement est réservée
@@ -1269,4 +1226,24 @@ button.pf-suggest.is-link:hover .pf-suggest-name { color: var(--accent-brand); t
   .app-scroll-viewport,
   .shell-scroll-viewport { scrollbar-gutter: stable both-edges; }
   .landing .shell-scroll-viewport { scrollbar-gutter: auto; }
+}
+
+/* -- Palette claire : teintes écrites en dur ailleurs (avatars, couverture de profil, marque Nexus,
+      message bref). Limité au thème clair : le thème sombre garde ses valeurs d'origine. -------- */
+:root:not([data-theme="dark"]) {
+  --pf-cover-1: #26284F;
+  --pf-cover-2: #393C74;
+  --pf-cover-3: #5A5E9C;
+  --nexus-a: #5A5E9C;
+  --nexus-b: #D9825F;
+}
+:where(:root:not([data-theme="dark"])) .avatar:not(.has-photo) { background: #393C74; }
+:where(:root:not([data-theme="dark"])) .avatar.lavender:not(.has-photo) { background: #6D597A; }
+:where(:root:not([data-theme="dark"])) .avatar.peach:not(.has-photo) { background: #B04E2A; }
+:where(:root:not([data-theme="dark"])) .pf-cover { background: #26284F; }
+:where(:root:not([data-theme="dark"])) .toast { background: #1F2033; }
+:where(:root:not([data-theme="dark"])) .top-active-lab-core {
+  background: #23254A;
+  color: #C3C6F2;
+  border-color: rgba(195, 198, 242, 0.28);
 }

@@ -1131,6 +1131,7 @@ export default function App() {
           busy={busy}
           onCompleteLesson={handleCompleteLesson}
           onOpenQuizIntro={() => nav('quiz-intro', activeStudyModuleId)}
+          tourReady={splashPhase === 'done'}
           onExit={() => nav(studyReturnTarget.page === 'visitor' ? 'home' : studyReturnTarget.page, studyReturnTarget.id || '')}
         />
         {toast && (

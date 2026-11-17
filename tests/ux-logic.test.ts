@@ -871,3 +871,35 @@ test('menu d’un contenu du Studio : les actions suivent le statut', async () =
   assert.equal(studioCatalogId('st-9'), 'st-9');
   assert.equal(catalogDetailRoute('path'), 'path-detail');
 });
+
+import { shouldShowExploreTour, computeCoachLayout } from '../src/tour';
+
+test('Visite guidée « Explorer sans compte » : premier chargement seulement, bulle toujours dans la fenêtre', () => {
+  assert.equal(shouldShowExploreTour('', false), true);
+  assert.equal(shouldShowExploreTour('', true), false);
+  assert.equal(shouldShowExploreTour('?tour=1', true), true);
+  assert.equal(shouldShowExploreTour('?tour=0', false), false);
+  assert.equal(shouldShowExploreTour('?splash=0', false), true);
+
+  const bubble = { width: 320, height: 150 };
+  const viewport = { width: 1280, height: 800 };
+
+  // Assez de place dessous : la bulle se pose sous le lien, pointe centrée sur lui.
+  const below = computeCoachLayout({ top: 500, left: 250, width: 140, height: 26 }, bubble, viewport);
+  assert.equal(below.placement, 'below');
+  assert.equal(below.top, 500 + 26 + 6 + 12);
+  assert.equal(below.left, 320 - 160);
+  assert.equal(below.arrowX, 160);
+  assert.deepEqual(below.spot, { top: 494, left: 244, width: 152, height: 38 });
+
+  // Lien en bas de fenêtre : la bulle passe au-dessus.
+  const above = computeCoachLayout({ top: 740, left: 250, width: 140, height: 26 }, bubble, viewport);
+  assert.equal(above.placement, 'above');
+  assert.equal(above.top, 740 - 6 - 12 - 150);
+
+  // Lien près d'un bord, petit écran : la bulle reste dans la fenêtre et la pointe vise encore le lien.
+  const narrow = computeCoachLayout({ top: 300, left: 8, width: 140, height: 26 }, bubble, { width: 390, height: 700 });
+  assert.equal(narrow.left, 12);
+  assert.equal(narrow.arrowX, 78 - 12);
+  assert.ok(narrow.left + bubble.width <= 390 - 12);
+});

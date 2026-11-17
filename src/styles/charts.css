@@ -5,8 +5,8 @@
    ========================================================================== */
 
 :root {
-  --chart-main: #1d4d3b;
-  --chart-soft: #8fc1aa;
+  --chart-main: #393c74;
+  --chart-soft: #a9abd3;
 }
 [data-theme='dark'] {
   --chart-main: #6fcba4;

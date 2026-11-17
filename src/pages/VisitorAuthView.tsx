@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { CoachMark } from '../components/CoachMark';
 import { LandingVideo } from '../components/LandingVideo';
+import { markExploreTourSeen, readExploreTourSeen, shouldShowExploreTour } from '../tour';
 import { ArrowLeft, ArrowRight, CheckCircle2, KeyRound, Lock, Mail } from 'lucide-react';
 
 type AuthTab = 'login' | 'signup' | 'verify' | 'reset' | 'onboarding';
@@ -65,6 +67,7 @@ export function VisitorAuthView({
   cloudConfigured,
   busy,
   error,
+  tourReady = true,
   onSelectPersona,
   onLoginCloud,
   onCompleteOnboarding,
@@ -73,6 +76,8 @@ export function VisitorAuthView({
   cloudConfigured: boolean;
   busy: boolean;
   error: string;
+  /** Faux tant que l'écran de lancement couvre la page : la visite guidée attend. */
+  tourReady?: boolean;
   onSelectPersona: (id: 'afi' | 'kossi' | 'nadege') => void;
   onLoginCloud: (email: string, password: string) => void;
   onCompleteOnboarding?: (displayName: string, interests: string) => void;
@@ -89,6 +94,20 @@ export function VisitorAuthView({
   const [signupSent, setSignupSent] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+
+  // Visite guidée : au premier chargement, une bulle montre « Explorer sans compte » au testeur.
+  const exploreRef = useRef<HTMLButtonElement>(null);
+  const [tourOpen, setTourOpen] = useState(false);
+  useEffect(() => {
+    if (!tourReady) return;
+    if (!shouldShowExploreTour(window.location.search, readExploreTourSeen())) return;
+    // Court délai : la page se pose avant que la bulle n'apparaisse.
+    const timer = window.setTimeout(() => {
+      markExploreTourSeen();
+      setTourOpen(true);
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [tourReady]);
 
   const finishOnboarding = (nameToUse: string, interestsToUse: string) => {
     if (onCompleteOnboarding) {
@@ -371,7 +390,7 @@ export function VisitorAuthView({
           </section>
 
           {isPrimaryTab && (
-            <button type="button" className="lf-explore" onClick={() => onSelectPersona('afi')}>
+            <button ref={exploreRef} type="button" className="lf-explore" onClick={() => onSelectPersona('afi')}>
               Explorer sans compte
             </button>
           )}
@@ -388,6 +407,21 @@ export function VisitorAuthView({
           <span>Hackathon CREATE WITH AI · Forum Femmes &amp; IA 2026</span>
         </footer>
       </div>
+
+      {tourOpen && authTab === 'login' && (
+        <CoachMark
+          target={exploreRef.current}
+          title="Vous testez SAVOIR+ ?"
+          actionLabel="Explorer sans compte"
+          onAction={() => {
+            setTourOpen(false);
+            onSelectPersona('afi');
+          }}
+          onClose={() => setTourOpen(false)}
+        >
+          Pas besoin de créer un compte : ce lien ouvre la plateforme avec un profil de démonstration.
+        </CoachMark>
+      )}
     </div>
   );
 }

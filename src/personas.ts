@@ -430,7 +430,7 @@ export function computeCatalogCardSteps(
   };
 }
 
-export const SPLASH_HOLD_MS = 1550;
+export const SPLASH_HOLD_MS = 1100;
 export const SPLASH_REDUCED_HOLD_MS = 550;
 export const SPLASH_EXIT_MS = 320;
 
