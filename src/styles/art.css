@@ -1,0 +1,73 @@
+/* ==========================================================================
+   Illustrations — un seul style pour tout le site : un trait sombre de 2 px,
+   des aplats pastel aux deux teintes de la marque, des coins arrondis, une
+   ombre portée décalée. Tout passe par ces variables, pour que les deux thèmes
+   restent cohérents.
+   ========================================================================== */
+:root {
+  --art-ink: var(--fg-primary);
+  --art-paper: var(--bg-surface);
+  --art-ground: var(--bg-subtle);
+  --art-a: var(--accent-brand);
+  --art-a-soft: var(--accent-brand-soft);
+  --art-b: var(--accent-warm);
+  --art-b-soft: var(--accent-warm-soft);
+}
+
+/* -- La scène : un fond de formes, un objet au centre ---------------------------------------- */
+.art-scene { position: relative; display: grid; place-items: center; overflow: hidden; background: var(--art-ground); }
+/* Seconde palette : la teinte chaude mène, l'indigo accompagne. */
+.art-scene.is-b { --art-a: var(--accent-warm); --art-a-soft: var(--accent-warm-soft); --art-b: var(--accent-brand); --art-b-soft: var(--accent-brand-soft); }
+.art-scene-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.art-scene.is-flip .art-scene-bg { transform: scaleX(-1); }
+.art-fill-a { fill: var(--art-a-soft); }
+.art-fill-b { fill: var(--art-b-soft); }
+.art-line-b { fill: none; stroke: var(--art-b); stroke-width: 9; }
+.art-dot { fill: var(--border-strong); }
+.art-ring { fill: none; stroke-width: 16; }
+.art-scene:not(.is-wide) .art-ring { stroke-width: 10; }
+.art-scene:not(.is-wide) .art-line-b { stroke-width: 6; }
+.art-ring-1 { stroke: var(--art-a); }
+.art-ring-2 { stroke: var(--art-b); }
+.art-ring-3 { stroke: var(--art-a-soft); }
+.art-ring-4 { stroke: var(--art-b-soft); }
+.art-spark { fill: var(--art-ink); }
+
+/* Le pictogramme du sujet, dans sa pastille */
+.art-icon { display: grid; flex: none; place-items: center; width: 40px; height: 40px; border: 2px solid var(--art-ink); border-radius: 999px; background: var(--art-b-soft); color: var(--art-ink); }
+.art-lines { display: grid; flex: 1 1 auto; gap: 6px; min-width: 0; }
+.art-lines i { height: 6px; border-radius: 999px; background: var(--art-ground); }
+.art-lines i:first-child { width: 78%; background: var(--art-a); opacity: 0.85; }
+.art-lines i:nth-child(2) { width: 100%; }
+.art-lines i:last-child { width: 56%; }
+
+/* Module : une fenêtre */
+.art-window { position: relative; width: 148px; border: 2px solid var(--art-ink); border-radius: 10px; background: var(--art-paper); box-shadow: 5px 5px 0 var(--art-a); }
+.art-window-bar { display: flex; gap: 4px; padding: 6px 9px; border-bottom: 2px solid var(--art-ink); }
+.art-window-bar i { width: 6px; height: 6px; border-radius: 999px; background: var(--art-ink); opacity: 0.28; }
+.art-window-row { display: flex; align-items: center; gap: 10px; padding: 10px; }
+
+/* Fiche : une feuille, coin plié */
+.art-sheet { position: relative; display: grid; justify-items: center; gap: 8px; width: 96px; padding: 12px 12px 14px; border: 2px solid var(--art-ink); border-radius: 8px; background: var(--art-paper); box-shadow: 5px 5px 0 var(--art-a); transform: rotate(-4deg); }
+.art-sheet::after { content: ''; position: absolute; top: -2px; right: -2px; width: 18px; height: 18px; border-bottom: 2px solid var(--art-ink); border-left: 2px solid var(--art-ink); border-radius: 0 6px 0 5px; background: var(--art-ground); }
+.art-sheet .art-icon { width: 36px; height: 36px; }
+.art-sheet .art-lines { width: 100%; }
+
+/* Parcours : des étapes reliées */
+.art-route { position: relative; display: flex; align-items: center; }
+.art-route > i { width: 22px; height: 22px; border: 2px solid var(--art-ink); border-radius: 999px; background: var(--art-a-soft); }
+.art-route > i:last-child { background: var(--art-a); }
+.art-route > b { width: 24px; border-top: 2px dashed var(--art-ink); }
+.art-route .art-icon { width: 52px; height: 52px; box-shadow: 4px 4px 0 var(--art-a); background: var(--art-paper); }
+
+/* Grand format : le bandeau d'un module */
+.art-scene.is-wide .art-window { width: 264px; border-radius: 12px; box-shadow: 6px 6px 0 var(--art-a); }
+.art-scene.is-wide .art-window-bar { gap: 5px; padding: 7px 12px; }
+.art-scene.is-wide .art-window-bar i { width: 7px; height: 7px; }
+.art-scene.is-wide .art-window-row { gap: 14px; padding: 12px 16px; }
+.art-scene.is-wide .art-icon { width: 48px; height: 48px; }
+.art-scene.is-wide .art-lines { gap: 8px; }
+.art-scene.is-wide .art-lines i { height: 8px; }
+
+/* Dans une vignette de contenu, la scène remplit le cadre. */
+.sober-card-banner > .art-scene { position: absolute; inset: 0; }

@@ -57,7 +57,7 @@
 .ch-step.is-weak .ch-step-bar i { background: var(--accent-danger); }
 .ch-step.is-weak .ch-step-bar b { color: var(--accent-danger); }
 .ch-step-tick { font-size: 0.75rem; line-height: 1.25; text-align: center; color: var(--fg-muted); }
-.ch-steps-label { font-size: 0.75rem; font-weight: 600; line-height: 1.25; text-align: center; color: var(--fg-primary); }
+.ch-steps-label { font-size: 0.75rem; font-weight: 500; line-height: 1.25; text-align: center; color: var(--fg-primary); }
 
 /* -- Cellules de tableau : chiffre et jauge fine ------------------------------------------- */
 .ch-inline { display: inline-flex; align-items: center; justify-content: flex-end; gap: 10px; width: 100%; }
@@ -95,7 +95,7 @@
 .ui-sort:hover .ui-sort-idle { opacity: 1; }
 .ui-sort.is-on { color: var(--fg-primary); }
 .ui-sort.is-on svg { color: var(--accent-brand); }
-.ui-sort-rank { margin-left: -2px; font-size: 0.625rem; font-weight: 600; color: var(--accent-brand); }
+.ui-sort-rank { margin-left: -2px; font-size: 0.625rem; font-weight: 500; color: var(--accent-brand); }
 th.is-num .ui-sort { flex-direction: row-reverse; }
 
 @media (max-width: 560px) {

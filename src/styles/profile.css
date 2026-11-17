@@ -39,7 +39,7 @@
   width: 152px;
   height: 152px;
   font-size: 3rem;
-  font-weight: 600;
+  font-weight: 500;
   border: 4px solid var(--bg-surface);
   box-sizing: border-box;
 }
@@ -71,14 +71,14 @@
   border: 0;
   background: none;
   font: inherit;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--accent-brand);
   text-decoration: none;
   cursor: pointer;
 }
 .pf-link:hover { text-decoration: underline; background: none; }
 .pf-orgs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.pf-orgs li { display: flex; align-items: center; gap: 8px; font-size: 0.875rem; font-weight: 600; color: var(--fg-primary); }
+.pf-orgs li { display: flex; align-items: center; gap: 8px; font-size: 0.875rem; font-weight: 500; color: var(--fg-primary); }
 .pf-orgs .ui-icon-tile { width: 32px; height: 32px; flex: 0 0 32px; border-radius: var(--angle); }
 .pf-orgs li > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .pf-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
@@ -122,7 +122,7 @@
   border-radius: 0;
   background: none;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--fg-muted);
   cursor: pointer;
   transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
@@ -179,7 +179,7 @@
   background: var(--accent-brand-soft);
   color: var(--accent-brand);
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 500;
   box-shadow: inset 0 0 0 2px var(--accent-brand);
 }
 .pf-level-text { display: flex; flex-direction: column; gap: 2px; }
@@ -187,7 +187,7 @@
 .pf-level-text small { font-size: 0.875rem; color: var(--fg-muted); }
 .pf-level-bar { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .pf-level-bar-head { display: flex; justify-content: space-between; gap: 12px; font-size: 0.75rem; color: var(--fg-muted); }
-.pf-level-bar-head span:first-child { font-weight: 600; color: var(--fg-primary); }
+.pf-level-bar-head span:first-child { font-weight: 500; color: var(--fg-primary); }
 
 /* Lignes de section : toutes à la même hauteur */
 .pf-entries { display: flex; flex-direction: column; }
@@ -232,7 +232,7 @@ button.pf-entry:hover .pf-entry-text b { color: var(--accent-brand); text-decora
   border-radius: var(--angle);
   background: none;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--fg-muted);
   cursor: pointer;
 }

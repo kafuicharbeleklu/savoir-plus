@@ -35,13 +35,13 @@
   border: 2px solid var(--accent-brand);
   border-radius: 50%;
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--accent-brand);
 }
 .pg-level-text { flex: 1; min-width: 0; }
 .pg-level-text h2 { margin: 0; font-size: 1.25rem; font-weight: 600; line-height: 1.25; color: var(--fg-primary); }
 .pg-level-text p { margin: 2px 0 0; font-size: 0.875rem; color: var(--fg-muted); }
-.pg-level-xp { flex: none; font-size: 1.25rem; font-weight: 600; color: var(--fg-primary); }
+.pg-level-xp { flex: none; font-size: 1.25rem; font-weight: 500; color: var(--fg-primary); }
 .pg-level .progress-track { height: 6px; }
 .pg-level-note { margin: 0; font-size: 0.8125rem; color: var(--fg-muted); }
 
@@ -81,7 +81,7 @@
   border-radius: var(--angle);
   background: var(--bg-surface);
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--fg-muted);
   cursor: pointer;
 }

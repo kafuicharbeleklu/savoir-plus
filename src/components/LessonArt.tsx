@@ -1,7 +1,8 @@
 /**
- * Les illustrations des leçons, dans un seul style : un trait sombre de 2 px, des aplats pastel
- * (les deux teintes de la marque), des coins arrondis, une ombre portée décalée. Le bandeau ouvre
- * chaque leçon ; les schémas (chaîne, répartition) servent de figures dans le texte.
+ * Les illustrations du site, dans un seul style : un trait sombre de 2 px, des aplats pastel (les
+ * deux teintes de la marque), des coins arrondis, une ombre portée décalée (voir `styles/art.css`).
+ * `ArtScene` sert de vignette aux contenus et de bandeau aux modules ; les schémas (chaîne,
+ * répartition) servent de figures dans le texte des leçons.
  */
 import React from 'react';
 import {
@@ -34,7 +35,7 @@ import {
 } from 'lucide-react';
 import type { LessonArt, LessonFlowFigure, LessonSplitFigure } from '../content';
 
-const ART_ICONS: Record<LessonArt, LucideIcon> = {
+export const ART_ICONS: Record<LessonArt, LucideIcon> = {
   alert: ShieldAlert,
   search: Search,
   shield: ShieldCheck,
@@ -64,43 +65,150 @@ const ART_ICONS: Record<LessonArt, LucideIcon> = {
 
 const SPARK = 'M0 -9C1.2 -3 3 -1.2 9 0C3 1.2 1.2 3 0 9C-1.2 3 -3 1.2 -9 0C-3 -1.2 -1.2 -3 0 -9Z';
 
-/** Bandeau d'ouverture d'une leçon : une fenêtre avec le pictogramme du sujet, sur un fond de formes. */
-export function LessonBanner({ art }: { art: LessonArt }) {
-  const Icon = ART_ICONS[art];
+/** Un nombre stable tiré d'un texte : il choisit la variante d'une scène, toujours la même pour un même contenu. */
+export function artSeed(text: string): number {
+  let h = 7;
+  for (let i = 0; i < text.length; i += 1) h = (h * 31 + text.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+const dots = (x: number, y: number) => (
+  <g className="art-dot">
+    {[0, 1, 2, 3].map((cx) => [0, 1, 2].map((cy) => <circle key={`${cx}-${cy}`} cx={x + cx * 12} cy={y + cy * 12} r="2" />))}
+  </g>
+);
+
+/** Les fonds d'une vignette (320 × 200) : trois compositions des mêmes formes. */
+function CardBackdrop({ layout }: { layout: number }) {
+  if (layout === 1) {
+    return (
+      <>
+        <circle className="art-fill-a" cx="286" cy="176" r="76" />
+        <circle className="art-ring art-ring-1" cx="-6" cy="-24" r="62" />
+        <circle className="art-ring art-ring-2" cx="-6" cy="-24" r="76" />
+        <circle className="art-ring art-ring-4" cx="-6" cy="-24" r="90" />
+        <circle className="art-line-b" cx="268" cy="36" r="15" />
+        {dots(22, 150)}
+        <path className="art-spark" d={SPARK} transform="translate(92 34) scale(0.8)" />
+      </>
+    );
+  }
+  if (layout === 2) {
+    return (
+      <>
+        <circle className="art-fill-a" cx="30" cy="150" r="64" />
+        <circle className="art-fill-b" cx="296" cy="30" r="52" />
+        <circle className="art-ring art-ring-2" cx="160" cy="262" r="74" />
+        <circle className="art-ring art-ring-3" cx="160" cy="262" r="88" />
+        {dots(246, 142)}
+        <path className="art-spark" d={SPARK} transform="translate(60 40) scale(0.8)" />
+        <path className="art-spark" d={SPARK} transform="translate(258 96) scale(0.5)" />
+      </>
+    );
+  }
   return (
-    <div className="rd-banner rd-wide" aria-hidden="true">
-      <svg className="rd-banner-bg" viewBox="0 0 736 176" preserveAspectRatio="xMidYMid slice">
-        <circle className="art-fill-a" cx="64" cy="34" r="92" />
-        <circle className="art-line-b" cx="150" cy="148" r="24" />
-        <g className="art-dot">
-          {[0, 1, 2, 3].map((x) => [0, 1, 2].map((y) => <circle key={`${x}-${y}`} cx={196 + x * 14} cy={30 + y * 14} r="2.2" />))}
-        </g>
-        <circle className="art-ring art-ring-1" cx="700" cy="236" r="112" />
-        <circle className="art-ring art-ring-2" cx="700" cy="236" r="132" />
-        <circle className="art-ring art-ring-3" cx="700" cy="236" r="152" />
-        <circle className="art-ring art-ring-4" cx="700" cy="236" r="172" />
-        <path className="art-spark" d={SPARK} transform="translate(536 40)" />
-        <path className="art-spark" d={SPARK} transform="translate(236 136) scale(0.6)" />
+    <>
+      <circle className="art-fill-a" cx="34" cy="26" r="72" />
+      <circle className="art-line-b" cx="58" cy="170" r="15" />
+      <circle className="art-ring art-ring-1" cx="326" cy="226" r="62" />
+      <circle className="art-ring art-ring-2" cx="326" cy="226" r="76" />
+      <circle className="art-ring art-ring-3" cx="326" cy="226" r="90" />
+      {dots(232, 22)}
+      <path className="art-spark" d={SPARK} transform="translate(250 84) scale(0.8)" />
+    </>
+  );
+}
+
+/** Le fond d'un bandeau (736 × 176). */
+function WideBackdrop() {
+  return (
+    <>
+      <circle className="art-fill-a" cx="64" cy="34" r="92" />
+      <circle className="art-line-b" cx="150" cy="148" r="24" />
+      <g className="art-dot">
+        {[0, 1, 2, 3].map((x) => [0, 1, 2].map((y) => <circle key={`${x}-${y}`} cx={196 + x * 14} cy={30 + y * 14} r="2.2" />))}
+      </g>
+      <circle className="art-ring art-ring-1" cx="700" cy="236" r="112" />
+      <circle className="art-ring art-ring-2" cx="700" cy="236" r="132" />
+      <circle className="art-ring art-ring-3" cx="700" cy="236" r="152" />
+      <circle className="art-ring art-ring-4" cx="700" cy="236" r="172" />
+      <path className="art-spark" d={SPARK} transform="translate(536 40)" />
+      <path className="art-spark" d={SPARK} transform="translate(236 136) scale(0.6)" />
+    </>
+  );
+}
+
+export type ArtFrame = 'window' | 'sheet' | 'route';
+
+/**
+ * Une illustration : un fond de formes et, au centre, un objet qui porte le pictogramme du sujet
+ * (une fenêtre pour un module, une feuille pour une fiche, des étapes pour un parcours).
+ * `seed` fixe la variante : composition du fond, sens, teinte qui mène.
+ */
+export function ArtScene({
+  icon,
+  frame = 'window',
+  seed = '',
+  wide = false,
+  className = ''
+}: {
+  icon: React.ReactNode;
+  frame?: ArtFrame;
+  seed?: string;
+  /** Grand format (bandeau) : objet plus grand, fond étiré. */
+  wide?: boolean;
+  className?: string;
+}) {
+  const h = artSeed(seed);
+  const classes = ['art-scene', wide ? 'is-wide' : '', !wide && h % 2 === 1 ? 'is-flip' : '', (h >> 1) % 2 === 1 ? 'is-b' : '', className].filter(Boolean).join(' ');
+  const lines = (
+    <span className="art-lines">
+      <i />
+      <i />
+      <i />
+    </span>
+  );
+  return (
+    <div className={classes} aria-hidden="true">
+      <svg className="art-scene-bg" viewBox={wide ? '0 0 736 176' : '0 0 320 200'} preserveAspectRatio="xMidYMid slice">
+        {wide ? <WideBackdrop /> : <CardBackdrop layout={(h >> 2) % 3} />}
       </svg>
-      <div className="rd-banner-window">
-        <div className="rd-banner-dots">
+      {frame === 'window' && (
+        <div className="art-window">
+          <div className="art-window-bar">
+            <i />
+            <i />
+            <i />
+          </div>
+          <div className="art-window-row">
+            <span className="art-icon">{icon}</span>
+            {lines}
+          </div>
+        </div>
+      )}
+      {frame === 'sheet' && (
+        <div className="art-sheet">
+          <span className="art-icon">{icon}</span>
+          {lines}
+        </div>
+      )}
+      {frame === 'route' && (
+        <div className="art-route">
           <i />
-          <i />
+          <b />
+          <span className="art-icon">{icon}</span>
+          <b />
           <i />
         </div>
-        <div className="rd-banner-row">
-          <span className="rd-banner-icon">
-            <Icon size={30} strokeWidth={1.75} />
-          </span>
-          <span className="rd-banner-lines">
-            <i />
-            <i />
-            <i />
-          </span>
-        </div>
-      </div>
+      )}
     </div>
   );
+}
+
+/** Bandeau d'ouverture d'un module : la scène en grand format, avec le pictogramme du sujet. */
+export function LessonBanner({ art, seed = '' }: { art: LessonArt; seed?: string }) {
+  const Icon = ART_ICONS[art];
+  return <ArtScene wide seed={seed} className="rd-banner rd-wide" icon={<Icon size={26} strokeWidth={1.75} />} />;
 }
 
 /** Pastille illustrée : le pictogramme d'une partie, à côté de son titre. */

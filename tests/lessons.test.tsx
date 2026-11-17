@@ -80,13 +80,43 @@ test('le contrôle de forme signale les défauts', () => {
 const render = (lesson: StudyLesson, index = 0, practice: React.ReactNode = null) =>
   renderToStaticMarkup(<LessonPart lesson={lesson} index={index} practice={practice} />);
 
-test('le module s’ouvre par son bandeau et ses objectifs', () => {
-  const html = renderToStaticMarkup(<ModuleOpening art="alert" goals={MODULE_GOALS.phishing} />);
-  assert.match(html, /class="rd-banner rd-wide"/);
-  assert.match(html, /À la fin de ce module, vous saurez :/);
-  assert.equal(html.match(/<li>/g)?.length, 3);
-  // Un contenu du Studio n'a ni bandeau ni objectifs : rien ne s'affiche.
-  assert.equal(renderToStaticMarkup(<ModuleOpening />), '');
+test('le module s’ouvre par son en-tête, sa présentation et ses objectifs', () => {
+  const html = renderToStaticMarkup(
+    <ModuleOpening
+      title="Ne tombez plus dans le piège"
+      domain="Numérique"
+      summary="Apprenez à reconnaître un e-mail de phishing."
+      goals={MODULE_GOALS.phishing}
+      art="alert"
+      seed="phishing"
+      minutes={10}
+      questionCount={3}
+      hasPractice
+    />
+  );
+  // Le titre, les durées par type d'activité et l'illustration tiennent dans l'en-tête, côte à côte.
+  assert.match(html, /<header class="rd-hero rd-wide">/);
+  assert.match(html, /<h1>Ne tombez plus dans le piège<\/h1>/);
+  assert.match(html, /Module · Numérique/);
+  assert.match(html, /10 min de lecture/);
+  assert.match(html, /1 exercice/);
+  assert.match(html, /Quiz de 3 questions/);
+  assert.match(html, /class="art-scene[^"]* rd-hero-art"/);
+  assert.ok(!html.includes('Lu<'));
+  // La présentation et les objectifs viennent après l'en-tête, en texte simple (pas d'encadré sous l'image).
+  const afterHero = html.slice(html.indexOf('</header>'));
+  assert.match(afterHero, /Apprenez à reconnaître un e-mail de phishing\./);
+  assert.match(afterHero, /À la fin de ce module, vous saurez :/);
+  assert.equal(afterHero.match(/<li>/g)?.length, 3);
+  assert.ok(!afterHero.includes('rd-aside'));
+
+  // Un contenu du Studio : pas d'illustration ni d'objectifs, seulement l'en-tête.
+  const plain = renderToStaticMarkup(<ModuleOpening title="Créer un tableau" minutes={2} questionCount={0} read />);
+  assert.match(plain, /<header class="rd-hero rd-wide is-plain">/);
+  assert.ok(!plain.includes('art-scene'));
+  assert.ok(!plain.includes('vous saurez'));
+  assert.ok(!plain.includes('Quiz de'));
+  assert.match(plain, /Lu<\/li>/);
 });
 
 test('une partie rédigée a son titre, ses sous-parties, sa figure, sa question et son résumé', () => {
@@ -140,7 +170,8 @@ test('une partie créée dans le Studio garde le même cadre, avec son seul para
   assert.match(html, /Commencez par les titres de colonnes\./);
   assert.ok(!html.includes('rd-art-badge'));
   assert.ok(!html.includes('rd-figure'));
-  assert.match(html, /<h3>À vous de jouer<\/h3>/);
+  // Le titre de l'exercice est une ancre : le sommaire y mène.
+  assert.match(html, /<h3 id="exercice" tabindex="-1">À vous de jouer<\/h3>/);
   assert.match(html, /<h3>En résumé<\/h3>/);
 });
 

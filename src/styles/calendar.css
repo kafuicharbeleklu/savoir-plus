@@ -16,7 +16,7 @@
   padding: 4px 0;
   text-align: center;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--fg-muted);
 }
 
@@ -51,9 +51,9 @@
 .cal-day.is-break .cal-day-disc { background: var(--accent-brand-soft); }
 .cal-day.is-planned .cal-day-disc { box-shadow: inset 0 0 0 1px var(--border-strong); }
 .cal-day.is-marker .cal-day-disc { box-shadow: inset 0 0 0 1.5px var(--accent-brand); }
-.cal-day.is-done .cal-day-disc { background: var(--accent-warm-soft); color: var(--accent-warm); font-weight: 600; }
-.cal-day.is-exam .cal-day-disc { background: var(--accent-warm); color: var(--badge-warm-ink, #fff); font-weight: 600; }
-.cal-day.is-today .cal-day-disc { background: var(--accent-brand); color: var(--accent-brand-ink); font-weight: 600; }
+.cal-day.is-done .cal-day-disc { background: var(--accent-warm-soft); color: var(--accent-warm); font-weight: 500; }
+.cal-day.is-exam .cal-day-disc { background: var(--accent-warm); color: var(--badge-warm-ink, #fff); font-weight: 500; }
+.cal-day.is-today .cal-day-disc { background: var(--accent-brand); color: var(--accent-brand-ink); font-weight: 500; }
 .cal-day.is-break:hover .cal-day-disc { background: color-mix(in srgb, var(--accent-brand) 16%, var(--bg-surface)); }
 .cal-day.is-done:hover .cal-day-disc { background: color-mix(in srgb, var(--accent-warm) 18%, var(--bg-surface)); }
 .cal-day.is-exam:hover .cal-day-disc { background: var(--accent-warm); }

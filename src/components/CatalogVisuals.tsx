@@ -1,3 +1,4 @@
+import { ArtScene } from './LessonArt';
 import React from 'react';
 import {
   BookMarked,
@@ -165,20 +166,15 @@ export function formatShortDuration(duration: string, item: CatalogItem): string
 }
 
 /**
- * Sober visual header: soft atmospheric gradient + crisp centered medallion emblem.
- * No overlay pills on top of the visual artwork (per Image 2 reference).
+ * La vignette d'un contenu : une illustration dans le style du site, dont l'objet dit le type
+ * (une fenêtre pour un module, une feuille pour une fiche, des étapes pour un parcours) et dont la
+ * variante dépend du contenu, pour que deux cartes voisines ne se ressemblent pas.
  */
 export function CatalogCardBanner({ item, compact = false }: { item: CatalogItem; compact?: boolean }) {
-  const domClass = domainToneClass(item.domain);
+  const frame = item.type === 'path' ? 'route' : item.type === 'resource' ? 'sheet' : 'window';
   return (
-    <div className={`sober-card-banner type-${item.type} ${domClass} ${compact ? 'compact' : ''}`} aria-hidden="true">
-      <span className="sober-banner-glow sober-glow-a" />
-      <span className="sober-banner-glow sober-glow-b" />
-      <div className={`sober-emblem-ring type-${item.type}`}>
-        <div className="sober-emblem-core">
-          <BannerEmblem item={item} />
-        </div>
-      </div>
+    <div className={`sober-card-banner type-${item.type} ${compact ? 'compact' : ''}`} aria-hidden="true">
+      <ArtScene frame={frame} seed={item.id} icon={<BannerEmblem item={item} size={20} />} />
     </div>
   );
 }

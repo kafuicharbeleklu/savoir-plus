@@ -35,12 +35,12 @@
   gap: 8px;
   padding: 4px 12px 0;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--fg-muted);
 }
 .gv-view select { flex: 1; min-width: 0; min-height: 32px; height: 32px; padding-top: 0; padding-bottom: 0; font-size: 0.8125rem; }
 .gv-view-desc { margin: 0; padding: 6px 12px 8px; font-size: 0.75rem; line-height: 1.33; color: var(--fg-muted); }
-.gv-rail-group { display: block; padding: 12px 12px 4px; font-size: 0.75rem; font-weight: 600; color: var(--fg-muted); }
+.gv-rail-group { display: block; padding: 12px 12px 4px; font-size: 0.75rem; font-weight: 500; color: var(--fg-muted); }
 .gv-rail-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .gv-rail-btn > span { min-width: 0; }
 
@@ -48,7 +48,7 @@
 .gv-mobile-nav { display: none; }
 @media (max-width: 768px) {
   .gv-mobile-nav { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
-  .gv-mobile-nav label { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--fg-muted); }
+  .gv-mobile-nav label { display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; font-weight: 500; color: var(--fg-muted); }
   .gv-mobile-nav select { width: 100%; min-height: 36px; }
 }
 
@@ -142,7 +142,7 @@
 .gv-table tbody tr.is-active { background: var(--accent-brand-soft); }
 .gv-table td small { display: block; font-size: 0.75rem; color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; }
 .gv-table .is-action { text-align: right; overflow: visible; }
-.gv-table-link { padding: 0; border: 0; background: none; text-align: left; font-size: 0.875rem; font-weight: 600; color: var(--fg-primary); cursor: pointer; }
+.gv-table-link { padding: 0; border: 0; background: none; text-align: left; font-size: 0.875rem; font-weight: 500; color: var(--fg-primary); cursor: pointer; }
 .gv-table-link:hover { color: var(--accent-brand); text-decoration: underline; }
 .gv-table .gv-day th { height: 32px; background: var(--bg-subtle); font-size: 0.75rem; font-weight: 600; color: var(--fg-muted); }
 .gv-table tbody:first-of-type .gv-day th { border-top: 1px solid var(--border-hairline); }

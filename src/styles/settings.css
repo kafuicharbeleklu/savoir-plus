@@ -79,7 +79,7 @@
 .st-nav-item:hover { background: var(--bg-subtle); color: var(--fg-primary); }
 .st-nav-item.is-active {
   color: var(--accent-brand);
-  font-weight: 600;
+  font-weight: 500;
   box-shadow: inset 4px 0 0 var(--accent-brand);
 }
 

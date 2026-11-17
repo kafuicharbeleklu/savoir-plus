@@ -1279,6 +1279,8 @@ export default function App() {
       <>
         <AcademyReaderView
           moduleContent={activeStudyContent}
+          summary={dynamicCatalog.find((c) => c.id === activeStudyModuleId)?.summary}
+          domain={dynamicCatalog.find((c) => c.id === activeStudyModuleId)?.domain}
           progress={activeStudyProgress}
           lessonIndex={lessonIndex}
           busy={busy}

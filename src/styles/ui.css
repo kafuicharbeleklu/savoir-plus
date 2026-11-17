@@ -49,7 +49,7 @@
   border: 0;
   background: none;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--fg-muted);
   cursor: pointer;
 }
@@ -224,7 +224,7 @@ button.ui-row-main { cursor: pointer; }
   border-radius: 0;
   background: none;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--fg-muted);
   white-space: nowrap;
   cursor: pointer;
@@ -284,7 +284,7 @@ button.ui-row-main { cursor: pointer; }
   flex-direction: column;
   gap: 2px;
 }
-.ui-toggle-text label { font-size: 0.875rem; font-weight: 600; color: var(--fg-primary); }
+.ui-toggle-text label { font-size: 0.875rem; font-weight: 500; color: var(--fg-primary); }
 .ui-toggle-text small { font-size: 0.75rem; color: var(--fg-muted); }
 .ui-toggle-state { font-size: 0.875rem; color: var(--fg-muted); }
 .ui-switch {
@@ -386,7 +386,7 @@ button.ui-row-main { cursor: pointer; }
 
 /* -- Champs de formulaire sobres (dans panneaux et sous-pages) ------------------ */
 .ui-field { display: flex; flex-direction: column; gap: 6px; }
-.ui-field > span { font-size: 0.875rem; font-weight: 600; color: var(--fg-primary); }
+.ui-field > span { font-size: 0.875rem; font-weight: 500; color: var(--fg-primary); }
 .ui-field > small { font-size: 0.75rem; color: var(--fg-muted); }
 
 /* -- Chiffres clés en ligne (séparés par des filets) ------------------------------- */

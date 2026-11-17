@@ -4,7 +4,7 @@
  * Le module se lit sur une seule page, comme un chapitre ; le sommaire est à gauche.
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Award, Check, List, RotateCcw, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Award, Check, List, MousePointerClick, RotateCcw, X } from 'lucide-react';
 import type { Progress } from '../data';
 import { MODULES_CONTENT, type ModuleStudyContent } from '../content';
 import { isQuizPassed, moduleProgressPercent, moduleXp, quizPassThreshold, scoreAnswers } from '../domain.mjs';
@@ -122,6 +122,8 @@ function IllustratedSteps({
  */
 export function AcademyReaderView({
   moduleContent = MODULES_CONTENT.phishing,
+  summary,
+  domain,
   progress,
   lessonIndex,
   busy,
@@ -130,6 +132,9 @@ export function AcademyReaderView({
   onExit
 }: {
   moduleContent?: ModuleStudyContent;
+  /** La présentation du module et son domaine, tels que la bibliothèque les donne. */
+  summary?: string;
+  domain?: string;
   progress: Progress;
   /** La partie sur laquelle arriver à l'ouverture (reprise, ou « revoir cette section »). */
   lessonIndex: number;
@@ -147,6 +152,7 @@ export function AcademyReaderView({
   };
   const viewportRef = useRef<HTMLDivElement>(null);
   const partEls = useRef<(HTMLHeadingElement | null)[]>([]);
+  const practiceEl = useRef<HTMLHeadingElement | null>(null);
   const [currentPart, setCurrentPart] = useState(0);
 
   useEffect(() => {
@@ -180,8 +186,14 @@ export function AcademyReaderView({
       viewport.scrollTo({ top: 0, behavior });
       return;
     }
+    scrollToHeading(heading, behavior);
+  };
+  const scrollToHeading = (heading: HTMLElement | null, behavior: ScrollBehavior = 'smooth') => {
+    const viewport = viewportRef.current;
+    if (!viewport || !heading) return;
+    const calm = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const top = heading.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop - 24;
-    viewport.scrollTo({ top, behavior });
+    viewport.scrollTo({ top, behavior: calm ? 'auto' : behavior });
   };
 
   // Repère la partie en cours de lecture, pour le sommaire et la barre du haut.
@@ -218,6 +230,7 @@ export function AcademyReaderView({
   // L'exercice n'apparaît qu'une fois, dans la partie qui donne de quoi le réussir : après la
   // lecture de l'adresse et du lien pour le phishing, à la fin pour les autres modules.
   const labPart = moduleContent.labType === 'phishing' ? Math.min(1, last) : last;
+  const hasLab = !moduleContent.steps?.length;
   const practiceOf = (index: number) =>
     moduleContent.steps?.length ? (
       index === 0 ? (
@@ -262,7 +275,8 @@ export function AcademyReaderView({
                   const isDone = progress.lessons.includes(i);
                   const isCurrent = i === current;
                   return (
-                    <li key={lesson.title} className={`rd-step${isDone ? ' is-done' : ''}${isCurrent ? ' is-current' : ''}`}>
+                    <React.Fragment key={lesson.title}>
+                    <li className={`rd-step${isDone ? ' is-done' : ''}${isCurrent ? ' is-current' : ''}`}>
                       <button
                         type="button"
                         aria-current={isCurrent ? 'location' : undefined}
@@ -277,12 +291,32 @@ export function AcademyReaderView({
                         <span className="rd-step-text">
                           <b>{lesson.title}</b>
                           <small>
-                            {lesson.minutes}
+                            Lecture · {lesson.minutes}
                             {isDone && <span className="sr-only"> — lue</span>}
                           </small>
                         </span>
                       </button>
                     </li>
+                    {hasLab && i === labPart && (
+                      <li className="rd-step is-sub">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            scrollToHeading(practiceEl.current);
+                            closeIfNarrow();
+                          }}
+                        >
+                          <span className="rd-step-mark" aria-hidden="true">
+                            <MousePointerClick size={13} />
+                          </span>
+                          <span className="rd-step-text">
+                            <b>À vous de jouer</b>
+                            <small>Exercice</small>
+                          </span>
+                        </button>
+                      </li>
+                    )}
+                    </React.Fragment>
                   );
                 })}
                 <li className={`rd-step${quizPassed ? ' is-done' : ''}`}>
@@ -299,7 +333,7 @@ export function AcademyReaderView({
                     <span className="rd-step-text">
                       <b>Quiz final</b>
                       <small>
-                        {moduleContent.questions.length} questions
+                        Quiz · {moduleContent.questions.length} questions
                         {quizPassed && <span className="sr-only"> — réussi</span>}
                       </small>
                     </span>
@@ -310,19 +344,19 @@ export function AcademyReaderView({
           </aside>
 
           <article key={moduleContent.id} className="rd-article rd-chapter-main">
-            <h1>{moduleContent.title}</h1>
-            <p className="rd-chapter-meta tabular-nums">
-              {minutes} min de lecture
-              {unread === 0 && (
-                <span className="rd-done">
-                  <Check size={14} aria-hidden="true" />
-                  Lu
-                </span>
-              )}
-            </p>
-
             <div className="rd-chapter-body">
-              <ModuleOpening art={lessons[0]?.rich?.art} goals={moduleContent.goals} />
+              <ModuleOpening
+                title={moduleContent.title}
+                domain={domain}
+                summary={summary}
+                goals={moduleContent.goals}
+                art={lessons[0]?.rich?.art}
+                seed={moduleContent.id}
+                minutes={minutes}
+                questionCount={moduleContent.questions.length}
+                hasPractice={hasLab}
+                read={unread === 0}
+              />
               {lessons.map((lesson, i) => (
                 <LessonPart
                   key={lesson.title}
@@ -331,6 +365,9 @@ export function AcademyReaderView({
                   practice={practiceOf(i)}
                   headingRef={(el) => {
                     partEls.current[i] = el;
+                  }}
+                  practiceRef={(el) => {
+                    practiceEl.current = el;
                   }}
                 />
               ))}

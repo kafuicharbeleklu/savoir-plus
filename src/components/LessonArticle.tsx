@@ -6,9 +6,9 @@
  * même cadre, avec son seul paragraphe.
  */
 import React from 'react';
-import { Mail, MessageSquare } from 'lucide-react';
+import { Check, ClipboardCheck, Clock, Mail, MessageSquare, MousePointerClick } from 'lucide-react';
 import type { LessonArt, LessonFigure, StudyLesson } from '../content';
-import { ArtBadge, FlowFigure, LessonBanner, SplitFigure } from './LessonArt';
+import { ART_ICONS, ArtBadge, ArtScene, FlowFigure, SplitFigure } from './LessonArt';
 import { RichText } from './RichText';
 
 /** Encadré à pastille : « i » (à savoir) ou « ? » (la question de l'élève). */
@@ -113,16 +113,76 @@ function List({ items, ordered }: { items: string[]; ordered?: boolean }) {
   );
 }
 
-/** L'ouverture du module : le bandeau illustré, puis ce que l'on saura faire à la fin. */
-export function ModuleOpening({ art, goals }: { art?: LessonArt; goals?: string[] }) {
+/**
+ * L'ouverture du module : un en-tête (titre, durées par type d'activité, illustration à côté), puis
+ * la présentation du module et ce que l'on saura faire à la fin, en texte simple.
+ */
+export function ModuleOpening({
+  title,
+  domain,
+  summary,
+  goals,
+  art,
+  seed = '',
+  minutes,
+  questionCount,
+  hasPractice = false,
+  read = false
+}: {
+  title: string;
+  domain?: string;
+  summary?: string;
+  goals?: string[];
+  art?: LessonArt;
+  seed?: string;
+  minutes: number;
+  questionCount: number;
+  hasPractice?: boolean;
+  /** Toutes les parties ont été déclarées lues. */
+  read?: boolean;
+}) {
+  const Icon = art ? ART_ICONS[art] : null;
   return (
     <>
-      {art && <LessonBanner art={art} />}
+      <header className={`rd-hero rd-wide${Icon ? '' : ' is-plain'}`}>
+        <div className="rd-hero-text">
+          <p className="rd-hero-kicker">Module{domain ? ` · ${domain}` : ''}</p>
+          <h1>{title}</h1>
+          <ul className="rd-hero-meta tabular-nums">
+            {minutes > 0 && (
+              <li>
+                <Clock size={16} aria-hidden="true" />
+                {minutes} min de lecture
+              </li>
+            )}
+            {hasPractice && (
+              <li>
+                <MousePointerClick size={16} aria-hidden="true" />1 exercice
+              </li>
+            )}
+            {questionCount > 0 && (
+              <li>
+                <ClipboardCheck size={16} aria-hidden="true" />
+                Quiz de {questionCount} questions
+              </li>
+            )}
+            {read && (
+              <li className="is-done">
+                <Check size={16} aria-hidden="true" />
+                Lu
+              </li>
+            )}
+          </ul>
+        </div>
+        {Icon && <ArtScene className="rd-hero-art" seed={seed} icon={<Icon size={20} strokeWidth={1.75} />} />}
+      </header>
+
+      {summary && <p>{summary}</p>}
       {goals && goals.length > 0 && (
-        <Aside kind="info" label="Objectifs du module">
-          <p>À la fin de ce module, vous saurez :</p>
+        <>
+          <p className="rd-goals-title">À la fin de ce module, vous saurez :</p>
           <List items={goals} />
-        </Aside>
+        </>
       )}
     </>
   );
@@ -136,13 +196,16 @@ export function LessonPart({
   lesson,
   index,
   practice,
-  headingRef
+  headingRef,
+  practiceRef
 }: {
   lesson: StudyLesson;
   index: number;
   /** L'exercice, si c'est dans cette partie qu'il se place. */
   practice?: React.ReactNode;
   headingRef?: (el: HTMLHeadingElement | null) => void;
+  /** Le titre de l'exercice, pour que le sommaire puisse y mener. */
+  practiceRef?: (el: HTMLHeadingElement | null) => void;
 }) {
   const rich = lesson.rich;
   return (
@@ -208,7 +271,9 @@ export function LessonPart({
 
       {practice && (
         <>
-          <h3>À vous de jouer</h3>
+          <h3 id="exercice" ref={practiceRef} tabIndex={-1}>
+            À vous de jouer
+          </h3>
           <div className="rd-practice rd-wide">{practice}</div>
         </>
       )}
