@@ -17,6 +17,7 @@ import './styles/landing.css';
 import './styles/calendar.css';
 import './styles/school.css';
 import './styles/planning.css';
+import './styles/offers.css';
 import './styles/retouches.css';
 import './styles/angles.css';
 

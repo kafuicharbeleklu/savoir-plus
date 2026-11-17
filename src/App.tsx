@@ -138,6 +138,10 @@ import {
   visibleInSuggestions,
   type SchoolState
 } from './school';
+import { accountOf as schoolAccountOf, ageBandOf } from './school';
+import { addDays as addCalendarDays } from './calendar';
+import { demoCampaigns } from './ads';
+import { OffersModal, SponsoredCard } from './components/SponsoredCard';
 import { initialSchoolState } from './seedSchool';
 
 import { TopBar } from './components/TopBar';
@@ -337,6 +341,9 @@ export default function App() {
     STUDY_DEEP_LINK_PAGES.includes(initialRoute.page) && initialRoute.id ? initialRoute.id : 'phishing'
   );
   const [lessonIndex, setLessonIndex] = useState<number>(0);
+  // Publicité : le tirage des annonces est fixé pour la visite ; la fenêtre des offres s'ouvre depuis la carte.
+  const [adSeed] = useState(() => Math.floor(Math.random() * 1_000_000_000));
+  const [offersOpen, setOffersOpen] = useState(false);
   const [answers, setAnswers] = useState<number[]>([]);
   // Brouillons de quiz non envoyés, par module (conservés pendant la session).
   const quizDraftsRef = useRef<Record<string, number[]>>({});
@@ -1843,6 +1850,24 @@ export default function App() {
                 Ma progression détaillée <ArrowRight size={16} aria-hidden="true" />
               </button>
             </section>
+            )}
+
+            {/* Carte publicitaire : jamais montrée à un compte d'enfant de moins de 12 ans. */}
+            {ageBandOf(schoolAccountOf(school, uid), today) !== 'child' && (
+              <SponsoredCard
+                campaigns={demoCampaigns(today, addCalendarDays)}
+                today={today}
+                seed={adSeed}
+                canOpen={(id) => networkDirectory.some((p) => p.id === id)}
+                onOpenAdvertiser={(id) => nav('member', id)}
+                onOpenOffers={() => setOffersOpen(true)}
+              />
+            )}
+            {offersOpen && (
+              <OffersModal
+                initial={caps.accountKind === 'institution' ? 'institution' : caps.accountKind === 'guardian' ? 'family' : caps.accountKind === 'educator' ? 'educator' : 'learner'}
+                onClose={() => setOffersOpen(false)}
+              />
             )}
 
             <section className="rail-card">
