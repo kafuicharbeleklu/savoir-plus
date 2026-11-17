@@ -6,13 +6,6 @@
    liste égales, statut = point + texte, aucune couleur propre à cet écran.
    ========================================================================== */
 
-/* -- Pictogrammes des repères : le nombre se pose au centre du vide de chacun ------- */
-.cal-glyph { display: block; }
-.cal-gauge.is-flame { --cal-num-top: 61%; }
-.cal-gauge.is-pad { --cal-num-top: 57%; }
-.cal-gauge.is-page { --cal-num-top: 60%; }
-.cal-gauge.is-alert { --cal-num-top: 63%; }
-
 /* -- Grille d'un mois : des ronds sobres, sans point ni pictogramme ------------------
       aujourd'hui : rond plein · examen : rond plein terre cuite · séance faite : fond doux
       séance prévue : fin cercle gris · congés : teinte légère · repère : fin cercle de couleur */
@@ -81,44 +74,43 @@
 .cal-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .cal-card-month { font-size: 0.75rem; color: var(--fg-muted); white-space: nowrap; }
 
-/* -- Repères ronds de la carte : série, séances du jour, prochain examen, retard --------- */
-.cal-gauges { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 0; }
+/* -- Repères de la carte : une icône dans un petit rond, le nombre à côté. Gris tant qu'il n'y a
+      rien à signaler, en couleur selon ce que le repère annonce. ------------------------------ */
+.cal-gauges { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding-top: 2px; }
 .cal-gauge {
-  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  box-shadow: none;
+  color: var(--fg-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.cal-gauge-icon {
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  min-height: 0;
-  padding: 0;
-  border: 0;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--bg-subtle);
-  box-shadow: none;
   color: var(--fg-subtle);
-  cursor: pointer;
   transition: box-shadow var(--dur-fast) var(--ease-standard);
 }
-.cal-gauge .cal-glyph { width: 38px; height: 38px; }
-.cal-gauge b {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: var(--cal-num-top, 58%);
-  transform: translateY(-50%);
-  text-align: center;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  line-height: 1;
-}
-.cal-gauge.is-alert b { font-size: 0.75rem; }
-.cal-gauge.is-off .cal-glyph { opacity: 0.6; }
-.cal-gauge.is-brand { background: var(--accent-brand-soft); color: var(--accent-brand); }
-.cal-gauge.is-warm { background: var(--accent-warm-soft); color: var(--accent-warm); }
-.cal-gauge.is-danger { background: var(--accent-danger-soft); color: var(--accent-danger); }
-.cal-gauge:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
+.cal-gauge b { font-size: 0.875rem; font-weight: 600; line-height: 1; color: var(--fg-muted); }
+.cal-gauge.is-brand .cal-gauge-icon { background: var(--accent-brand-soft); color: var(--accent-brand); }
+.cal-gauge.is-warm .cal-gauge-icon { background: var(--accent-warm-soft); color: var(--accent-warm); }
+.cal-gauge.is-danger .cal-gauge-icon { background: var(--accent-danger-soft); color: var(--accent-danger); }
+.cal-gauge.is-brand b,
+.cal-gauge.is-warm b { color: var(--fg-primary); }
+.cal-gauge.is-danger b { color: var(--accent-danger); }
+.cal-gauge:hover .cal-gauge-icon { box-shadow: inset 0 0 0 1.5px currentColor; }
 
 /* -- Page : mois affiché --------------------------------------------------------------- */
 .cal-page .ui-tabs { margin-bottom: 4px; }
