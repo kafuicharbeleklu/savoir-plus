@@ -9,6 +9,8 @@ import {
   SEED_POSTS_RECENT
 } from './seedCommunity';
 import type { CalendarUserState } from './calendar';
+import type { SchoolState } from './school';
+import { SEED_SCHOOL_PROGRESS } from './seedSchool';
 
 /** Version des données de simulation : l'augmenter fait apparaître les nouveautés chez les visiteurs déjà venus. */
 export const SEED_VERSION = 2;
@@ -629,6 +631,8 @@ export interface ExtendedDemoState {
   followingIds: Record<string, string[]>;
   /** Calendrier et plan de révision de chaque membre. Absent : calendrier de démonstration du personnage. */
   calendar?: Record<string, CalendarUserState>;
+  /** Profils et vie scolaire (comptes, établissements, classes, liens parentaux…). Absent : données de démonstration du jour. */
+  school?: SchoolState;
   moduleProgress: Record<string, Record<string, { lessons: number[]; answers: number[]; submitted: boolean }>>;
   requestMessages: Record<string, string>;
   appPrefs: {
@@ -1026,6 +1030,46 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       xpVisibility: 'Moi uniquement',
       contactPolicy: 'Membres autorisés'
     },
+    elom: {
+      tagline: 'Élève de Terminale D | Les Palmiers',
+      location: 'Lomé, Région Maritime',
+      verified: false,
+      bio: 'En Terminale D. Je prépare le BAC II et je révise un peu chaque jour.',
+      interests: 'Sciences, Numérique, Révisions',
+      profileVisibility: 'Membres',
+      xpVisibility: 'Moi uniquement',
+      contactPolicy: 'Personnes que je suis'
+    },
+    akouvi: {
+      tagline: 'Parent | Elom et Kokou',
+      location: 'Lomé, Région Maritime',
+      verified: true,
+      bio: 'Mère d’Elom et de Kokou. Je suis leurs progrès et je choisis leurs contenus.',
+      interests: 'Scolarité, Numérique',
+      profileVisibility: 'Moi uniquement',
+      xpVisibility: 'Moi uniquement',
+      contactPolicy: 'Personnes que je suis'
+    },
+    kokou: {
+      tagline: 'Élève de CM2 | Les Palmiers',
+      location: 'Lomé, Région Maritime',
+      verified: false,
+      bio: '',
+      interests: '',
+      profileVisibility: 'Moi uniquement',
+      xpVisibility: 'Moi uniquement',
+      contactPolicy: 'Personne'
+    },
+    palmiers: {
+      tagline: 'Établissement | Complexe scolaire (démonstration)',
+      location: 'Lomé, Région Maritime',
+      verified: true,
+      bio: 'Complexe scolaire fictif, créé pour la démonstration de SAVOIR+ : collège, lycée et classes primaires.',
+      interests: 'Enseignement, Numérique',
+      profileVisibility: 'Membres',
+      xpVisibility: 'Moi uniquement',
+      contactPolicy: 'Membres autorisés'
+    },
     ...SEED_MEMBER_DETAILS
   },
   followingIds: {
@@ -1048,7 +1092,9 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       reseaux: { lessons: [], answers: [], submitted: false },
       comptes: { lessons: [], answers: [], submitted: false }
     },
-    ...SEED_MEMBER_PROGRESS
+    ...SEED_MEMBER_PROGRESS,
+    // Élèves des classes de démonstration : leurs progressions nourrissent le suivi de l'enseignant.
+    ...SEED_SCHOOL_PROGRESS
   },
   requestMessages: {},
   appPrefs: {

@@ -1,0 +1,39 @@
+/* ==========================================================================
+   Profils et vie scolaire : famille, encadrant, établissement, vérification.
+   Mêmes règles que le reste : listes à lignes égales, statut = point + texte,
+   une action principale par écran, un seul arrondi.
+   ========================================================================== */
+
+/* -- Lecture seule : un parent ou tuteur, ou un élève d'une classe « stricte », lit sans réagir -- */
+.feed-post-card.is-read-only .li-action-bar,
+.feed-post-card.is-read-only .li-comment-composer,
+.feed-post-card.is-read-only .li-comment-actions { display: none; }
+.feed-post-card.is-read-only { padding-bottom: 12px; }
+
+/* -- Écran d'attente du code parental ------------------------------------------------- */
+.sc-gate {
+  width: min(480px, 100% - 32px);
+  margin: 0 auto;
+  padding: 56px 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sc-gate-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--angle);
+}
+.sc-gate-card h1 { margin: 0; font-size: 1.5rem; line-height: 1.25; font-weight: 600; color: var(--fg-primary); }
+.sc-gate-card p { margin: 0; font-size: 0.9375rem; line-height: 1.5; color: var(--fg-muted); }
+.sc-gate-form { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.sc-gate-form input { width: 100%; font-family: var(--font-mono, monospace); letter-spacing: 0.04em; text-transform: uppercase; }
+.sc-gate-form input::placeholder { text-transform: none; letter-spacing: 0; }
+.sc-gate-form .primary { align-self: flex-start; }
+.sc-error { font-size: 0.75rem; line-height: 1.45; color: var(--accent-danger); }
+.sc-demo-note { margin: 0; font-size: 0.75rem; line-height: 1.5; color: var(--fg-muted); }
+.sc-demo-note .li-text-link { font-size: inherit; }

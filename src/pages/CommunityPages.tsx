@@ -41,6 +41,8 @@ interface CommunityProps {
   onRepost?: (postId: string, note?: string) => void;
   onForwardToRelation?: (relation: Relation, post: CommunityPost) => Promise<boolean> | boolean;
   setToast: (msg: string) => void;
+  /** Lecture seule : ni réponse ni réaction (parent ou tuteur, classe « stricte »). */
+  readOnly?: boolean;
 }
 
 const KNOWN_MEMBERS = new Set(['afi', 'kossi', 'nadege']);
@@ -507,7 +509,8 @@ export function CommunityThreadView({
   selectedId,
   openReport,
   onToggleFollow,
-  setToast
+  setToast,
+  readOnly = false
 }: CommunityProps) {
   const post = ext.posts.find((p) => p.id === selectedId) || ext.posts[0];
   const [replyText, setReplyText] = useState('');
@@ -573,6 +576,10 @@ export function CommunityThreadView({
 
   const toggleHelpful = (replyId: string, authorId: string) => {
     if (authorId === user.id) return;
+    if (readOnly) {
+      setToast('Ce profil lit les discussions sans y réagir.');
+      return;
+    }
     updateExt((prev) => ({
       ...prev,
       posts: prev.posts.map((p) =>
@@ -794,6 +801,9 @@ export function CommunityThreadView({
         })}
       </div>
 
+      {readOnly ? (
+        <p className="tiny muted">Ce profil lit les discussions sans y répondre ni réagir.</p>
+      ) : (
       <form className="wf-card wf-form-stack" onSubmit={addReply}>
         <h3>{post.kind === 'question' ? 'Proposer une réponse' : 'Ajouter un commentaire'}</h3>
         <textarea
@@ -809,6 +819,7 @@ export function CommunityThreadView({
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }

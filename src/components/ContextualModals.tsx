@@ -839,7 +839,11 @@ export function DemoAuthModal({
 
   const demoList = [
     { id: 'afi', title: 'Afi Mensah', subtitle: 'Apprenante · Parcours & Entraide' },
-    { id: 'kossi', title: 'Kossi Agbo', subtitle: 'Créateur & Mentor · Studio pédagogique' },
+    { id: 'elom', title: 'Elom Dogbé', subtitle: 'Élève de Terminale · 17 ans' },
+    { id: 'kokou', title: 'Kokou Dogbé', subtitle: 'Élève de CM2 · 10 ans, attend son code' },
+    { id: 'akouvi', title: 'Akouvi Dogbé', subtitle: 'Parent · deux enfants' },
+    { id: 'kossi', title: 'Kossi Agbo', subtitle: 'Enseignant · Studio et classes' },
+    { id: 'palmiers', title: 'Les Palmiers', subtitle: 'Établissement · classes et membres' },
     { id: 'nadege', title: 'Nadège Koffi', subtitle: 'Modération & Gouvernance' }
   ];
 
@@ -861,8 +865,8 @@ export function DemoAuthModal({
         <span className="eyebrow">Changer de rôle ou de session</span>
         <h2>Comptes & Connexion</h2>
         <p>
-          Explorez SAVOIR+ avec trois personnages de démonstration fictifs pour tester l’intégration contextuelle des espaces Apprenant,
-          Studio et Gouvernance.
+          Explorez SAVOIR+ avec sept personnages fictifs : une apprenante, deux élèves, un parent, un enseignant, un établissement
+          et la gouvernance. Chacun voit ce que son profil autorise.
         </p>
 
         <div className="persona-choices-three">

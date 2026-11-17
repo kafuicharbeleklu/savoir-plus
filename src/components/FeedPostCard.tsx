@@ -40,6 +40,8 @@ export interface FeedPostCardProps {
   setToast: (msg: string) => void;
   defaultExpandedComments?: boolean;
   communityMemberIds?: string[];
+  /** Lecture seule : ni réaction, ni commentaire, ni repartage (parent ou tuteur, classe « stricte »). */
+  readOnly?: boolean;
 }
 
 export function FeedPostCard({
@@ -63,7 +65,8 @@ export function FeedPostCard({
   onReport,
   setToast,
   defaultExpandedComments = false,
-  communityMemberIds
+  communityMemberIds,
+  readOnly = false
 }: FeedPostCardProps) {
   const authorMeta = useMemo(
     () => resolveCommunityAuthor(post.authorId, post.authorName, people, ext),
@@ -325,7 +328,7 @@ export function FeedPostCard({
   };
 
   return (
-    <article className="wf-card feed-post-card" aria-label={`Contribution : ${post.title}`}>
+    <article className={`wf-card feed-post-card${readOnly ? ' is-read-only' : ''}`} aria-label={`Contribution : ${post.title}`}>
       {post.repostedFrom && (
         <div className="li-repost-banner">
           <Repeat2 size={14} aria-hidden="true" />

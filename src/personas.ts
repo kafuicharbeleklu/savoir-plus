@@ -12,8 +12,19 @@ import type {
 import type { Profile, Progress } from './data';
 import { isQuizPassed, moduleProgressPercent } from './domain.mjs';
 import { builtInAnswerKey } from './content';
+import { todayDay, type Day } from './calendar';
+import {
+  accountOf,
+  ageBandOf,
+  canPublish as schoolCanPublish,
+  classesOfStudent,
+  educatorStanding,
+  needsGuardianCode,
+  type AccountKind,
+  type SchoolState
+} from './school';
 
-export interface RoleCapabilities {
+interface BaseCapabilities {
   roleLabel: string;
   canLearn: boolean;
   canCreate: boolean;
@@ -23,6 +34,21 @@ export interface RoleCapabilities {
   accountStatus: AccountStatus;
   isRestricted: boolean;
   isSuspended: boolean;
+}
+
+export interface RoleCapabilities extends BaseCapabilities {
+  /** Apprenant, encadrant, parent ou tuteur, établissement. */
+  accountKind: AccountKind;
+  /** Publier, commenter, réagir (jamais pour un parent, un compte en attente de code, une classe « stricte »). */
+  canPublish: boolean;
+  /** Espace encadrant : suivre ses apprenants et ses classes. */
+  canTeach: boolean;
+  /** Espace famille : suivre ses enfants, créer un code, acheter pour eux. */
+  canManageFamily: boolean;
+  /** Espace établissement : classes, membres, demandes de rattachement. */
+  canManageInstitution: boolean;
+  /** Moins de 12 ans, sans parent ou tuteur vérifié rattaché : le compte attend son code. */
+  awaitingGuardianCode: boolean;
 }
 
 const DEMO_STATUS_ID_MAP: Record<string, string> = {
@@ -48,12 +74,58 @@ export function resolveProfileVerified(
   return Boolean(profileVerified);
 }
 
+/**
+ * Capacités d'un membre. Les droits d'origine (apprendre, créer, modérer) viennent de son rôle sur la
+ * plateforme ; le type de compte y ajoute ce qu'il peut faire dans la communauté et quels espaces il
+ * voit. Sans données scolaires (anciens appels, mode connecté), tout membre est un apprenant adulte.
+ */
 export function resolveCapabilities(
   uid: string,
   mode: 'local' | 'cloud',
   adminUsers: AdminUserRecord[],
-  cloudPreviewRole?: 'learner' | 'creator' | 'admin'
+  cloudPreviewRole?: 'learner' | 'creator' | 'admin',
+  school?: SchoolState,
+  today: Day = todayDay()
 ): RoleCapabilities {
+  const base = baseCapabilities(uid, mode, adminUsers, cloudPreviewRole);
+  const none = { canTeach: false, canManageFamily: false, canManageInstitution: false, awaitingGuardianCode: false };
+  if (!school) return { ...base, ...none, accountKind: 'learner', canPublish: !base.isSuspended };
+
+  const account = accountOf(school, uid);
+  const common = {
+    ...none,
+    accountKind: account.kind,
+    canPublish: !base.isSuspended && schoolCanPublish(school, uid, today),
+    awaitingGuardianCode: needsGuardianCode(school, uid, today)
+  };
+  if (base.isSuspended) return { ...base, ...common };
+  if (account.kind === 'guardian') {
+    return { ...base, ...common, roleLabel: 'Parent ou tuteur', canCreate: false, canManageFamily: true };
+  }
+  if (account.kind === 'institution') {
+    return { ...base, ...common, roleLabel: 'Établissement', canCreate: false, canManageInstitution: true };
+  }
+  if (account.kind === 'educator') {
+    return {
+      ...base,
+      ...common,
+      // Un compte de la gouvernance garde son intitulé ; sinon l'intitulé suit l'identité et le rattachement.
+      roleLabel: base.canAdmin ? base.roleLabel : educatorStanding(school, uid).label,
+      canCreate: base.canCreate || !base.isRestricted,
+      canTeach: true
+    };
+  }
+  // Élève d'une classe : son intitulé dit sa classe.
+  const schoolClass = ageBandOf(account, today) !== 'adult' ? classesOfStudent(school, uid)[0] : undefined;
+  return { ...base, ...common, roleLabel: schoolClass ? `Élève · ${schoolClass.name}` : base.roleLabel };
+}
+
+function baseCapabilities(
+  uid: string,
+  mode: 'local' | 'cloud',
+  adminUsers: AdminUserRecord[],
+  cloudPreviewRole?: 'learner' | 'creator' | 'admin'
+): BaseCapabilities {
   const status = resolveAccountStatus(uid, adminUsers);
   const isSuspended = status === 'suspended' || status === 'deactivated';
   const isRestricted = status === 'restricted';
@@ -172,7 +244,7 @@ export function isGovernanceRoute(page: string): boolean {
   return page.startsWith('admin') || page === 'moderation';
 }
 
-export const DEMO_PERSONA_IDS = ['afi', 'kossi', 'nadege'] as const;
+export const DEMO_PERSONA_IDS = ['afi', 'kossi', 'nadege', 'elom', 'akouvi', 'kokou', 'palmiers'] as const;
 
 /**
  * Personnage de démo au chargement : `?as=kossi` dans l'URL, sinon celui mémorisé pour cet onglet
@@ -193,11 +265,21 @@ export function resolveDemoPersona(search: string, stored: string | null): strin
  */
 export function canAccessRoute(
   page: string,
-  caps: Pick<RoleCapabilities, 'canCreate' | 'canModerate' | 'canAdmin'>
+  caps: Pick<RoleCapabilities, 'canCreate' | 'canModerate' | 'canAdmin'> &
+    Partial<Pick<RoleCapabilities, 'canTeach' | 'canManageFamily' | 'canManageInstitution'>>
 ): boolean {
   if (isStudioRoute(page)) return caps.canCreate;
   if (isGovernanceRoute(page)) return caps.canModerate || caps.canAdmin;
+  // Espaces liés au type de compte : famille, encadrant, établissement.
+  if (page === 'family') return Boolean(caps.canManageFamily);
+  if (page === 'teaching') return Boolean(caps.canTeach);
+  if (page === 'institution') return Boolean(caps.canManageInstitution);
   return true;
+}
+
+/** Vrai pour les espaces réservés à un type de compte (famille, encadrant, établissement). */
+export function isProfileSpaceRoute(page: string): boolean {
+  return page === 'family' || page === 'teaching' || page === 'institution';
 }
 
 export function isAccountRoute(page: string): boolean {

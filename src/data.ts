@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import config from './supabase-public.json';
 import { pairId, canSend, emptyProgress } from './domain.mjs';
+import { SCHOOL_PERSONAS } from './seedSchool';
 
 export type Profile = {
   id: string;
@@ -63,7 +64,9 @@ export const profiles: Profile[] = [
     initials: 'NK',
     color: 'mint',
     bio: 'Responsable de la qualité pédagogique, du suivi des signalements et de la gouvernance de la plateforme.'
-  }
+  },
+  // Élève, enfant de moins de 12 ans, parent et établissement : voir seedSchool.ts
+  ...SCHOOL_PERSONAS
 ];
 
 const KEY = 'savoir-demo-v1';

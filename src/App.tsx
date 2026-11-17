@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Clock,
   ArrowRight,
@@ -81,6 +81,7 @@ import {
   computeCatalogCardSteps,
   filterHomeFeed,
   isGovernanceRoute,
+  isProfileSpaceRoute,
   isStudioRoute,
   resolveActiveLab,
   resolveActiveSpace,
@@ -117,6 +118,14 @@ import {
   type CalendarUserState,
   type LinkedModuleState
 } from './calendar';
+import {
+  CONTACT_REFUSAL_MESSAGE,
+  contactRefusal,
+  normalizeSchoolState,
+  visibleInSuggestions,
+  type SchoolState
+} from './school';
+import { initialSchoolState } from './seedSchool';
 
 import { TopBar } from './components/TopBar';
 import { MobileNav } from './components/MobileNav';
@@ -173,6 +182,7 @@ import {
 } from './pages/LearningExtraPages';
 import { CommunityComposeView, CommunityThreadView } from './pages/CommunityPages';
 import { CalendarPage } from './pages/CalendarPage';
+import { GuardianGate } from './pages/school/GuardianGate';
 import {
   AuthFlowsView,
   ModerationView,
@@ -518,8 +528,15 @@ export default function App() {
     );
   }, [mode, selectedRelId, page]);
 
+  // Profils et vie scolaire : données de démonstration datées du jour, tant que le visiteur n'a rien modifié.
+  const today = todayDay();
+  const baseSchool = useMemo(() => initialSchoolState(today), [today]);
+  const school = useMemo(() => normalizeSchoolState(ext.school, baseSchool), [ext.school, baseSchool]);
+  const saveSchool = (next: SchoolState) => updateExt((prev) => ({ ...prev, school: next }));
+
   const user: Profile = people.find((p) => p.id === uid) || people[0] || profiles[0];
-  const caps = resolveCapabilities(uid, mode, ext.adminUsers, cloudPreviewRole);
+  // En mode connecté, la base ne porte pas encore ces profils : chaque membre y reste un apprenant adulte.
+  const caps = resolveCapabilities(uid, mode, ext.adminUsers, cloudPreviewRole, mode === 'local' ? school : undefined, today);
 
   // Navigation helper
   const nav = (target: RoutePage, id = '') => {
@@ -601,7 +618,6 @@ export default function App() {
 
   // Calendrier et plan de révision : calculés sur l'appareil, pour le personnage en cours.
   // Tant que le visiteur n'a rien modifié, il voit le calendrier de démonstration, daté du jour.
-  const today = todayDay();
   const calendarState: CalendarUserState = ext.calendar?.[uid]
     ? normalizeCalendarState(ext.calendar[uid])
     : demoCalendarState(uid, today);
@@ -675,13 +691,18 @@ export default function App() {
   }, [page, selectedId]);
 
   // Route guard: Studio / Governance pages typed in the URL fall back to home without the matching role.
-  const routeAllowed = canAccessRoute(page, caps);
+  // Même règle pour la page de publication quand le profil ne publie pas (parent ou tuteur, classe « stricte »).
+  const routeAllowed = canAccessRoute(page, caps) && !(page === 'community-compose' && !caps.canPublish);
   useEffect(() => {
     if (routeAllowed) return;
     setToast(
-      isStudioRoute(page)
-        ? 'Espace réservé aux créateurs habilités.'
-        : 'Espace réservé à la modération et à la gouvernance.'
+      page === 'community-compose'
+        ? 'Ce profil consulte les contenus sans publier.'
+        : isProfileSpaceRoute(page)
+          ? 'Cet espace ne correspond pas à votre profil.'
+        : isStudioRoute(page)
+          ? 'Espace réservé aux créateurs habilités.'
+          : 'Espace réservé à la modération et à la gouvernance.'
     );
     nav('home');
   }, [page, routeAllowed]);
@@ -801,6 +822,9 @@ export default function App() {
 
   // Social helpers
   const networkDirectory = resolveCommunityDirectory(people, ext);
+  // Suggestions : ni parents, ni comptes en attente de code ; un mineur n'est proposé qu'à ses proches.
+  const suggestable =
+    mode === 'local' ? networkDirectory.filter((p) => visibleInSuggestions(school, uid, p.id, today)) : networkDirectory;
   const myFollowing = ext.followingIds?.[uid] || [];
   // Messagerie : personnes à qui on a déjà écrit ou qui nous ont écrit (discussion acceptée,
   // ou demande envoyée / reçue avec son premier message) — pas les simples abonnements.
@@ -831,6 +855,12 @@ export default function App() {
 
   const handleRequestContact = async (targetProfile: Profile) => {
     if (targetProfile.id === uid) return;
+    // Mineurs, comptes en attente de code, parents : la demande n'est possible qu'entre personnes liées.
+    const refusal = mode === 'local' ? contactRefusal(school, uid, targetProfile.id, today) : null;
+    if (refusal) {
+      setToast(CONTACT_REFUSAL_MESSAGE[refusal]);
+      return;
+    }
     const policy = ext.profileDetails[targetProfile.id]?.contactPolicy || 'Membres autorisés';
     const followsMe = (ext.followingIds?.[targetProfile.id] || []).includes(uid);
     if (policy === 'Personne' || (policy === 'Personnes que je suis' && !followsMe)) {
@@ -935,8 +965,20 @@ export default function App() {
     }
   };
 
+  /** Vrai si le profil peut publier, commenter et réagir ; sinon l'explique et renvoie faux. */
+  const mayPublish = (): boolean => {
+    if (caps.canPublish) return true;
+    setToast(
+      caps.accountKind === 'guardian'
+        ? 'Un parent ou tuteur consulte les contenus sans publier ni réagir.'
+        : 'Votre classe ne permet pas de publier ni de réagir.'
+    );
+    return false;
+  };
+
   // LinkedIn-style inline feed & community interaction handlers
   const handleTogglePostHelpful = (postId: string) => {
+    if (!mayPublish()) return;
     updateExt((prev) => ({
       ...prev,
       posts: togglePostHelpful(prev.posts, postId, uid)
@@ -949,6 +991,7 @@ export default function App() {
     parentReplyId?: string,
     replyToName?: string
   ) => {
+    if (!mayPublish()) return;
     const headline = ext.profileDetails[uid]?.tagline || caps.roleLabel || user.role;
     updateExt((prev) => ({
       ...prev,
@@ -965,7 +1008,7 @@ export default function App() {
   };
 
   const handleToggleReplyHelpful = (postId: string, replyId: string, replyAuthorId: string) => {
-    if (replyAuthorId === uid) return;
+    if (replyAuthorId === uid || !mayPublish()) return;
     updateExt((prev) => ({
       ...prev,
       posts: prev.posts.map((p) =>
@@ -1003,6 +1046,7 @@ export default function App() {
   };
 
   const handleRepostPost = (postId: string, note?: string) => {
+    if (!mayPublish()) return;
     let created = false;
     updateExt((prev) => {
       const res = applyPostRepost(prev.posts, postId, user, note);
@@ -1122,6 +1166,29 @@ export default function App() {
   const acceptedRelations = relations.filter((r) => r.status === 'accepted');
   const unreadNotifs = notificationsFor(ext.notifications, uid, ext.notifPrefs).filter((n) => !n.read).length;
 
+  // Fenêtre « Changer de compte » : commune à l'application et à l'écran d'attente du code parental.
+  const authModal = (
+    <DemoAuthModal
+      open={authModalOpen}
+      onClose={() => setAuthModalOpen(false)}
+      uid={uid}
+      mode={mode}
+      cloudConfigured={cloudConfigured}
+      people={people}
+      ext={ext}
+      busy={busy}
+      error={error}
+      onSwitchPerson={handleSwitchPersona}
+      onLoginCloud={handleLoginCloud}
+      onLogoutCloud={handleLogoutCloud}
+      onResetDemo={handleResetDemo}
+      onEnterVisitor={() => {
+        setAuthModalOpen(false);
+        nav('visitor');
+      }}
+    />
+  );
+
   const renderActiveScreen = () => {
   // Visitor portal
   if (page === 'visitor') {
@@ -1158,6 +1225,32 @@ export default function App() {
           onExitToVisitor={() => nav('visitor')}
           setToast={setToast}
         />
+        {toast && (
+          <div className="toast" role="status" aria-live="polite">
+            {toast}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Moins de 12 ans sans parent ou tuteur vérifié rattaché : seul l'écran de saisie du code est accessible.
+  if (caps.awaitingGuardianCode) {
+    return (
+      <>
+        <GuardianGate
+          user={user}
+          school={school}
+          today={today}
+          onActivated={(next) => {
+            saveSchool(next);
+            setToast(`Compte ouvert : bienvenue, ${user.name.split(' ')[0]} !`);
+            nav('home');
+          }}
+          onExit={() => nav('visitor')}
+          onSwitchAccount={() => setAuthModalOpen(true)}
+        />
+        {authModal}
         {toast && (
           <div className="toast" role="status" aria-live="polite">
             {toast}
@@ -1335,7 +1428,8 @@ export default function App() {
     onSelectSolution: handleSelectQuestionSolution,
     onRepost: handleRepostPost,
     onForwardToRelation: handleForwardPostToRelation,
-    setToast
+    setToast,
+    readOnly: !caps.canPublish
   };
 
   const accountAdminProps = {
@@ -1401,17 +1495,14 @@ export default function App() {
       const lvl = computeGlobalLevel(totalXP);
       const visibleFeedPosts = filterHomeFeed(ext.posts, homeFeedTab, myFollowing);
       const openHelpPosts = ext.posts.filter((p) => p.kind === 'question' && !p.solutionReplyId);
-      const discoverMembers = resolveAlgorithmicDiscoverProfiles(
-        networkDirectory,
-        uid,
-        myFollowing,
-        ext,
-        3
-      ).map((entry) => entry.profile);
+      const discoverMembers = resolveAlgorithmicDiscoverProfiles(suggestable, uid, myFollowing, ext, 3).map(
+        (entry) => entry.profile
+      );
       return (
         <div className="dashboard-grid">
           <div className="dashboard-main">
-            {/* Inline LinkedIn-style Composer */}
+            {/* Inline LinkedIn-style Composer — absent pour un profil qui lit sans publier */}
+            {caps.canPublish && (
             <section className="home-composer-inline" aria-label="Créer une contribution">
               <div className="home-composer-trigger-row">
                 <Avatar person={user} small />
@@ -1463,6 +1554,7 @@ export default function App() {
                 </button>
               )}
             </section>
+            )}
 
             {/* Pedagogical Resume Card + Popular Carousel (All / Modules) */}
             <>
@@ -1582,9 +1674,11 @@ export default function App() {
                     <p>
                       Aucune publication pour le moment.
                     </p>
-                    <button className="primary" onClick={() => setComposerOpen(true)}>
-                      <Plus size={15} /> Lancer une discussion
-                    </button>
+                    {caps.canPublish && (
+                      <button className="primary" onClick={() => setComposerOpen(true)}>
+                        <Plus size={15} /> Lancer une discussion
+                      </button>
+                    )}
                   </div>
                 ) : (
                   visibleFeedPosts.map((post) => (
@@ -1610,6 +1704,7 @@ export default function App() {
                       onOpenRelations={() => nav('relations')}
                       onReport={(label) => setReportTarget(label)}
                       setToast={setToast}
+                      readOnly={!caps.canPublish}
                     />
                   ))
                 )}
@@ -1853,13 +1948,7 @@ export default function App() {
     }
 
     if (page === 'relations') {
-      const discoverEntries = resolveAlgorithmicDiscoverProfiles(
-        networkDirectory,
-        uid,
-        myFollowing,
-        ext,
-        12
-      );
+      const discoverEntries = resolveAlgorithmicDiscoverProfiles(suggestable, uid, myFollowing, ext, 12);
       const myNetworkEntries = resolveFollowedAndConnectedProfiles(
         networkDirectory,
         uid,
@@ -2240,7 +2329,7 @@ export default function App() {
           onToggleFollow={toggleFollowPerson}
           onOpenChatDrawer={openConversation}
           onReportTarget={(label) => setReportTarget(label)}
-          onOpenComposer={() => setComposerOpen(true)}
+          onOpenComposer={caps.canPublish ? () => setComposerOpen(true) : undefined}
           onOpenInfoModal={setInfoModal}
           nav={nav}
           openSettingsTab={openSettingsTab}
@@ -2569,7 +2658,7 @@ export default function App() {
 
               {(activeSpace === 'learner' || activeSpace === 'community') && (
                 <nav className="rail-nav-card" aria-label="Espaces d’apprentissage">
-                  {activeSpace === 'community' && (
+                  {activeSpace === 'community' && caps.canPublish && (
                     <>
                       <span className="left-rail-section-label">Communauté</span>
                       <button
@@ -2710,12 +2799,12 @@ export default function App() {
         pendingCount={pendingIncoming.length}
         unreadNotifs={unreadNotifs}
         onOpenAuthModal={() => setAuthModalOpen(true)}
-        onOpenComposer={() => setComposerOpen(true)}
+        onOpenComposer={caps.canPublish ? () => setComposerOpen(true) : undefined}
         onEnterVisitor={() => nav('visitor')}
       />
 
       <PostComposerModal
-        open={composerOpen}
+        open={composerOpen && caps.canPublish}
         initialView={composerView}
         onClose={() => {
           setComposerOpen(false);
@@ -2760,25 +2849,7 @@ export default function App() {
         }}
       />
 
-      <DemoAuthModal
-        open={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        uid={uid}
-        mode={mode}
-        cloudConfigured={cloudConfigured}
-        people={people}
-        ext={ext}
-        busy={busy}
-        error={error}
-        onSwitchPerson={handleSwitchPersona}
-        onLoginCloud={handleLoginCloud}
-        onLogoutCloud={handleLogoutCloud}
-        onResetDemo={handleResetDemo}
-        onEnterVisitor={() => {
-          setAuthModalOpen(false);
-          nav('visitor');
-        }}
-      />
+      {authModal}
 
       {infoModal && (
         <div
