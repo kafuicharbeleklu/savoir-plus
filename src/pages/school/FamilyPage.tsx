@@ -1,18 +1,11 @@
 /**
- * Espace famille d'un parent ou tuteur : ses enfants, leurs progrès, leur emploi du temps,
- * les codes qu'il crée pour eux et les contenus qu'il leur achète (achat simulé).
+ * Espace famille d'un parent ou tuteur : pour chaque enfant, le message de la semaine, les chiffres
+ * clés, le plan de révision et l'emploi du temps ; puis les codes qu'il crée et les contenus qu'il
+ * achète pour eux (achat simulé).
  */
 import React, { useState } from 'react';
 import { BookOpen, KeyRound, Receipt } from 'lucide-react';
-import {
-  countdownLabel,
-  examStatusLabel,
-  formatDayShort,
-  planGauges,
-  type CalendarEvent,
-  type RevisionPlan,
-  type SessionLog
-} from '../../calendar';
+import { formatDayShort, type CalendarEvent, type RevisionPlan, type SessionLog } from '../../calendar';
 import {
   PURCHASE_MESSAGE,
   accountOf,
@@ -30,9 +23,9 @@ import {
   slotsFor,
   GUARDIAN_CODE_DAYS
 } from '../../school';
-import { DateTile, examStatusTone } from '../../components/CalendarMonth';
-import { ActionMenu, EmptyState, IconTile, ListCard, ListRow, Modal, PageHeader, RowTitle, Select, StatusDot } from '../../components/ui';
-import { FollowUpList, IdentityDot, TimetableList, followUp, followUpSummary, memberName, moduleTitle, plural, type SchoolPageProps } from './shared';
+import { ActionMenu, EmptyState, IconTile, ListCard, ListRow, Modal, PageHeader, Select, StatusDot } from '../../components/ui';
+import { ChildBoard, ChildCard, childSnapshot } from './FamilyBoard';
+import { FollowUpList, IdentityDot, followUp, memberName, moduleTitle, plural, type SchoolPageProps } from './shared';
 
 export interface ChildCalendar {
   events: CalendarEvent[];
@@ -83,8 +76,6 @@ export function FamilyPage({
     const birth = accountOf(school, child).birthDate;
     const rows = moduleIdsOf(child).map((id) => followUp(ext, catalog, child, id));
     const calendar = calendarOf(child);
-    const gauges = planGauges(calendar.plan, calendar.events, calendar.log, today);
-    const exams = calendar.plan.exams.filter((e) => e.status !== 'past');
     const paid = catalog.filter((item) => priceOf(school, item.id) > 0);
     const buyingItem = paid.find((item) => item.id === buying);
 
@@ -108,54 +99,12 @@ export function FamilyPage({
           subtitle={`${classLine(child)}${birth ? ` · ${ageOn(birth, today)} ans` : ''}`}
         />
 
-        <div className="ui-kpis tabular-nums">
-          <div className="ui-kpi">
-            <b>
-              {rows.filter((r) => r.quiz === 'passed').length} / {rows.length}
-            </b>
-            <span>Modules validés</span>
-          </div>
-          <div className="ui-kpi">
-            <b>{gauges.streak}</b>
-            <span>{gauges.streak > 1 ? 'Jours de révision de suite' : 'Jour de révision de suite'}</span>
-          </div>
-          <div className="ui-kpi">
-            <b>{gauges.examDays === null ? '—' : countdownLabel(gauges.examDays).replace(/^./, (c) => c.toLocaleUpperCase('fr'))}</b>
-            <span>Prochain examen</span>
-          </div>
-        </div>
+        <ChildBoard name={name} rows={rows} calendar={calendar} slots={slotsFor(school, child)} people={people} today={today} />
 
         <div className="ui-section-title">
           <h2>Modules de sa classe</h2>
         </div>
         <FollowUpList rows={rows} label={`Modules de ${firstName}`} />
-
-        <div className="ui-section-title">
-          <h2>Révisions</h2>
-        </div>
-        <ListCard label={`Examens que prépare ${firstName}`}>
-          {exams.length === 0 ? (
-            <EmptyState title="Aucun examen dans son calendrier" text={`${firstName} n’a pas encore ajouté d’examen à préparer.`} />
-          ) : (
-            exams.map((exam) => {
-              const flagged = exam.status === 'late' || exam.status === 'overload';
-              return (
-                <ListRow
-                  key={exam.examId}
-                  leading={<DateTile day={exam.examDay} tone="warm" />}
-                  title={<RowTitle state={flagged ? 'alert' : 'ok'} hint={flagged ? examStatusLabel(exam) : undefined}>{exam.title}</RowTitle>}
-                  meta={`${countdownLabel(exam.daysLeft)} · ${exam.done} / ${exam.total} séances faites`}
-                  trailing={flagged ? <StatusDot tone={examStatusTone(exam.status)}>{examStatusLabel(exam)}</StatusDot> : undefined}
-                />
-              );
-            })
-          )}
-        </ListCard>
-
-        <div className="ui-section-title">
-          <h2>Emploi du temps</h2>
-        </div>
-        <TimetableList slots={slotsFor(school, child)} school={school} />
 
         <div className="ui-section-title">
           <h2>Contenus payants</h2>
@@ -270,26 +219,19 @@ export function FamilyPage({
       <div className="ui-section-title">
         <h2>Mes enfants</h2>
       </div>
-      <ListCard label="Mes enfants">
-        {children.length === 0 ? (
+      {children.length === 0 ? (
+        <ListCard label="Mes enfants">
           <EmptyState title="Aucun enfant rattaché" text="Créez un code, puis donnez-le à votre enfant : il le saisit à l’ouverture de son compte." />
-        ) : (
-          children.map((id) => {
-            const calendar = calendarOf(id);
-            const late = calendar.plan.exams.filter((e) => e.status === 'late' || e.status === 'overload').length;
-            return (
-              <ListRow
-                key={id}
-                leading={<span className="sc-initial" aria-hidden="true">{memberName(id, people).charAt(0)}</span>}
-                title={memberName(id, people)}
-                meta={`${classLine(id)} · ${followUpSummary(moduleIdsOf(id).map((m) => followUp(ext, catalog, id, m)))}`}
-                onClick={() => nav('family', id)}
-                trailing={late > 0 ? <StatusDot tone="danger">Révisions en retard</StatusDot> : undefined}
-              />
-            );
-          })
-        )}
-      </ListCard>
+        </ListCard>
+      ) : (
+        <div className="pl-children">
+          {children.map((id) => {
+            const name = memberName(id, people);
+            const rows = moduleIdsOf(id).map((m) => followUp(ext, catalog, id, m));
+            return <ChildCard key={id} name={name} classLine={classLine(id)} snapshot={childSnapshot(name, rows, calendarOf(id), today)} onOpen={() => nav('family', id)} />;
+          })}
+        </div>
+      )}
 
       <div className="ui-section-title">
         <h2>Codes</h2>

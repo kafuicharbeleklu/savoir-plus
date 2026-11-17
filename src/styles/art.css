@@ -71,3 +71,13 @@
 
 /* Dans une vignette de contenu, la scène remplit le cadre. */
 .sober-card-banner > .art-scene { position: absolute; inset: 0; }
+
+/* Carte « Reprise » de l'accueil : l'illustration tient dans sa colonne (ou en bandeau au-dessus du
+   texte sur écran étroit) ; elle ne passe jamais derrière le titre. */
+.home-resume-visual { position: relative; inset: auto; z-index: 0; display: block; grid-row: 1; grid-column: 1; }
+.home-resume-visual .sober-card-banner { position: absolute; inset: 0; height: auto; min-height: 0; border-radius: 0; }
+@media (min-width: 761px) {
+  .home-resume { min-height: 288px; }
+  .home-resume-body { padding-left: 24px; }
+  .home-resume-visual .art-window { transform: scale(1.2); }
+}

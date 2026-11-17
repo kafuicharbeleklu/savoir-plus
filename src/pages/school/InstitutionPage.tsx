@@ -1,6 +1,7 @@
 /**
- * Espace établissement : demandes de rattachement à valider, classes et leur niveau de restriction,
- * enseignants, emploi du temps. Centré sur l'apprentissage : ni appel, ni notes, ni bulletins.
+ * Espace établissement : vue d'ensemble chiffrée, planification en diagramme de Gantt, grille
+ * d'emploi du temps, classes et leur niveau de restriction, enseignants, demandes de rattachement.
+ * Centré sur l'apprentissage : ni appel, ni notes, ni bulletins.
  */
 import React, { useState } from 'react';
 import { Users } from 'lucide-react';
@@ -35,16 +36,19 @@ import {
   StatusDot,
   Tabs
 } from '../../components/ui';
-import { LearnerModal, TimetableList, clock, followUp, followUpSummary, memberName, moduleTitle, plural, weekdayLabel, type SchoolPageProps } from './shared';
+import { InstitutionOverview, InstitutionPlanning, TimetablePanel } from './InstitutionBoard';
+import { LearnerModal, clock, followUp, followUpSummary, memberName, moduleTitle, plural, weekdayLabel, type SchoolPageProps } from './shared';
 
-type TabId = 'requests' | 'classes' | 'teachers' | 'timetable';
+type TabId = 'overview' | 'planning' | 'timetable' | 'classes' | 'teachers' | 'requests';
+const TAB_IDS: TabId[] = ['overview', 'planning', 'timetable', 'classes', 'teachers', 'requests'];
 
 const LEVELS: RestrictionLevel[] = [1, 2, 3];
 const HOURS = ['07:00', '08:00', '09:00', '09:15', '10:00', '11:00', '11:15', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '18:30', '19:00', '20:00', '20:30'];
 
 export function InstitutionPage({ school, saveSchool, ext, user, people, today, catalog, selectedId, nav, setToast }: SchoolPageProps) {
   const institution = institutionOf(school, accountOf(school, user.id).institutionId);
-  const [tab, setTab] = useState<TabId>('requests');
+  // L'adresse peut ouvrir une rubrique directement : « institution/requests », « institution/planning »…
+  const [tab, setTab] = useState<TabId>((TAB_IDS as string[]).includes(selectedId) ? (selectedId as TabId) : 'overview');
   const [classOpen, setClassOpen] = useState(false);
   const [levelFor, setLevelFor] = useState<SchoolClass | null>(null);
   const [learnerId, setLearnerId] = useState<string | null>(null);
@@ -174,12 +178,27 @@ export function InstitutionPage({ school, saveSchool, ext, user, people, today, 
         value={tab}
         onChange={setTab}
         items={[
-          { id: 'requests', label: 'Demandes', count: requests.length || undefined },
+          { id: 'overview', label: 'Vue d’ensemble' },
+          { id: 'planning', label: 'Planification' },
+          { id: 'timetable', label: 'Emploi du temps' },
           { id: 'classes', label: 'Classes', count: classes.length },
           { id: 'teachers', label: 'Enseignants', count: teachers.length },
-          { id: 'timetable', label: 'Emploi du temps' }
+          { id: 'requests', label: 'Demandes', count: requests.length || undefined }
         ]}
       />
+
+      {tab === 'overview' && (
+        <InstitutionOverview
+          data={{ school, ext, catalog, people, today, classes }}
+          teachers={teachers}
+          requests={requests}
+          onOpenClass={(id) => nav('institution', id)}
+          onOpenLearner={setLearnerId}
+          onShowRequests={() => setTab('requests')}
+        />
+      )}
+
+      {tab === 'planning' && <InstitutionPlanning data={{ school, ext, catalog, people, today, classes }} saveSchool={saveSchool} setToast={setToast} />}
 
       {tab === 'requests' && (
         <ListCard label="Demandes de rattachement">
@@ -298,26 +317,26 @@ export function InstitutionPage({ school, saveSchool, ext, user, people, today, 
               Ajouter un créneau
             </button>
           </div>
-          <TimetableList
+          <TimetablePanel
             slots={slots}
-            school={school}
-            trailing={(slot) => (
-              <ActionMenu
-                label={`Plus d’actions pour ${slot.subject}`}
-                items={[
-                  {
-                    label: 'Supprimer le créneau',
-                    danger: true,
-                    onSelect: () => {
-                      saveSchool({ ...school, timetable: school.timetable.filter((s) => s.id !== slot.id) });
-                      setToast('Créneau supprimé');
-                    }
-                  }
-                ]}
-              />
-            )}
+            people={people}
+            today={today}
+            label={`Emploi du temps de ${className(shownClassId)}`}
+            onRemove={(slot) => {
+              saveSchool({ ...school, timetable: school.timetable.filter((s) => s.id !== slot.id) });
+              setToast('Créneau supprimé');
+            }}
           />
         </>
+      )}
+
+      {learnerId && (
+        <LearnerModal
+          name={memberName(learnerId, people)}
+          subtitle={`${classes.filter((c) => studentsOfClass(school, c.id).includes(learnerId)).map((c) => c.name).join(', ')} · ${institution.name}`}
+          rows={[...new Set(classes.filter((c) => studentsOfClass(school, c.id).includes(learnerId)).flatMap((c) => c.moduleIds))].map((id) => followUp(ext, catalog, learnerId, id))}
+          onClose={() => setLearnerId(null)}
+        />
       )}
 
       {classOpen && (

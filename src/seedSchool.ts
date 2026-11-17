@@ -8,6 +8,7 @@
 import { addDays, todayDay, type Day } from './calendar';
 import { MODULES_CONTENT } from './content';
 import type { Profile, Progress } from './data';
+import { mondayOf, type PlanItem } from './planning';
 import { normalizeSchoolState, type AccountRecord, type Membership, type SchoolState, type TimetableSlot } from './school';
 
 /** Personnages jouables ajoutés à ceux d'origine (Afi, Kossi, Nadège). */
@@ -254,6 +255,7 @@ export function initialSchoolState(today: Day): SchoolState {
       { id: 'KYC-002', userId: 'akouvi', document: 'cni', submittedOn: addDays(today, -41), status: 'verified' },
       { id: 'KYC-001', userId: 'kossi', document: 'passeport', submittedOn: addDays(today, -72), status: 'verified' }
     ],
+    plans: seedPlans(today),
     prices: { budget: 1500, reunion: 1000 }
   };
 }
@@ -262,6 +264,28 @@ export function initialSchoolState(today: Day): SchoolState {
  * Vie scolaire telle que l'application la lit : l'état enregistré s'il existe, complété par l'état
  * de départ du jour ; sinon l'état de départ seul.
  */
+/**
+ * Planification du trimestre, posée autour de la semaine en cours pour que le diagramme soit
+ * toujours vivant : une séquence terminée, une en cours, puis les révisions et la composition.
+ */
+function seedPlans(today: Day): PlanItem[] {
+  const monday = mondayOf(today);
+  const at = (weeks: number, days = 0) => addDays(monday, weeks * 7 + days);
+  return [
+    { id: 'pl-tle-1', classId: 'cl-tle-d', title: 'Protéger ses comptes', kind: 'sequence', moduleId: 'comptes', start: at(-3), end: at(-1, 4) },
+    { id: 'pl-tle-2', classId: 'cl-tle-d', title: 'Sauvegarder ses fichiers', kind: 'sequence', moduleId: 'sauvegarde', start: at(0), end: at(1, 4) },
+    { id: 'pl-tle-3', classId: 'cl-tle-d', title: 'E-mail professionnel', kind: 'sequence', moduleId: 'email-pro', start: at(2), end: at(3, 4) },
+    { id: 'pl-tle-4', classId: 'cl-tle-d', title: 'Révisions', kind: 'revision', start: at(4), end: at(4, 4) },
+    { id: 'pl-tle-5', classId: 'cl-tle-d', title: 'Composition du trimestre', kind: 'exam', start: at(5), end: at(5, 2) },
+    { id: 'pl-3e-1', classId: 'cl-3e-a', title: 'Protéger ses comptes', kind: 'sequence', moduleId: 'comptes', start: at(-2), end: at(1, 4) },
+    { id: 'pl-3e-2', classId: 'cl-3e-a', title: 'Révisions', kind: 'revision', start: at(2), end: at(3, 4) },
+    { id: 'pl-3e-3', classId: 'cl-3e-a', title: 'Composition du trimestre', kind: 'exam', start: at(4, 2), end: at(4, 4) },
+    { id: 'pl-cm2-1', classId: 'cl-cm2', title: 'Découverte du clavier', kind: 'sequence', start: at(-1), end: at(2, 4) },
+    { id: 'pl-cm2-2', classId: 'cl-cm2', title: 'Évaluation', kind: 'exam', start: at(3, 3), end: at(3, 3) },
+    { id: 'pl-res-1', classId: 'cl-reseaux', title: 'Comprendre les réseaux', kind: 'sequence', moduleId: 'reseaux', start: at(-2), end: at(2, 4) }
+  ];
+}
+
 export function schoolOf(ext: { school?: SchoolState }, today: Day = todayDay()): SchoolState {
   return normalizeSchoolState(ext.school, initialSchoolState(today));
 }

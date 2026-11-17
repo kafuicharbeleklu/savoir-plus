@@ -13,6 +13,7 @@
  * aucun argent ne quitte l'appareil.
  */
 import { addDays, diffDays, type Day } from './calendar';
+import type { PlanItem } from './planning';
 
 /* ------------------------------------------------------------------ Comptes */
 
@@ -193,6 +194,8 @@ export interface SchoolState {
   guardianCodes: GuardianCode[];
   mentorships: Mentorship[];
   timetable: TimetableSlot[];
+  /** Planification des classes : séquences de cours, révisions, évaluations. */
+  plans: PlanItem[];
   purchases: Purchase[];
   identityRequests: IdentityRequest[];
   /** Prix de démonstration, en francs CFA. Absent : contenu gratuit. */
@@ -208,6 +211,7 @@ export const emptySchoolState = (): SchoolState => ({
   guardianCodes: [],
   mentorships: [],
   timetable: [],
+  plans: [],
   purchases: [],
   identityRequests: [],
   prices: {}
@@ -226,6 +230,7 @@ export function normalizeSchoolState(raw: Partial<SchoolState> | undefined | nul
     guardianCodes: list(raw.guardianCodes, base.guardianCodes),
     mentorships: list(raw.mentorships, base.mentorships),
     timetable: list(raw.timetable, base.timetable),
+    plans: list(raw.plans, base.plans),
     purchases: list(raw.purchases, base.purchases),
     identityRequests: list(raw.identityRequests, base.identityRequests),
     prices: { ...base.prices, ...(raw.prices || {}) }
