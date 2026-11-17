@@ -1604,39 +1604,39 @@ export default function App() {
                       : openReader(resumeModuleId)
                   }
                 >
+                  <div className="home-resume-visual">
+                    <CatalogCardBanner item={resumeCatalog} />
+                  </div>
                   <div className="home-resume-body">
-                    <span className="home-resume-kicker">
-                      {resumeValidated ? 'Module validé' : resumePct === 0 ? 'À commencer' : 'Reprendre où vous en étiez'}
-                    </span>
-                    <h2>{resumeCatalog.title}</h2>
-                    <p className="home-resume-next">
-                      {resumeValidated
-                        ? 'Vous pouvez le relire quand vous voulez.'
-                        : resumeNextIdx !== undefined
-                          ? resumePct === 0
-                            ? resumeCatalog.summary
-                            : 'Votre lecture est en cours.'
-                          : resumeProg.submitted
-                            ? 'Le quiz est à retenter pour valider le module.'
-                            : 'Lecture terminée : il vous reste le quiz final.'}
-                    </p>
+                    <span className="home-resume-kicker">Reprise · Module</span>
+                    <h2>
+                      {/* Le titre est le bouton (clavier) ; le clic sur toute la carte remonte à l'article */}
+                      <button
+                        type="button"
+                        className="home-resume-link"
+                        aria-label={`${resumePct === 0 ? 'Commencer' : resumePct === 100 ? 'Revoir' : 'Reprendre'} le module ${resumeCatalog.title}`}
+                      >
+                        {resumeCatalog.title}
+                      </button>
+                    </h2>
+                    <p className="home-resume-summary">{resumeCatalog.summary}</p>
                     <div className="home-resume-progress">
                       <ProgressBar value={resumePct} label="Progression du module en cours" tone="htb" />
                       <b className="tabular-nums">{resumePct} %</b>
                     </div>
-                    <div className="home-resume-foot">
-                      {/* Le bouton est la commande ; le clic sur le reste de la carte remonte à l'article. */}
-                      <button type="button" className="primary">
-                        {resumeValidated ? 'Revoir le module' : resumeNextIdx !== undefined ? (resumePct === 0 ? 'Commencer' : 'Reprendre la lecture') : 'Passer au quiz'}
-                        <ArrowRight size={16} aria-hidden="true" />
-                      </button>
-                      <span className="home-resume-meta tabular-nums">
-                        {resumeCatalog.duration} · {resumeCatalog.level} · {resumeCatalog.xpReward || 150} XP
-                      </span>
-                    </div>
-                  </div>
-                  <div className="home-resume-visual">
-                    <CatalogCardBanner item={resumeCatalog} />
+                    <p className="home-resume-next">
+                      {resumeNextIdx !== undefined
+                        ? `Prochaine section : 0${resumeNextIdx + 1} · ${MODULES_CONTENT[resumeModuleId]?.lessons[resumeNextIdx]?.title}`
+                        : resumeValidated
+                          ? 'Module validé — révision libre'
+                          : resumeProg.submitted
+                            ? 'Quiz à retenter pour valider le module'
+                            : 'Sections lues — prêt pour le quiz final'}
+                    </p>
+                    <p className="home-resume-meta">
+                      {resumeCatalog.domain} · {resumeCatalog.duration} · {resumeCatalog.level} ·{' '}
+                      <span className="tabular-nums">{resumeCatalog.xpReward || 150} XP</span>
+                    </p>
                   </div>
                 </article>
 
