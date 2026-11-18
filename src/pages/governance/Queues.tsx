@@ -4,7 +4,7 @@
  * dans l'état courant sont proposées ; une décision soumise est verrouillée.
  */
 import React, { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ClipboardCheck, EyeOff, Flag, LifeBuoy, ScrollText } from 'lucide-react';
 import {
   ACCOUNT_STATUS,
   GOV_LABEL,
@@ -21,7 +21,7 @@ import {
   type SupportTicketRecord,
   type ValidationRequestRecord
 } from '../../wireframeData';
-import { ActionMenu, ConfirmDialog, EmptyState, ListCard, ListRow, PageHeader, Select, StatusDot, type StatusTone, Tabs, useIsNarrow } from '../../components/ui';
+import { ActionMenu, ConfirmDialog, EmptyState, ListCard, ListRow, PageHeader, RowTitle, Select, StateTile, StatusDot, type RowState, type StatusTone, Tabs, useIsNarrow } from '../../components/ui';
 import { Block, Facts, GovShell, Split, type GovProps } from './shared';
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
@@ -98,9 +98,17 @@ export function AdminDashboardView({ ext, updateExt, nav, setToast }: GovProps) 
                 return (
                   <ListRow
                     key={l.id}
-                    title={`${l.action} · ${l.target}`}
+                    leading={
+                      <StateTile state={l.result === 'Succès' ? 'ok' : 'alert'}>
+                        <ScrollText size={20} aria-hidden="true" />
+                      </StateTile>
+                    }
+                    title={
+                      <RowTitle state={l.result === 'Succès' ? 'ok' : 'alert'} hint={l.result === 'Succès' ? undefined : l.result}>
+                        {`${l.action} · ${l.target}`}
+                      </RowTitle>
+                    }
                     meta={`${day}${time ? ` · ${time}` : ''} · ${l.actor}`}
-                    trailing={<StatusDot tone={l.result === 'Succès' ? 'ok' : 'danger'}>{l.result}</StatusDot>}
                   />
                 );
               })
@@ -114,6 +122,16 @@ export function AdminDashboardView({ ext, updateExt, nav, setToast }: GovProps) 
 
 /* ================================================================== Signalements */
 
+/**
+ * État d'une ligne de file, comme dans le Studio : gris (–) tant que rien n'est décidé, rouge (✕) pour un refus,
+ * un retrait ou une correction demandée, normal (✓) une fois réglé. La précision reste au survol.
+ */
+const DOSSIER_ROW: Record<ModerationDossier['status'], RowState> = {
+  'À examiner': 'muted',
+  'En examen': 'muted',
+  'Précisions demandées': 'muted',
+  'Décision soumise': 'ok'
+};
 const DOSSIER_TONE: Record<ModerationDossier['status'], StatusTone> = {
   'À examiner': 'warn',
   'En examen': 'info',
@@ -261,9 +279,17 @@ export function ModerationView({ ext, updateExt, nav, user, setToast }: GovProps
                 <ListRow
                   key={d.id}
                   active={d.id === selectedId}
-                  title={`${d.id} · ${d.targetType}`}
-                  meta={`${d.status} · ${d.assignee ? d.assignee : 'Non affecté'}`}
-                  trailing={<StatusDot tone={DOSSIER_TONE[d.status]}>{d.status}</StatusDot>}
+                  leading={
+                    <StateTile state={DOSSIER_ROW[d.status]}>
+                      <Flag size={20} aria-hidden="true" />
+                    </StateTile>
+                  }
+                  title={
+                    <RowTitle state={DOSSIER_ROW[d.status]} hint={DOSSIER_ROW[d.status] === 'ok' ? undefined : d.status}>
+                      {`${d.id} · ${d.targetType}`}
+                    </RowTitle>
+                  }
+                  meta={d.assignee ? d.assignee : 'Non affecté'}
                   onClick={() => setSelectedId(d.id)}
                   ariaLabel={`Ouvrir le dossier ${d.id}`}
                 />
@@ -407,6 +433,13 @@ export function ModerationView({ ext, updateExt, nav, user, setToast }: GovProps
 
 /* ================================================================== Validations */
 
+const VALIDATION_ROW: Record<ValidationRequestRecord['status'], RowState> = {
+  Soumise: 'muted',
+  'En examen': 'muted',
+  'À corriger': 'alert',
+  Validée: 'ok',
+  Refusée: 'alert'
+};
 const VALIDATION_TONE: Record<ValidationRequestRecord['status'], StatusTone> = {
   Soumise: 'warn',
   'En examen': 'info',
@@ -506,9 +539,17 @@ export function AdminValidationView({ ext, updateExt, nav, user, setToast }: Gov
                 <ListRow
                   key={v.id}
                   active={v.id === selectedId}
-                  title={v.title}
-                  meta={`${v.status} · ${v.contentType} ${v.version} · ${v.author}`}
-                  trailing={<StatusDot tone={VALIDATION_TONE[v.status]}>{v.status}</StatusDot>}
+                  leading={
+                    <StateTile state={VALIDATION_ROW[v.status]}>
+                      <ClipboardCheck size={20} aria-hidden="true" />
+                    </StateTile>
+                  }
+                  title={
+                    <RowTitle state={VALIDATION_ROW[v.status]} hint={VALIDATION_ROW[v.status] === 'ok' ? undefined : v.status}>
+                      {v.title}
+                    </RowTitle>
+                  }
+                  meta={`${v.contentType} ${v.version} · ${v.author}`}
                   onClick={() => {
                     setSelectedId(v.id);
                     setNote('');
@@ -786,6 +827,13 @@ export function AppealView({ ext, updateExt, nav, user, caps, setToast }: GovPro
 
 /* ================================================================== Support */
 
+const TICKET_ROW: Record<SupportTicketRecord['status'], RowState> = {
+  nouveau: 'muted',
+  ouvert: 'muted',
+  'en attente': 'muted',
+  résolu: 'ok',
+  fermé: 'ok'
+};
 const TICKET_TONE: Record<SupportTicketRecord['status'], StatusTone> = {
   nouveau: 'warn',
   ouvert: 'info',
@@ -872,9 +920,17 @@ export function AdminSupportView({ ext, updateExt, nav, user, setToast }: GovPro
                 <ListRow
                   key={t.id}
                   active={t.id === selectedId}
-                  title={t.subject}
-                  meta={`${TICKET_LABEL[t.status]} · ${t.userName}${t.priority === 'Haute' ? ' · Prioritaire' : ''}`}
-                  trailing={<StatusDot tone={TICKET_TONE[t.status]}>{TICKET_LABEL[t.status]}</StatusDot>}
+                  leading={
+                    <StateTile state={TICKET_ROW[t.status]}>
+                      <LifeBuoy size={20} aria-hidden="true" />
+                    </StateTile>
+                  }
+                  title={
+                    <RowTitle state={TICKET_ROW[t.status]} hint={TICKET_ROW[t.status] === 'ok' ? undefined : TICKET_LABEL[t.status]}>
+                      {t.subject}
+                    </RowTitle>
+                  }
+                  meta={`${t.userName}${t.priority === 'Haute' ? ' · Prioritaire' : ''}`}
                   onClick={() => {
                     setSelectedId(t.id);
                     setReply('');
@@ -975,6 +1031,12 @@ export function AdminSupportView({ ext, updateExt, nav, user, setToast }: GovPro
 
 /* ================================================================== Contenus restreints */
 
+const VISIBILITY_ROW: Record<FlaggedContentRecord['visibility'], RowState> = {
+  Accessible: 'muted',
+  'Masqué temporairement': 'muted',
+  'Modification demandée': 'alert',
+  Retiré: 'alert'
+};
 const VISIBILITY: Record<FlaggedContentRecord['visibility'], { label: string; tone: StatusTone }> = {
   Accessible: { label: 'À examiner', tone: 'warn' },
   'Masqué temporairement': { label: 'Masqué', tone: 'info' },
@@ -1041,9 +1103,17 @@ export function AdminFlaggedContentsView({ ext, updateExt, nav, user, setToast }
                 <ListRow
                   key={c.id}
                   active={c.id === selectedId}
-                  title={c.title}
-                  meta={`${VISIBILITY[c.visibility].label} · ${c.type} · ${plural(c.reportCount, 'signalement', 'signalements')}`}
-                  trailing={<StatusDot tone={VISIBILITY[c.visibility].tone}>{VISIBILITY[c.visibility].label}</StatusDot>}
+                  leading={
+                    <StateTile state={VISIBILITY_ROW[c.visibility]}>
+                      <EyeOff size={20} aria-hidden="true" />
+                    </StateTile>
+                  }
+                  title={
+                    <RowTitle state={VISIBILITY_ROW[c.visibility]} hint={VISIBILITY_ROW[c.visibility] === 'ok' ? undefined : VISIBILITY[c.visibility].label}>
+                      {c.title}
+                    </RowTitle>
+                  }
+                  meta={`${c.type} · ${plural(c.reportCount, 'signalement', 'signalements')}`}
                   onClick={() => setSelectedId(c.id)}
                   ariaLabel={`Ouvrir ${c.title}`}
                 />

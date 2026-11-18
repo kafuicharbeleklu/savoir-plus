@@ -18,7 +18,7 @@ import {
 } from '../../school';
 import { SCHOOL_MEMBER_NAMES, schoolOf } from '../../seedSchool';
 import { appendAuditLog } from '../../wireframeData';
-import { ActionMenu, EmptyState, ListCard, ListRow, PageHeader, StatusDot, Tabs } from '../../components/ui';
+import { ActionMenu, EmptyState, ListCard, ListRow, PageHeader, RowTitle, StateTile, Tabs } from '../../components/ui';
 import { GovShell, type GovProps } from './shared';
 
 type Filter = 'pending' | 'done';
@@ -82,24 +82,31 @@ export function AdminIdentityView({ ext, updateExt, nav, user, setToast, people,
             return (
               <ListRow
                 key={request.id}
-                leading={<span className="sc-initial" aria-hidden="true">{name.charAt(0)}</span>}
-                title={name}
+                leading={
+                  <StateTile state={request.status === 'pending' ? 'muted' : request.status === 'verified' ? 'ok' : 'alert'} plain>
+                    <span className="sc-initial" aria-hidden="true">
+                      {name.charAt(0)}
+                    </span>
+                  </StateTile>
+                }
+                title={
+                  <RowTitle
+                    state={request.status === 'pending' ? 'muted' : request.status === 'verified' ? 'ok' : 'alert'}
+                    hint={request.status === 'pending' ? 'En attente' : request.status === 'refused' ? 'Refusée' : undefined}
+                  >
+                    {name}
+                  </RowTitle>
+                }
                 meta={`${ACCOUNT_KIND_LABEL[account.kind]} · ${IDENTITY_DOCUMENT_LABEL[request.document]} · ${request.id} · demande du ${formatDayShort(request.submittedOn)}`}
                 trailing={
-                  request.status === 'pending' ? (
-                    canAct ? (
+                  request.status === 'pending' && canAct ? (
                       <>
                         <button type="button" className="li-text-link" onClick={() => decide(request, 'verified')}>
                           Accepter
                         </button>
                         <ActionMenu label={`Plus d’actions pour ${name}`} items={[{ label: 'Refuser la vérification', danger: true, onSelect: () => decide(request, 'refused') }]} />
                       </>
-                    ) : (
-                      <StatusDot tone="warn">En attente</StatusDot>
-                    )
-                  ) : (
-                    <StatusDot tone={request.status === 'verified' ? 'info' : 'danger'}>{request.status === 'verified' ? 'Acceptée' : 'Refusée'}</StatusDot>
-                  )
+                  ) : undefined
                 }
               />
             );

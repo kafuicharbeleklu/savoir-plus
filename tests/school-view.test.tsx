@@ -233,8 +233,9 @@ test('vérification d’identité : demande simulée côté membre, file côté 
   );
   assert.match(queue, /Identités/);
   assert.match(queue, /À traiter 2 Traitées 2/);
-  assert.match(queue, /Mawuena Kpodar Parent ou tuteur · Passeport · KYC-004 · demande du 16 nov\. Accepter/);
-  assert.match(queue, /Yawo Amouzou Encadrant · Carte nationale d’identité · KYC-003 · demande du 15 nov\. Accepter/);
+  // Plus de mention de statut : la ligne en attente est en gris, la précision n'est lue qu'au survol et par les lecteurs d'écran.
+  assert.match(queue, /Mawuena Kpodar — En attente Parent ou tuteur · Passeport · KYC-004 · demande du 16 nov\. Accepter/);
+  assert.match(queue, /Yawo Amouzou — En attente Encadrant · Carte nationale d’identité · KYC-003 · demande du 15 nov\. Accepter/);
   // Vue « Auditeur » : lecture seule, aucune décision possible.
   const audit = text(
     renderToStaticMarkup(

@@ -4,7 +4,7 @@
  * chaque refus lié à la vue active est inscrit au journal.
  */
 import React, { useState } from 'react';
-import { ArrowRight, Download, Plus } from 'lucide-react';
+import { ArrowRight, Download, Plus, SlidersHorizontal } from 'lucide-react';
 import {
   ACCOUNT_STATUS,
   canApproveSettings,
@@ -25,7 +25,7 @@ import {
   type PlatformSettingsState,
   type RoleAssignmentRecord
 } from '../../wireframeData';
-import { ActionMenu, ConfirmDialog, EmptyState, ListCard, ListRow, PageHeader, SearchField, Select, SidePanel, SortTh, StatusDot, type StatusTone, Tabs, useTableSort } from '../../components/ui';
+import { ActionMenu, ConfirmDialog, EmptyState, ListCard, ListRow, PageHeader, RowTitle, SearchField, Select, SidePanel, SortTh, StateTile, StatusDot, type StatusTone, Tabs, useTableSort } from '../../components/ui';
 import { Block, Facts, GovShell, normalize, type GovProps } from './shared';
 
 /* ================================================================== Utilisateurs */
@@ -625,17 +625,23 @@ export function AdminSettingsView({ ext, updateExt, nav, user, setToast }: GovPr
           pending.map((ch) => (
             <ListRow
               key={ch.id}
-              title={ch.settingName}
+              leading={
+                <StateTile state="muted">
+                  <SlidersHorizontal size={20} aria-hidden="true" />
+                </StateTile>
+              }
+              title={
+                <RowTitle state="muted" hint="En attente d’approbation">
+                  {ch.settingName}
+                </RowTitle>
+              }
               meta={`${ch.currentValue} → ${ch.proposedValue} · proposé par ${ch.requester}`}
               trailing={
-                <>
-                  <StatusDot tone="warn">En attente</StatusDot>
-                  {canAct && (
-                    <button type="button" className="secondary ui-btn-sm" onClick={() => approve(ch)}>
-                      Approuver
-                    </button>
-                  )}
-                </>
+                canAct ? (
+                  <button type="button" className="secondary ui-btn-sm" onClick={() => approve(ch)}>
+                    Approuver
+                  </button>
+                ) : undefined
               }
             />
           ))
@@ -651,9 +657,13 @@ export function AdminSettingsView({ ext, updateExt, nav, user, setToast }: GovPr
             {applied.map((ch) => (
               <ListRow
                 key={ch.id}
+                leading={
+                  <StateTile state="ok">
+                    <SlidersHorizontal size={20} aria-hidden="true" />
+                  </StateTile>
+                }
                 title={ch.settingName}
                 meta={`${ch.currentValue} → ${ch.proposedValue} · approuvé par ${ch.approver || '—'}`}
-                trailing={<StatusDot tone="ok">Appliqué</StatusDot>}
               />
             ))}
           </ListCard>
