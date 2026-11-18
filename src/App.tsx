@@ -2936,7 +2936,8 @@ export default function App() {
 
               {(activeSpace === 'learner' || activeSpace === 'community') && (
                 <nav className="rail-nav-card" aria-label="Espaces d’apprentissage">
-                  {activeSpace === 'community' && caps.canPublish && (
+                  {/* Raccourci de publication : pas sur la page Relations, qui sert à gérer son réseau. */}
+                  {activeSpace === 'community' && caps.canPublish && page !== 'relations' && (
                     <>
                       <span className="left-rail-section-label">Communauté</span>
                       <button
