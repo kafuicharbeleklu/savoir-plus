@@ -20,6 +20,7 @@ import './styles/planning.css';
 import './styles/offers.css';
 import './styles/info.css';
 import './styles/retouches.css';
+import './styles/work.css';
 import './styles/angles.css';
 
 installTooltips();

@@ -11,6 +11,7 @@ import {
   BarChart2,
   BookOpen,
   CalendarDays,
+  ChartGantt,
   Check,
   CheckCheck,
   CheckCircle2,
@@ -18,13 +19,17 @@ import {
   ChevronRight,
   ClipboardList,
   Compass,
+  CreditCard,
   Edit3,
   FileText,
   FileUp,
   Flag,
+  GraduationCap,
   HelpCircle,
   Image as ImageIcon,
+  Inbox,
   Layers,
+  LayoutGrid,
   Lock,
   MessageCircle,
   MessageSquare,
@@ -140,11 +145,11 @@ import {
   visibleInSuggestions,
   type SchoolState
 } from './school';
-import { accountOf as schoolAccountOf, ageBandOf, libraryOf } from './school';
+import { accountOf as schoolAccountOf, ageBandOf, institutionOf, libraryOf, studentsOfClass } from './school';
 import { addDays as addCalendarDays, dayFromDate } from './calendar';
 import { demoCampaigns } from './ads';
 import { OffersModal, SponsoredCard } from './components/SponsoredCard';
-import { audienceOfKind, contentIncluded, paidSubscription } from './offers';
+import { audienceOfKind, contentIncluded, institutionSteering, paidSubscription } from './offers';
 import { rankFeed, recommend, viewerOf } from './personalize';
 import { addUsage, lockApplies, lockState, requestOfDay, requestTime, rulesOf } from './deviceLock';
 import { initialSchoolState } from './seedSchool';
@@ -211,7 +216,8 @@ import { DEMO_TOUR, readTourStep, writeTourStep } from './demoTour';
 import { FamilyPage } from './pages/school/FamilyPage';
 import { TeachingPage } from './pages/school/TeachingPage';
 import { InstitutionPage } from './pages/school/InstitutionPage';
-import { TimetableList } from './pages/school/shared';
+import { TimetableList, memberName } from './pages/school/shared';
+import { WorkShell, type WorkNavGroup, type WorkSpaceLink } from './components/WorkShell';
 import {
   AuthFlowsView,
   ModerationView,
@@ -3027,8 +3033,175 @@ export default function App() {
     return null;
   };
 
+  /* Coque « espace de travail » : les outils de l'établissement, de l'encadrant, de la famille, du Studio et
+     de la gouvernance ont leur barre latérale et un plan de travail en pleine largeur ; le réseau garde ses colonnes. */
+  const workSpaceId: 'institution' | 'teaching' | 'family' | 'studio' | 'admin' | null =
+    page === 'institution' && caps.canManageInstitution
+      ? 'institution'
+      : page === 'teaching' && caps.canTeach
+        ? 'teaching'
+        : page === 'family' && caps.canManageFamily
+          ? 'family'
+          : activeSpace === 'studio'
+            ? 'studio'
+            : activeSpace === 'admin'
+              ? 'admin'
+              : null;
+  const workSpaces: WorkSpaceLink[] = [
+    ...(caps.canManageInstitution ? [{ id: 'institution', label: 'Établissement', onSelect: () => nav('institution') }] : []),
+    ...(caps.canTeach ? [{ id: 'teaching', label: 'Enseigner', onSelect: () => nav('teaching') }] : []),
+    ...(caps.canManageFamily ? [{ id: 'family', label: 'Famille', onSelect: () => nav('family') }] : []),
+    ...(caps.canCreate ? [{ id: 'studio', label: 'Studio', onSelect: () => nav('studio') }] : []),
+    ...(caps.canModerate || caps.canAdmin ? [{ id: 'admin', label: 'Gouvernance', onSelect: () => nav('admin') }] : [])
+  ];
+  const workShell = (() => {
+    if (!workSpaceId) return null;
+    const accountMark = <Avatar person={user} />;
+    if (workSpaceId === 'institution') {
+      const institution = institutionOf(school, schoolAccountOf(school, uid).institutionId);
+      const classes = institution ? school.classes.filter((c) => c.institutionId === institution.id) : [];
+      const members = institution ? school.memberships.filter((m) => m.institutionId === institution.id) : [];
+      const requests = members.filter((m) => m.status === 'pending').length;
+      const teachers = members.filter((m) => m.role === 'teacher' && m.status === 'active').length;
+      const tabs = ['overview', 'planning', 'timetable', 'classes', 'library', 'teachers', 'requests'];
+      // Une classe ouverte appartient à la rubrique Classes ; sans rubrique, l'espace s'ouvre comme la page.
+      const current = tabs.includes(selectedId)
+        ? selectedId
+        : selectedId
+          ? 'classes'
+          : institutionSteering(ext.subscriptions, uid)
+            ? 'overview'
+            : 'classes';
+      const go = (id: string) => nav('institution', id === 'overview' ? '' : id);
+      const groups: WorkNavGroup[] = [
+        {
+          items: [
+            { id: 'overview', label: 'Vue d’ensemble', icon: <LayoutGrid size={18} aria-hidden="true" />, onSelect: () => go('overview') },
+            { id: 'planning', label: 'Planification', icon: <ChartGantt size={18} aria-hidden="true" />, onSelect: () => go('planning') },
+            { id: 'timetable', label: 'Emploi du temps', icon: <CalendarDays size={18} aria-hidden="true" />, onSelect: () => go('timetable') },
+            { id: 'classes', label: 'Classes', icon: <Users size={18} aria-hidden="true" />, count: classes.length, onSelect: () => go('classes') },
+            { id: 'library', label: 'Bibliothèque', icon: <BookOpen size={18} aria-hidden="true" />, count: institutionLibrary(uid)?.length, onSelect: () => go('library') },
+            { id: 'teachers', label: 'Enseignants', icon: <UserCheck size={18} aria-hidden="true" />, count: teachers, onSelect: () => go('teachers') },
+            { id: 'requests', label: 'Demandes', icon: <Inbox size={18} aria-hidden="true" />, count: requests, urgent: requests > 0, onSelect: () => go('requests') }
+          ].map((item) => ({ ...item, active: item.id === current }))
+        },
+        {
+          label: 'Compte',
+          items: [
+            { id: 'plan', label: 'Formule et factures', icon: <CreditCard size={18} aria-hidden="true" />, onSelect: () => nav('settings', 'account/plan') },
+            { id: 'settings', label: 'Paramètres', icon: <Settings size={18} aria-hidden="true" />, onSelect: () => nav('settings') }
+          ]
+        }
+      ];
+      return {
+        label: 'Rubriques de l’établissement',
+        mark: <span className="work-mark-square">{accountMark}</span>,
+        title: institution?.name || user.name,
+        subtitle: paidPlan ? `Formule ${paidPlan.offer.name}` : 'Sans formule',
+        groups
+      };
+    }
+    if (workSpaceId === 'teaching') {
+      const classes = classesOfTeacher(school, uid);
+      const tabs = ['overview', 'planning', 'timetable', 'classes'];
+      const current = tabs.includes(selectedId) ? selectedId : classes.some((c) => c.id === selectedId) ? selectedId : classes.length ? 'overview' : 'classes';
+      const groups: WorkNavGroup[] = [
+        {
+          items: [
+            { id: 'overview', label: 'Vue d’ensemble', icon: <LayoutGrid size={18} aria-hidden="true" />, onSelect: () => nav('teaching') },
+            { id: 'planning', label: 'Planification', icon: <ChartGantt size={18} aria-hidden="true" />, onSelect: () => nav('teaching', 'planning') },
+            { id: 'timetable', label: 'Emploi du temps', icon: <CalendarDays size={18} aria-hidden="true" />, onSelect: () => nav('teaching', 'timetable') },
+            { id: 'classes', label: 'Classes et apprenants', icon: <Users size={18} aria-hidden="true" />, onSelect: () => nav('teaching', 'classes') }
+          ].map((item) => ({ ...item, active: item.id === current }))
+        },
+        ...(classes.length
+          ? [
+              {
+                label: 'Mes classes',
+                items: classes.map((c) => ({
+                  id: c.id,
+                  label: c.name,
+                  icon: <GraduationCap size={18} aria-hidden="true" />,
+                  count: studentsOfClass(school, c.id).length,
+                  active: current === c.id,
+                  onSelect: () => nav('teaching', c.id)
+                }))
+              }
+            ]
+          : [])
+      ];
+      return { label: 'Rubriques de l’espace encadrant', mark: accountMark, title: 'Enseigner', subtitle: user.name, groups };
+    }
+    if (workSpaceId === 'family') {
+      const kids = childrenOf(school, uid);
+      const familyName = user.name.split(' ').slice(1).join(' ');
+      const groups: WorkNavGroup[] = [
+        {
+          items: [
+            { id: 'home', label: 'Vue d’ensemble', icon: <LayoutGrid size={18} aria-hidden="true" />, active: !kids.includes(selectedId), onSelect: () => nav('family') }
+          ]
+        },
+        ...(kids.length
+          ? [
+              {
+                label: 'Mes enfants',
+                items: kids.map((id) => {
+                  const firstName = memberName(id, people).split(' ')[0];
+                  const schoolClass = classesOfStudent(school, id)[0];
+                  const paused = lockApplies(school, id, today) && rulesOf(school, id).lockedNow;
+                  return {
+                    id,
+                    label: firstName,
+                    avatar: <span className="work-nav-initial" aria-hidden="true">{firstName.charAt(0)}</span>,
+                    meta: paused ? 'SAVOIR+ en pause' : schoolClass ? schoolClass.name : 'Sans classe',
+                    active: selectedId === id,
+                    onSelect: () => nav('family', id)
+                  };
+                })
+              }
+            ]
+          : []),
+        {
+          label: 'Compte',
+          items: [{ id: 'plan', label: 'Formule et paiement', icon: <CreditCard size={18} aria-hidden="true" />, onSelect: () => nav('settings', 'account/plan') }]
+        }
+      ];
+      return {
+        label: 'Rubriques de l’espace famille',
+        mark: accountMark,
+        title: familyName ? `Famille ${familyName}` : 'Espace famille',
+        subtitle: paidPlan ? `Formule ${paidPlan.offer.name}` : 'Offre gratuite',
+        groups
+      };
+    }
+    if (workSpaceId === 'studio') {
+      // Éditeur, quiz, publication et parcours sont des onglets d'un contenu : « Contenus » reste actif.
+      const inContents = ['studio', 'studio-editor', 'studio-quiz', 'studio-publish', 'studio-path'].includes(page);
+      const groups: WorkNavGroup[] = [
+        {
+          items: [
+            { id: 'studio', label: 'Contenus', icon: <Layers size={18} aria-hidden="true" />, active: inContents, onSelect: () => nav('studio') },
+            { id: 'studio-ocr', label: 'Créer avec l’IA', icon: <Sparkles size={18} aria-hidden="true" />, active: page === 'studio-ocr', onSelect: () => nav('studio-ocr') },
+            { id: 'studio-media', label: 'Médias', icon: <ImageIcon size={18} aria-hidden="true" />, active: page === 'studio-media', onSelect: () => nav('studio-media') },
+            { id: 'studio-stats', label: 'Statistiques', icon: <BarChart2 size={18} aria-hidden="true" />, active: page === 'studio-stats', onSelect: () => nav('studio-stats') },
+            { id: 'studio-profile', label: 'Profil créateur', icon: <User size={18} aria-hidden="true" />, active: page === 'studio-profile', onSelect: () => nav('studio-profile') }
+          ]
+        }
+      ];
+      return { label: 'Rubriques du Studio', mark: accountMark, title: 'Studio', subtitle: user.name, groups };
+    }
+    return {
+      label: 'Rubriques de la gouvernance',
+      mark: accountMark,
+      title: 'Gouvernance',
+      subtitle: user.name,
+      groups: [],
+      extra: <GovernanceRail ext={ext} updateExt={updateExt} nav={nav} page={page} setToast={setToast} />
+    };
+  })();
+
   return (
-    <div className="app-root">
+    <div className={`app-root${workShell ? ' is-work' : ''}`}>
       <TopBar
         page={caps.accountKind === 'institution' && page === 'institution' ? 'home' : page}
         nav={nav}
@@ -3052,6 +3225,26 @@ export default function App() {
         }}
       />
 
+      {workShell && workSpaceId ? (
+        <div className="app-scroll-viewport">
+          <WorkShell
+            space={workSpaceId}
+            label={workShell.label}
+            mark={workShell.mark}
+            title={workShell.title}
+            subtitle={workShell.subtitle}
+            spaces={workSpaces}
+            currentSpace={workSpaceId}
+            groups={workShell.groups}
+            extra={'extra' in workShell ? workShell.extra : undefined}
+            footer={<SidebarCompactFooter nav={nav} canCreate={caps.canCreate} onOpenInfoModal={openInfoPage} />}
+          >
+            <div key={`${page}:${selectedId}`} className="page-transition">
+              {renderMainContent()}
+            </div>
+          </WorkShell>
+        </div>
+      ) : (
       <div className="app-scroll-viewport">
         <div className={`app-shell ${isFullWidth ? 'full-width' : ''}`}>
           {!isFullWidth && (
@@ -3149,39 +3342,6 @@ export default function App() {
                 </nav>
               )}
 
-            {activeSpace === 'studio' && (
-              <nav className="rail-nav-card" aria-label="Navigation du Studio">
-                <span className="left-rail-section-label">Studio</span>
-                {(() => {
-                  // Éditeur, quiz, publication et parcours sont des onglets d'un contenu : « Contenus » reste actif.
-                  const inContents = ['studio', 'studio-editor', 'studio-quiz', 'studio-publish', 'studio-path'].includes(page);
-                  const items: { id: RoutePage; label: string; icon: React.ReactNode; active: boolean }[] = [
-                    { id: 'studio', label: 'Contenus', icon: <Layers size={16} />, active: inContents },
-                    { id: 'studio-ocr', label: 'Créer avec l’IA', icon: <Sparkles size={16} />, active: page === 'studio-ocr' },
-                    { id: 'studio-media', label: 'Médias', icon: <ImageIcon size={16} />, active: page === 'studio-media' },
-                    { id: 'studio-stats', label: 'Statistiques', icon: <BarChart2 size={16} />, active: page === 'studio-stats' },
-                    { id: 'studio-profile', label: 'Profil créateur', icon: <User size={16} />, active: page === 'studio-profile' }
-                  ];
-                  return items.map((it) => (
-                    <button
-                      key={it.id}
-                      className={`rail-nav-btn ${it.active ? 'active' : ''}`}
-                      aria-current={it.active ? 'page' : undefined}
-                      onClick={() => nav(it.id)}
-                    >
-                      <span>
-                        {it.icon} {it.label}
-                      </span>
-                    </button>
-                  ));
-                })()}
-              </nav>
-            )}
-
-            {activeSpace === 'admin' && (
-              <GovernanceRail ext={ext} updateExt={updateExt} nav={nav} page={page} setToast={setToast} />
-            )}
-
             <SidebarCompactFooter
               nav={nav}
               canCreate={caps.canCreate}
@@ -3197,6 +3357,7 @@ export default function App() {
           </main>
         </div>
       </div>
+      )}
 
       {page !== 'messages' && page !== 'settings' && !messagesOff && (
         <MessagingDrawer

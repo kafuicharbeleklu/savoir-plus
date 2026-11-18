@@ -1,0 +1,189 @@
+/* ==========================================================================
+   Coque « espace de travail » (établissement, encadrant, famille, Studio, gouvernance)
+   Barre latérale de 252 px collée à gauche, plan de travail en pleine largeur jusqu'à
+   1 240 px. La barre du haut s'étend sur toute la largeur pour s'aligner sur la barre latérale.
+   Couleurs : uniquement les jetons du thème (le thème sombre garde ses valeurs).
+   ========================================================================== */
+
+.app-root.is-work .topbar-inner {
+  max-width: none;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+@media (min-width: 769px) {
+  .app-root.is-work .app-scroll-viewport { scrollbar-gutter: stable; }
+}
+
+.work-shell {
+  display: grid;
+  grid-template-columns: 252px minmax(0, 1fr);
+  align-items: start;
+  min-height: 100%;
+}
+
+.work-side {
+  position: sticky;
+  top: 0;
+  height: calc(100dvh - 52px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 12px 16px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-hairline);
+}
+
+/* Identité de l'espace, avec le sélecteur quand la personne a plusieurs espaces */
+.work-space {
+  position: relative;
+  padding-bottom: 10px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.work-space-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px;
+  border-radius: var(--angle);
+  text-align: left;
+  color: var(--fg-primary);
+}
+
+button.work-space-btn:hover { background: var(--bg-subtle); }
+.work-space-btn.is-static { cursor: default; }
+
+.work-space-mark { flex-shrink: 0; display: inline-flex; }
+.work-space-mark .avatar { width: 36px; height: 36px; font-size: 0.8125rem; }
+.work-mark-square .avatar,
+.work-mark-square .avatar img { border-radius: var(--angle); }
+
+.work-space-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.work-space-text b,
+.work-space-text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.work-space-text b { font-size: 0.9375rem; font-weight: 600; line-height: 1.25; }
+.work-space-text small { font-size: 0.75rem; color: var(--fg-muted); line-height: 1.35; }
+.work-space-chevron { flex-shrink: 0; color: var(--fg-muted); }
+
+.work-space-menu {
+  position: absolute;
+  top: calc(100% - 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--angle);
+  box-shadow: var(--shadow-elevated);
+}
+
+.work-space-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: var(--angle);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--fg-primary);
+  text-align: left;
+}
+
+.work-space-menu button:hover { background: var(--bg-subtle); }
+.work-space-menu button.is-current { color: var(--accent-brand); }
+
+/* Rubriques */
+.work-nav { display: flex; flex-direction: column; gap: 14px; }
+.work-nav-group { display: flex; flex-direction: column; gap: 2px; }
+.work-nav-label { padding: 2px 10px 4px; font-size: 0.75rem; font-weight: 500; color: var(--fg-muted); }
+
+.work-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: var(--angle);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--fg-primary);
+  text-align: left;
+}
+
+.work-nav-item > svg { flex-shrink: 0; color: var(--fg-muted); }
+.work-nav-item:hover { background: var(--bg-subtle); }
+.work-nav-item.is-active { background: var(--accent-brand-soft); color: var(--accent-brand); }
+.work-nav-item.is-active > svg { color: var(--accent-brand); }
+.work-nav-item.has-meta { min-height: 48px; padding-top: 6px; padding-bottom: 6px; }
+
+.work-nav-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.work-nav-name,
+.work-nav-text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.work-nav-text small { font-size: 0.75rem; font-weight: 400; color: var(--fg-muted); line-height: 1.35; }
+.work-nav-item.is-active .work-nav-text small { color: var(--accent-brand); opacity: .8; }
+
+.work-nav-count { margin-left: auto; font-style: normal; font-size: 0.75rem; font-weight: 500; color: var(--fg-muted); }
+.work-nav-count.is-urgent { color: var(--accent-warm); font-weight: 600; }
+
+.work-nav-initial {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--accent-brand-soft);
+  color: var(--accent-brand);
+}
+
+/* Gouvernance : son sélecteur de vue et ses files, sans carte autour */
+.work-side .gv-rail { border: 0; background: none; padding: 0; gap: 2px; }
+.work-side .gv-rail > .left-rail-section-label { display: none; }
+.work-side .gv-rail .rail-nav-btn { min-height: 36px; padding: 0 10px; color: var(--fg-primary); }
+.work-side .gv-rail .rail-nav-btn svg { color: var(--fg-muted); }
+.work-side .gv-rail .rail-nav-btn.active,
+.work-side .gv-rail .rail-nav-btn.active svg { color: var(--accent-brand); }
+/* Compteurs en texte, comme dans les autres espaces (pas de pastille pleine) */
+.work-side .gv-rail .gv-count { background: none; min-width: 0; padding: 0; font-size: 0.75rem; font-weight: 600; color: var(--accent-warm); }
+
+.work-side-foot { margin-top: auto; padding-top: 16px; }
+
+/* Plan de travail */
+.work-canvas { min-width: 0; padding: 24px 32px 96px; }
+.work-canvas > .page-transition { max-width: 1240px; }
+
+/* La barre latérale remplace les onglets de rubrique de l'établissement et de l'encadrant
+   (ils restent sur petit écran, où la barre latérale est masquée). */
+@media (min-width: 769px) {
+  .work-canvas[data-space="institution"] .sc-page > .ui-tabs,
+  .work-canvas[data-space="institution"] .sc-page > .ui-tabs-bar > .ui-tabs,
+  .work-canvas[data-space="teaching"] .sc-page > .ui-tabs,
+  .work-canvas[data-space="teaching"] .sc-page > .ui-tabs-bar > .ui-tabs { display: none; }
+  .work-canvas .sc-page > .ui-tabs-bar { justify-content: flex-end; border-bottom: 0; }
+}
+
+@media (max-width: 1119px) {
+  .work-shell { grid-template-columns: 220px minmax(0, 1fr); }
+  .work-canvas { padding: 20px 20px 96px; }
+}
+
+@media (max-width: 768px) {
+  .work-shell { grid-template-columns: minmax(0, 1fr); }
+  .work-side { display: none; }
+  .work-canvas { padding: 12px 12px 84px; }
+}
