@@ -63,13 +63,26 @@ test('écran d’attente du code parental : un seul champ, aucune autre porte', 
 test('espace encadrant : intitulé, classes, questions à revoir, cours de la semaine', () => {
   const school = initialSchoolState(TODAY);
   const home = text(renderToStaticMarkup(<TeachingPage {...props('kossi', school)} />));
-  // Ni titre visible ni phrase d'introduction : la page ouvre directement sur les classes.
-  assert.match(home, /Espace encadrant Mes classes/);
+  // Les outils de l'établissement, pour ses classes : la page ouvre sur la vue d'ensemble.
+  assert.match(home, /Espace encadrant Vue d’ensemble Planification Emploi du temps Classes 3/);
   assert.doesNotMatch(home, /Faire vérifier mon identité/);
-  assert.match(home, /Terminale D Les Palmiers · 10 élèves · 3 modules/);
-  assert.match(home, /Initiation aux réseaux Centre Horizon · 3 élèves · 2 modules/);
-  assert.match(home, /Mes cours de la semaine/);
-  assert.match(home, /Informatique 10 h – 12 h · Terminale D · Salle informatique/);
+  assert.match(home, /Élèves 21 3 classes Heures de cours \d+ par semaine Questions à revoir \d+/);
+  assert.match(home, /Avancement des classes/);
+  assert.match(home, /Élèves à accompagner/);
+  // La planification de ses classes, en lecture : l'établissement la tient.
+  const planning = text(renderToStaticMarkup(<TeachingPage {...props('kossi', school, 'planning')} />));
+  assert.match(planning, /planifiées par l’établissement/);
+  assert.doesNotMatch(planning, /Ajouter une période/);
+  // L'emploi du temps est une grille.
+  const grid = text(renderToStaticMarkup(<TeachingPage {...props('kossi', school, 'timetable')} />));
+  assert.match(grid, /Lundi Mardi Mercredi Jeudi Vendredi/);
+  // Chaque cours dit sa classe et sa salle.
+  assert.match(grid, /Informatique 10 h – 12 h Terminale D · Salle informatique/);
+  // Ses classes.
+  const list = text(renderToStaticMarkup(<TeachingPage {...props('kossi', school, 'classes')} />));
+  assert.match(list, /Mes classes/);
+  assert.match(list, /Terminale D Les Palmiers · 10 élèves · 3 modules/);
+  assert.match(list, /Initiation aux réseaux Centre Horizon · 3 élèves · 2 modules/);
 
   const oneClass = text(renderToStaticMarkup(<TeachingPage {...props('kossi', school, 'cl-tle-d')} />));
   assert.match(oneClass, /Terminale D Les Palmiers · Lycée · niveau « encadré »/);
@@ -79,7 +92,7 @@ test('espace encadrant : intitulé, classes, questions à revoir, cours de la se
   assert.match(oneClass, /Elom Dogbé 1 module validé sur 3/);
   assert.match(oneClass, /Aucune réponse individuelle n’est montrée/);
   // Une classe qui n'est pas la sienne : l'adresse ne l'ouvre pas, il retombe sur l'accueil de l'espace.
-  assert.match(text(renderToStaticMarkup(<TeachingPage {...props('kossi', school, 'cl-cm2')} />)), /Mes classes/);
+  assert.match(text(renderToStaticMarkup(<TeachingPage {...props('kossi', school, 'cl-cm2')} />)), /Vue d’ensemble/);
 });
 
 test('espace encadrant : sans identité vérifiée ni rattachement validé, aucune classe', () => {
@@ -91,7 +104,7 @@ test('espace encadrant : sans identité vérifiée ni rattachement validé, aucu
   assert.match(pending, /Les Palmiers Français · expression écrite · demandé le 15 nov\. En attente de l’établissement/);
   // L'établissement valide : la classe apparaît.
   const validated = setMembershipStatus(school, 'mb-ama-palmiers', 'active');
-  const active = text(renderToStaticMarkup(<TeachingPage {...withPersona} school={validated} />));
+  const active = text(renderToStaticMarkup(<TeachingPage {...withPersona} school={validated} selectedId="classes" />));
   assert.match(active, /Troisième A Les Palmiers · 8 élèves · 1 module/);
   assert.doesNotMatch(active, /Aucune classe pour le moment/);
 });

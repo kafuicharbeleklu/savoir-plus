@@ -1,9 +1,11 @@
 /**
- * Espace encadrant : mes classes (enseignant), mes apprenants suivis (encadreur indépendant),
- * mes cours de la semaine. Pour chaque classe : où elle bute, question par question, en agrégé.
+ * Espace encadrant, avec les outils de l'établissement pour ses propres classes : vue d'ensemble
+ * (avancement face à l'attendu, échéances, élèves à accompagner), planification en diagramme de Gantt
+ * (en lecture : l'établissement la tient), emploi du temps en grille ; puis ses classes, ses demandes et
+ * ses apprenants suivis. Pour chaque classe : où elle bute, question par question, en agrégé.
  */
-import React, { useState } from 'react';
-import { Users } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { CircleHelp, Clock, GraduationCap, UserCheck, Users } from 'lucide-react';
 import type { Progress } from '../../data';
 import {
   accountOf,
@@ -18,11 +20,13 @@ import {
 import { computeModuleStat, type ModuleStat } from '../../studioStats';
 import { formatDayShort } from '../../calendar';
 import { InlineMeter } from '../../components/Charts';
-import { EmptyState, IconTile, ListCard, ListRow, Modal, PageHeader, RowTitle, Select, StatusDot } from '../../components/ui';
+import { EmptyState, IconTile, ListCard, ListRow, Modal, PageHeader, RowTitle, Select, StatusDot, Tabs } from '../../components/ui';
+import { KpiRow, KpiTile } from '../../components/PlanningTools';
+import { weeklyHours } from '../../planning';
+import { ClassesOverview, InstitutionPlanning, TimetablePanel } from './InstitutionBoard';
 import {
   IdentityDot,
   LearnerModal,
-  TimetableList,
   followUp,
   followUpSummary,
   memberName,
@@ -32,6 +36,9 @@ import {
 } from './shared';
 
 const started = (p: Progress) => p.lessons.length > 0 || p.submitted;
+
+type TabId = 'overview' | 'planning' | 'timetable' | 'classes';
+const TAB_IDS: TabId[] = ['overview', 'planning', 'timetable', 'classes'];
 
 /** Question la moins réussie d'un module, si elle l'est par moins de 60 % des élèves. */
 const weakestQuestion = (stat: ModuleStat) => {
@@ -51,6 +58,13 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
   const openClass = classes.find((c) => c.id === selectedId);
   const mentored = school.mentorships.filter((m) => m.educatorId === user.id && m.status === 'active').map((m) => m.learnerId);
   const pending = school.memberships.filter((m) => m.userId === user.id && m.role === 'teacher' && m.status === 'pending');
+  // Rubriques : l'adresse peut en ouvrir une (« teaching/planning ») ; sans classe, l'espace s'ouvre sur les classes.
+  const [tab, setTab] = useState<TabId>((TAB_IDS as string[]).includes(selectedId) ? (selectedId as TabId) : classes.length ? 'overview' : 'classes');
+  useEffect(() => {
+    if ((TAB_IDS as string[]).includes(selectedId)) setTab(selectedId as TabId);
+  }, [selectedId]);
+  // Élève ouvert depuis la vue d'ensemble : son suivi sur les modules de sa classe.
+  const [classLearner, setClassLearner] = useState<{ uid: string; classId: string } | null>(null);
 
   const statFor = (schoolClass: SchoolClass, moduleId: string): ModuleStat | null => {
     const item = catalog.find((c) => c.id === moduleId);
@@ -194,6 +208,18 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
   }
 
   /* ---------------------------------------------------------------- Accueil de l'espace */
+  const board = { school, ext, catalog, people, today, classes };
+  const studentCount = new Set(classes.flatMap((c) => studentsOfClass(school, c.id))).size;
+  const hours = weeklyHours(slotsFor(school, user.id));
+  const weakCount = classes.reduce(
+    (sum, c) =>
+      sum +
+      c.moduleIds.filter((id) => {
+        const stat = statFor(c, id);
+        return stat ? Boolean(weakestQuestion(stat)) : false;
+      }).length,
+    0
+  );
   const joinable = school.institutions.filter(
     (i) => !school.memberships.some((m) => m.userId === user.id && m.institutionId === i.id && m.role === 'teacher' && (m.status === 'active' || m.status === 'pending'))
   );
@@ -213,57 +239,110 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
         </section>
       )}
 
-      <div className="ui-section-title">
-        <h2>Mes classes</h2>
-        {joinable.length > 0 && (
-          <button type="button" className="li-text-link" onClick={() => setJoinOpen(true)}>
-            Demander un rattachement
-          </button>
-        )}
-      </div>
-      <ListCard label="Mes classes">
-        {classes.length === 0 ? (
-          <EmptyState
-            title="Aucune classe pour le moment"
-            text="Une classe vous est confiée quand un établissement valide votre rattachement et que votre identité est vérifiée."
-          />
-        ) : (
-          classes.map((c) => {
-            const count = studentsOfClass(school, c.id).length;
-            const weak = c.moduleIds.some((id) => {
-              const stat = statFor(c, id);
-              return stat ? Boolean(weakestQuestion(stat)) : false;
-            });
-            return (
-              <ListRow
-                key={c.id}
-                leading={<IconTile tone="brand">{<Users size={20} aria-hidden="true" />}</IconTile>}
-                title={c.name}
-                meta={`${institutionOf(school, c.institutionId)?.name || ''} · ${plural(count, 'élève', 'élèves')} · ${plural(c.moduleIds.length, 'module', 'modules')}`}
-                onClick={() => nav('teaching', c.id)}
-                trailing={weak ? <StatusDot tone="danger">Une question à revoir</StatusDot> : undefined}
-              />
-            );
-          })
-        )}
-      </ListCard>
+      <Tabs<TabId>
+        label="Rubriques de l’espace encadrant"
+        value={tab}
+        onChange={(id) => {
+          setTab(id);
+          nav('teaching', id === 'overview' ? '' : id);
+        }}
+        items={[
+          { id: 'overview', label: 'Vue d’ensemble' },
+          { id: 'planning', label: 'Planification' },
+          { id: 'timetable', label: 'Emploi du temps' },
+          { id: 'classes', label: 'Classes', count: classes.length }
+        ]}
+      />
 
-      {pending.length > 0 && (
+      {tab === 'overview' && (
+        <ClassesOverview
+          data={board}
+          emptyText="Une classe vous est confiée quand un établissement valide votre rattachement."
+          onOpenClass={(id) => nav('teaching', id)}
+          onOpenLearner={(uid) => {
+            const schoolClass = classes.find((c) => studentsOfClass(school, c.id).includes(uid));
+            if (schoolClass) setClassLearner({ uid, classId: schoolClass.id });
+          }}
+          kpis={
+            <KpiRow label="Chiffres clés de vos classes">
+              <KpiTile label="Élèves" value={studentCount} hint={plural(classes.length, 'classe', 'classes')} icon={<GraduationCap size={15} aria-hidden="true" />} />
+              <KpiTile label="Heures de cours" value={hours} hint="par semaine" icon={<Clock size={15} aria-hidden="true" />} />
+              <KpiTile
+                label="Questions à revoir"
+                value={weakCount}
+                tone={weakCount > 0 ? 'warn' : 'plain'}
+                hint={weakCount > 0 ? 'réussies par moins de 60 %' : 'aucune'}
+                icon={<CircleHelp size={15} aria-hidden="true" />}
+              />
+              <KpiTile label="Apprenants suivis" value={mentored.length} hint="en accompagnement" icon={<UserCheck size={15} aria-hidden="true" />} />
+            </KpiRow>
+          }
+        />
+      )}
+
+      {tab === 'planning' && <InstitutionPlanning data={board} saveSchool={saveSchool} setToast={setToast} readOnly />}
+
+      {tab === 'timetable' && <TimetablePanel
+          slots={slotsFor(school, user.id)}
+          people={people}
+          today={today}
+          label="Vos cours de la semaine"
+          classNameOf={(id) => school.classes.find((c) => c.id === id)?.name || ''}
+        />}
+
+      {tab === 'classes' && (
         <>
           <div className="ui-section-title">
-            <h2>Demandes en attente</h2>
+            <h2>Mes classes</h2>
+            {joinable.length > 0 && (
+              <button type="button" className="li-text-link" onClick={() => setJoinOpen(true)}>
+                Demander un rattachement
+              </button>
+            )}
           </div>
-          <ListCard label="Demandes de rattachement en attente">
-            {pending.map((m) => (
-              <ListRow
-                key={m.id}
-                leading={<IconTile>{<Users size={20} aria-hidden="true" />}</IconTile>}
-                title={institutionOf(school, m.institutionId)?.name || 'Établissement'}
-                meta={`${m.subject || 'Enseignement'} · demandé le ${formatDayShort(m.requestedOn)}`}
-                trailing={<StatusDot tone="warn">En attente de l’établissement</StatusDot>}
+          <ListCard label="Mes classes">
+            {classes.length === 0 ? (
+              <EmptyState
+                title="Aucune classe pour le moment"
+                text="Une classe vous est confiée quand un établissement valide votre rattachement et que votre identité est vérifiée."
               />
-            ))}
+            ) : (
+              classes.map((c) => {
+                const count = studentsOfClass(school, c.id).length;
+                const weak = c.moduleIds.some((id) => {
+                  const stat = statFor(c, id);
+                  return stat ? Boolean(weakestQuestion(stat)) : false;
+                });
+                return (
+                  <ListRow
+                    key={c.id}
+                    leading={<IconTile tone="brand">{<Users size={20} aria-hidden="true" />}</IconTile>}
+                    title={c.name}
+                    meta={`${institutionOf(school, c.institutionId)?.name || ''} · ${plural(count, 'élève', 'élèves')} · ${plural(c.moduleIds.length, 'module', 'modules')}`}
+                    onClick={() => nav('teaching', c.id)}
+                    trailing={weak ? <StatusDot tone="danger">Une question à revoir</StatusDot> : undefined}
+                  />
+                );
+              })
+            )}
           </ListCard>
+
+          {pending.length > 0 && (
+            <>
+              <div className="ui-section-title">
+                <h2>Demandes en attente</h2>
+              </div>
+              <ListCard label="Demandes de rattachement en attente">
+                {pending.map((m) => (
+                  <ListRow
+                    key={m.id}
+                    leading={<IconTile>{<Users size={20} aria-hidden="true" />}</IconTile>}
+                    title={institutionOf(school, m.institutionId)?.name || 'Établissement'}
+                    meta={`${m.subject || 'Enseignement'} · demandé le ${formatDayShort(m.requestedOn)}`}
+                    trailing={<StatusDot tone="warn">En attente de l’établissement</StatusDot>}
+                  />
+                ))}
+              </ListCard>
         </>
       )}
 
@@ -289,12 +368,22 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
         </>
       )}
 
-      <div className="ui-section-title">
-        <h2>Mes cours de la semaine</h2>
-      </div>
-      <TimetableList slots={slotsFor(school, user.id)} school={school} showClass />
+        </>
+      )}
 
       {learnerId && learnerModal(learnerId, Object.keys(ext.moduleProgress?.[learnerId] || {}), 'Suivi accepté par l’apprenant')}
+      {classLearner &&
+        (() => {
+          const schoolClass = classes.find((c) => c.id === classLearner.classId);
+          return schoolClass ? (
+            <LearnerModal
+              name={memberName(classLearner.uid, people)}
+              subtitle={`${schoolClass.name} · ${institutionOf(school, schoolClass.institutionId)?.name || ''}`}
+              rows={schoolClass.moduleIds.map((id) => followUp(ext, catalog, classLearner.uid, id))}
+              onClose={() => setClassLearner(null)}
+            />
+          ) : null;
+        })()}
 
       {joinOpen && (
         <JoinModal

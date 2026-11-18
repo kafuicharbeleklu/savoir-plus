@@ -112,6 +112,7 @@ export const DEMO_TOUR: TourStep[] = [
     role: 'Encadrant',
     persona: 'kossi',
     page: 'teaching',
+    param: 'classes',
     target: '[aria-label="Mes classes"]',
     title: 'Ses classes, et ce qui bloque',
     text: 'Pour chaque classe, la question que les élèves ratent le plus ; plus bas, ses cours de la semaine.'

@@ -82,11 +82,62 @@ export function InstitutionOverview({
   onOpenLearner: (userId: string) => void;
   onShowRequests: () => void;
 }) {
-  const { school, ext, catalog, people, today, classes } = data;
-  const standings = classes.map((c) => ({ schoolClass: c, ...classStanding(data, c) }));
-  const studentIds = new Set(standings.flatMap((s) => s.students));
+  const { school, classes } = data;
+  const studentIds = new Set(classes.flatMap((c) => studentsOfClass(school, c.id)));
   const classIds = new Set(classes.map((c) => c.id));
   const hours = weeklyHours(school.timetable.filter((s) => classIds.has(s.classId)));
+  return (
+    <ClassesOverview
+      data={data}
+      onOpenClass={onOpenClass}
+      onOpenLearner={onOpenLearner}
+      kpis={
+          <KpiRow label="Chiffres clés de l’établissement">
+            <KpiTile label="Élèves" value={studentIds.size} hint={plural(classes.length, 'classe', 'classes')} icon={<GraduationCap size={15} aria-hidden="true" />} />
+            <KpiTile label="Enseignants" value={teachers.length} hint="rattachés et actifs" icon={<Presentation size={15} aria-hidden="true" />} />
+            <KpiTile label="Heures de cours" value={hours} hint="par semaine, toutes classes" icon={<Clock size={15} aria-hidden="true" />} />
+            <KpiTile
+              label="Demandes"
+              value={requests.length}
+              tone={requests.length ? 'warn' : 'plain'}
+              hint={
+                requests.length ? (
+                  <button type="button" className="rd-link" onClick={onShowRequests}>
+                    À traiter
+                  </button>
+                ) : (
+                  'aucune en attente'
+                )
+              }
+              icon={<Inbox size={15} aria-hidden="true" />}
+            />
+          </KpiRow>
+      }
+    />
+  );
+}
+
+/**
+ * Avancement des classes face à l'attendu, échéances des deux semaines, élèves à accompagner :
+ * pour l'établissement (toutes ses classes) comme pour un encadrant (les siennes).
+ */
+export function ClassesOverview({
+  data,
+  kpis,
+  onOpenClass,
+  onOpenLearner,
+  emptyText = 'Créez une classe pour suivre son avancement.'
+}: {
+  data: BoardData;
+  /** Rangée de chiffres clés propre à celui qui regarde. */
+  kpis: React.ReactNode;
+  onOpenClass: (classId: string) => void;
+  onOpenLearner: (userId: string) => void;
+  emptyText?: string;
+}) {
+  const { school, ext, catalog, people, today, classes } = data;
+  const standings = classes.map((c) => ({ schoolClass: c, ...classStanding(data, c) }));
+  const classIds = new Set(classes.map((c) => c.id));
 
   // Élèves à accompagner : un quiz à retenter, ou un net retard sur la séquence en cours.
   const flags = standings
@@ -113,26 +164,7 @@ export function InstitutionOverview({
 
   return (
     <div className="pl-board">
-      <KpiRow label="Chiffres clés de l’établissement">
-        <KpiTile label="Élèves" value={studentIds.size} hint={plural(classes.length, 'classe', 'classes')} icon={<GraduationCap size={15} aria-hidden="true" />} />
-        <KpiTile label="Enseignants" value={teachers.length} hint="rattachés et actifs" icon={<Presentation size={15} aria-hidden="true" />} />
-        <KpiTile label="Heures de cours" value={hours} hint="par semaine, toutes classes" icon={<Clock size={15} aria-hidden="true" />} />
-        <KpiTile
-          label="Demandes"
-          value={requests.length}
-          tone={requests.length ? 'warn' : 'plain'}
-          hint={
-            requests.length ? (
-              <button type="button" className="rd-link" onClick={onShowRequests}>
-                À traiter
-              </button>
-            ) : (
-              'aucune en attente'
-            )
-          }
-          icon={<Inbox size={15} aria-hidden="true" />}
-        />
-      </KpiRow>
+      {kpis}
 
       <div className="pl-split">
         <section className="pl-panel" aria-label="Avancement des classes">
@@ -141,7 +173,7 @@ export function InstitutionOverview({
             <small>Le trait marque l’attendu à ce jour</small>
           </header>
           {standings.length === 0 ? (
-            <EmptyState title="Aucune classe" text="Créez une classe pour suivre son avancement." />
+            <EmptyState title="Aucune classe" text={emptyText} />
           ) : (
             <ul className="pl-rows">
               {standings.map(({ schoolClass, students, current, actual, expected, pace }) => (
@@ -224,11 +256,14 @@ const KINDS: PlanKind[] = ['sequence', 'revision', 'exam'];
 export function InstitutionPlanning({
   data,
   saveSchool,
-  setToast
+  setToast,
+  readOnly = false
 }: {
   data: BoardData;
   saveSchool: (next: SchoolState) => void;
   setToast: (message: string) => void;
+  /** Encadrant : il lit la planification de ses classes, l'établissement la tient. */
+  readOnly?: boolean;
 }) {
   const { school, ext, catalog, today, classes } = data;
   const [openId, setOpenId] = useState<string | null>(null);
@@ -270,18 +305,26 @@ export function InstitutionPlanning({
       <div className="pl-toolbar">
         <div>
           <h2>Planification du trimestre</h2>
-          <p>Séquences de cours, révisions et évaluations de chaque classe. Le remplissage d’une barre montre l’avancement réel des élèves.</p>
+          <p>
+            {readOnly ? 'Séquences, révisions et évaluations de vos classes, planifiées par l’établissement.' : 'Séquences de cours, révisions et évaluations de chaque classe.'}{' '}
+            Le remplissage d’une barre montre l’avancement réel des élèves.
+          </p>
         </div>
-        <div className="pl-toolbar-actions">
-          <button type="button" className="secondary ui-btn-sm" disabled={classes.length === 0} onClick={() => setAdding(true)}>
-            <CalendarRange size={16} aria-hidden="true" /> Ajouter une période
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="pl-toolbar-actions">
+            <button type="button" className="secondary ui-btn-sm" disabled={classes.length === 0} onClick={() => setAdding(true)}>
+              <CalendarRange size={16} aria-hidden="true" /> Ajouter une période
+            </button>
+          </div>
+        )}
       </div>
 
       {classes.length === 0 ? (
         <section className="pl-panel">
-          <EmptyState title="Aucune classe à planifier" text="Créez une classe, puis ajoutez ses séquences et ses évaluations." />
+          <EmptyState
+            title="Aucune classe à planifier"
+            text={readOnly ? 'La planification apparaît quand un établissement vous confie une classe.' : 'Créez une classe, puis ajoutez ses séquences et ses évaluations.'}
+          />
         </section>
       ) : (
         <>
@@ -307,17 +350,19 @@ export function InstitutionPlanning({
           onClose={() => setOpenId(null)}
           footer={
             <>
-              <button
-                type="button"
-                className="secondary pl-danger"
-                onClick={() => {
-                  saveSchool({ ...school, plans: school.plans.filter((p) => p.id !== open.id) });
-                  setOpenId(null);
-                  setToast(`« ${open.title} » retirée de la planification`);
-                }}
-              >
-                Supprimer la période
-              </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  className="secondary pl-danger"
+                  onClick={() => {
+                    saveSchool({ ...school, plans: school.plans.filter((p) => p.id !== open.id) });
+                    setOpenId(null);
+                    setToast(`« ${open.title} » retirée de la planification`);
+                  }}
+                >
+                  Supprimer la période
+                </button>
+              )}
               <button type="button" className="primary" onClick={() => setOpenId(null)}>
                 Fermer
               </button>
@@ -487,12 +532,15 @@ export function TimetablePanel({
   people,
   today,
   label,
-  onRemove
+  onRemove,
+  classNameOf
 }: {
   slots: TimetableSlot[];
   people: Profile[];
   today: Day;
   label: string;
+  /** Grille d'un enseignant : chaque cours dit sa classe plutôt que le nom de l'enseignant. */
+  classNameOf?: (classId: string) => string;
   /** Présent : un créneau peut être supprimé depuis sa fiche. */
   onRemove?: (slot: TimetableSlot) => void;
 }) {
@@ -511,7 +559,7 @@ export function TimetablePanel({
       <TimetableGrid
         label={label}
         todayWeekday={weekdayOf(today)}
-        slots={slots.map((s) => ({ id: s.id, weekday: s.weekday, start: s.start, end: s.end, subject: s.subject, detail: [teacherOf(s), s.room].filter(Boolean).join(' · ') || undefined }))}
+        slots={slots.map((s) => ({ id: s.id, weekday: s.weekday, start: s.start, end: s.end, subject: s.subject, detail: [classNameOf ? classNameOf(s.classId) : teacherOf(s), s.room].filter(Boolean).join(' · ') || undefined }))}
         onSlotClick={(id) => setOpenId(id)}
       />
       {open && (
