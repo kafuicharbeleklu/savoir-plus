@@ -1325,3 +1325,10 @@ b, strong { font-weight: 600; }
 /* Visite guidée : l'étape et le rôle au-dessus du texte, « Précédent » en lien sous le texte. */
 .tour-bubble .tour-step { margin-bottom: 2px; font-size: 0.75rem; font-weight: 600; color: var(--accent-brand); }
 .tour-bubble .tour-prev { margin-top: 8px; font-size: 0.8125rem; }
+/* Anneau du module en cours (barre du haut) : la pastille centrale touchait l'anneau (moins d'un pixel
+   d'écart), si bien que la part avancée, de la couleur de la pastille, s'y confondait et que seule la part
+   restante se voyait. Une pastille plus petite laisse un vide clair entre les deux. */
+.top-active-lab-core { width: 23px; height: 23px; }
+@media (max-width: 768px) {
+  .top-active-lab-core { width: 21px; height: 21px; }
+}
