@@ -1,51 +1,69 @@
 # SAVOIR+ — Démonstrateur hackathon
 
-React / TypeScript / Vite, avec Supabase Auth, PostgreSQL et Realtime. Firebase a été retiré. Le mode local Afi/Kossi reste disponible sans compte et conserve ses données dans le navigateur.
+Plateforme d’apprentissage et d’entraide : modules courts, communauté, et des espaces pour les familles, les encadrants et les établissements. React 19, TypeScript, Vite 8. La démonstration fonctionne sans compte (données dans le navigateur) ; un mode connecté s’appuie sur Supabase (Auth, PostgreSQL, Realtime).
 
-## Éditer et démarrer en local
+## Démarrer en local
 
-Installer Node 22+, extraire l’archive, ouvrir ce dossier dans son éditeur puis :
-
-```sh
-npm ci
-npm run dev
-```
+Node 22 ou plus récent, puis dans ce dossier :
 
 ```sh
-npm test
-npm run build
+npm ci            # en cas de conflit de dépendances : npm ci --legacy-peer-deps
+npm run dev       # http://127.0.0.1:3000
 ```
 
-Le routage par fragments `#` fonctionne sur hébergement statique. Le dossier `dist/` contient la version compilée. Versionner les sources et package-lock.json avec Git ; ne pas versionner node_modules, mots de passe ou clés privées.
+Vérifier et construire :
+
+```sh
+npx tsc --noEmit
+npm test                      # tests métier et tests d’affichage (124 au 18 novembre 2026)
+npx vite build --base=./      # version statique dans dist/
+```
+
+Le routage par fragments `#` fonctionne sur tout hébergement statique, sans règle de réécriture. Versionner les sources et `package-lock.json` ; jamais `node_modules`, ni mot de passe, ni clé privée.
+
+## Démonstration
+
+Chaque personnage s’ouvre par l’adresse, `splash=0` évitant l’écran de lancement :
+
+| Adresse | Personnage |
+| --- | --- |
+| `?as=afi&splash=0` | Afi, apprenante (offre gratuite : publicité obligatoire, modules payants à l’achat) |
+| `?as=kossi&splash=0` | Kossi, encadrant et créateur de modules (formule Encadrant Pro, Studio) |
+| `?as=nadege&splash=0` | Nadège, modération et gouvernance |
+| `?as=akouvi&splash=0` | Akouvi, parent d’Elom et de Kokou (formule Famille) |
+| `?as=elom&splash=0` | Elom, 17 ans, élève de Terminale D aux Palmiers |
+| `?as=kokou&splash=0` | Kokou, 10 ans : son compte attend le code parental `PAR-7K3Q-9M2X` |
+| `?as=palmiers&splash=0` | Les Palmiers, établissement (formule Pilotage) |
+
+- **Visite guidée** : `?visite=1` ou menu Vous › Visite guidée. Douze étapes en quatre rôles (apprenante, parent, établissement, encadrant) ; la visite change elle-même de personnage et de page.
+- Un personnage par onglet : les onglets se relisent quand l’un d’eux enregistre (une pause décidée par un parent arrive chez l’enfant sans recharger).
+- Les données de démonstration vivent dans le navigateur (`savoir-extended-v1`). Pour repartir de zéro : Paramètres › Confidentialité des données › Réinitialiser la démonstration.
+
+Ce que la démonstration montre :
+
+- **Accueil propre à chaque profil** : recommandations avec leur raison (« Donné à Terminale D »), fil ordonné pour le lecteur.
+- **Module sur une seule page** : parties, exercice, quiz final ; le résultat s’ouvre à part.
+- **Espace famille** : message de la semaine par enfant, plan de révision en Gantt, emploi du temps, contenus payants ; **verrouillage de SAVOIR+** pour un enfant de moins de 12 ans (pause, temps par jour, plage horaire, demandes de temps).
+- **Espace encadrant** et **espace établissement** : vue d’ensemble, planification en Gantt, emploi du temps en grille, classes ; l’établissement gère aussi sa bibliothèque (contenus de ses enseignants, gratuits pour ses élèves). Un établissement n’a ni XP, ni progression, ni fil.
+- **Formules en F CFA** : Paramètres › Préférences du compte › Abonnement. Apprenant+ et Famille incluent les contenus payants ; Famille ouvre le plan et l’emploi du temps des enfants ; Pilotage ouvre la vue d’ensemble et le Gantt de l’établissement ; toute formule payante rend la carte publicitaire facultative.
+
+Sont **simulés**, avec une mention visible : paiements (achats, formules, mobile money), vérification d’identité, comptes de mineurs. Aucune pièce n’est reçue ni conservée ; la caméra n’est jamais utilisée.
 
 ## Projet Supabase
 
-Projet SAVOIR+ : `nkcgdgdiqawzhfpepzpd`, région eu-west-1. Configuration publique dans `src/supabase-public.json` : URL et clé publishable, destinées au navigateur. Aucune clé service_role. Pour changer de projet, copier `.env.example` vers `.env.local`, renseigner les deux variables VITE_SUPABASE_* puis recompiler.
+Projet `nkcgdgdiqawzhfpepzpd`, région eu-west-1. Configuration publique dans `src/supabase-public.json` (URL et clé publishable, destinées au navigateur) ; aucune clé service_role. Pour changer de projet, copier `.env.example` vers `.env.local`, renseigner les deux variables `VITE_SUPABASE_*`, puis reconstruire.
 
-Les migrations `supabase/migrations/` ont été appliquées au projet fourni. Pour un nouveau projet, appliquer ces migrations avec la CLI Supabase après liaison au projet cible. Ne pas réexécuter manuellement une migration déjà appliquée.
+Les migrations `supabase/migrations/` sont appliquées au projet fourni ; pour un nouveau projet, les appliquer avec la CLI Supabase après liaison. Profils visibles entre membres authentifiés, progression privée, relations et messages limités aux participants, blocage géré par chacun ; `tests/supabase-rls.sql` vérifie ces règles (fixtures annulées par ROLLBACK).
 
-1. Dans Supabase Authentication, préparer deux comptes de démonstration e-mail/mot de passe. Conserver les mots de passe hors du dépôt et du chat. L’application ne propose pas d’inscription publique.
-2. Dans SAVOIR+, ouvrir Vous → Réglages / personnages, puis le formulaire de connexion Supabase.
-3. Le profil du compte est initialisé à la première connexion. Modifier le nom dans Mon profil pour distinguer les comptes.
-4. Ouvrir un second navigateur avec le second compte. Envoyer une invitation, l’accepter, échanger, puis bloquer et vérifier le refus d’envoi.
+La vie scolaire (classes, familles, verrouillage, formules) n’existe qu’en mode démonstration : elle n’est pas encore enregistrée dans Supabase.
 
-Les profils sont visibles entre membres authentifiés ; la progression est privée. Relations et messages sont limités aux participants. Seul le destinataire accepte une invitation. Chaque membre peut gérer son propre blocage ; débloquer ne réactive pas le consentement. Les horodatages sont fixés par PostgreSQL. Realtime actualise l’interface, avec relecture périodique de secours. Une erreur distante ne produit pas de faux message local.
+## Limites connues
 
-## Recette effectuée le 13 novembre 2026
-
-- Compilation TypeScript/Vite et 3 tests métier réussis.
-- `tests/supabase-rls.sql` exécuté sur le projet : isolation de progression, refus des tiers/anonymes, interdiction d’auto-acceptation, envoi après consentement, blocage, déblocage sans réactivation, participants immuables. Les fixtures sont annulées par ROLLBACK.
-- Parcours local desktop vérifié précédemment : leçons, quiz, progression, relations, messages et blocage. Correction v0.31 : Messagerie dans la barre supérieure ouvre la page complète ; Message sur un contact ouvre le chat rapide desktop. Le brouillon est conservé.
-- À faire : recette avec deux véritables sessions Supabase et recette sur téléphone. Les tests SQL ne prouvent pas l’authentification ni la réception Realtime dans deux navigateurs.
-
-## Démonstration en 4 minutes
-
-Accueil → module phishing → trois leçons → quiz → résultat → Mes apprentissages. Puis Relations : invitation Afi vers Kossi, changement de personnage dans Réglages, acceptation et message, retour Afi puis blocage. Le mode local fonctionne entre onglets de même origine, pas entre deux ordinateurs. Le mode connecté utilise des comptes Supabase distincts.
-
-## Limites
-
-Un module actif ; un second en aperçu. XP calculés côté client : pédagogie, pas certification. Pas d’IA intégrée, pièces jointes, modération administrative, indicateurs de lecture ou présence distante. Les 100 messages les plus récents sont affichés. Après refus/déblocage, pas de réinvitation automatique. Aucune migration des données locales vers Supabase. Aucun ancien stockage Firebase réel n’existait à migrer.
+- Données de démonstration propres à chaque navigateur ; pas de synchronisation entre appareils en mode démonstration.
+- Le verrouillage s’applique à SAVOIR+, pas au reste de l’appareil (un site ne peut pas verrouiller un téléphone).
+- XP calculés côté navigateur : pédagogie, pas certification.
+- Annoncés dans les formules mais pas encore réalisés : attestations de réussite (Apprenant+), limites et suivi réservés à Encadrant Pro, vente de modules.
 
 ## Livraison
 
-Soumission : 14 novembre 2026 à 15 h 30 UTC. Présentation finale : 5 décembre. Le référentiel consolidé conserve le plan, la fiche de soumission et les décisions ; ce README explique uniquement l’exécution du code. Le site existant reste public ; sa publication doit être vérifiée avant de soumettre le lien au jury.
+Présentation finale : 5 décembre 2026. Ce README explique l’exécution du code ; le plan et les décisions sont tenus à part.
