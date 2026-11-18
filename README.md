@@ -15,7 +15,7 @@ Vérifier et construire :
 
 ```sh
 npx tsc --noEmit
-npm test                      # tests métier et tests d’affichage (124 au 18 novembre 2026)
+npm test                      # tests métier et tests d’affichage (126 au 18 novembre 2026)
 npx vite build --base=./      # version statique dans dist/
 ```
 
@@ -62,6 +62,7 @@ La vie scolaire (classes, familles, verrouillage, formules) n’existe qu’en m
 - Données de démonstration propres à chaque navigateur ; pas de synchronisation entre appareils en mode démonstration.
 - Le verrouillage s’applique à SAVOIR+, pas au reste de l’appareil (un site ne peut pas verrouiller un téléphone).
 - XP calculés côté navigateur : pédagogie, pas certification.
+- Les vidéos d’illustration (licence Pexels) sont hébergées avec le site, dans `public/media`.
 - Annoncés dans les formules mais pas encore réalisés : attestations de réussite (Apprenant+), limites et suivi réservés à Encadrant Pro, vente de modules.
 
 ## Livraison
