@@ -1,11 +1,11 @@
 /**
  * Données de simulation complémentaires de la communauté : nouveaux membres, publications
  * de formats variés (texte, image, vidéo, module partagé), abonnements et progressions.
- * Tout est fictif ; les vidéos sont des séquences d'illustration libres de droits.
+ * Tout est fictif ; les vidéos sont des séquences d'illustration libres de droits (Pexels),
+ * hébergées avec le site.
  */
 import type { CommunityPost } from './wireframeData';
-
-const PEXELS = 'https://videos.pexels.com/video-files';
+import { HOSTED_VIDEOS } from './media';
 
 /** Publications du jour, placées en tête du fil. */
 export const SEED_POSTS_RECENT: CommunityPost[] = [
@@ -25,7 +25,7 @@ export const SEED_POSTS_RECENT: CommunityPost[] = [
     createdAt: 'Aujourd’hui · 15 h 40',
     media: {
       kind: 'video',
-      src: `${PEXELS}/9198355/9198355-sd_960_540_25fps.mp4`,
+      src: HOSTED_VIDEOS['9198355'],
       alt: 'Deux personnes révisent ensemble devant un ordinateur portable, un livre ouvert à la main.',
       credit: 'Vidéo d’illustration : Mikhail Nilov · Pexels'
     },
@@ -260,7 +260,7 @@ export const SEED_POSTS_OLDER: CommunityPost[] = [
     createdAt: '11 nov. · 18 h 05',
     media: {
       kind: 'video',
-      src: `${PEXELS}/6281083/6281083-sd_960_540_24fps.mp4`,
+      src: HOSTED_VIDEOS['6281083'],
       alt: 'Une personne révise à une table de travail, des documents étalés devant elle, dans une bibliothèque.',
       credit: 'Vidéo d’illustration : Yaroslav Shuraev · Pexels'
     },

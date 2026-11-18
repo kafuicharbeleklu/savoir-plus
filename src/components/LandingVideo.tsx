@@ -5,18 +5,19 @@
  * – Avec « réduire les animations », le premier plan reste affiché, immobile.
  * – Si la vidéo ne se charge pas, le fond aux couleurs de SAVOIR+ reste en place.
  *
- * Séquences : Yan Krukau, Pexels (licence Pexels, usage libre).
+ * Séquences : Yan Krukau, Pexels (licence Pexels, usage libre), hébergées avec le site (src/media.ts).
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { useIsNarrow } from './ui';
+import { HOSTED_VIDEOS } from '../media';
 
 const CLIPS = [
   {
-    src: 'https://videos.pexels.com/video-files/8199407/8199407-hd_1280_720_25fps.mp4',
+    src: HOSTED_VIDEOS['8199407'],
     position: '62% 50%',
   },
   {
-    src: 'https://videos.pexels.com/video-files/8199412/8199412-hd_1280_720_25fps.mp4',
+    src: HOSTED_VIDEOS['8199412'],
     position: '46% 50%',
   },
 ];

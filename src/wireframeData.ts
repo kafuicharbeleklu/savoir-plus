@@ -11,6 +11,7 @@ import {
 import type { CalendarUserState } from './calendar';
 import type { SchoolState } from './school';
 import type { Subscription } from './offers';
+import { hostedVideo } from './media';
 import { SEED_SCHOOL_PROGRESS } from './seedSchool';
 
 /** Version des données de simulation : l'augmenter fait apparaître les nouveautés chez les visiteurs déjà venus. */
@@ -1497,10 +1498,15 @@ export function readExtended(): ExtendedDemoState {
     const base = initialExtendedState();
     const parsed = JSON.parse(raw);
     const seeded = mergeNewSeeds(parsed, base);
+    // Publications enregistrées avant l'hébergement local des vidéos : elles lisent désormais le fichier du site.
+    const posts = (seeded.posts || (Array.isArray(parsed?.posts) ? parsed.posts : base.posts)).map((p: CommunityPost) =>
+      p.media?.kind === 'video' && hostedVideo(p.media.src) !== p.media.src ? { ...p, media: { ...p.media, src: hostedVideo(p.media.src) } } : p
+    );
     return {
       ...base,
       ...parsed,
       ...seeded,
+      posts,
       appeal: { ...base.appeal, ...(parsed?.appeal || {}) },
       appPrefs: { ...base.appPrefs, ...(parsed?.appPrefs || {}) },
       notifPrefs: { ...base.notifPrefs, ...(parsed?.notifPrefs || {}) },
