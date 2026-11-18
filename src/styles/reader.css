@@ -247,7 +247,7 @@
 .rd-result-text p { margin: 0; }
 .rd-result-text .rd-result-kicker { font-size: 0.875rem; font-weight: 500; line-height: 1.375rem; color: var(--accent-brand); }
 .rd-result.is-low .rd-result-kicker { color: var(--accent-danger); }
-.rd-result-text .rd-result-headline { margin-top: 2px; font-size: 1.3125rem; font-weight: 600; line-height: 1.75rem; letter-spacing: -0.01em; color: var(--fg-primary); }
+.rd-result-text .rd-result-headline { margin-top: 2px; font-size: 1.25rem; font-weight: 600; line-height: 1.75rem; letter-spacing: -0.01em; color: var(--fg-primary); }
 .rd-result-text .rd-result-lead { margin-top: 6px; font-size: 1rem; line-height: 1.6; color: var(--fg-muted); }
 .rd-reward { display: flex; flex-direction: column; gap: 8px; margin-top: 28px; padding: 14px 18px; border-radius: 14px; background: var(--bg-subtle); }
 .rd-reward-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
@@ -256,7 +256,7 @@
 .rd-reward small { font-size: 0.75rem; line-height: 1.4; color: var(--fg-muted); }
 .rd-correction .rd-question-text { margin: 0 0 14px; letter-spacing: 0; }
 .rd-correction .rd-options { margin: 0; padding: 0; list-style: none; }
-.rd-chapter-body .rd-correction li { margin: 0; }
+.rd-chapter-body .rd-correction li { margin: 0; padding: 12px 14px; }
 .rd-option.is-static,
 .rd-option.is-static:hover { background: var(--bg-surface); cursor: default; }
 .rd-option.is-static small { flex: none; margin-left: auto; padding-left: 8px; font-size: 0.8125rem; font-weight: 500; line-height: 1.45; color: var(--fg-muted); }
@@ -324,31 +324,35 @@
 .rd-article.rd-chapter-main { --measure: 608px; --inset: max(0px, calc((100% - var(--measure)) / 2)); width: 100%; max-width: 720px; margin: 0 auto; padding: 40px 0 96px; }
 
 /* -- Le texte ----------------------------------------------------------------------------------
-   Les mesures suivent ce que montrent les études de lecture à l'écran :
-   - corps de 18 px : lisibilité et compréhension progressent avec la taille (Rello et al., CHI 2016) ;
-   - interligne de 1,6 : au-dessus du minimum de 1,5 retenu par le W3C (WCAG 1.4.12) ;
-   - lignes d'environ 75 caractères : confort entre 50 et 75, 80 au plus (Baymard ; WCAG 1.4.8) ;
+   L'échelle est celle des lectures de Coursera (styles calculés relevés le 18 novembre 2026 sur une
+   page de lecture d'un cours) : texte 16 px sur 24 px, intertitres 28 px sur 36 px puis 20 px sur
+   28 px, paragraphes séparés de 16 px, 32 px au-dessus d'un intertitre. Le 18 px d'avant, appuyé sur
+   Rello et al. (CHI 2016), a été jugé trop gros. Coursera compose en Source Sans ; SAVOIR+ garde Inter,
+   sa seule police. Les études restent la limite :
+   - interligne de 1,5 : le minimum retenu par le W3C (WCAG 1.4.12) ;
+   - lignes d'environ 75 caractères : confort entre 50 et 75, 80 au plus (Baymard ; WCAG 1.4.8) — la
+     colonne de Coursera, large de 770 px, en compte plus de 100 ; la nôtre reste plus étroite ;
    - un intertitre plus proche du texte qu'il annonce que de celui qui précède (loi de proximité).
    Les figures et l'exercice débordent un peu de la colonne de texte, les encadrés la suivent. */
 .rd-chapter-main h1 { margin: 0 var(--inset); font-size: 2rem; font-weight: 600; line-height: 2.5rem; letter-spacing: -0.015em; color: var(--fg-primary); }
 .rd-chapter-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 8px var(--inset) 0; font-size: 0.875rem; line-height: 1.375rem; color: var(--fg-muted); }
 .rd-chapter-meta .rd-done { align-items: center; gap: 4px; font-weight: 500; }
 
-.rd-chapter-body { margin-top: 0; font-size: 1.125rem; line-height: 1.8125rem; color: var(--fg-primary); }
+.rd-chapter-body { margin-top: 0; font-size: 1rem; line-height: 1.5rem; color: var(--fg-primary); }
 /* Le texte est un peu plus étroit que les figures et les encadrés, qui prennent toute la colonne. */
 .rd-chapter-body > :not(.rd-wide) { margin-right: var(--inset); margin-left: var(--inset); }
-.rd-chapter-body > p { margin-top: 0; margin-bottom: 20px; }
+.rd-chapter-body > p { margin-top: 0; margin-bottom: 16px; }
 /* Le titre d'une partie ouvre un nouveau morceau du module : un filet, de l'air, son pictogramme. */
-.rd-chapter-body > h2 { display: flex; align-items: center; gap: 14px; margin-top: 56px; margin-bottom: 16px; padding-top: 44px; border-top: 1px solid var(--border-hairline); font-size: 1.75rem; font-weight: 600; line-height: 2.25rem; letter-spacing: -0.015em; color: var(--fg-primary); }
+.rd-chapter-body > h2 { display: flex; align-items: center; gap: 14px; margin-top: 40px; margin-bottom: 16px; padding-top: 32px; border-top: 1px solid var(--border-hairline); font-size: 1.75rem; font-weight: 600; line-height: 2.25rem; letter-spacing: -0.015em; color: var(--fg-primary); }
 .rd-chapter-body > h2:focus { outline: none; }
 .rd-art-badge { display: grid; flex: none; place-items: center; width: 44px; height: 44px; border: 2px solid var(--art-ink); border-radius: 999px; background: var(--art-b-soft); box-shadow: 3px 3px 0 var(--art-b); color: var(--art-ink); }
 .rd-chapter-body > h2:is(#partie-2, #partie-4, #partie-6) .rd-art-badge { background: var(--art-a-soft); box-shadow: 3px 3px 0 var(--art-a); }
 /* Une section qui ouvre sa page n'a ni filet ni marge au-dessus de son titre. */
 .rd-chapter-body > h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 /* Un intertitre appartient au texte qui le suit : quatre fois plus d'air au-dessus qu'au-dessous. */
-.rd-chapter-body > h3 { margin-top: 36px; margin-bottom: 8px; font-size: 1.3125rem; font-weight: 600; line-height: 1.75rem; letter-spacing: -0.01em; color: var(--fg-primary); }
+.rd-chapter-body > h3 { margin-top: 32px; margin-bottom: 8px; font-size: 1.25rem; font-weight: 600; line-height: 1.75rem; letter-spacing: -0.01em; color: var(--fg-primary); }
 .rd-chapter-body ul,
-.rd-chapter-body ol { margin-top: 0; margin-bottom: 20px; padding-left: 36px; }
+.rd-chapter-body ol { margin-top: 0; margin-bottom: 16px; padding-left: 36px; }
 .rd-chapter-body ul { list-style: disc; }
 .rd-chapter-body ol { list-style: decimal; }
 .rd-chapter-body li { margin-bottom: 8px; padding-left: 0; }
@@ -414,7 +418,7 @@
 .rd-timeline li:not(:last-child)::after { content: ''; position: absolute; top: 23px; bottom: -4px; left: 8px; width: 1px; background: var(--border-strong); }
 
 /* Un tableau */
-.rd-table { width: 100%; overflow: hidden; border: 1px solid var(--border-strong); border-radius: var(--angle); border-collapse: separate; border-spacing: 0; font-size: 1rem; line-height: 1.6; }
+.rd-table { width: 100%; overflow: hidden; border: 1px solid var(--border-strong); border-radius: var(--angle); border-collapse: separate; border-spacing: 0; font-size: 0.9375rem; line-height: 1.5; }
 .rd-table th { padding: 12px 16px; border-bottom: 1px solid var(--border-strong); background: var(--bg-subtle); font-weight: 600; text-align: left; color: var(--fg-primary); }
 .rd-table td { padding: 12px 16px; border-top: 1px solid var(--border-hairline); vertical-align: top; color: var(--fg-primary); }
 .rd-table tbody tr:first-child td { border-top: 0; }
@@ -449,14 +453,13 @@
 }
 @media (max-width: 640px) {
   .rd-chapter-main h1 { font-size: 1.75rem; line-height: 2.125rem; }
-  .rd-chapter-body { font-size: 1.0625rem; line-height: 1.6875rem; }
-  .rd-chapter-body > h2 { margin-top: 40px; padding-top: 32px; font-size: 1.5rem; line-height: 1.9375rem; }
-  .rd-chapter-body > h3 { margin-top: 28px; font-size: 1.1875rem; line-height: 1.625rem; }
+  .rd-chapter-body > h2 { margin-top: 32px; padding-top: 24px; font-size: 1.5rem; line-height: 2rem; }
+  .rd-chapter-body > h3 { margin-top: 28px; font-size: 1.125rem; line-height: 1.625rem; }
   .rd-art-badge { width: 38px; height: 38px; }
   .rd-aside { margin-left: 8px; padding: 12px 18px 12px 24px; }
   .rd-practice { padding: 0; }
   .rd-figure figcaption { max-width: 100%; }
-  .rd-table { font-size: 0.9375rem; }
+  .rd-table { font-size: 0.875rem; }
   .rd-table th,
   .rd-table td { padding: 10px 12px; }
 }
@@ -520,7 +523,7 @@
    (une adresse, un objet, un bouton) ; trouvées, elles portent un numéro.
    ========================================================================== */
 .rd-lab-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin: 0 var(--inset) 16px; }
-.rd-lab-head p { margin: 0; font-size: 1.125rem; line-height: 1.8125rem; color: var(--fg-primary); }
+.rd-lab-head p { margin: 0; font-size: 1rem; line-height: 1.5rem; color: var(--fg-primary); }
 .rd-lab-count { flex: none; padding: 3px 12px; border-radius: 999px; background: var(--bg-subtle); font-size: 0.8125rem; font-weight: 600; line-height: 1.5; white-space: nowrap; color: var(--fg-primary); }
 
 .rd-lab-scene { overflow: hidden; border: 1px solid var(--border-strong); border-radius: 14px; background: var(--bg-surface); }
@@ -554,7 +557,7 @@
 .rd-lab-from { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
 .rd-lab-from b { font-size: 1rem; font-weight: 600; color: var(--fg-primary); }
 .rd-lab-from small { font-size: 0.875rem; color: var(--fg-muted); overflow-wrap: anywhere; }
-.rd-lab-zone.is-subject { padding: 16px 52px 6px 18px; font-size: 1.1875rem; font-weight: 600; line-height: 1.35; color: var(--fg-primary); }
+.rd-lab-zone.is-subject { padding: 16px 52px 6px 18px; font-size: 1.0625rem; font-weight: 600; line-height: 1.35; color: var(--fg-primary); }
 .rd-lab-mail-body { padding: 8px 18px 20px; font-size: 1rem; line-height: 1.65; color: var(--fg-primary); }
 .rd-lab-mail-body p { margin: 0 0 10px; }
 .rd-lab-zone.is-inline { display: inline; width: auto; border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
@@ -607,9 +610,8 @@
   .rd-hero-art { height: 112px; order: -1; }
   .rd-hero-text { padding: 20px; }
   .rd-lab-head { flex-direction: column; gap: 8px; }
-  .rd-lab-head p { font-size: 1.0625rem; line-height: 1.6875rem; }
   .rd-lab-zone.is-row { grid-template-columns: minmax(0, 1fr); }
-  .rd-lab-zone.is-subject { font-size: 1.0625rem; }
+  .rd-lab-zone.is-subject { font-size: 1rem; }
 }
 
 /* -- Quiz final, sur sa page, dans le cadre du cours ------------------------------------------------ */
