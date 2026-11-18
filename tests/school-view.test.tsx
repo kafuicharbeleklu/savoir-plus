@@ -63,8 +63,9 @@ test('écran d’attente du code parental : un seul champ, aucune autre porte', 
 test('espace encadrant : intitulé, classes, questions à revoir, cours de la semaine', () => {
   const school = initialSchoolState(TODAY);
   const home = text(renderToStaticMarkup(<TeachingPage {...props('kossi', school)} />));
-  assert.match(home, /Espace encadrant Enseignant · 2 établissements/);
-  assert.match(home, /Identité vérifiée/);
+  // Ni titre visible ni phrase d'introduction : la page ouvre directement sur les classes.
+  assert.match(home, /Espace encadrant Mes classes/);
+  assert.doesNotMatch(home, /Faire vérifier mon identité/);
   assert.match(home, /Terminale D Les Palmiers · 10 élèves · 3 modules/);
   assert.match(home, /Initiation aux réseaux Centre Horizon · 3 élèves · 2 modules/);
   assert.match(home, /Mes cours de la semaine/);
@@ -85,14 +86,14 @@ test('espace encadrant : sans identité vérifiée ni rattachement validé, aucu
   const school = initialSchoolState(TODAY);
   const withPersona = { ...props('kossi', school), user: { ...person('kossi'), id: 'ama', name: 'Ama Dossou' } };
   const pending = text(renderToStaticMarkup(<TeachingPage {...withPersona} />));
-  assert.match(pending, /Encadreur indépendant vérifié/);
-  assert.match(pending, /Aucune classe pour le moment/);
+  // L'action de rattachement se trouve au titre de la section qu'elle concerne.
+  assert.match(pending, /Mes classes Demander un rattachement Aucune classe pour le moment/);
   assert.match(pending, /Les Palmiers Français · expression écrite · demandé le 15 nov\. En attente de l’établissement/);
   // L'établissement valide : la classe apparaît.
   const validated = setMembershipStatus(school, 'mb-ama-palmiers', 'active');
   const active = text(renderToStaticMarkup(<TeachingPage {...withPersona} school={validated} />));
-  assert.match(active, /Enseignant · Les Palmiers/);
   assert.match(active, /Troisième A Les Palmiers · 8 élèves · 1 module/);
+  assert.doesNotMatch(active, /Aucune classe pour le moment/);
 });
 
 test('espace famille : enfants, code en attente, achats ; fiche d’un enfant', () => {
@@ -132,9 +133,9 @@ test('espace famille : enfants, code en attente, achats ; fiche d’un enfant', 
 test('espace établissement : demandes, classes et niveaux, une classe en détail', () => {
   const school = initialSchoolState(TODAY);
   const home = text(renderToStaticMarkup(<InstitutionPage {...props('palmiers', school)} />));
-  assert.match(home, /Les Palmiers Complexe scolaire \(démonstration\) · Lomé/);
-  assert.match(home, /Établissement vérifié/);
-  assert.match(home, /Vue d’ensemble Planification Emploi du temps Classes 3 Enseignants 1 Demandes 2/);
+  // Plus d'en-tête de présentation : ni type, ni ville, ni statut quand l'établissement est vérifié.
+  assert.doesNotMatch(home, /Complexe scolaire|Établissement vérifié|Vous validez qui rejoint/);
+  assert.match(home, /Vue d’ensemble Planification Emploi du temps Classes 3 Enseignants 1 Demandes 2 Créer une classe/);
   // La vue d'ensemble : chiffres clés, avancement des classes face à l'attendu, élèves à accompagner.
   assert.match(home, /Élèves 24 3 classes Enseignants 1 rattachés et actifs Heures de cours 30 par semaine/);
   assert.match(home, /Terminale D 10 élèves · Sauvegarder ses fichiers \d+ % (En avance|Dans les temps|En retard)/);

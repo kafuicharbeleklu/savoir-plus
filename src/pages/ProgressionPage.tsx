@@ -157,6 +157,7 @@ export function ProgressionView({
       <div className="dashboard-main">
         <PageHeader
           title={isOwnProfile ? 'Progression' : `Progression de ${firstName}`}
+          keepTitle={!isOwnProfile}
           subtitle={isOwnProfile ? 'Votre niveau, vos modules, vos badges et vos compétences.' : 'Niveau, modules, badges et compétences.'}
         />
 

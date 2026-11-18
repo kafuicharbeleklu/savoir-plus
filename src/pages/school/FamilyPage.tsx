@@ -192,29 +192,18 @@ export function FamilyPage({
 
   return (
     <div className="sc-page">
-      <PageHeader
-        title="Espace famille"
-        subtitle="Vos enfants, leurs progrès et leurs contenus."
-        actions={
-          <button type="button" className="primary ui-btn-sm" disabled={!verified} onClick={() => setCodeOpen(true)}>
-            Créer un code
-          </button>
-        }
-      />
+      <PageHeader title="Espace famille" />
 
-      <section className="sc-status" aria-label="Votre statut">
-        <IdentityDot status={account.identity} />
-        <p>
-          {verified
-            ? 'Votre identité est vérifiée : vous pouvez rattacher un enfant par un code et acheter des contenus pour lui. Vous lisez le fil et la bibliothèque, sans publier.'
-            : 'Tant que votre identité n’est pas vérifiée, vous consultez les contenus mais vous ne pouvez ni rattacher un enfant ni acheter pour lui.'}
-        </p>
-        {!verified && (
+      {/* Le bandeau n'apparaît que s'il y a quelque chose à faire. */}
+      {!verified && (
+        <section className="sc-status" aria-label="Votre statut">
+          <IdentityDot status={account.identity} />
+          <p>Tant que votre identité n’est pas vérifiée, vous consultez les contenus mais vous ne pouvez ni rattacher un enfant ni acheter pour lui.</p>
           <button type="button" className="li-text-link" onClick={() => nav('settings', 'account/verification')}>
             Faire vérifier mon identité
           </button>
-        )}
-      </section>
+        </section>
+      )}
 
       <div className="ui-section-title">
         <h2>Mes enfants</h2>
@@ -235,6 +224,9 @@ export function FamilyPage({
 
       <div className="ui-section-title">
         <h2>Codes</h2>
+        <button type="button" className="li-text-link" disabled={!verified} onClick={() => setCodeOpen(true)}>
+          Créer un code
+        </button>
       </div>
       <ListCard label="Codes créés pour vos enfants">
         {codes.length === 0 ? (

@@ -35,9 +35,11 @@ interface AccountAdminProps {
   settingsTab?: 'prefs' | 'privacy' | 'security';
   setSettingsTab?: (tab: 'prefs' | 'privacy' | 'security') => void;
   setToast: (msg: string) => void;
+  /** Colonne de droite de la page des alertes. */
+  rail?: React.ReactNode;
 }
 
-export function NotificationsView({ ext, updateExt, nav, people, user, setToast }: AccountAdminProps) {
+export function NotificationsView({ ext, updateExt, nav, people, user, setToast, rail }: AccountAdminProps) {
 
   const resolveActor = (n: NotificationItem): Profile => {
     const matched = n.actorId ? people.find((p) => p.id === n.actorId) : undefined;
@@ -82,9 +84,7 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast 
   return (
     <div className="dashboard-grid">
       <div className="dashboard-main">
-        <div className="page-heading wf-no-mb">
-          <h1>Alertes</h1>
-        </div>
+        <h1 className="sr-only">Alertes</h1>
 
         <div className="ui-filter" role="group" aria-label="Filtrer les alertes">
           {(
@@ -98,6 +98,11 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast 
               {f.label}
             </button>
           ))}
+          {unreadCount > 0 && (
+            <button type="button" className="li-text-link ui-filter-aside" onClick={markAllRead}>
+              Tout marquer comme lu
+            </button>
+          )}
         </div>
 
         {shown.length === 0 ? (
@@ -134,31 +139,8 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast 
         )}
       </div>
 
-      <aside className="right-rail" aria-label="Repères notifications">
-
-        <section className="rail-card">
-          <span className="eyebrow">À traiter en priorité</span>
-          <h3>{unreadCount > 0 ? `${unreadCount} alerte(s) non lue(s)` : 'Tout est à jour'}</h3>
-          {unreadCount > 0 && (
-            <button type="button" className="li-text-link" onClick={markAllRead}>
-              Tout marquer comme lu
-            </button>
-          )}
-          <div className="rail-quick-list">
-            <button type="button" className="rail-quick-item" onClick={() => nav('report')}>
-              <b>Suivi des signalements ({ext.reports.length})</b>
-              <small>
-                {ext.reports.some((r) => r.status === 'Précisions demandées')
-                  ? 'Précisions demandées sur un dossier'
-                  : 'Consulter vos démarches privées'}
-              </small>
-            </button>
-            <button type="button" className="rail-quick-item" onClick={() => nav('settings', 'notifications')}>
-              <b>Préférences de notification</b>
-              <small>Choisir les alertes que vous recevez</small>
-            </button>
-          </div>
-        </section>
+      <aside className="right-rail" aria-label="À venir">
+        {rail}
       </aside>
     </div>
   );

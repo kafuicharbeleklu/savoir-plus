@@ -8,7 +8,6 @@ import type { Progress } from '../../data';
 import {
   accountOf,
   classesOfTeacher,
-  educatorStanding,
   institutionOf,
   requestMembership,
   slotsFor,
@@ -47,7 +46,6 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
   const [moduleOpen, setModuleOpen] = useState<string | null>(null);
   const [joinOpen, setJoinOpen] = useState(false);
 
-  const standing = educatorStanding(school, user.id);
   const account = accountOf(school, user.id);
   const classes = classesOfTeacher(school, user.id);
   const openClass = classes.find((c) => c.id === selectedId);
@@ -202,33 +200,26 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
 
   return (
     <div className="sc-page">
-      <PageHeader
-        title="Espace encadrant"
-        subtitle={standing.label}
-        actions={
-          joinable.length > 0 ? (
-            <button type="button" className="primary ui-btn-sm" onClick={() => setJoinOpen(true)}>
-              Demander un rattachement
-            </button>
-          ) : undefined
-        }
-      />
+      <PageHeader title="Espace encadrant" />
 
-      <section className="sc-status" aria-label="Votre statut">
-        <IdentityDot status={account.identity} />
-        <p>
-          Votre intitulé n’est pas choisi : il suit la vérification de votre identité et vos rattachements validés par un établissement.
-          {account.identity !== 'verified' && ' Sans identité vérifiée, vous restez encadreur indépendant et ne recevez pas de classe.'}
-        </p>
-        {account.identity !== 'verified' && (
+      {/* Le bandeau n'apparaît que s'il y a quelque chose à faire. */}
+      {account.identity !== 'verified' && (
+        <section className="sc-status" aria-label="Votre statut">
+          <IdentityDot status={account.identity} />
+          <p>Sans identité vérifiée, vous restez encadreur indépendant et ne recevez pas de classe.</p>
           <button type="button" className="li-text-link" onClick={() => nav('settings', 'account/verification')}>
             Faire vérifier mon identité
           </button>
-        )}
-      </section>
+        </section>
+      )}
 
       <div className="ui-section-title">
         <h2>Mes classes</h2>
+        {joinable.length > 0 && (
+          <button type="button" className="li-text-link" onClick={() => setJoinOpen(true)}>
+            Demander un rattachement
+          </button>
+        )}
       </div>
       <ListCard label="Mes classes">
         {classes.length === 0 ? (

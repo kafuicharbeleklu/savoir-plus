@@ -158,25 +158,25 @@ export function InstitutionPage({ school, saveSchool, ext, user, people, today, 
 
   return (
     <div className="sc-page">
-      <PageHeader
-        title={institution.name}
-        subtitle={`${institution.type} · ${institution.city}`}
-        actions={
-          <button type="button" className="primary ui-btn-sm" onClick={() => setClassOpen(true)}>
-            Créer une classe
-          </button>
-        }
-      />
+      <PageHeader title={institution.name} />
 
-      <section className="sc-status" aria-label="Statut de l’établissement">
-        <StatusDot tone={institution.verified ? 'info' : 'warn'}>{institution.verified ? 'Établissement vérifié' : 'Vérification en cours'}</StatusDot>
-        <p>Vous validez qui rejoint vos classes, vous réglez ce que les élèves peuvent faire, et vous suivez l’avancement des apprentissages.</p>
-      </section>
+      {/* Rien à dire quand tout est en ordre : le bandeau n'apparaît que tant que la vérification est en cours. */}
+      {!institution.verified && (
+        <section className="sc-status" aria-label="Statut de l’établissement">
+          <StatusDot tone="warn">Vérification en cours</StatusDot>
+          <p>Vos classes et vos rattachements seront visibles des membres une fois l’établissement vérifié.</p>
+        </section>
+      )}
 
       <Tabs<TabId>
         label="Rubriques de l’établissement"
         value={tab}
         onChange={setTab}
+        trailing={
+          <button type="button" className="primary ui-btn-sm" onClick={() => setClassOpen(true)}>
+            Créer une classe
+          </button>
+        }
         items={[
           { id: 'overview', label: 'Vue d’ensemble' },
           { id: 'planning', label: 'Planification' },

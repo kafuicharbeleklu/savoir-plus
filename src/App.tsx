@@ -1442,6 +1442,29 @@ export default function App() {
     readOnly: !caps.canPublish
   };
 
+  // Carte publicitaire : une seule définition, posée dans la colonne de droite des pages les plus visitées
+  // (accueil, relations, messagerie, alertes, mes apprentissages). Jamais montrée à un compte d'enfant de moins de 12 ans.
+  const adSlot = (
+    <>
+      {ageBandOf(schoolAccountOf(school, uid), today) !== 'child' && (
+        <SponsoredCard
+          campaigns={demoCampaigns(today, addCalendarDays)}
+          today={today}
+          seed={adSeed}
+          canOpen={(id) => networkDirectory.some((p) => p.id === id)}
+          onOpenAdvertiser={(id) => nav('member', id)}
+          onOpenOffers={() => setOffersOpen(true)}
+        />
+      )}
+      {offersOpen && (
+        <OffersModal
+          initial={caps.accountKind === 'institution' ? 'institution' : caps.accountKind === 'guardian' ? 'family' : caps.accountKind === 'educator' ? 'educator' : 'learner'}
+          onClose={() => setOffersOpen(false)}
+        />
+      )}
+    </>
+  );
+
   const accountAdminProps = {
     ext,
     updateExt,
@@ -1817,23 +1840,7 @@ export default function App() {
             </section>
             )}
 
-            {/* Carte publicitaire : jamais montrée à un compte d'enfant de moins de 12 ans. */}
-            {ageBandOf(schoolAccountOf(school, uid), today) !== 'child' && (
-              <SponsoredCard
-                campaigns={demoCampaigns(today, addCalendarDays)}
-                today={today}
-                seed={adSeed}
-                canOpen={(id) => networkDirectory.some((p) => p.id === id)}
-                onOpenAdvertiser={(id) => nav('member', id)}
-                onOpenOffers={() => setOffersOpen(true)}
-              />
-            )}
-            {offersOpen && (
-              <OffersModal
-                initial={caps.accountKind === 'institution' ? 'institution' : caps.accountKind === 'guardian' ? 'family' : caps.accountKind === 'educator' ? 'educator' : 'learner'}
-                onClose={() => setOffersOpen(false)}
-              />
-            )}
+            {adSlot}
 
             <section className="rail-card">
               <h2 className="discover-feed-title">Ajouter à votre fil d’actualité</h2>
@@ -1917,11 +1924,7 @@ export default function App() {
       return (
         <div className="dashboard-grid">
           <div className="dashboard-main">
-            <header className="page-header">
-              <span className="eyebrow">Apprendre</span>
-              <h1>Mes apprentissages</h1>
-              <p>Vos modules en cours, ceux à commencer et ceux que vous avez validés.</p>
-            </header>
+            <h1 className="sr-only">Mes apprentissages</h1>
             <div className="md:hidden">
               <ProfileIdentityCard
                 user={user}
@@ -2032,6 +2035,7 @@ export default function App() {
                 Ouvrir la bibliothèque <ArrowRight size={14} />
               </button>
             </section>
+            {adSlot}
           </aside>
         </div>
       );
@@ -2050,11 +2054,6 @@ export default function App() {
       return (
         <div className="dashboard-grid">
           <div className="dashboard-main">
-            <header className="page-header">
-              <span className="eyebrow">Réseau</span>
-              <h1>Relations</h1>
-              <p>Suivez des membres pour voir leurs publications ; pour discuter en privé, envoyez une demande : l’échange s’ouvre seulement quand elle est acceptée.</p>
-            </header>
             <h1 className="sr-only">Relations</h1>
 
             <div className="catalog-tabs-underline" role="tablist" aria-label="Sections du réseau">
@@ -2347,6 +2346,7 @@ export default function App() {
                 Réglages de contact
               </button>
             </section>
+            {adSlot}
           </aside>
         </div>
       );
@@ -2470,12 +2470,7 @@ export default function App() {
               </header>
               <div className="conversation-list" role="list">
                 {msgContacts.length === 0 ? (
-                  <div className="conversation-empty">
-                    <p>Aucune discussion pour le moment.</p>
-                    <button type="button" className="li-text-link" onClick={() => nav('relations')}>
-                      Découvrir des membres
-                    </button>
-                  </div>
+                  <p className="conversation-empty">Aucune discussion.</p>
                 ) : (
                   (() => {
                     const q = normalizeSearch(conversationQuery);
@@ -2561,8 +2556,20 @@ export default function App() {
                 ) : (
                   <div className="chat-welcome">
                     <MessageCircle size={32} />
-                    <h3>Sélectionnez une discussion</h3>
-                    <p>Choisissez une personne à gauche pour reprendre l’échange.</p>
+                    {msgContacts.length === 0 ? (
+                      <>
+                        <h3>Aucune discussion pour le moment</h3>
+                        <p>Un échange privé s’ouvre quand une demande de contact est acceptée.</p>
+                        <button type="button" className="secondary" onClick={() => nav('relations')}>
+                          Découvrir des membres
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <h3>Sélectionnez une discussion</h3>
+                        <p>Choisissez une personne à gauche pour reprendre l’échange.</p>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -2629,6 +2636,7 @@ export default function App() {
                 </button>
               </div>
             </section>
+            {adSlot}
           </aside>
         </div>
       );
@@ -2692,7 +2700,20 @@ export default function App() {
     if (page === 'community-compose') return <CommunityComposeView {...communityProps} />;
     if (page === 'community-thread') return <CommunityThreadView {...communityProps} />;
 
-    if (page === 'notifications') return <NotificationsView {...accountAdminProps} />;
+    if (page === 'notifications')
+      return (
+        <NotificationsView
+          {...accountAdminProps}
+          rail={
+            <>
+              {learnsHere && (
+                <CalendarCard today={today} events={calendarEvents} plan={revisionPlan} log={calendarState.log} onOpen={(day) => nav('calendar', day || '')} />
+              )}
+              {adSlot}
+            </>
+          }
+        />
+      );
     if (page === 'report') return <ReportView {...accountAdminProps} />;
     if (page === 'settings')
       return (

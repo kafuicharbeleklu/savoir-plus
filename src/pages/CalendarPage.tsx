@@ -587,20 +587,17 @@ export function CalendarPage({
   return (
     <div className="dashboard-grid cal-page">
       <div className="dashboard-main">
-        <PageHeader
-          title="Calendrier"
-          subtitle="Examens, congés et séances de révision."
-          actions={
-            <button type="button" className="primary ui-btn-sm" onClick={() => setEditing({ event: null })}>
-              Ajouter une date
-            </button>
-          }
-        />
+        <PageHeader title="Calendrier" />
 
         <Tabs<TabId>
           label="Vues du calendrier"
           value={tab}
           onChange={setTab}
+          trailing={
+            <button type="button" className="primary ui-btn-sm" onClick={() => setEditing({ event: null })}>
+              Ajouter une date
+            </button>
+          }
           items={[
             { id: 'agenda', label: 'Agenda' },
             { id: 'plan', label: 'Plan de révision', count: remaining > 0 ? remaining : undefined },

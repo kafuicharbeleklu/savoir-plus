@@ -171,13 +171,9 @@ export function CatalogExtraView({
     domain !== 'Tous' || levelFilter !== 'Tous' || reviewFilter !== 'Toutes' || typeTab !== 'all' || Boolean(q);
 
   return (
-    <div className="dashboard-grid">
+    <div className="dashboard-grid is-single">
       <div className="dashboard-main">
-        <header className="page-header">
-          <span className="eyebrow">Apprendre</span>
-          <h1>Bibliothèque</h1>
-          <p>Modules courts, fiches de révision et parcours pour progresser à votre rythme.</p>
-        </header>
+        <h1 className="sr-only">Bibliothèque</h1>
 
         <div className="catalog-tabs-underline" role="tablist" aria-label="Type de contenu">
           {[
@@ -324,93 +320,6 @@ export function CatalogExtraView({
         )}
       </div>
 
-      <aside className="right-rail" aria-label="Repères bibliothèque">
-        <section
-          className="rail-card is-clickable"
-          role="button"
-          tabIndex={0}
-          onClick={() => openDetail(recommendedItem)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              openDetail(recommendedItem);
-            }
-          }}
-        >
-          <span className="eyebrow">
-            {domain === 'Tous' ? 'Parcours conseillé' : `Adapté · ${domain}`}
-          </span>
-          <h3>{recommendedItem.title}</h3>
-          <p className="tiny muted">{recommendedItem.summary}</p>
-          {recommendedItem.type !== 'resource' ? (
-            <div className="rail-stat-row">
-              <span>Avancement estimé</span>
-              <b className="tabular">{recommendedPct}%</b>
-            </div>
-          ) : (
-            <div className="rail-stat-row">
-              <span>Format · Durée</span>
-              <b>
-                {recommendedItem.resourceFormat || 'Fiche'} · {recommendedItem.duration}
-              </b>
-            </div>
-          )}
-        </section>
-
-
-        <section className="rail-card">
-          <span className="eyebrow">À commencer ({plannedItems.length})</span>
-          <h3>Votre liste planifiée</h3>
-          {plannedItems.length === 0 ? (
-            <p className="tiny muted">Ajoutez un module depuis sa fiche pour le retrouver ici.</p>
-          ) : (
-            <div className="rail-quick-list">
-              {plannedItems.slice(0, 3).map((pl) => (
-                <button
-                  key={pl.id}
-                  type="button"
-                  className="rail-quick-item"
-                  onClick={() => openDetail(pl)}
-                >
-                  <b>{pl.title}</b>
-                  <small>
-                    {pl.domain} · {pl.duration}
-                  </small>
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="rail-card">
-          <span className="eyebrow">
-            {domain === 'Tous' ? 'Entraide récente' : `Discussions · ${domain}`}
-          </span>
-          <h3>Questions des apprenants</h3>
-          {domainPosts.length === 0 ? (
-            <p className="tiny muted">Aucune question récente sur {domain.toLowerCase()} pour le moment.</p>
-          ) : (
-            <div className="rail-quick-list">
-              {domainPosts.slice(0, 2).map((dp) => (
-                <button
-                  key={dp.id}
-                  type="button"
-                  className="rail-quick-item"
-                  onClick={() => nav('community-thread', dp.id)}
-                >
-                  <b>{dp.title}</b>
-                  <small>
-                    {dp.authorName} · {dp.replies.length} réponse(s)
-                  </small>
-                </button>
-              ))}
-            </div>
-          )}
-          <button className="text-link" onClick={() => nav('community-compose')}>
-            Poser une question <ArrowRight size={14} />
-          </button>
-        </section>
-      </aside>
     </div>
   );
 }

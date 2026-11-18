@@ -14,20 +14,29 @@ export function PageHeader({
   title,
   subtitle,
   actions,
-  back
+  back,
+  keepTitle = false
 }: {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   actions?: React.ReactNode;
   back?: { label: string; onClick: () => void };
+  /** Garder le titre visible sur une page de premier niveau (quand il dit de qui ou de quoi il s’agit). */
+  keepTitle?: boolean;
 }) {
+  if (!back) {
+    return (
+      <header className={`ui-page-header is-bare${actions || keepTitle ? '' : ' sr-only'}`}>
+        <h1 className={keepTitle ? undefined : 'sr-only'}>{title}</h1>
+        {actions && <div className="ui-page-header-actions">{actions}</div>}
+      </header>
+    );
+  }
   return (
     <header className="ui-page-header">
-      {back && (
-        <button type="button" className="ui-back-link" onClick={back.onClick}>
-          <ArrowLeft size={16} aria-hidden="true" /> {back.label}
-        </button>
-      )}
+      <button type="button" className="ui-back-link" onClick={back.onClick}>
+        <ArrowLeft size={16} aria-hidden="true" /> {back.label}
+      </button>
       <div className="ui-page-header-row">
         <div className="ui-page-header-text">
           <h1>{title}</h1>
@@ -45,10 +54,7 @@ export type StatusTone = 'ok' | 'neutral' | 'warn' | 'danger' | 'info';
 
 export function StatusDot({ tone = 'neutral', children }: { tone?: StatusTone; children: React.ReactNode }) {
   return (
-    <span className={`ui-status ui-status-${tone}`}>
-      <i aria-hidden="true" />
-      {children}
-    </span>
+    <span className={`ui-status ui-status-${tone}`}>{children}</span>
   );
 }
 
@@ -643,13 +649,24 @@ export function Tabs<T extends string>({
   items,
   value,
   onChange,
-  label
+  label,
+  trailing
 }: {
   items: { id: T; label: string; count?: number }[];
   value: T;
   onChange: (id: T) => void;
   label: string;
+  /** Action de la page, posée au bout de la ligne des onglets (hors de la liste d'onglets). */
+  trailing?: React.ReactNode;
 }) {
+  if (trailing) {
+    return (
+      <div className="ui-tabs-bar">
+        <Tabs items={items} value={value} onChange={onChange} label={label} />
+        <div className="ui-tabs-trailing">{trailing}</div>
+      </div>
+    );
+  }
   return (
     <div className="ui-tabs" role="tablist" aria-label={label}>
       {items.map((t) => (

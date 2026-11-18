@@ -1263,3 +1263,46 @@ button.pf-suggest.is-link:hover .pf-suggest-name { color: var(--accent-brand); t
 
 /* -- Graisses : le demi-gras est réservé aux titres et aux chiffres clés ; rien de plus gras. ---- */
 b, strong { font-weight: 600; }
+
+/* -- Retouches du 18 novembre --------------------------------------------------------------------
+   Un statut se lit à ses mots, colorés selon le ton : plus de point devant. */
+.ui-status-info { color: var(--accent-brand); }
+/* Une page de premier niveau n'a ni titre ni phrase d'introduction : seules ses actions restent. */
+.ui-page-header.is-bare { display: flex; flex-direction: row; justify-content: flex-end; margin: 0; }
+/* Le champ « partagez une astuce… » n'a pas de fond au repos : il n'en prend un qu'au survol. */
+.home-composer-prompt { background: transparent; }
+.home-composer-prompt:hover { background: var(--bg-subtle); }
+/* La bibliothèque occupe toute la largeur : pas de troisième colonne. */
+.dashboard-grid.is-single { grid-template-columns: minmax(0, 1fr); }
+/* Cartes de modules : proportions relevées sur HackTheBox Academy le 18 novembre (carte de 427 × 508, image de
+   427 × 235 à fleur de carte, soit 20:11, marges de texte de 32 px, 32 px entre deux cartes), ramenées à notre
+   largeur de 312 px : image de 172 px, marges de 20 px, 24 px entre deux cartes. */
+.sober-card { padding: 0; gap: 0; overflow: hidden; }
+.sober-card .sober-card-banner,
+.sober-card .sober-card-banner.compact { height: auto; aspect-ratio: 20 / 11; border: 0; border-bottom: 1px solid var(--border-hairline); border-radius: 0; }
+.sober-card .sober-card-body { padding: 16px 20px 14px; gap: 8px; }
+.sober-card .sober-card-footer { margin: auto 20px 0; padding: 12px 0 16px; }
+.popular-carousel-track { gap: 24px; }
+.popular-carousel-track > .sober-card { flex: 0 0 312px; }
+.course-grid, .catalog-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; }
+@media (max-width: 640px) {
+  .popular-carousel-track { gap: 16px; }
+  .popular-carousel-track > .sober-card { flex-basis: 272px; }
+}
+/* En-tête réduit : le titre conservé (page d'un autre membre) à gauche, les actions à droite. */
+.ui-page-header.is-bare { align-items: center; gap: 12px; }
+.ui-page-header.is-bare > h1:not(.sr-only) { margin: 0 auto 0 0; font-size: 1.25rem; font-weight: 600; letter-spacing: 0; }
+/* « Tout marquer comme lu » : au bout de la ligne des filtres. */
+.ui-filter > .ui-filter-aside { margin-left: auto; border: 0; background: none; padding: 0 2px; }
+/* Messagerie sans discussion : le bouton sous le texte d'accueil. */
+.chat-welcome > button { margin-top: 12px; }
+/* Onglets suivis de l'action de la page, sur la même ligne. */
+.ui-tabs-bar { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-hairline); }
+.ui-tabs-bar > .ui-tabs { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
+.ui-tabs-trailing { flex: none; display: flex; align-items: center; gap: 8px; }
+.ui-section-title .li-text-link:disabled { color: var(--fg-muted); text-decoration: none; cursor: not-allowed; }
+@media (max-width: 640px) {
+  .ui-tabs-bar { flex-wrap: wrap-reverse; border-bottom: 0; }
+  .ui-tabs-bar > .ui-tabs { flex-basis: 100%; border-bottom: 1px solid var(--border-hairline); }
+  .ui-tabs-trailing { margin-left: auto; }
+}
