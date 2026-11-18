@@ -1689,22 +1689,24 @@ export default function App() {
     setToast
   };
 
-  // Active lab for TopBar avatar & Home hero
-  const activeLab = resolveActiveLab(dynamicCatalog, getModuleProgress, LESSON_COUNTS);
+  // Module en cours : le même pour l'anneau de la barre du haut et pour la carte « Reprise » de l'accueil ;
+  // rien quand aucun module n'est commencé sans être validé.
+  const activeLab = resolveActiveLab(dynamicCatalog, modulePct);
+  // Reprendre un module là où on l'a laissé : le quiz quand toutes les parties sont lues, sinon la lecture.
+  const resumeModule = (id: string) => {
+    if (getModuleProgress(id).lessons.length >= (MODULES_CONTENT[id]?.lessons.length || 3) && !isModuleValidated(id)) {
+      setActiveStudyModuleId(id);
+      nav('quiz-intro', id);
+    } else openReader(id);
+  };
   const acceptedPeerIds = acceptedRelations
     .map((r) => r.members.find((m) => m !== uid))
     .filter((id): id is string => Boolean(id));
   const communityMemberIds = Array.from(new Set([...myFollowing, ...acceptedPeerIds]));
 
   // Determine active module to resume on Home hero
-  const resumeModuleId =
-    // Le module phishing (cœur du pitch) est proposé en premier tant qu'il n'est pas validé.
-    Array.from(
-      new Set(['phishing', 'reseaux', 'comptes', ...dynamicCatalog.filter((c) => c.type === 'module').map((c) => c.id)])
-    ).find((id) => {
-      const pct = modulePct(id);
-      return pct > 0 && pct < 100;
-    }) || 'phishing';
+  // Le module en cours ; sinon le phishing (cœur du pitch), proposé tant qu'il n'est pas validé.
+  const resumeModuleId = activeLab?.item.id || 'phishing';
   const resumeCatalog = dynamicCatalog.find((c) => c.id === resumeModuleId) || dynamicCatalog[0];
   const resumeProg = getModuleProgress(resumeModuleId);
   const resumePct = modulePct(resumeModuleId);
@@ -1800,11 +1802,7 @@ export default function App() {
                 {learnsHere && (
                   <article
                     className="htb-card home-resume"
-                    onClick={() =>
-                      resumeProg.lessons.length >= (MODULES_CONTENT[resumeModuleId]?.lessons.length || 3) && !resumeValidated
-                        ? (setActiveStudyModuleId(resumeModuleId), nav('quiz-intro', resumeModuleId))
-                        : openReader(resumeModuleId)
-                    }
+                    onClick={() => resumeModule(resumeModuleId)}
                   >
                     <div className="home-resume-visual">
                       <CatalogCardBanner item={resumeCatalog} />
@@ -2988,7 +2986,7 @@ export default function App() {
         ext={ext}
         people={people}
         activeLab={learnsHere ? activeLab : null}
-        onOpenActiveLab={(id) => openReader(id)}
+        onOpenActiveLab={resumeModule}
         pendingCount={pendingIncoming.length}
         unreadNotifs={unreadNotifs}
         topQuery={topQuery}

@@ -359,25 +359,17 @@ test('LinkedIn-style community helpers resolve author avatars, toggle helpful, r
 
 import { resolveActiveLab, resolveDefaultCommentPreview, resolveDiscoverSuggestions } from '../src/personas';
 
-test('resolveActiveLab prioritizes in-progress module for TopBar avatar', () => {
-  const counts = { phishing: 3, reseaux: 3, comptes: 3 };
-  const active = resolveActiveLab(
-    CATALOG_ITEMS,
-    (id) => (id === 'reseaux' ? { lessons: [0], answers: [], submitted: false } : { lessons: [], answers: [], submitted: false }),
-    counts
-  );
+test('module en cours : le premier commencé et pas validé ; rien pour un module fini ou jamais ouvert', () => {
+  const active = resolveActiveLab(CATALOG_ITEMS, (id) => (id === 'reseaux' ? 33 : 0));
   assert.ok(active);
   assert.equal(active!.item.id, 'reseaux');
-  assert.ok(active!.pct > 0 && active!.pct < 100);
-
-  const fallback = resolveActiveLab(
-    CATALOG_ITEMS,
-    () => ({ lessons: [], answers: [], submitted: false }),
-    counts
-  );
-  assert.ok(fallback);
-  assert.equal(fallback!.item.id, 'phishing');
-  assert.equal(fallback!.pct, 0);
+  assert.equal(active!.pct, 33);
+  // Le phishing passe d'abord quand il est lui aussi en cours.
+  assert.equal(resolveActiveLab(CATALOG_ITEMS, (id) => (id === 'reseaux' ? 33 : id === 'phishing' ? 75 : 0))!.item.id, 'phishing');
+  // Rien de commencé : pas de module « en cours » (avant : le phishing à 0 %).
+  assert.equal(resolveActiveLab(CATALOG_ITEMS, () => 0), null);
+  // Un module validé n'est plus « en cours » (avant : réseaux à 100 % dans la barre du haut).
+  assert.equal(resolveActiveLab(CATALOG_ITEMS, (id) => (id === 'reseaux' ? 100 : 0)), null);
 });
 
 test('resolveDefaultCommentPreview retracts comments unless latest top-level comment is from community', () => {

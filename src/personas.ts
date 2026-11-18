@@ -706,43 +706,26 @@ export function appendCommunityReply(
   });
 }
 
+/**
+ * Module en cours : le premier commencé et pas encore validé (phishing, réseaux, comptes d'abord, puis
+ * l'ordre du catalogue). C'est le même pour l'anneau de la barre du haut et pour la carte « Reprise » de
+ * l'accueil. Rien de commencé, ou tout validé : rien — pas d'anneau « en cours » pour un module terminé
+ * ou jamais ouvert. `pctOf` donne l'avancement d'un module (parties lues et quiz).
+ */
 export function resolveActiveLab(
   catalog: CatalogItem[],
-  getProgress: (modId: string) => Progress,
-  lessonCounts: Record<string, number>,
+  pctOf: (modId: string) => number,
   preferredOrder: string[] = ['phishing', 'reseaux', 'comptes']
 ): { item: CatalogItem; pct: number } | null {
   const modules = catalog.filter((c) => c.type === 'module');
-  if (modules.length === 0) return null;
-
   const orderedIds = Array.from(new Set([...preferredOrder, ...modules.map((m) => m.id)]));
-
   for (const id of orderedIds) {
     const item = modules.find((m) => m.id === id);
     if (!item) continue;
-    const total = lessonCounts[id] || item.sections?.length || 3;
-    const pct = moduleProgressPercent(getProgress(id), total, builtInAnswerKey(id));
-    if (pct > 0 && pct < 100) {
-      return { item, pct };
-    }
+    const pct = pctOf(id);
+    if (pct > 0 && pct < 100) return { item, pct };
   }
-
-  for (const id of orderedIds) {
-    const item = modules.find((m) => m.id === id);
-    if (!item) continue;
-    const total = lessonCounts[id] || item.sections?.length || 3;
-    const pct = moduleProgressPercent(getProgress(id), total, builtInAnswerKey(id));
-    if (pct > 0) {
-      return { item, pct };
-    }
-  }
-
-  const fallback = modules.find((m) => m.id === 'phishing') || modules[0];
-  const fallbackTotal = lessonCounts[fallback.id] || fallback.sections?.length || 3;
-  return {
-    item: fallback,
-    pct: moduleProgressPercent(getProgress(fallback.id), fallbackTotal, builtInAnswerKey(fallback.id))
-  };
+  return null;
 }
 
 export function resolveDefaultCommentPreview(
