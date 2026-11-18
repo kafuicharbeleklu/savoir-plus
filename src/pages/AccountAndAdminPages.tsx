@@ -198,14 +198,7 @@ export function ReportView({ ext, updateExt, nav, reportTarget, setToast }: Acco
         <ArrowLeft size={16} /> Retour aux alertes
       </button>
 
-      <div className="page-heading">
-        <span className="eyebrow">Signalement & suivi privé</span>
-        <h1>Signaler un contenu ou un échange</h1>
-        <p>
-          Votre identité reste confidentielle vis-à-vis de la personne signalée. Le blocage reste une action
-          indépendante.
-        </p>
-      </div>
+      <h1 className="sr-only">Signaler un contenu ou un échange</h1>
 
       <div className="wf-two-col">
         <form className="wf-card wf-form-stack" onSubmit={submitReport}>
@@ -213,6 +206,7 @@ export function ReportView({ ext, updateExt, nav, reportTarget, setToast }: Acco
           <p className="tiny muted">
             Élément visé : <b>{reportTarget || 'Aucun élément présélectionné (test général)'}</b>
           </p>
+          <p className="tiny muted">Votre identité reste confidentielle vis-à-vis de la personne signalée.</p>
           <label>
             Motif principal
             <Select value={reason} onChange={(e) => setReason(e.target.value)}>
@@ -292,11 +286,7 @@ export function AuthFlowsView({ nav, setToast }: AccountAdminProps) {
         <ArrowLeft size={16} /> Retour à l’application connectée
       </button>
 
-      <div className="page-heading">
-        <span className="eyebrow">Parcours d’accès & identité</span>
-        <h1>Accueil, inscription et récupération de compte</h1>
-        <p>Aperçu interactif des écrans publics sans fermer votre session de démonstration actuelle.</p>
-      </div>
+      <h1 className="sr-only">Accueil, inscription et récupération de compte</h1>
 
       <div className="catalog-tabs-underline" role="tablist" aria-label="Étapes du parcours d’accès">
         {[

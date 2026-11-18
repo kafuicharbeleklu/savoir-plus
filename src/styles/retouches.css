@@ -27,7 +27,7 @@ b, strong { font-weight: 600; }
 .page-header > .eyebrow,
 .page-heading > .eyebrow { display: none; }
 
-/* -- Statuts : point de couleur + texte, plus de pastilles pleines ------------------- */
+/* -- Statuts : le texte seul, coloré selon le ton ; ni pastille pleine ni point devant -------- */
 .status-tag {
   display: inline-flex;
   align-items: center;
@@ -42,20 +42,9 @@ b, strong { font-weight: 600; }
   color: var(--fg-muted);
   white-space: nowrap;
 }
-.status-tag::before {
-  content: '';
-  flex: 0 0 8px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--fg-subtle, var(--fg-muted));
-}
 .status-tag.ok { background: none; color: var(--fg-primary); }
-.status-tag.ok::before { background: var(--accent-ok); }
 .status-tag.warn { background: none; color: var(--accent-warm); }
-.status-tag.warn::before { background: var(--accent-warm); }
 .status-tag.danger { background: none; color: var(--accent-danger); }
-.status-tag.danger::before { background: var(--accent-danger); }
 .status-tag svg { display: none; }
 
 /* -- Colonnes de droite : des lignes séparées par un filet, plus de tuiles grises ---- */

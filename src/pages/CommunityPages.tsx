@@ -423,11 +423,7 @@ export function CommunityComposeView({ ext, updateExt, nav, user, setToast }: Co
         <ArrowLeft size={16} /> Retour à l’accueil
       </button>
 
-      <div className="page-heading">
-        <span className="eyebrow">Nouvelle contribution</span>
-        <h1>{kind === 'question' ? 'Poser une question à la communauté' : 'Partager une astuce ou méthode'}</h1>
-        <p>Audience : membres connectés autorisés. Évitez de partager des coordonnées ou secrets personnels.</p>
-      </div>
+      <h1 className="sr-only">{kind === 'question' ? 'Poser une question à la communauté' : 'Partager une astuce ou méthode'}</h1>
 
       <section className="wf-card">
         <div className="tabs wf-mb">
@@ -483,6 +479,7 @@ export function CommunityComposeView({ ext, updateExt, nav, user, setToast }: Co
           </div>
         )}
 
+        <p className="tiny muted">Visible des membres connectés. Ne partagez ni coordonnées ni informations personnelles.</p>
         <div className="lesson-actions">
           <button type="button" className="secondary" onClick={() => setPreview(!preview)}>
             <Eye size={15} /> {preview ? 'Revenir à l’édition' : 'Aperçu avant envoi'}
