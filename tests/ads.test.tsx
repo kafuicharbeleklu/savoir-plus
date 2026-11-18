@@ -8,7 +8,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AD_PLANS, activeCampaigns, airtimeShares, buildRotation, demoCampaigns, rankCampaigns, slotOf, type AdCampaign } from '../src/ads';
 import { addDays } from '../src/calendar';
-import { OFFERS, formatCfa, offersFor, priceLabel } from '../src/offers';
+import { OFFERS, formatCfa, offersFor, paidSubscription, priceLabel } from '../src/offers';
 import { SponsoredCard } from '../src/components/SponsoredCard';
 
 const TODAY = '2026-11-17';
@@ -89,15 +89,21 @@ test('les offres sont en francs CFA, une conseillée par public, l’établissem
   assert.equal(new Set(OFFERS.map((o) => o.id)).size, OFFERS.length);
 });
 
-test('la carte publicitaire porte la mention « Publicité » et dit pourquoi on voit l’annonce', () => {
+test('la carte publicitaire porte la mention « Publicité » ; obligatoire avec l’offre gratuite, un abonné peut la mettre en pause', () => {
   const html = renderToStaticMarkup(
     <SponsoredCard campaigns={campaigns} today={TODAY} seed={42} canOpen={(id) => id !== 'inst-horizon'} onOpenAdvertiser={() => undefined} onOpenOffers={() => undefined} />
   );
   assert.match(html, /<section class="ad-card" aria-label="Publicité">/);
   assert.match(html, /Publicité · /);
   assert.match(html, /class="art-scene/);
-  assert.match(html, /Pourquoi cette annonce \?/);
-  assert.match(html, /Mettre le défilement des annonces en pause/);
+  // Offre gratuite : ni pause, ni « Pourquoi cette annonce ? ».
+  assert.doesNotMatch(html, /Pourquoi cette annonce/);
+  assert.doesNotMatch(html, /ad-card-pause/);
+  const subscriber = renderToStaticMarkup(
+    <SponsoredCard campaigns={campaigns} today={TODAY} seed={42} canOpen={() => true} onOpenAdvertiser={() => undefined} onOpenOffers={() => undefined} canPause />
+  );
+  assert.match(subscriber, /Mettre le défilement des annonces en pause/);
+  assert.doesNotMatch(subscriber, /Pourquoi cette annonce/);
   // Un annonceur sans fiche n'a pas de bouton qui ne mènerait nulle part.
   const lone = renderToStaticMarkup(
     <SponsoredCard campaigns={campaigns.filter((c) => c.id === 'ad-horizon')} today={TODAY} seed={1} canOpen={() => false} onOpenAdvertiser={() => undefined} onOpenOffers={() => undefined} />
@@ -105,6 +111,20 @@ test('la carte publicitaire porte la mention « Publicité » et dit pourquoi on
   assert.match(lone, /Institut Horizon/);
   assert.ok(!lone.includes('ad-card-cta'));
   assert.ok(!lone.includes('ad-card-pause'), 'une seule annonce : rien à mettre en pause');
+  assert.ok(
+    !renderToStaticMarkup(
+      <SponsoredCard campaigns={campaigns.filter((c) => c.id === 'ad-horizon')} today={TODAY} seed={1} canOpen={() => false} onOpenAdvertiser={() => undefined} onOpenOffers={() => undefined} canPause />
+    ).includes('ad-card-pause'),
+    'même abonné : une seule annonce ne défile pas'
+  );
   // Rien à diffuser : pas de carte.
   assert.equal(renderToStaticMarkup(<SponsoredCard campaigns={[]} today={TODAY} seed={1} canOpen={() => false} onOpenAdvertiser={() => undefined} onOpenOffers={() => undefined} />), '');
+});
+
+test('formule payante : la publicité devient facultative ; avec l’offre gratuite, elle est obligatoire', () => {
+  assert.equal(paidSubscription(undefined, 'afi'), null);
+  assert.equal(paidSubscription({ afi: { offerId: 'learner-free', since: '2026-11-01' } }, 'afi'), null, 'offre gratuite');
+  assert.equal(paidSubscription({ ec: { offerId: 'ad-priority', since: '2026-11-01' } }, 'ec'), null, 'une formule d’annonceur n’en dispense pas');
+  assert.equal(paidSubscription({ kossi: { offerId: 'educator-pro', since: '2026-10-01' } }, 'kossi')?.offer.name, 'Encadrant Pro');
+  assert.equal(paidSubscription({ kossi: { offerId: 'educator-pro', since: '2026-10-01' } }, 'afi'), null, 'la formule est celle du membre');
 });

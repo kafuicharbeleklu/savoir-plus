@@ -10,6 +10,7 @@ import {
 } from './seedCommunity';
 import type { CalendarUserState } from './calendar';
 import type { SchoolState } from './school';
+import type { Subscription } from './offers';
 import { SEED_SCHOOL_PROGRESS } from './seedSchool';
 
 /** Version des données de simulation : l'augmenter fait apparaître les nouveautés chez les visiteurs déjà venus. */
@@ -633,6 +634,8 @@ export interface ExtendedDemoState {
     coverDataUrl?: string;
   }>;
   followingIds: Record<string, string[]>;
+  /** Formules payantes souscrites, paiement simulé (src/offers.ts) : la publicité y devient facultative. */
+  subscriptions?: Record<string, Subscription>;
   /** Calendrier et plan de révision de chaque membre. Absent : calendrier de démonstration du personnage. */
   calendar?: Record<string, CalendarUserState>;
   /** Profils et vie scolaire (comptes, établissements, classes, liens parentaux…). Absent : données de démonstration du jour. */
@@ -664,6 +667,8 @@ export interface ExtendedDemoState {
 }
 
 const EXT_KEY = 'savoir-extended-v1';
+/** Clé de l'état de démonstration dans le navigateur (relue quand un autre onglet l'enregistre). */
+export const EXTENDED_STORAGE_KEY = EXT_KEY;
 
 /** Quiz d'origine du module « Comprendre les réseaux » (chaque contenu porte désormais son quiz). */
 const SEED_NETWORK_QUIZ: NonNullable<StudioContent['quiz']> = [
@@ -1075,6 +1080,12 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       contactPolicy: 'Membres autorisés'
     },
     ...SEED_MEMBER_DETAILS
+  },
+  // Abonnés de démonstration : un encadrant, un parent, un établissement. Afi et Nadège ont l'offre gratuite.
+  subscriptions: {
+    kossi: { offerId: 'educator-pro', since: '2026-10-01' },
+    akouvi: { offerId: 'family', since: '2026-09-15' },
+    palmiers: { offerId: 'institution-steering', since: '2026-09-01' }
   },
   followingIds: {
     afi: ['kossi', 'maya'],

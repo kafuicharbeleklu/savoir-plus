@@ -1,12 +1,13 @@
 /**
  * La carte publicitaire de la colonne de droite et la fenêtre des offres.
  * La carte n'a pas de coins arrondis et porte la mention « Publicité » : on ne la confond pas avec
- * un contenu du site. Les annonces se succèdent ; on peut mettre en pause, et savoir pourquoi on
- * voit une annonce. Tout paiement est simulé.
+ * un contenu du site. Les annonces se succèdent. Avec l'offre gratuite, la publicité est obligatoire :
+ * ni pause ni masquage ; un abonné peut mettre le défilement en pause, ou masquer la carte dans ses
+ * paramètres. Tout paiement est simulé.
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Check, Pause, Play } from 'lucide-react';
-import { AD_PLANS, airtimeShares, buildRotation, type AdCampaign } from '../ads';
+import { buildRotation, type AdCampaign } from '../ads';
 import type { Day } from '../calendar';
 import { AUDIENCE_LABEL, offersFor, priceLabel, type OfferAudience } from '../offers';
 import { ART_ICONS, ArtScene } from './LessonArt';
@@ -18,7 +19,8 @@ export function SponsoredCard({
   seed,
   canOpen,
   onOpenAdvertiser,
-  onOpenOffers
+  onOpenOffers,
+  canPause = false
 }: {
   campaigns: AdCampaign[];
   today: Day;
@@ -28,12 +30,13 @@ export function SponsoredCard({
   canOpen: (advertiserId: string) => boolean;
   onOpenAdvertiser: (advertiserId: string) => void;
   onOpenOffers: () => void;
+  /** Abonné : il peut mettre le défilement en pause. Offre gratuite : la publicité est obligatoire. */
+  canPause?: boolean;
 }) {
   const rotation = useMemo(() => buildRotation(campaigns, today, seed), [campaigns, today, seed]);
   const [index, setIndex] = useState(0);
   const [hold, setHold] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [whyOpen, setWhyOpen] = useState(false);
   const slot = rotation.length ? rotation[index % rotation.length] : undefined;
   const seconds = slot?.seconds || 0;
   // Avec un seul annonceur, rien ne défile.
@@ -41,17 +44,16 @@ export function SponsoredCard({
 
   // Une annonce reste le temps que sa formule lui donne, puis laisse la place à la suivante.
   useEffect(() => {
-    if (!seconds || hold || paused || whyOpen || !rotates) return;
+    if (!seconds || hold || paused || !rotates) return;
     const timer = window.setTimeout(() => setIndex((i) => (i + 1) % rotation.length), seconds * 1000);
     return () => window.clearTimeout(timer);
-  }, [index, seconds, hold, paused, whyOpen, rotates, rotation.length]);
+  }, [index, seconds, hold, paused, rotates, rotation.length]);
 
   if (!slot) return null;
   const campaign = slot.campaign;
   const Icon = ART_ICONS[campaign.art];
   const house = campaign.advertiserKind === 'house';
   const openable = house || (campaign.cta !== '' && canOpen(campaign.advertiserId));
-  const shares = airtimeShares(rotation);
 
   return (
     <section
@@ -75,11 +77,8 @@ export function SponsoredCard({
           </button>
         )}
       </div>
-      <footer className="ad-card-foot">
-        <button type="button" className="ad-card-link" onClick={() => setWhyOpen(true)}>
-          Pourquoi cette annonce ?
-        </button>
-        {rotates && (
+      {canPause && rotates && (
+        <footer className="ad-card-foot">
           <button
             type="button"
             className="ad-card-pause"
@@ -90,50 +89,7 @@ export function SponsoredCard({
           >
             {paused ? <Play size={14} aria-hidden="true" /> : <Pause size={14} aria-hidden="true" />}
           </button>
-        )}
-      </footer>
-
-      {whyOpen && (
-        <Modal
-          open
-          size="sm"
-          title="Pourquoi cette annonce ?"
-          onClose={() => setWhyOpen(false)}
-          footer={
-            <button
-              type="button"
-              className="primary"
-              onClick={() => {
-                setWhyOpen(false);
-                onOpenOffers();
-              }}
-            >
-              Voir les offres
-            </button>
-          }
-        >
-          <p className="of-text">
-            Cette carte passe les annonces d’établissements et d’encadrants de SAVOIR+ qui ont souscrit une formule. L’ordre est tiré au sort ; la durée à l’écran et le
-            nombre de passages dépendent de la formule choisie et du montant réglé. Aucune annonce n’est choisie d’après ce que vous faites sur le site.
-          </p>
-          {!house && (
-            <dl className="rd-facts">
-              {shares.map((share) => {
-                const of = rotation.find((s) => s.campaign.id === share.id)?.campaign;
-                return (
-                  <div key={share.id}>
-                    <dt>
-                      {share.name}
-                      {of ? ` · ${AD_PLANS[of.tier].label}` : ''}
-                    </dt>
-                    <dd>{share.share} % du temps d’affichage</dd>
-                  </div>
-                );
-              })}
-            </dl>
-          )}
-          <p className="of-note">Les annonces ne sont pas montrées aux comptes d’enfants de moins de 12 ans. Démonstration : les paiements sont simulés.</p>
-        </Modal>
+        </footer>
       )}
     </section>
   );
@@ -168,8 +124,9 @@ export function OffersModal({ initial = 'learner', onClose }: { initial?: OfferA
         ))}
       </div>
       <p className="of-note">
-        Prix en francs CFA, par {audience === 'advertiser' ? 'semaine' : 'mois'}. Démonstration : aucun paiement réel n’a lieu ; la souscription en ligne viendra avec le
-        paiement par mobile money.
+        Prix en francs CFA, par {audience === 'advertiser' ? 'semaine' : 'mois'}.
+        {audience !== 'advertiser' && ' Avec une formule payante, la carte publicitaire se masque dans vos paramètres.'} Démonstration : aucun paiement réel
+        n’a lieu ; la souscription en ligne viendra avec le paiement par mobile money.
       </p>
     </Modal>
   );

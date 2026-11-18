@@ -387,7 +387,7 @@ export type RedeemResult = { ok: true; school: SchoolState; guardianId: string }
 
 export const REDEEM_MESSAGE: Record<RedeemFailure, string> = {
   unknown: 'Ce code n’existe pas. Vérifiez-le avec votre parent ou tuteur.',
-  used: 'Ce code a déjà servi. Demandez-en un nouveau.',
+  used: 'Ce code a déjà servi pour un compte : un code n’en ouvre qu’un seul. Demandez-en un nouveau.',
   expired: 'Ce code a expiré. Demandez-en un nouveau.',
   unverified: 'Le parent ou tuteur qui a créé ce code n’a pas encore fait vérifier son identité.',
   limit: 'Deux parents ou tuteurs sont déjà rattachés à ce compte.',

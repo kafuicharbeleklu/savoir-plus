@@ -1325,3 +1325,5 @@ b, strong { font-weight: 600; }
 .sc-request p { color: var(--fg-primary); }
 .sc-request b { font-weight: 600; }
 .sc-request-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+/* Carte publicitaire : seul le bouton de pause d'un abonné reste en pied de carte, à droite. */
+.ad-card-foot { justify-content: flex-end; }

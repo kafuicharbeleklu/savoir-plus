@@ -103,6 +103,7 @@ import {
   notificationsFor,
   promoteDuePosts,
   readExtended,
+  EXTENDED_STORAGE_KEY,
   writeExtended,
   type AdminRoleName,
   type AppPage,
@@ -143,6 +144,7 @@ import { accountOf as schoolAccountOf, ageBandOf, libraryOf } from './school';
 import { addDays as addCalendarDays, dayFromDate } from './calendar';
 import { demoCampaigns } from './ads';
 import { OffersModal, SponsoredCard } from './components/SponsoredCard';
+import { paidSubscription } from './offers';
 import { rankFeed, recommend, viewerOf } from './personalize';
 import { addUsage, lockApplies, lockState, requestOfDay, requestTime, rulesOf } from './deviceLock';
 import { initialSchoolState } from './seedSchool';
@@ -327,6 +329,16 @@ export default function App() {
   });
   const [selectedId, setSelectedId] = useState<string>(initialRoute.id);
   const [ext, setExt] = useState<ExtendedDemoState>(() => readExtended());
+  // Un personnage par onglet : quand un autre onglet enregistre, celui-ci relit l'état. Sans cela, un onglet resté
+  // ouvert écraserait le changement de l'autre (un code parental déjà utilisé resservirait, une pause décidée
+  // par le parent n'arriverait pas chez l'enfant).
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === EXTENDED_STORAGE_KEY) setExt(readExtended());
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const [people, setPeople] = useState<Profile[]>(profiles);
   const [progress, setProgress] = useState<Progress>(emptyProgress());
@@ -1336,6 +1348,8 @@ export default function App() {
         <GuardianGate
           user={user}
           school={school}
+          // Le code se vérifie sur l'état enregistré le plus récent : déjà utilisé dans un autre onglet, il ne ressert pas.
+          latestSchool={() => normalizeSchoolState(readExtended().school, baseSchool)}
           today={today}
           onActivated={(next) => {
             saveSchool(next);
@@ -1554,10 +1568,13 @@ export default function App() {
 
   // Carte publicitaire : une seule définition, posée dans la colonne de droite des pages les plus visitées
   // (accueil, relations, messagerie, alertes, mes apprentissages). Jamais montrée à un compte d'enfant de moins de 12 ans.
+  // Offre gratuite : la publicité est obligatoire. Un abonné peut la masquer (Paramètres) et en suspendre le défilement.
+  const paidPlan = paidSubscription(ext.subscriptions, uid);
   const adSlot = (
     <>
-      {ageBandOf(schoolAccountOf(school, uid), today) !== 'child' && (
+      {ageBandOf(schoolAccountOf(school, uid), today) !== 'child' && (!paidPlan || paidPlan.subscription.showAds !== false) && (
         <SponsoredCard
+          canPause={Boolean(paidPlan)}
           campaigns={demoCampaigns(today, addCalendarDays)}
           today={today}
           seed={adSeed}

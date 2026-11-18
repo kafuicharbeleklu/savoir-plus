@@ -45,9 +45,9 @@ export const OFFERS: Offer[] = [
     name: 'Apprenant+',
     price: 1500,
     period: 'mois',
-    tagline: 'Tout le catalogue, sans publicité.',
+    tagline: 'Tout le catalogue, publicité facultative.',
     recommended: true,
-    features: ['Tous les modules payants inclus', 'Les attestations de réussite à télécharger', 'Aucune publicité']
+    features: ['Tous les modules payants inclus', 'Les attestations de réussite à télécharger', 'La publicité, à masquer dans vos paramètres']
   },
   {
     id: 'family',
@@ -116,6 +116,30 @@ export const OFFERS: Offer[] = [
 ];
 
 export const offersFor = (audience: OfferAudience): Offer[] => OFFERS.filter((o) => o.audience === audience);
+
+export const offerById = (id: string): Offer | undefined => OFFERS.find((o) => o.id === id);
+
+/**
+ * Formule souscrite par un membre (paiement simulé). Avec l'offre gratuite, la carte publicitaire
+ * est obligatoire ; avec une formule payante, le membre peut la masquer dans ses paramètres.
+ */
+export interface Subscription {
+  offerId: string;
+  since: string;
+  /** Afficher la carte publicitaire. Absent : affichée. */
+  showAds?: boolean;
+}
+
+/** La formule payante d'un membre, ou rien (offre gratuite, ou formule de publicité pour annonceur). */
+export function paidSubscription(
+  subscriptions: Record<string, Subscription> | undefined,
+  uid: string
+): { subscription: Subscription; offer: Offer } | null {
+  const subscription = subscriptions?.[uid];
+  const offer = subscription ? offerById(subscription.offerId) : undefined;
+  if (!subscription || !offer || offer.price === 0 || offer.audience === 'advertiser') return null;
+  return { subscription, offer };
+}
 
 /** « 1 500 F CFA », avec une espace insécable pour les milliers. */
 export function formatCfa(amount: number): string {

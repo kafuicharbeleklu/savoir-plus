@@ -11,6 +11,7 @@ import { GUARDIAN_CODE_AGE, REDEEM_MESSAGE, redeemGuardianCode, type SchoolState
 export function GuardianGate({
   user,
   school,
+  latestSchool,
   today,
   onActivated,
   onExit,
@@ -18,6 +19,8 @@ export function GuardianGate({
 }: {
   user: Profile;
   school: SchoolState;
+  /** L'état enregistré le plus récent (un autre onglet a pu utiliser le code entre-temps). */
+  latestSchool?: () => SchoolState;
   today: Day;
   /** Le code est bon : l'état mis à jour porte le lien avec le parent ou tuteur. */
   onActivated: (next: SchoolState) => void;
@@ -30,7 +33,7 @@ export function GuardianGate({
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    const result = redeemGuardianCode(school, code, user.id, today);
+    const result = redeemGuardianCode(latestSchool ? latestSchool() : school, code, user.id, today);
     if (result.ok === false) {
       setError(REDEEM_MESSAGE[result.reason]);
       return;
@@ -55,7 +58,7 @@ export function GuardianGate({
             <h1>Bonjour {firstName}, il te manque un code</h1>
             <p>
               Avant {GUARDIAN_CODE_AGE} ans, un compte SAVOIR+ s’ouvre avec l’accord d’un parent ou d’un tuteur. Demande-lui le code
-              qu’il a créé pour toi, puis écris-le ici.
+              qu’il a créé pour toi, puis écris-le ici. Un code n’ouvre qu’un seul compte : le tien.
             </p>
             <form className="sc-gate-form" onSubmit={submit} noValidate>
               <label className="ui-field">

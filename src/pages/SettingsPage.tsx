@@ -15,6 +15,7 @@ import { Avatar } from '../components/ProfileIdentityCard';
 import { ConfirmDialog, EmptyState, RadioList, SavedIndicator, StatusDot, Toggle, useIsNarrow } from '../components/ui';
 import type { Day } from '../calendar';
 import { IDENTITY_LABEL, accountOf, type SchoolState } from '../school';
+import { paidSubscription, type Subscription } from '../offers';
 import { IdentityPanel } from './school/IdentityPanel';
 
 type SectionId = 'account' | 'security' | 'visibility' | 'data' | 'notifications';
@@ -169,6 +170,15 @@ export function SettingsView({
     updateExt((prev) => ({ ...prev, appPrefs: { ...prev.appPrefs, ...patch } }));
     saved();
   };
+  // Formule payante du membre : la publicité y devient facultative.
+  const paidPlan = paidSubscription(ext.subscriptions, user.id);
+  const patchSubscription = (patch: Partial<Subscription>) => {
+    updateExt((prev) => {
+      const current = prev.subscriptions?.[user.id];
+      return current ? { ...prev, subscriptions: { ...prev.subscriptions, [user.id]: { ...current, ...patch } } } : prev;
+    });
+    saved();
+  };
   const patchDetails = (patch: Partial<typeof details>) => {
     updateExt((prev) => ({
       ...prev,
@@ -252,6 +262,18 @@ export function SettingsView({
         return (
           <Detail title="Réduire les animations" description="Limite les transitions et les effets de mouvement de l’interface." onBack={back} savedAt={savedAt}>
             <Toggle label="Réduire les animations" checked={ext.appPrefs.reducedMotion} onChange={(v) => patchPrefs({ reducedMotion: v })} />
+          </Detail>
+        );
+      case 'account/ads':
+        if (!paidPlan) return null;
+        return (
+          <Detail
+            title="Carte publicitaire"
+            description={`Votre formule ${paidPlan.offer.name} rend la publicité facultative : affichez ou masquez la carte de la colonne de droite.`}
+            onBack={back}
+            savedAt={savedAt}
+          >
+            <Toggle label="Afficher la carte publicitaire" checked={paidPlan.subscription.showAds !== false} onChange={(v) => patchSubscription({ showAds: v })} />
           </Detail>
         );
       case 'account/language':
@@ -506,6 +528,12 @@ export function SettingsView({
             <Group title="Préférences générales">
               <Row label="Langue" value="Français" onClick={() => go(s, 'language')} />
             </Group>
+            {/* Avec l'offre gratuite, la publicité est obligatoire : le réglage n'existe que pour un abonné. */}
+            {paidPlan && (
+              <Group title="Publicité">
+                <Row label="Carte publicitaire" value={paidPlan.subscription.showAds === false ? 'Masquée' : 'Affichée'} onClick={() => go(s, 'ads')} />
+              </Group>
+            )}
           </>
         );
       case 'security':
