@@ -204,6 +204,8 @@ import { CommunityComposeView, CommunityThreadView } from './pages/CommunityPage
 import { CalendarPage } from './pages/CalendarPage';
 import { GuardianGate } from './pages/school/GuardianGate';
 import { DeviceLockScreen } from './pages/school/DeviceLockScreen';
+import { DemoTour } from './components/DemoTour';
+import { DEMO_TOUR, readTourStep, writeTourStep } from './demoTour';
 import { FamilyPage } from './pages/school/FamilyPage';
 import { TeachingPage } from './pages/school/TeachingPage';
 import { InstitutionPage } from './pages/school/InstitutionPage';
@@ -763,6 +765,25 @@ export default function App() {
   const messagesOff = Boolean(childRules && !childRules.allowMessages);
   const areaClosed = (feedOff && page.startsWith('community')) || (messagesOff && page === 'messages');
 
+  // Visite guidée de la démonstration (src/demoTour.ts) : chaque étape choisit son personnage et sa page.
+  const [tourIndex, setTourIndex] = useState<number | null>(() => readTourStep(window.location.search));
+  // « ?visite=1 » ne sert qu'une fois : retiré de l'adresse, un rechargement ne relance pas la visite.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('visite')) return;
+    params.delete('visite');
+    const query = params.toString();
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`);
+  }, []);
+  useEffect(() => {
+    writeTourStep(tourIndex);
+    if (tourIndex === null) return;
+    const step = DEMO_TOUR[tourIndex];
+    if (mode !== 'local' || step.persona !== uid) handleSwitchPersona(step.persona);
+    nav(step.page as Parameters<typeof nav>[0], step.param || '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourIndex]);
+
   // Route guard: Studio / Governance pages typed in the URL fall back to home without the matching role.
   // Même règle pour la page de publication quand le profil ne publie pas (parent ou tuteur, classe « stricte »).
   // Un établissement n'est pas une personne : ni accueil d'apprenant, ni fil, ni progression. Son accueil est son espace.
@@ -1200,6 +1221,29 @@ export default function App() {
     }
   };
 
+  // Bulle de la visite guidée, posée au-dessus de la page en cours (lecteur compris).
+  const tourStep = tourIndex !== null ? DEMO_TOUR[tourIndex] : null;
+  const tourOverlay =
+    tourStep && tourIndex !== null ? (
+      <DemoTour
+        step={tourStep}
+        index={tourIndex}
+        total={DEMO_TOUR.length}
+        personaName={networkDirectory.find((p) => p.id === tourStep.persona)?.name || tourStep.persona}
+        onNext={() => {
+          if (tourIndex >= DEMO_TOUR.length - 1) {
+            setTourIndex(null);
+            setToast('Fin de la visite guidée');
+          } else setTourIndex(tourIndex + 1);
+        }}
+        onPrev={() => setTourIndex(Math.max(0, tourIndex - 1))}
+        onClose={() => {
+          setTourIndex(null);
+          setToast('Visite interrompue : reprenez-la depuis le menu Vous');
+        }}
+      />
+    ) : null;
+
   // Auth / Persona switching / Onboarding
   const handleSwitchPersona = (id: string) => {
     setMode('local');
@@ -1418,6 +1462,7 @@ export default function App() {
           onOpenResult={() => nav('result', activeStudyModuleId)}
           onExit={() => nav(studyReturnTarget.page === 'visitor' ? 'home' : studyReturnTarget.page, studyReturnTarget.id || '')}
         />
+        {tourOverlay}
         {toast && (
           <div className="toast" role="status" aria-live="polite">
             {toast}
@@ -2951,6 +2996,7 @@ export default function App() {
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onEnterVisitor={signOut}
         hideMessaging={messagesOff}
+        onStartTour={mode === 'local' ? () => setTourIndex(0) : undefined}
         onOpenMessaging={() => {
           setDrawerOpen(false);
           nav('messages');
@@ -3155,6 +3201,7 @@ export default function App() {
         onEnterVisitor={signOut}
         hideMessaging={messagesOff}
       />
+      {tourOverlay}
 
       <PostComposerModal
         open={composerOpen && caps.canPublish}

@@ -1322,3 +1322,6 @@ b, strong { font-weight: 600; }
 .wf-plan-link { display: block; margin: 8px auto 0; font-size: 0.875rem; }
 .of-card .of-current { margin: 12px 0 0; font-size: 0.875rem; font-weight: 600; color: var(--accent-brand); }
 .of-card .of-choose { margin-top: 12px; align-self: flex-start; }
+/* Visite guidée : l'étape et le rôle au-dessus du texte, « Précédent » en lien sous le texte. */
+.tour-bubble .tour-step { margin-bottom: 2px; font-size: 0.75rem; font-weight: 600; color: var(--accent-brand); }
+.tour-bubble .tour-prev { margin-top: 8px; font-size: 0.8125rem; }

@@ -10,6 +10,7 @@ import {
   MessageCircle,
   MessagesSquare,
   Search,
+  Route,
   Settings,
   ShieldCheck,
   User,
@@ -40,7 +41,8 @@ export function TopBar({
   onOpenAuthModal,
   onEnterVisitor,
   onOpenMessaging,
-  hideMessaging = false
+  hideMessaging = false,
+  onStartTour
 }: {
   page: string;
   nav: (p: any, id?: string) => void;
@@ -59,6 +61,8 @@ export function TopBar({
   onOpenMessaging: () => void;
   /** Messagerie fermée par le parent d'un enfant de moins de 12 ans. */
   hideMessaging?: boolean;
+  /** Lance la visite guidée de la démonstration. */
+  onStartTour?: () => void;
 }) {
   const [vousOpen, setVousOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -386,6 +390,17 @@ export function TopBar({
 
                 <div className="vous-divider" />
 
+                {onStartTour && (
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setVousOpen(false);
+                      onStartTour();
+                    }}
+                  >
+                    <Route size={15} /> Visite guidée
+                  </button>
+                )}
                 <button
                   role="menuitem"
                   onClick={() => {
