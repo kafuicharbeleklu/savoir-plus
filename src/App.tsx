@@ -1496,6 +1496,7 @@ export default function App() {
           moduleContent={activeStudyContent}
           progress={activeStudyProgress}
           onRetryQuiz={handleRetryQuiz}
+          onOpenQuiz={() => nav('quiz', activeStudyModuleId)}
           onReviewLessons={(sectionIdx) => {
             setLessonIndex(sectionIdx);
             nav('reader', activeStudyModuleId);

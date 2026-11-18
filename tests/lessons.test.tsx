@@ -12,6 +12,7 @@ import { LESSONS_RICH, MODULE_GOALS } from '../src/lessonsRich';
 import { goalsIssues, lessonIssues } from '../src/lessonFormat';
 import { LessonPart, ModuleOpening } from '../src/components/LessonArticle';
 import { ModuleInteractiveLab } from '../src/components/LessonLab';
+import { AcademyReaderView, AcademyResultView } from '../src/pages/AcademyStudyPages';
 
 const moduleIds = Object.keys(MODULES_CONTENT);
 
@@ -189,4 +190,35 @@ test('l’exercice montre sa scène et annonce le nombre d’indices', () => {
     assert.match(html, /0 sur 3/, labType);
     assert.equal(html.match(/rd-lab-zone is-row/g)?.length, 3, labType);
   }
+});
+
+test('le résultat du quiz, sur son écran, garde l’interface du cours', () => {
+  const m = MODULES_CONTENT.reseaux;
+  const noop = () => {};
+  const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  // Le cadre du cours : la barre du haut, le sommaire à gauche, la colonne de lecture.
+  const inCourseFrame = (html: string) =>
+    html.startsWith('<div class="rd-shell is-chapter"><header class="rd-top">') && html.includes('<aside class="rd-outline"') && html.includes('class="rd-article rd-chapter-main"');
+  const reader = renderToStaticMarkup(
+    <AcademyReaderView moduleContent={m} progress={{ lessons: [], answers: [], submitted: false }} lessonIndex={0} answers={[]} setAnswers={noop} busy={false} onFinishReading={noop} onSubmitQuiz={noop} onOpenResult={noop} onExit={noop} />
+  );
+  assert.ok(inCourseFrame(reader));
+  const result = (answers: number[]) =>
+    renderToStaticMarkup(
+      <AcademyResultView moduleContent={m} progress={{ lessons: [0, 1, 2], answers, submitted: true }} onRetryQuiz={noop} onReviewLessons={noop} onOpenLearning={noop} onExit={noop} totalXP={150} />
+    );
+
+  const passed = result(m.questions.map((q) => q.correctIndex));
+  assert.ok(inCourseFrame(passed), 'même cadre que la page du cours');
+  assert.match(text(passed), /Résultat du quiz .* Module validé .* Correction Question 1 sur 3/);
+  // Le quiz final est la partie en cours du sommaire.
+  assert.match(passed, /<li class="rd-step is-done is-current"><button type="button" aria-current="location">.*?Quiz final/);
+
+  // La correction reprend les cartes du quiz : la réponse donnée (✕ si fausse) et la bonne réponse sont nommées.
+  const failed = result([(m.questions[0].correctIndex + 1) % 3, m.questions[1].correctIndex, -1]);
+  assert.match(text(failed), /Révision conseillée/);
+  assert.equal(failed.match(/rd-card rd-question-card rd-correction/g)?.length, 3);
+  assert.equal(failed.match(/rd-option is-static is-wrong/g)?.length, 1);
+  assert.equal(failed.match(/Bonne réponse<\/small>/g)?.length, 2);
+  assert.match(text(failed), /Question 3 sur 3 · sans réponse/);
 });

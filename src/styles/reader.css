@@ -56,7 +56,6 @@
 .rd-top-progress i { display: block; height: 100%; background: var(--accent-brand); transition: width 320ms ease; }
 
 /* -- Mise en page ------------------------------------------------------------------------------ */
-.rd-center { display: flex; flex-direction: column; gap: 12px; max-width: 760px; margin: 0 auto; padding: 24px 24px 64px; }
 .rd-card { background: var(--bg-surface); border: 1px solid var(--border-hairline); border-radius: var(--angle); }
 
 /* -- Article ------------------------------------------------------------------------------------ */
@@ -64,8 +63,7 @@
 .rd-overline { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 0.8125rem; line-height: 1.4; color: var(--fg-muted); }
 .rd-done { display: inline-flex; color: var(--accent-brand); }
 .rd-article h1,
-.rd-quiz-head h1,
-.rd-result-text h1 { margin: 0; font-size: 1.75rem; font-weight: 600; line-height: 1.25; letter-spacing: 0; color: var(--fg-primary); }
+.rd-quiz-head h1 { margin: 0; font-size: 1.75rem; font-weight: 600; line-height: 1.25; letter-spacing: 0; color: var(--fg-primary); }
 .rd-lead { margin: 12px 0 0; font-size: 1.125rem; line-height: 1.6; color: var(--fg-primary); }
 .rd-note { margin: 12px 0 0; font-size: 0.75rem; color: var(--fg-muted); }
 
@@ -232,8 +230,11 @@
 .rd-confirm p { margin: 0; font-size: 0.9375rem; line-height: 1.5; color: var(--fg-muted); }
 .rd-confirm.has-missing p { color: var(--accent-danger); }
 
-/* -- Résultat ---------------------------------------------------------------------------------- */
-.rd-result-head { display: flex; align-items: center; gap: 24px; padding: 24px; }
+/* -- Résultat du quiz : un écran à part, dans le cadre du cours ----------------------------------
+   Le titre suit celui des parties (pastille illustrée) ; le score et la récompense restent dans la
+   colonne de lecture ; la correction reprend les cartes du quiz, réponses marquées ✓ / ✕. */
+.rd-chapter-body > h1.rd-part-title { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; font-size: 1.75rem; font-weight: 600; line-height: 2.25rem; letter-spacing: -0.015em; }
+.rd-result { display: flex; align-items: center; gap: 24px; }
 .rd-score { position: relative; display: grid; flex: none; place-items: center; width: 96px; height: 96px; }
 .rd-score svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
 .rd-score circle { fill: none; stroke-width: 6; }
@@ -243,42 +244,36 @@
 .rd-score b { position: relative; font-size: 1.75rem; font-weight: 600; line-height: 1; color: var(--fg-primary); }
 .rd-score b span { font-size: 1rem; font-weight: 500; color: var(--fg-muted); }
 .rd-result-text { min-width: 0; }
-.rd-result-text h1 { font-size: 1.5rem; }
-.rd-result-text p:last-child { margin: 6px 0 0; font-size: 0.9375rem; line-height: 1.5; color: var(--fg-muted); }
-.rd-reward { display: flex; flex-direction: column; gap: 8px; padding: 16px 24px; }
+.rd-result-text p { margin: 0; }
+.rd-result-text .rd-result-kicker { font-size: 0.875rem; font-weight: 500; line-height: 1.375rem; color: var(--accent-brand); }
+.rd-result.is-low .rd-result-kicker { color: var(--accent-danger); }
+.rd-result-text .rd-result-headline { margin-top: 2px; font-size: 1.3125rem; font-weight: 600; line-height: 1.75rem; letter-spacing: -0.01em; color: var(--fg-primary); }
+.rd-result-text .rd-result-lead { margin-top: 6px; font-size: 1rem; line-height: 1.6; color: var(--fg-muted); }
+.rd-reward { display: flex; flex-direction: column; gap: 8px; margin-top: 28px; padding: 14px 18px; border-radius: 14px; background: var(--bg-subtle); }
 .rd-reward-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .rd-reward-head b { font-size: 1rem; font-weight: 600; color: var(--fg-primary); }
 .rd-reward-head span { display: inline-flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 500; color: var(--fg-muted); }
-.rd-reward small { font-size: 0.75rem; color: var(--fg-muted); }
-.rd-review { padding: 20px 24px 4px; }
-.rd-review h2 { margin: 0 0 4px; font-size: 1.0625rem; font-weight: 600; letter-spacing: 0; }
-.rd-review ol { margin: 0; padding: 0; list-style: none; }
-.rd-review li { display: flex; gap: 14px; padding: 16px 0; }
-.rd-review li + li { border-top: 1px solid var(--border-hairline); }
-.rd-review li > div { min-width: 0; }
-.rd-review-mark {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  margin-top: 2px;
-  border-radius: 999px;
-  background: var(--accent-brand);
-  color: var(--bg-surface);
-}
-.rd-review li.is-wrong .rd-review-mark { background: var(--accent-danger); color: #fff; }
-.rd-review .rd-overline { margin-bottom: 2px; }
-.rd-review h3 { margin: 0 0 8px; font-size: 1rem; font-weight: 600; line-height: 1.45; letter-spacing: 0; color: var(--fg-primary); }
-.rd-review li.is-wrong h3 { color: var(--accent-danger); }
-.rd-review li p:not(.rd-overline) { margin: 0 0 4px; font-size: 0.9375rem; line-height: 1.5; color: var(--fg-primary); }
-.rd-review li p.rd-review-why { margin-top: 8px; color: var(--fg-muted); }
+.rd-reward small { font-size: 0.75rem; line-height: 1.4; color: var(--fg-muted); }
+.rd-correction .rd-question-text { margin: 0 0 14px; letter-spacing: 0; }
+.rd-correction .rd-options { margin: 0; padding: 0; list-style: none; }
+.rd-chapter-body .rd-correction li { margin: 0; }
+.rd-option.is-static,
+.rd-option.is-static:hover { background: var(--bg-surface); cursor: default; }
+.rd-option.is-static small { flex: none; margin-left: auto; padding-left: 8px; font-size: 0.8125rem; font-weight: 500; line-height: 1.45; color: var(--fg-muted); }
+.rd-option.is-right,
+.rd-option.is-right:hover { border-color: var(--accent-brand); background: var(--accent-brand-soft); }
+.rd-option.is-right .rd-option-mark { border-color: var(--accent-brand); background: var(--accent-brand); color: var(--accent-brand-ink); }
+.rd-option.is-right small { color: var(--accent-brand); }
+.rd-option.is-wrong,
+.rd-option.is-wrong:hover { border-color: var(--accent-danger); background: var(--accent-danger-soft); }
+.rd-option.is-wrong .rd-option-mark { border-color: var(--accent-danger); background: var(--accent-danger); color: #fff; }
+.rd-option.is-wrong small { color: var(--accent-danger); }
+.rd-correction-why { margin: 14px 0 0; font-size: 0.9375rem; line-height: 1.55; color: var(--fg-muted); }
 .rd-link { margin-top: 4px; padding: 0; border: 0; background: none; font-size: 0.875rem; font-weight: 500; color: var(--accent-brand); cursor: pointer; }
 .rd-link:hover { text-decoration: underline; }
 
 /* -- Écrans étroits : le sommaire devient un panneau ----------------------------------------- */
 @media (max-width: 960px) {
-  .rd-center { padding: 16px 16px 48px; }
   .rd-top-outline { display: grid; }
 }
 @media (max-width: 640px) {
@@ -286,10 +281,9 @@
   .rd-article h1 { font-size: 1.5rem; }
   .rd-lead { font-size: 1.0625rem; }
   .rd-question-card,
-  .rd-confirm,
-  .rd-reward { padding-right: 16px; padding-left: 16px; }
-  .rd-review { padding: 16px 16px 0; }
-  .rd-result-head { flex-direction: column; align-items: flex-start; gap: 16px; padding: 20px 16px; }
+  .rd-confirm { padding-right: 16px; padding-left: 16px; }
+  .rd-result { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .rd-chapter-body > h1.rd-part-title { font-size: 1.5rem; line-height: 1.9375rem; }
   .rd-nav { flex-direction: column-reverse; align-items: stretch; }
   .rd-nav-next { align-items: stretch; margin-left: 0; }
   .rd-nav .primary,
