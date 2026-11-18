@@ -42,7 +42,7 @@ Chaque personnage s’ouvre par l’adresse, `splash=0` évitant l’écran de l
 Ce que la démonstration montre :
 
 - **Accueil propre à chaque profil** : recommandations avec leur raison (« Donné à Terminale D »), fil ordonné pour le lecteur.
-- **Module sur une seule page** : parties, exercice, quiz final ; le résultat s’ouvre à part.
+- **Module section par section** : chaque section a sa page (l’exercice dans la sienne), puis le quiz final et le résultat ont chacun la leur, dans la même interface (barre d’avancement, sommaire, colonne de lecture).
 - **Espace famille** : message de la semaine par enfant, plan de révision en Gantt, emploi du temps, contenus payants ; **verrouillage de SAVOIR+** pour un enfant de moins de 12 ans (pause, temps par jour, plage horaire, demandes de temps).
 - **Espace encadrant** et **espace établissement** : vue d’ensemble, planification en Gantt, emploi du temps en grille, classes ; l’établissement gère aussi sa bibliothèque (contenus de ses enseignants, gratuits pour ses élèves). Un établissement n’a ni XP, ni progression, ni fil.
 - **Formules en F CFA** : Paramètres › Préférences du compte › Abonnement. Apprenant+ et Famille incluent les contenus payants ; Famille ouvre le plan et l’emploi du temps des enfants ; Pilotage ouvre la vue d’ensemble et le Gantt de l’établissement ; toute formule payante rend la carte publicitaire facultative.

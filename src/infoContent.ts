@@ -44,7 +44,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     excerpt: 'L’anneau de la barre du haut et la carte « Reprise » de l’accueil vous ramènent à la lecture, ou au quiz quand toutes les parties sont lues.',
     body: [
       'Le module en cours est le premier que vous avez commencé sans l’avoir encore validé. Il apparaît dans l’anneau de la barre du haut et dans la carte « Reprise » de l’accueil.',
-      'Un clic vous ramène où vous vous êtes arrêté : à la partie suivante, ou au quiz final quand toutes les parties sont lues. Quand aucun module n’est en cours, l’anneau disparaît.'
+      'Un clic vous ramène où vous vous êtes arrêté : à la section suivante, ou au quiz final quand toutes les sections sont lues. Quand aucun module n’est en cours, l’anneau disparaît.'
     ],
     links: [{ label: 'Mes apprentissages', page: 'learning', only: 'learner' }]
   },
@@ -52,9 +52,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
     id: 'valider-un-module',
     topic: 'learning',
     title: 'Valider un module : le quiz final',
-    excerpt: 'Le quiz est au bas de la page du module. Il faut deux bonnes réponses sur trois ; la correction s’affiche après l’envoi.',
+    excerpt: 'Après la dernière section, le quiz final a sa page. Il faut deux bonnes réponses sur trois ; la correction s’affiche après l’envoi.',
     body: [
-      'Les parties, l’exercice et le quiz final se suivent sur la page du module. Le quiz compte trois questions à choix unique, sans limite de temps.',
+      'Chaque section du module a sa page ; le bouton du bas note la section lue et mène à la suivante, puis au quiz final, qui a la sienne. Le quiz compte trois questions à choix unique, sans limite de temps.',
       'Avec deux bonnes réponses sur trois, le module est validé et ses points d’expérience vous sont acquis. Vous pouvez renvoyer le quiz : un nouvel envoi remplace le résultat précédent.'
     ],
     links: [{ label: 'La bibliothèque', page: 'catalog' }]

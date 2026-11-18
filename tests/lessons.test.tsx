@@ -1,6 +1,6 @@
 /**
  * Les leçons rédigées : chaque partie de chaque module en a une, bien formée ; le module s'ouvre par
- * son bandeau et ses objectifs, puis les parties se suivent sur la même page (titre, sous-parties,
+ * son bandeau et ses objectifs, puis chaque partie a sa page (titre, sous-parties,
  * figure légendée, question, résumé).
  */
 import assert from 'node:assert/strict';
@@ -12,7 +12,7 @@ import { LESSONS_RICH, MODULE_GOALS } from '../src/lessonsRich';
 import { goalsIssues, lessonIssues } from '../src/lessonFormat';
 import { LessonPart, ModuleOpening } from '../src/components/LessonArticle';
 import { ModuleInteractiveLab } from '../src/components/LessonLab';
-import { AcademyReaderView, AcademyResultView } from '../src/pages/AcademyStudyPages';
+import { AcademyQuizView, AcademyReaderView, AcademyResultView } from '../src/pages/AcademyStudyPages';
 
 const moduleIds = Object.keys(MODULES_CONTENT);
 
@@ -192,17 +192,45 @@ test('l’exercice montre sa scène et annonce le nombre d’indices', () => {
   }
 });
 
-test('le résultat du quiz, sur son écran, garde l’interface du cours', () => {
+test('le cours se lit section par section ; le quiz et le résultat ont chacun leur page, dans l’interface du cours', () => {
   const m = MODULES_CONTENT.reseaux;
   const noop = () => {};
   const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   // Le cadre du cours : la barre du haut, le sommaire à gauche, la colonne de lecture.
   const inCourseFrame = (html: string) =>
     html.startsWith('<div class="rd-shell is-chapter"><header class="rd-top">') && html.includes('<aside class="rd-outline"') && html.includes('class="rd-article rd-chapter-main"');
-  const reader = renderToStaticMarkup(
-    <AcademyReaderView moduleContent={m} progress={{ lessons: [], answers: [], submitted: false }} lessonIndex={0} answers={[]} setAnswers={noop} busy={false} onFinishReading={noop} onSubmitQuiz={noop} onOpenResult={noop} onExit={noop} />
+  const fresh = { lessons: [] as number[], answers: [] as number[], submitted: false };
+  const section = (index: number, progress = fresh) =>
+    renderToStaticMarkup(
+      <AcademyReaderView moduleContent={m} progress={progress} lessonIndex={index} busy={false} onGoToPart={noop} onCompletePart={noop} onOpenQuiz={noop} onExit={noop} />
+    );
+
+  // Une section par page : la première s'ouvre par l'en-tête du module ; aucune ne contient le quiz.
+  const first = section(0);
+  assert.ok(inCourseFrame(first));
+  assert.match(first, /class="rd-hero/);
+  assert.match(first, /<h2 id="partie-1"/);
+  assert.ok(!first.includes('id="partie-2"'));
+  assert.ok(!first.includes('rd-question-card'));
+  assert.match(text(first), new RegExp(`${esc(m.lessons[1].title)} · \\+25 XP Terminer et continuer`));
+  const lastIndex = m.lessons.length - 1;
+  const lastPage = section(lastIndex);
+  assert.ok(!lastPage.includes('rd-hero'));
+  assert.match(lastPage, new RegExp(`<h2 id="partie-${lastIndex + 1}"`));
+  assert.match(text(lastPage), /Section précédente .* Quiz final · \+25 XP Terminer et passer au quiz/);
+  // Une section déjà lue mène simplement à la suivante.
+  assert.match(text(section(0, { lessons: [0], answers: [], submitted: false })), / Section suivante /);
+
+  // Le quiz a sa page : même cadre, le quiz final en partie en cours du sommaire, aucune section.
+  const quiz = renderToStaticMarkup(
+    <AcademyQuizView moduleContent={m} progress={fresh} answers={[]} setAnswers={noop} busy={false} onSubmitQuiz={noop} onOpenResult={noop} onGoToPart={noop} onExit={noop} />
   );
-  assert.ok(inCourseFrame(reader));
+  assert.ok(inCourseFrame(quiz));
+  assert.match(quiz, /<li class="rd-step is-current"><button type="button" aria-current="location">.*?Quiz final/);
+  assert.equal(quiz.match(/rd-card rd-question-card/g)?.length, m.questions.length);
+  assert.ok(!quiz.includes('id="partie-1"'));
+
   const result = (answers: number[]) =>
     renderToStaticMarkup(
       <AcademyResultView moduleContent={m} progress={{ lessons: [0, 1, 2], answers, submitted: true }} onRetryQuiz={noop} onReviewLessons={noop} onOpenLearning={noop} onExit={noop} totalXP={150} />

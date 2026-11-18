@@ -47,8 +47,8 @@ export const DEMO_TOUR: TourStep[] = [
     page: 'reader',
     param: 'phishing',
     target: '.rd-outline',
-    title: 'Un module sur une seule page',
-    text: 'Les parties, l’exercice et le quiz final se suivent sur une page ; le sommaire suit la lecture. Taille du texte et longueur des lignes suivent les études de lisibilité.'
+    title: 'Un module, section par section',
+    text: 'Chaque section a sa page, puis le quiz final a la sienne, dans la même interface. Taille du texte et longueur des lignes suivent les études de lisibilité.'
   },
   {
     id: 'family-week',

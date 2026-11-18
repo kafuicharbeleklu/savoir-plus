@@ -189,6 +189,7 @@ const LESSON_COUNTS: Record<string, number> = Object.fromEntries(
 import { VisitorAuthView } from './pages/VisitorAuthView';
 import { AppealPortalView } from './pages/AppealPortalView';
 import {
+  AcademyQuizView,
   AcademyReaderView,
   AcademyResultView
 } from './pages/AcademyStudyPages';
@@ -359,6 +360,8 @@ export default function App() {
     STUDY_DEEP_LINK_PAGES.includes(initialRoute.page) && initialRoute.id ? initialRoute.id : 'phishing'
   );
   const [lessonIndex, setLessonIndex] = useState<number>(0);
+  // Où arriver sur la page d'une section : en haut, ou sur son exercice (lien « À vous de jouer » du sommaire).
+  const [readerAnchor, setReaderAnchor] = useState<'top' | 'practice'>('top');
   // Publicité : le tirage des annonces est fixé pour la visite ; la fenêtre des offres s'ouvre depuis la carte.
   const [adSeed] = useState(() => Math.floor(Math.random() * 1_000_000_000));
   const [offersOpen, setOffersOpen] = useState(false);
@@ -892,29 +895,39 @@ export default function App() {
     }
     setActiveStudyModuleId(moduleId);
     setLessonIndex(idx);
+    setReaderAnchor('top');
     setAnswers(modProg.answers || []);
     nav('reader', moduleId);
   };
 
-  // Le module se lit sur une seule page. L'action principale, en bas, déclare la lecture une fois
-  // (toutes les parties sont alors notées lues), puis mène aux consignes du quiz. Faire défiler la
-  // page ou passer par le sommaire n'enregistre rien (R:645 : naviguer n'est pas déclarer avoir lu).
-  const handleFinishReading = async () => {
-    const allParts = activeStudyContent.lessons.map((_, i) => i);
-    const unread = allParts.filter((i) => !activeStudyProgress.lessons.includes(i)).length;
-    if (unread > 0) {
+  /** Ouvre une section du cours, sur sa page : en haut, ou sur son exercice. */
+  const goToPart = (index: number, anchor: 'top' | 'practice' = 'top') => {
+    setLessonIndex(index);
+    setReaderAnchor(anchor);
+    if (page !== 'reader') nav('reader', activeStudyModuleId);
+  };
+
+  // Chaque section a sa page. Le bouton du bas note la section lue (+25 XP), puis ouvre la suivante, ou
+  // le quiz final après la dernière. Passer par le sommaire n'enregistre rien (R:645 : naviguer n'est pas
+  // déclarer avoir lu).
+  const handleCompletePart = async () => {
+    const lessonCount = activeStudyContent.lessons.length;
+    const index = Math.max(0, Math.min(lessonIndex, lessonCount - 1));
+    if (!activeStudyProgress.lessons.includes(index)) {
       setBusy(true);
       try {
-        await saveModuleProgress(activeStudyModuleId, { ...activeStudyProgress, lessons: allParts });
-        setToast(`Lecture terminée · +${unread * 25} XP`);
+        const lessons = [...new Set([...activeStudyProgress.lessons, index])].sort((a, b) => a - b);
+        await saveModuleProgress(activeStudyModuleId, { ...activeStudyProgress, lessons });
+        setToast(`Section « ${activeStudyContent.lessons[index]?.title} » terminée · +25 XP`);
       } catch (e: any) {
         setToast(e?.message || 'Erreur lors de la sauvegarde');
-        return; // on reste sur la page, pour pouvoir réessayer
+        return; // on reste sur la section, pour pouvoir réessayer
       } finally {
         setBusy(false);
       }
     }
-    nav('quiz-intro', activeStudyModuleId);
+    if (index < lessonCount - 1) goToPart(index + 1);
+    else nav('quiz', activeStudyModuleId);
   };
 
   const handleSubmitQuiz = async () => {
@@ -1456,8 +1469,9 @@ export default function App() {
     );
   }
 
-  // Focused Study Routes (Auto HTB Dark)
-  if (page === 'reader' || page === 'quiz-intro' || page === 'quiz') {
+  // Le cours d'un module : chaque section sur sa page, puis le quiz final sur la sienne, puis le résultat ;
+  // toutes gardent l'interface du cours (barre du haut, sommaire, colonne de lecture).
+  if (page === 'reader') {
     return (
       <>
         <AcademyReaderView
@@ -1466,17 +1480,39 @@ export default function App() {
           domain={dynamicCatalog.find((c) => c.id === activeStudyModuleId)?.domain}
           progress={activeStudyProgress}
           lessonIndex={lessonIndex}
+          anchor={readerAnchor}
           busy={busy}
-          startAtQuiz={page !== 'reader'}
+          onGoToPart={goToPart}
+          onCompletePart={handleCompletePart}
+          onOpenQuiz={() => nav('quiz', activeStudyModuleId)}
+          onExit={() => nav(studyReturnTarget.page === 'visitor' ? 'home' : studyReturnTarget.page, studyReturnTarget.id || '')}
+        />
+        {tourOverlay}
+        {toast && (
+          <div className="toast" role="status" aria-live="polite">
+            {toast}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  if (page === 'quiz-intro' || page === 'quiz') {
+    return (
+      <>
+        <AcademyQuizView
+          moduleContent={activeStudyContent}
+          progress={activeStudyProgress}
           answers={answers}
           setAnswers={(next) => {
             // Le brouillon suit chaque réponse : quitter la page ne fait rien perdre.
             quizDraftsRef.current[activeStudyModuleId] = next;
             setAnswers(next);
           }}
-          onFinishReading={handleFinishReading}
+          busy={busy}
           onSubmitQuiz={handleSubmitQuiz}
           onOpenResult={() => nav('result', activeStudyModuleId)}
+          onGoToPart={goToPart}
           onExit={() => nav(studyReturnTarget.page === 'visitor' ? 'home' : studyReturnTarget.page, studyReturnTarget.id || '')}
         />
         {tourOverlay}
@@ -1497,10 +1533,7 @@ export default function App() {
           progress={activeStudyProgress}
           onRetryQuiz={handleRetryQuiz}
           onOpenQuiz={() => nav('quiz', activeStudyModuleId)}
-          onReviewLessons={(sectionIdx) => {
-            setLessonIndex(sectionIdx);
-            nav('reader', activeStudyModuleId);
-          }}
+          onReviewLessons={goToPart}
           onOpenLearning={() => nav('learning')}
           onExit={() => nav('home')}
           totalXP={totalXP}

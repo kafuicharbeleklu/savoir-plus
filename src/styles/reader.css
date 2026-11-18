@@ -342,7 +342,9 @@
 .rd-chapter-body > h2 { display: flex; align-items: center; gap: 14px; margin-top: 56px; margin-bottom: 16px; padding-top: 44px; border-top: 1px solid var(--border-hairline); font-size: 1.75rem; font-weight: 600; line-height: 2.25rem; letter-spacing: -0.015em; color: var(--fg-primary); }
 .rd-chapter-body > h2:focus { outline: none; }
 .rd-art-badge { display: grid; flex: none; place-items: center; width: 44px; height: 44px; border: 2px solid var(--art-ink); border-radius: 999px; background: var(--art-b-soft); box-shadow: 3px 3px 0 var(--art-b); color: var(--art-ink); }
-.rd-chapter-body > h2:nth-of-type(even) .rd-art-badge { background: var(--art-a-soft); box-shadow: 3px 3px 0 var(--art-a); }
+.rd-chapter-body > h2:is(#partie-2, #partie-4, #partie-6) .rd-art-badge { background: var(--art-a-soft); box-shadow: 3px 3px 0 var(--art-a); }
+/* Une section qui ouvre sa page n'a ni filet ni marge au-dessus de son titre. */
+.rd-chapter-body > h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 /* Un intertitre appartient au texte qui le suit : quatre fois plus d'air au-dessus qu'au-dessous. */
 .rd-chapter-body > h3 { margin-top: 36px; margin-bottom: 8px; font-size: 1.3125rem; font-weight: 600; line-height: 1.75rem; letter-spacing: -0.01em; color: var(--fg-primary); }
 .rd-chapter-body ul,
@@ -610,11 +612,7 @@
   .rd-lab-zone.is-subject { font-size: 1.0625rem; }
 }
 
-/* -- Fin de la lecture et quiz, au bas de la page du module ------------------------------------- */
-.rd-checkpoint { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin: 44px var(--inset) 0; padding: 14px 18px; border-radius: 14px; background: var(--bg-subtle); }
-.rd-checkpoint p { margin: 0; font-size: 1rem; line-height: 1.5; color: var(--fg-primary); }
-.rd-checkpoint b { font-weight: 600; }
-.rd-checkpoint .secondary { flex: none; white-space: nowrap; }
+/* -- Quiz final, sur sa page, dans le cadre du cours ------------------------------------------------ */
 .rd-chapter-body > .rd-quiz-last { font-size: 0.9375rem; line-height: 1.5; color: var(--fg-muted); }
 .rd-chapter-body > .rd-question-card { margin-bottom: 12px; font-size: 1rem; line-height: 1.5; }
 .rd-chapter-body > .rd-confirm { margin-top: 16px; }

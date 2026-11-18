@@ -1,7 +1,7 @@
 /**
- * Lecteur d'un module : la lecture et le quiz sur une même page, comme un chapitre, puis le résultat sur
- * un écran à part. Les deux écrans gardent l'interface du cours : une barre fine en haut (titre, partie en
- * cours, avancement), le sommaire à gauche, la colonne de lecture.
+ * Lecteur d'un module : chaque section sur sa page, puis le quiz final sur la sienne, puis le résultat.
+ * Toutes gardent l'interface du cours : une barre fine en haut (titre, section en cours, avancement), le
+ * sommaire à gauche, la colonne de lecture.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Award, Check, List, MousePointerClick, RotateCcw, X } from 'lucide-react';
@@ -247,8 +247,8 @@ function ModuleOutline({
 }
 
 /**
- * Le cadre commun aux écrans du cours — la lecture et le quiz, puis le résultat : la barre du haut, le
- * sommaire à gauche, la colonne de lecture. Passer de l'un à l'autre ne change pas d'interface.
+ * Le cadre commun aux pages du cours — les sections, le quiz, le résultat : la barre du haut, le sommaire
+ * à gauche, la colonne de lecture. Passer de l'une à l'autre ne change pas d'interface.
  */
 function ChapterFrame({
   title,
@@ -259,6 +259,7 @@ function ChapterFrame({
   sommaire,
   viewportRef,
   articleKey,
+  footer,
   children
 }: {
   title: string;
@@ -269,6 +270,8 @@ function ChapterFrame({
   sommaire: React.ReactNode;
   viewportRef?: React.Ref<HTMLDivElement>;
   articleKey?: string;
+  /** La navigation du bas de page (section précédente, suite). */
+  footer?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { open, setOpen } = outline;
@@ -288,6 +291,7 @@ function ChapterFrame({
 
           <article key={articleKey} className="rd-article rd-chapter-main">
             <div className="rd-chapter-body">{children}</div>
+            {footer}
           </article>
         </div>
       </div>
@@ -299,9 +303,14 @@ function ChapterFrame({
 
 /* ------------------------------------------------------------------ lecture */
 
+/** Respecter le réglage « réduire les animations » du système. */
+const calmMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 /**
- * La lecture d'un module : une seule page, les parties à la suite. Le sommaire fait défiler jusqu'à
- * la partie voulue ; la lecture se déclare une fois, en bas, par le bouton qui mène au quiz.
+ * Une section du cours, sur sa page : son titre, son texte, son exemple, sa question et son résumé, et
+ * l'exercice dans la section qui donne de quoi le réussir. La première section s'ouvre par l'en-tête du
+ * module et ses objectifs. En bas, le bouton note la section lue (+25 XP) et mène à la suivante, puis au
+ * quiz final, qui a sa page. Passer par le sommaire n'enregistre rien.
  */
 export function AcademyReaderView({
   moduleContent = MODULES_CONTENT.phishing,
@@ -309,13 +318,11 @@ export function AcademyReaderView({
   domain,
   progress,
   lessonIndex,
-  startAtQuiz = false,
-  answers,
-  setAnswers,
+  anchor = 'top',
   busy,
-  onFinishReading,
-  onSubmitQuiz,
-  onOpenResult,
+  onGoToPart,
+  onCompletePart,
+  onOpenQuiz,
   onExit
 }: {
   moduleContent?: ModuleStudyContent;
@@ -323,194 +330,129 @@ export function AcademyReaderView({
   summary?: string;
   domain?: string;
   progress: Progress;
-  /** La partie sur laquelle arriver à l'ouverture (reprise, ou « revoir cette section »). */
+  /** La section affichée. */
   lessonIndex: number;
-  /** Arriver directement sur le quiz, au bas de la page. */
-  startAtQuiz?: boolean;
-  answers: number[];
-  setAnswers: (a: number[]) => void;
+  /** Où arriver sur la page : en haut, ou sur l'exercice de la section. */
+  anchor?: 'top' | 'practice';
   busy: boolean;
-  onFinishReading: () => void;
-  onSubmitQuiz: () => void;
-  /** Rouvrir la correction du dernier envoi. */
-  onOpenResult: () => void;
+  /** Ouvrir une autre section, en haut de sa page ou sur son exercice. */
+  onGoToPart: (index: number, anchor?: 'practice') => void;
+  /** Noter la section lue, puis ouvrir la suivante, ou le quiz après la dernière. */
+  onCompletePart: () => void;
+  onOpenQuiz: () => void;
   onExit: () => void;
 }) {
   const outline = useOutline();
   const viewportRef = useRef<HTMLDivElement>(null);
-  const partEls = useRef<(HTMLHeadingElement | null)[]>([]);
   const practiceEl = useRef<HTMLHeadingElement | null>(null);
-  const quizEl = useRef<HTMLHeadingElement | null>(null);
-  const [currentPart, setCurrentPart] = useState(0);
 
   const lessons = moduleContent.lessons;
   const last = lessons.length - 1;
+  const index = Math.max(0, Math.min(lessonIndex, last));
+  const lesson = lessons[index];
   const answerKey = moduleContent.questions.map((q) => q.correctIndex);
   const pct = moduleProgressPercent(progress, lessons.length, answerKey);
   const unread = lessons.filter((_, i) => !progress.lessons.includes(i)).length;
-  const minutes = lessons.reduce((sum, lesson) => sum + (parseInt(lesson.minutes, 10) || 0), 0);
-  // Le quiz est la dernière étape de la page : il compte comme une partie pour le sommaire.
-  const onQuiz = currentPart > last;
-  const current = Math.max(0, Math.min(currentPart, last));
-  const passThreshold = quizPassThreshold(moduleContent.questions.length);
-  const lastScore = progress.submitted ? scoreAnswers(progress.answers || [], answerKey) : null;
+  const minutes = lessons.reduce((sum, l) => sum + (parseInt(l.minutes, 10) || 0), 0);
+  const done = progress.lessons.includes(index);
+  const nextLabel = index < last ? (done ? 'Section suivante' : 'Terminer et continuer') : done ? 'Passer au quiz' : 'Terminer et passer au quiz';
+  const nextHint = [index < last ? lessons[index + 1].title : 'Quiz final', done ? '' : '+25 XP'].filter(Boolean).join(' · ');
 
-  const scrollToPart = (index: number, smooth: boolean) => {
-    const viewport = viewportRef.current;
-    const heading = partEls.current[index];
-    if (!viewport) return;
-    const calm = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const behavior: ScrollBehavior = smooth && !calm ? 'smooth' : 'auto';
-    // La première partie se lit depuis le haut de la page : titre du module, bandeau, objectifs.
-    if (index <= 0 || !heading) {
-      viewport.scrollTo({ top: 0, behavior });
-      return;
-    }
-    scrollToHeading(heading, behavior);
-  };
+  const scrollToTop = (behavior: ScrollBehavior = 'auto') => viewportRef.current?.scrollTo({ top: 0, behavior: calmMotion() ? 'auto' : behavior });
   const scrollToHeading = (heading: HTMLElement | null, behavior: ScrollBehavior = 'smooth') => {
     const viewport = viewportRef.current;
     if (!viewport || !heading) return;
-    const calm = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const top = heading.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop - 24;
-    viewport.scrollTo({ top, behavior: calm ? 'auto' : behavior });
+    viewport.scrollTo({ top, behavior: calmMotion() ? 'auto' : behavior });
   };
 
-  // Repère la partie en cours de lecture, pour le sommaire et la barre du haut.
+  // À l'ouverture d'une section : en haut de sa page, ou sur son exercice.
   useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-    let frame = 0;
-    const update = () => {
-      frame = 0;
-      const line = viewport.getBoundingClientRect().top + 140;
-      let found = 0;
-      partEls.current.forEach((el, i) => {
-        if (el && el.getBoundingClientRect().top <= line) found = i;
-      });
-      if (quizEl.current && quizEl.current.getBoundingClientRect().top <= line) found = lessons.length;
-      setCurrentPart(found);
-    };
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(update);
-    };
-    viewport.addEventListener('scroll', onScroll, { passive: true });
-    update();
-    return () => {
-      viewport.removeEventListener('scroll', onScroll);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [moduleContent.id, lessons.length]);
-
-  // À l'ouverture, on arrive sur la partie demandée.
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => (startAtQuiz ? scrollToHeading(quizEl.current, 'auto') : scrollToPart(lessonIndex, false)));
+    const frame = requestAnimationFrame(() => (anchor === 'practice' && practiceEl.current ? scrollToHeading(practiceEl.current, 'auto') : scrollToTop()));
     return () => cancelAnimationFrame(frame);
-  }, [lessonIndex, startAtQuiz, moduleContent.id]);
+  }, [index, anchor, moduleContent.id]);
 
-  // L'exercice n'apparaît qu'une fois, dans la partie qui donne de quoi le réussir.
+  // L'exercice n'apparaît qu'une fois, dans la section qui donne de quoi le réussir.
   const { hasLab, labPart } = labPlacement(moduleContent);
-  const practiceOf = (index: number) =>
-    moduleContent.steps?.length ? (
-      index === 0 ? (
-        <IllustratedSteps steps={moduleContent.steps} aiAssisted={moduleContent.aiAssisted} />
-      ) : null
-    ) : index === labPart ? (
-      <ModuleInteractiveLab labType={moduleContent.labType} />
-    ) : null;
+  const practice = moduleContent.steps?.length ? (
+    index === 0 ? (
+      <IllustratedSteps steps={moduleContent.steps} aiAssisted={moduleContent.aiAssisted} />
+    ) : null
+  ) : index === labPart ? (
+    <ModuleInteractiveLab labType={moduleContent.labType} />
+  ) : null;
 
   return (
     <ChapterFrame
       title={moduleContent.title}
-      step={onQuiz ? 'Quiz final' : lessons[current]?.title || ''}
+      step={lesson?.title || ''}
       pct={pct}
       onExit={onExit}
       outline={outline}
       viewportRef={viewportRef}
-      articleKey={moduleContent.id}
+      articleKey={`${moduleContent.id}-${index}`}
       sommaire={
         <ModuleOutline
           moduleContent={moduleContent}
           progress={progress}
           outline={outline}
-          current={onQuiz ? 'quiz' : current}
+          current={index}
           onPickPart={(i) => {
-            scrollToPart(i, true);
             outline.closeIfNarrow();
+            if (i === index) scrollToTop('smooth');
+            else onGoToPart(i);
           }}
           onPickPractice={() => {
-            scrollToHeading(practiceEl.current);
             outline.closeIfNarrow();
+            if (index === labPart) scrollToHeading(practiceEl.current);
+            else onGoToPart(labPart, 'practice');
           }}
-          onPickQuiz={() => {
-            scrollToHeading(quizEl.current);
-            outline.closeIfNarrow();
-          }}
+          onPickQuiz={onOpenQuiz}
         />
       }
+      footer={
+        <footer className="rd-nav">
+          {index > 0 ? <BackLink label="Section précédente" title={lessons[index - 1].title} onClick={() => onGoToPart(index - 1)} /> : <span />}
+          <div className="rd-nav-next">
+            <small>{nextHint}</small>
+            <button type="button" className="primary" disabled={busy} onClick={onCompletePart}>
+              {nextLabel} <ArrowRight size={16} aria-hidden="true" />
+            </button>
+          </div>
+        </footer>
+      }
     >
-      <ModuleOpening
-        title={moduleContent.title}
-        domain={domain}
-        summary={summary}
-        goals={moduleContent.goals}
-        art={lessons[0]?.rich?.art}
-        seed={moduleContent.id}
-        minutes={minutes}
-        questionCount={moduleContent.questions.length}
-        hasPractice={hasLab}
-        read={unread === 0}
-      />
-      {lessons.map((lesson, i) => (
+      {index === 0 && (
+        <ModuleOpening
+          title={moduleContent.title}
+          domain={domain}
+          summary={summary}
+          goals={moduleContent.goals}
+          art={lessons[0]?.rich?.art}
+          seed={moduleContent.id}
+          minutes={minutes}
+          questionCount={moduleContent.questions.length}
+          hasPractice={hasLab}
+          read={unread === 0}
+        />
+      )}
+      {lesson && (
         <LessonPart
-          key={lesson.title}
           lesson={lesson}
-          index={i}
-          practice={practiceOf(i)}
-          headingRef={(el) => {
-            partEls.current[i] = el;
-          }}
+          index={index}
+          practice={practice}
           practiceRef={(el) => {
             practiceEl.current = el;
           }}
         />
-      ))}
-
-      {unread > 0 && (
-        <div className="rd-checkpoint rd-wide">
-          <p>
-            <b>Vous avez tout lu ?</b> Déclarez votre lecture pour faire avancer le module.
-          </p>
-          <button type="button" className="secondary" disabled={busy} onClick={onFinishReading}>
-            Marquer comme lu · +{unread * 25} XP
-          </button>
-        </div>
       )}
-
-      <h2 id="quiz" ref={quizEl} className="rd-part-title" tabIndex={-1}>
-        <ArtBadge art="done" />
-        <span>Quiz final</span>
-      </h2>
-      <p>
-        {moduleContent.quizTitle} : {moduleContent.questions.length} questions à choix unique, sans limite de temps. Il faut {passThreshold} bonnes réponses sur{' '}
-        {moduleContent.questions.length} pour valider le module. La correction détaillée s’affiche après l’envoi.
-      </p>
-      {lastScore !== null && (
-        <p className="rd-quiz-last tabular-nums">
-          Dernier envoi : {lastScore} / {moduleContent.questions.length}. Un nouvel envoi remplace ce résultat.{' '}
-          <button type="button" className="rd-link" onClick={onOpenResult}>
-            Revoir ma correction
-          </button>
-        </p>
-      )}
-      <QuizBlock moduleContent={moduleContent} answers={answers} setAnswers={setAnswers} busy={busy} onSubmit={onSubmitQuiz} />
     </ChapterFrame>
   );
 }
 
 /* ------------------------------------------------------------------ quiz */
 
-/** Le quiz final, au bas de la page du module : les questions, puis une confirmation avant l'envoi. */
+/** Les questions du quiz final, puis une confirmation avant l'envoi. */
 function QuizBlock({
   moduleContent,
   answers,
@@ -597,6 +539,88 @@ function QuizBlock({
   );
 }
 
+/**
+ * Le quiz final, sur sa page, dans le cadre du cours : la même barre du haut, le même sommaire (le quiz y
+ * est la partie en cours), la même colonne de lecture. Les consignes tiennent en deux phrases ; les
+ * questions suivent, puis la confirmation d'envoi.
+ */
+export function AcademyQuizView({
+  moduleContent = MODULES_CONTENT.phishing,
+  progress,
+  answers,
+  setAnswers,
+  busy,
+  onSubmitQuiz,
+  onOpenResult,
+  onGoToPart,
+  onExit
+}: {
+  moduleContent?: ModuleStudyContent;
+  progress: Progress;
+  answers: number[];
+  setAnswers: (a: number[]) => void;
+  busy: boolean;
+  onSubmitQuiz: () => void;
+  /** Rouvrir la correction du dernier envoi. */
+  onOpenResult: () => void;
+  /** Revenir à une section du cours, en haut de sa page ou sur son exercice. */
+  onGoToPart: (index: number, anchor?: 'practice') => void;
+  onExit: () => void;
+}) {
+  const outline = useOutline();
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const qLen = moduleContent.questions.length;
+  const answerKey = moduleContent.questions.map((q) => q.correctIndex);
+  const pct = moduleProgressPercent(progress, moduleContent.lessons.length, answerKey);
+  const passThreshold = quizPassThreshold(qLen);
+  const lastScore = progress.submitted ? scoreAnswers(progress.answers || [], answerKey) : null;
+  const { labPart } = labPlacement(moduleContent);
+
+  return (
+    <ChapterFrame
+      title={moduleContent.title}
+      step="Quiz final"
+      pct={pct}
+      onExit={onExit}
+      outline={outline}
+      viewportRef={viewportRef}
+      articleKey={`${moduleContent.id}-quiz`}
+      sommaire={
+        <ModuleOutline
+          moduleContent={moduleContent}
+          progress={progress}
+          outline={outline}
+          current="quiz"
+          onPickPart={(i) => onGoToPart(i)}
+          onPickPractice={() => onGoToPart(labPart, 'practice')}
+          onPickQuiz={() => {
+            outline.closeIfNarrow();
+            viewportRef.current?.scrollTo({ top: 0, behavior: calmMotion() ? 'auto' : 'smooth' });
+          }}
+        />
+      }
+    >
+      <h1 className="rd-part-title">
+        <ArtBadge art="done" />
+        <span>Quiz final</span>
+      </h1>
+      <p>
+        {moduleContent.quizTitle} : {qLen} questions à choix unique, sans limite de temps. Il faut {passThreshold} bonnes réponses sur {qLen} pour valider le
+        module. La correction détaillée s’affiche après l’envoi.
+      </p>
+      {lastScore !== null && (
+        <p className="rd-quiz-last tabular-nums">
+          Dernier envoi : {lastScore} / {qLen}. Un nouvel envoi remplace ce résultat.{' '}
+          <button type="button" className="rd-link" onClick={onOpenResult}>
+            Revoir ma correction
+          </button>
+        </p>
+      )}
+      <QuizBlock moduleContent={moduleContent} answers={answers} setAnswers={setAnswers} busy={busy} onSubmit={onSubmitQuiz} />
+    </ChapterFrame>
+  );
+}
+
 /* ------------------------------------------------------------------ résultat */
 
 /**
@@ -619,9 +643,10 @@ export function AcademyResultView({
   moduleContent?: ModuleStudyContent;
   progress: Progress;
   onRetryQuiz: () => void;
-  /** Revenir au quiz, au bas de la page du module (depuis le sommaire). */
+  /** Revenir à la page du quiz (depuis le sommaire). */
   onOpenQuiz?: () => void;
-  onReviewLessons: (sectionIdx: number) => void;
+  /** Revenir à une section du cours, en haut de sa page ou sur son exercice. */
+  onReviewLessons: (sectionIdx: number, anchor?: 'practice') => void;
   onOpenLearning: () => void;
   onExit: () => void;
   totalXP: number;
@@ -671,8 +696,8 @@ export function AcademyResultView({
           progress={progress}
           outline={outline}
           current="quiz"
-          onPickPart={onReviewLessons}
-          onPickPractice={() => onReviewLessons(labPart)}
+          onPickPart={(i) => onReviewLessons(i)}
+          onPickPractice={() => onReviewLessons(labPart, 'practice')}
           onPickQuiz={onOpenQuiz || onRetryQuiz}
         />
       }
