@@ -1544,7 +1544,9 @@ export default function App() {
     page === 'auth-flows' ||
     page === 'profile' ||
     page === 'settings' ||
-    page === 'member';
+    page === 'member' ||
+    // Pages d'information du pied de page : une page seule, sans colonne de gauche.
+    page === 'info';
 
   // Common props passed to subpages
   const extraProps = {

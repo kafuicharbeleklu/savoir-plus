@@ -8,12 +8,13 @@ const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '
 const page = (topic: string, extra: Partial<React.ComponentProps<typeof InfoPage>> = {}) =>
   text(renderToStaticMarkup(<InfoPage topic={topic} nav={() => {}} canPublish isGuardian={false} isLocal onStartTour={() => {}} {...extra} />));
 
-test('pages d’information : de vraies pages, une rubrique par onglet', () => {
+test('pages d’information : une page seule par rubrique, sans onglets vers les autres', () => {
   assert.ok(isInfoTopic('privacy'));
   assert.ok(!isInfoTopic('inconnu'));
-  // Les cinq rubriques, toujours accessibles par les onglets ; le titre n'est lu que par les lecteurs d'écran.
-  assert.match(page('about'), /À propos Accessibilité Centre d’aide Confidentialité et conditions Hackathon/);
-  assert.match(page('about'), /Ce qu’est SAVOIR\+/);
+  // La page s'ouvre sur son titre et son texte ; aucune rangée d'onglets vers les autres rubriques.
+  assert.match(page('about'), /^ ?À propos Ce qu’est SAVOIR\+/);
+  assert.doesNotMatch(page('about'), /Accessibilité Centre d’aide Confidentialité et conditions/);
+  assert.match(page('privacy'), /^ ?Confidentialité et conditions Ce qui reste privé/);
   assert.match(page('accessibility'), /WCAG 2\.2, niveau AA/);
   assert.match(page('privacy'), /La caméra n’est jamais utilisée/);
   assert.match(page('hackathon'), /Le rôle de l’IA/);

@@ -1,11 +1,11 @@
 /**
  * Pages d'information du pied de page (À propos, Accessibilité, Centre d'aide, Confidentialité et
- * conditions, Hackathon) : de vraies pages, à l'adresse « #info/<rubrique> », et non plus des fenêtres
- * superposées. Chaque lien mène à l'endroit qu'il nomme ; rien n'est annoncé que le site ne fasse pas.
+ * conditions, Hackathon) : chacune est une page seule, à l'adresse « #info/<rubrique> », sans colonne de
+ * gauche ni onglets vers les autres rubriques, et non plus une fenêtre superposée. Chaque lien mène à
+ * l'endroit qu'il nomme ; rien n'est annoncé que le site ne fasse pas.
  */
 import React from 'react';
 import type { FooterInfoTopic } from '../components/SidebarFooters';
-import { Tabs } from '../components/ui';
 
 const TOPICS: { id: FooterInfoTopic; label: string }[] = [
   { id: 'about', label: 'À propos' },
@@ -46,12 +46,10 @@ export function InfoPage({
   const title = TOPICS.find((t) => t.id === current)?.label || 'À propos';
 
   return (
-    <div className="dashboard-grid is-single info-page">
-      <div className="dashboard-main">
-        <h1 className="sr-only">{title}</h1>
-        <Tabs<FooterInfoTopic> label="Pages d’information" value={current} onChange={(id) => nav('info', id)} items={TOPICS} />
-
+    <div className="info-page">
+      <div className="info-main">
         <article className="wf-card info-article">
+          <h1>{title}</h1>
           {current === 'about' && (
             <>
               <section>
