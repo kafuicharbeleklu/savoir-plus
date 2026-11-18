@@ -112,7 +112,7 @@ export function DeviceLockPanel({
       </ListCard>
       <p className="sc-note">
         S’applique à SAVOIR+ sur les appareils où son compte est ouvert, pas au reste du téléphone ou de la tablette : pour cela, utilisez aussi
-        leur contrôle parental. {firstName} voit ses règles ; vous ne voyez que son temps, jamais ses lectures ni ses messages.
+        leur contrôle parental. {firstName} voit ses règles ; le verrouillage ne relève que son temps, sans rien montrer de ses messages.
       </p>
 
       {editing === 'time' && (

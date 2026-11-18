@@ -203,6 +203,7 @@ import {
 import { CommunityComposeView, CommunityThreadView } from './pages/CommunityPages';
 import { CalendarPage } from './pages/CalendarPage';
 import { GuardianGate } from './pages/school/GuardianGate';
+import { InfoPage } from './pages/InfoPage';
 import { DeviceLockScreen } from './pages/school/DeviceLockScreen';
 import { DemoTour } from './components/DemoTour';
 import { DEMO_TOUR, readTourStep, writeTourStep } from './demoTour';
@@ -251,6 +252,7 @@ const VALID_PAGES = new Set<string>([
   'catalog',
   'learning',
   'calendar',
+  'info',
   'family',
   'teaching',
   'institution',
@@ -379,7 +381,6 @@ export default function App() {
   const [composerView, setComposerView] = useState<'compose' | 'scheduled'>('compose');
   const [scheduleTick, setScheduleTick] = useState(0);
   const [reportTarget, setReportTarget] = useState<string | null>(null);
-  const [infoModal, setInfoModal] = useState<FooterInfoTopic | null>(null);
 
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -520,16 +521,6 @@ export default function App() {
     };
   }, [page, uid, catalogDomain, ext.plannedIds.length, ext.posts.length]);
 
-  // Modal Escape for infoModal
-  useEffect(() => {
-    if (!infoModal) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setInfoModal(null);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [infoModal]);
-
   // Cloud auth observer
   useEffect(() => {
     return observeAuth((cloudUid) => {
@@ -600,6 +591,8 @@ export default function App() {
     document.querySelector('.shell-scroll-viewport')?.scrollTo({ top: 0, behavior });
     window.scrollTo({ top: 0, behavior });
   };
+  // Liens du pied de page (À propos, Accessibilité, Centre d’aide, Confidentialité, Hackathon) : des pages dédiées.
+  const openInfoPage = (topic: FooterInfoTopic) => nav('info', topic);
 
   const openSettingsTab = (tab: 'prefs' | 'privacy' | 'security') => {
     setSettingsTab(tab);
@@ -2584,7 +2577,7 @@ export default function App() {
           onOpenChatDrawer={openConversation}
           onRequestContact={handleRequestContact}
           onReportTarget={(label) => setReportTarget(label)}
-          onOpenInfoModal={setInfoModal}
+          onOpenInfoModal={openInfoPage}
           nav={nav}
           openSettingsTab={openSettingsTab}
           setToast={setToast}
@@ -2634,7 +2627,7 @@ export default function App() {
           onOpenChatDrawer={openConversation}
           onReportTarget={(label) => setReportTarget(label)}
           onOpenComposer={caps.canPublish ? () => setComposerOpen(true) : undefined}
-          onOpenInfoModal={setInfoModal}
+          onOpenInfoModal={openInfoPage}
           nav={nav}
           openSettingsTab={openSettingsTab}
           setToast={setToast}
@@ -2914,6 +2907,18 @@ export default function App() {
     if (page === 'community-compose') return <CommunityComposeView {...communityProps} />;
     if (page === 'community-thread') return <CommunityThreadView {...communityProps} />;
 
+    // Pages d'information du pied de page : de vraies pages, plus des fenêtres superposées.
+    if (page === 'info')
+      return (
+        <InfoPage
+          topic={selectedId}
+          nav={nav}
+          canPublish={caps.canPublish}
+          isGuardian={caps.accountKind === 'guardian'}
+          isLocal={mode === 'local'}
+          onStartTour={mode === 'local' ? () => setTourIndex(0) : undefined}
+        />
+      );
     if (page === 'notifications')
       return (
         <NotificationsView
@@ -3134,7 +3139,7 @@ export default function App() {
             <SidebarCompactFooter
               nav={nav}
               canCreate={caps.canCreate}
-              onOpenInfoModal={setInfoModal}
+              onOpenInfoModal={openInfoPage}
             />
           </aside>
           )}
@@ -3249,98 +3254,6 @@ export default function App() {
 
       {authModal}
 
-      {infoModal && (
-        <div
-          className="modal-backdrop"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Informations SAVOIR+"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setInfoModal(null);
-          }}
-        >
-          <div className="modal">
-            <button type="button" className="icon-btn modal-close" aria-label="Fermer" onClick={() => setInfoModal(null)}>
-              <X size={18} />
-            </button>
-            <span className="eyebrow">
-              {infoModal === 'hackathon' ? 'Nexus · Hackathon CREATE WITH AI' : 'SAVOIR+ · Information'}
-            </span>
-            <h2>
-              {infoModal === 'about'
-                ? 'À propos de SAVOIR+'
-                : infoModal === 'privacy'
-                  ? 'Confidentialité & Contrôle des données'
-                  : infoModal === 'accessibility'
-                    ? 'Accessibilité & Design inclusif'
-                    : infoModal === 'hackathon'
-                      ? 'SAVOIR+ par Nexus · Hackathon 2026'
-                      : 'Aide & Entraide'}
-            </h2>
-            {infoModal === 'about' && (
-              <p className="lead">
-                SAVOIR+ réunit l’entraide éditoriale inspirée d’un réseau social et la rigueur pratique d’une académie
-                structurée par sections, laboratoires interactifs et vérifications d’acquis. Conçu par l’équipe{' '}
-                <b>Nexus</b>.
-              </p>
-            )}
-            {infoModal === 'privacy' && (
-              <p className="lead">
-                Votre progression, vos résultats de quiz et vos discussions privées ne sont jamais publiés sur votre
-                profil public. Vous contrôlez qui peut vous contacter depuis Paramètres &amp; Confidentialité.
-              </p>
-            )}
-            {infoModal === 'accessibility' && (
-              <p className="lead">
-                SAVOIR+ vise les bonnes pratiques WCAG 2.2 AA : navigation complète au clavier, contrastes vérifiés,
-                préférence de réduction des animations respectée et cibles tactiles adaptées sur mobile.
-              </p>
-            )}
-            {infoModal === 'hackathon' && (
-              <p className="lead">
-                Prototype présenté par l’équipe <b>Nexus</b> dans le cadre du <b>Hackathon CREATE WITH AI</b> et du{' '}
-                <b>Forum Femmes &amp; Intelligence Artificielle 2026</b>. Il démontre l’apprentissage guidé, la
-                progression vérifiable et l’entraide directe entre membres.
-              </p>
-            )}
-            {infoModal === 'help' && (
-              <p className="lead">
-                Besoin d’aide sur un module ou un compte ? Posez une question directement dans le fil, commentez une
-                réponse ou consultez vos signalements depuis l’espace Alertes.
-              </p>
-            )}
-            <div className="modal-actions">
-              <button type="button" className="secondary" onClick={() => setInfoModal(null)}>
-                Fermer
-              </button>
-              {infoModal === 'privacy' && (
-                <button
-                  type="button"
-                  className="primary"
-                  onClick={() => {
-                    setInfoModal(null);
-                    nav('settings');
-                  }}
-                >
-                  Ouvrir mes paramètres
-                </button>
-              )}
-              {(infoModal === 'help' || infoModal === 'hackathon') && (
-                <button
-                  type="button"
-                  className="primary"
-                  onClick={() => {
-                    setInfoModal(null);
-                    nav(infoModal === 'hackathon' ? 'catalog' : 'home');
-                  }}
-                >
-                  {infoModal === 'hackathon' ? 'Explorer le catalogue' : 'Aller à l’accueil'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {toast && (
         <div className="toast" role="status" aria-live="polite">

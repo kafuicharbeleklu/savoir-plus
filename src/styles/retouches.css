@@ -1332,3 +1332,15 @@ b, strong { font-weight: 600; }
 @media (max-width: 768px) {
   .top-active-lab-core { width: 21px; height: 21px; }
 }
+/* Pages d'information du pied de page : un texte lisible, des intertitres sobres, des liens dans le texte. */
+.info-article { padding: 8px 28px 24px; }
+.info-article section { padding: 16px 0 0; }
+.info-article h2 { margin: 0 0 6px; font-size: 1.0625rem; font-weight: 600; color: var(--fg-primary); }
+.info-article p, .info-article li { margin: 0; max-width: 70ch; font-size: 0.9375rem; line-height: 1.6; color: var(--fg-primary); }
+.info-article ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.info-article b { font-weight: 600; }
+.info-article .info-go { display: inline; padding: 0; font-size: inherit; }
+.info-article .info-qa + .info-qa { border-top: 1px solid var(--border-hairline); margin-top: 16px; }
+@media (max-width: 640px) {
+  .info-article { padding: 4px 16px 20px; }
+}

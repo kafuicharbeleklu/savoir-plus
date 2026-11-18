@@ -25,6 +25,7 @@ export type AppPage =
   | 'catalog'
   | 'learning'
   | 'calendar'
+  | 'info'
   | 'family'
   | 'teaching'
   | 'institution'
