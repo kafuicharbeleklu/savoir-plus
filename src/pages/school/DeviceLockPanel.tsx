@@ -4,6 +4,7 @@
  * voit que des minutes, jamais ce que l'enfant lit ou écrit (voir src/deviceLock.ts).
  */
 import React, { useState } from 'react';
+import { ofName } from '../../french';
 import { Clock, Hourglass, LayoutGrid, Lock, LockOpen } from 'lucide-react';
 import { dayFromDate } from '../../calendar';
 import {
@@ -258,10 +259,10 @@ export function TimeRequestBanner({
   if (request?.status !== 'pending') return null;
   const answer = (minutes: number | null) => {
     saveSchool(answerRequest(school, request.id, minutes));
-    setToast(minutes ? `${minutes} minutes accordées à ${firstName} pour aujourd’hui` : `Demande de ${firstName} refusée pour aujourd’hui`);
+    setToast(minutes ? `${minutes} minutes accordées à ${firstName} pour aujourd’hui` : `Demande ${ofName(firstName)} refusée pour aujourd’hui`);
   };
   return (
-    <section className="sc-status sc-request" aria-label={`Demande de temps de ${firstName}`}>
+    <section className="sc-status sc-request" aria-label={`Demande de temps ${ofName(firstName)}`}>
       <p>
         <b>{firstName} demande plus de temps</b> · demande de {request.at}, son temps du jour est écoulé.
       </p>

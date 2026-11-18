@@ -1316,3 +1316,9 @@ b, strong { font-weight: 600; }
 .sc-request-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 /* Carte publicitaire : seul le bouton de pause d'un abonné reste en pied de carte, à droite. */
 .ad-card-foot { justify-content: flex-end; }
+/* -- Formules : choix dans les paramètres, rappel sur un module payant, fenêtre des offres ------- */
+.st-plan-method { margin-top: 12px; max-width: 320px; }
+.st-plan-actions { display: flex; justify-content: flex-start; margin-top: 16px; }
+.wf-plan-link { display: block; margin: 8px auto 0; font-size: 0.875rem; }
+.of-card .of-current { margin: 12px 0 0; font-size: 0.875rem; font-weight: 600; color: var(--accent-brand); }
+.of-card .of-choose { margin-top: 12px; align-self: flex-start; }

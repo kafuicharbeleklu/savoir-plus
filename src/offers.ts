@@ -57,7 +57,7 @@ export const OFFERS: Offer[] = [
     period: 'mois',
     tagline: 'Suivre jusqu’à trois enfants.',
     recommended: true,
-    features: ['Apprenant+ pour chaque enfant', 'Le message de la semaine pour chacun', 'Le plan de révision et l’emploi du temps de chaque enfant']
+    features: ['Les contenus payants inclus pour chaque enfant', 'Le plan de révision et l’emploi du temps de chaque enfant', 'La publicité, à masquer dans vos paramètres']
   },
   {
     id: 'educator-pro',
@@ -128,6 +128,8 @@ export interface Subscription {
   since: string;
   /** Afficher la carte publicitaire. Absent : affichée. */
   showAds?: boolean;
+  /** Moyen de paiement choisi (simulé). */
+  method?: string;
 }
 
 /** La formule payante d'un membre, ou rien (offre gratuite, ou formule de publicité pour annonceur). */
@@ -140,6 +142,51 @@ export function paidSubscription(
   if (!subscription || !offer || offer.price === 0 || offer.audience === 'advertiser') return null;
   return { subscription, offer };
 }
+
+/** Moyens de paiement proposés (paiement simulé dans la démonstration). */
+export const PAYMENT_METHODS = ['Mixx by Yas', 'Flooz', 'Carte bancaire'];
+
+/** Le public des formules d'un type de compte. */
+export const audienceOfKind = (kind: string | undefined): OfferAudience =>
+  kind === 'guardian' ? 'family' : kind === 'educator' ? 'educator' : kind === 'institution' ? 'institution' : 'learner';
+
+/**
+ * Les formules entre lesquelles un compte choisit : la gratuite d'abord (« Découverte » pour un
+ * apprenant, sans formule pour un parent ou un encadrant), puis les payantes. Un établissement
+ * souscrit toujours une formule : pas d'offre gratuite.
+ */
+export function plansFor(audience: OfferAudience): Offer[] {
+  if (audience === 'advertiser') return [];
+  const paid = offersFor(audience).filter((o) => o.price !== 0);
+  if (audience === 'institution') return paid;
+  const free =
+    offersFor(audience).find((o) => o.price === 0) ||
+    ({
+      id: 'free',
+      audience,
+      name: 'Gratuite',
+      price: 0,
+      period: 'mois',
+      tagline: audience === 'family' ? 'Suivre ses enfants et leur message de la semaine.' : 'Enseigner et suivre ses classes.',
+      features: []
+    } satisfies Offer);
+  return [free, ...paid];
+}
+
+/** Les contenus payants sont inclus : formule Apprenant+ ou Famille du membre, ou Famille d'un de ses parents. */
+export function contentIncluded(subscriptions: Record<string, Subscription> | undefined, uid: string, guardianIds: string[] = []): boolean {
+  const own = paidSubscription(subscriptions, uid)?.offer.id;
+  if (own === 'learner-plus' || own === 'family') return true;
+  return guardianIds.some((g) => paidSubscription(subscriptions, g)?.offer.id === 'family');
+}
+
+/** Formule Famille : le plan de révision et l'emploi du temps de chaque enfant. */
+export const familyTools = (subscriptions: Record<string, Subscription> | undefined, uid: string): boolean =>
+  paidSubscription(subscriptions, uid)?.offer.id === 'family';
+
+/** Formule Pilotage ou Réseau : la vue d'ensemble et la planification en diagramme de Gantt. */
+export const institutionSteering = (subscriptions: Record<string, Subscription> | undefined, uid: string): boolean =>
+  ['institution-steering', 'institution-network'].includes(paidSubscription(subscriptions, uid)?.offer.id || '');
 
 /** « 1 500 F CFA », avec une espace insécable pour les milliers. */
 export function formatCfa(amount: number): string {

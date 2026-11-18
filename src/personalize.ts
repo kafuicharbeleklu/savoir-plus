@@ -20,6 +20,7 @@ import {
   type SchoolState
 } from './school';
 import type { CatalogItem, CommunityPost } from './wireframeData';
+import { ofName } from './french';
 
 export type ViewerKind = 'learner' | 'educator' | 'guardian' | 'institution';
 type Domain = CatalogItem['domain'];
@@ -70,8 +71,6 @@ function interestFor(domain: Domain, interests: string[]): string | undefined {
 }
 
 const firstName = (name: string) => name.split(' ')[0];
-/** « de Kokou », « d’Elom » : élision devant une voyelle ou un h. */
-const ofName = (name: string) => (/^[aeiouyhàâéèêëîïôûü]/i.test(name) ? `d’${name}` : `de ${name}`);
 
 /**
  * Construit le lecteur de l'accueil à partir du profil, de la vie scolaire et de l'avancement.

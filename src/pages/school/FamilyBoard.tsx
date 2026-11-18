@@ -4,6 +4,7 @@
  * révision en diagramme de Gantt et la grille d'emploi du temps.
  */
 import React from 'react';
+import { ofName } from '../../french';
 import { ArrowRight, CalendarClock, CheckCircle2, Flame, Hourglass } from 'lucide-react';
 import {
   SCHOOL_CALENDAR,
@@ -120,7 +121,9 @@ export function ChildBoard({
   calendar,
   slots,
   people,
-  today
+  today,
+  planIncluded = true,
+  onUpgrade
 }: {
   name: string;
   rows: ModuleFollowUp[];
@@ -128,6 +131,9 @@ export function ChildBoard({
   slots: TimetableSlot[];
   people: Profile[];
   today: Day;
+  /** Formule Famille : le plan de révision et l'emploi du temps de l'enfant. */
+  planIncluded?: boolean;
+  onUpgrade?: () => void;
 }) {
   const firstName = name.split(' ')[0];
   const snapshot = childSnapshot(name, rows, calendar, today);
@@ -167,7 +173,7 @@ export function ChildBoard({
     <div className="pl-board">
       <WeeklyNoteCard note={weeklyNote(snapshot)} firstName={firstName} />
 
-      <KpiRow label={`Chiffres clés de ${firstName}`}>
+      <KpiRow label={`Chiffres clés ${ofName(firstName)}`}>
         <KpiTile label="Modules validés" value={`${snapshot.validated} / ${snapshot.total}`} hint="de sa classe" icon={<CheckCircle2 size={15} aria-hidden="true" />} />
         <KpiTile
           label="Révision"
@@ -190,37 +196,49 @@ export function ChildBoard({
         />
       </KpiRow>
 
-      <div className="pl-toolbar">
-        <div>
-          <h2>Plan de révision</h2>
-          <p>Une ligne par examen : la période de révision se remplit à mesure que {firstName} fait ses séances.</p>
-        </div>
-      </div>
-      {ganttRows.length === 0 ? (
+      {!planIncluded ? (
         <section className="pl-panel">
-          <EmptyState title="Aucun examen dans son calendrier" text={`${firstName} n’a pas encore ajouté d’examen à préparer.`} />
+          <EmptyState
+            title="Plan de révision et emploi du temps"
+            text={`Avec la formule Famille, vous suivez le plan de révision et l’emploi du temps ${ofName(firstName)}.`}
+            action={onUpgrade ? { label: 'Voir la formule Famille', onClick: onUpgrade } : undefined}
+          />
         </section>
       ) : (
         <>
-          <GanttChart window={window} rows={ganttRows} today={today} shades={shades} label={`Plan de révision de ${firstName}`} />
-          <GanttLegend
-            items={[
-              { tone: 'brand', label: 'Révisions (remplissage : séances faites)' },
-              { tone: 'warm', label: 'Épreuve' },
-              { tone: 'shade', label: 'Congés' },
-              { tone: 'today', label: 'Aujourd’hui' }
-            ]}
-          />
+          <div className="pl-toolbar">
+            <div>
+              <h2>Plan de révision</h2>
+              <p>Une ligne par examen : la période de révision se remplit à mesure que {firstName} fait ses séances.</p>
+            </div>
+          </div>
+          {ganttRows.length === 0 ? (
+            <section className="pl-panel">
+              <EmptyState title="Aucun examen dans son calendrier" text={`${firstName} n’a pas encore ajouté d’examen à préparer.`} />
+            </section>
+          ) : (
+            <>
+              <GanttChart window={window} rows={ganttRows} today={today} shades={shades} label={`Plan de révision ${ofName(firstName)}`} />
+              <GanttLegend
+                items={[
+                  { tone: 'brand', label: 'Révisions (remplissage : séances faites)' },
+                  { tone: 'warm', label: 'Épreuve' },
+                  { tone: 'shade', label: 'Congés' },
+                  { tone: 'today', label: 'Aujourd’hui' }
+                ]}
+              />
+            </>
+          )}
+
+          <div className="pl-toolbar">
+            <div>
+              <h2>Emploi du temps</h2>
+              <p>Sa semaine de cours, telle que son établissement l’a saisie.</p>
+            </div>
+          </div>
+          <TimetablePanel slots={slots} people={people} today={today} label={`Emploi du temps ${ofName(firstName)}`} />
         </>
       )}
-
-      <div className="pl-toolbar">
-        <div>
-          <h2>Emploi du temps</h2>
-          <p>Sa semaine de cours, telle que son établissement l’a saisie.</p>
-        </div>
-      </div>
-      <TimetablePanel slots={slots} people={people} today={today} label={`Emploi du temps de ${firstName}`} />
     </div>
   );
 }

@@ -3,6 +3,7 @@
  * nom d'un membre, lecture d'une progression, fiche de suivi d'un apprenant, emploi du temps.
  */
 import React from 'react';
+import { ofName } from '../../french';
 import type { Day } from '../../calendar';
 import { MODULES_CONTENT, builtInAnswerKey } from '../../content';
 import type { Profile, Progress } from '../../data';
@@ -124,7 +125,7 @@ export function LearnerModal({
   return (
     <Modal open size="md" title={name} onClose={onClose}>
       <p className="sc-modal-sub">{subtitle}</p>
-      <FollowUpList rows={rows} label={`Suivi de ${name}`} />
+      <FollowUpList rows={rows} label={`Suivi ${ofName(name)}`} />
       <p className="sc-note">Vous voyez l’avancement et la note au quiz. Les réponses données question par question ne sont pas montrées.</p>
     </Modal>
   );

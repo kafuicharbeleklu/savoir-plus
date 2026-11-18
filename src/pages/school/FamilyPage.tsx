@@ -28,6 +28,8 @@ import { ActionMenu, EmptyState, IconTile, ListCard, ListRow, Modal, PageHeader,
 import { ChildBoard, ChildCard, childSnapshot } from './FamilyBoard';
 import { DeviceLockPanel, TimeRequestBanner } from './DeviceLockPanel';
 import { lockApplies, requestOfDay, rulesOf } from '../../deviceLock';
+import { PAYMENT_METHODS, familyTools } from '../../offers';
+import { ofName } from '../../french';
 import { dayFromDate } from '../../calendar';
 import { FollowUpList, IdentityDot, authorIdOf, followUp, memberName, moduleTitle, plural, type SchoolPageProps } from './shared';
 
@@ -37,7 +39,6 @@ export interface ChildCalendar {
   log: SessionLog[];
 }
 
-const PAYMENT_METHODS = ['Mixx by Yas', 'Flooz', 'Carte bancaire'];
 
 export function FamilyPage({
   school,
@@ -66,6 +67,8 @@ export function FamilyPage({
   const codes = school.guardianCodes.filter((c) => c.guardianId === user.id);
   const purchases = school.purchases.filter((p) => p.buyerId === user.id);
   const child = children.find((id) => id === selectedId);
+  // Formule Famille : plan de révision et emploi du temps des enfants, contenus payants inclus.
+  const familyPlan = familyTools(ext.subscriptions, user.id);
 
   const classLine = (uid: string) => {
     const schoolClass = classesOfStudent(school, uid)[0];
@@ -113,7 +116,16 @@ export function FamilyPage({
           <TimeRequestBanner school={school} saveSchool={saveSchool} childId={child} firstName={firstName} now={new Date()} setToast={setToast} />
         )}
 
-        <ChildBoard name={name} rows={rows} calendar={calendar} slots={slotsFor(school, child)} people={people} today={today} />
+        <ChildBoard
+          name={name}
+          rows={rows}
+          calendar={calendar}
+          slots={slotsFor(school, child)}
+          people={people}
+          today={today}
+          planIncluded={familyPlan}
+          onUpgrade={() => nav('settings', 'account/plan/family')}
+        />
 
         {/* Moins de 12 ans : le parent règle le verrouillage de SAVOIR+ selon son besoin. */}
         {lockApplies(school, child, today) && (
@@ -123,7 +135,7 @@ export function FamilyPage({
         <div className="ui-section-title">
           <h2>Modules de sa classe</h2>
         </div>
-        <FollowUpList rows={rows} label={`Modules de ${firstName}`} />
+        <FollowUpList rows={rows} label={`Modules ${ofName(firstName)}`} />
 
         <div className="ui-section-title">
           <h2>Contenus payants</h2>
@@ -144,6 +156,8 @@ export function FamilyPage({
                     <StatusDot tone="info">Offert par {offeredBy.name}</StatusDot>
                   ) : owned ? (
                     <StatusDot tone="info">Acquis pour {firstName}</StatusDot>
+                  ) : familyPlan ? (
+                    <StatusDot tone="info">Inclus dans la formule Famille</StatusDot>
                   ) : (
                     <button type="button" className="li-text-link" onClick={() => setBuying(item.id)}>
                       Acheter

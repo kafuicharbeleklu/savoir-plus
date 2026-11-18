@@ -8,7 +8,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AD_PLANS, activeCampaigns, airtimeShares, buildRotation, demoCampaigns, rankCampaigns, slotOf, type AdCampaign } from '../src/ads';
 import { addDays } from '../src/calendar';
-import { OFFERS, formatCfa, offersFor, paidSubscription, priceLabel } from '../src/offers';
+import { OFFERS, contentIncluded, familyTools, formatCfa, institutionSteering, offersFor, paidSubscription, plansFor, priceLabel } from '../src/offers';
 import { SponsoredCard } from '../src/components/SponsoredCard';
 
 const TODAY = '2026-11-17';
@@ -127,4 +127,28 @@ test('formule payante : la publicité devient facultative ; avec l’offre gratu
   assert.equal(paidSubscription({ ec: { offerId: 'ad-priority', since: '2026-11-01' } }, 'ec'), null, 'une formule d’annonceur n’en dispense pas');
   assert.equal(paidSubscription({ kossi: { offerId: 'educator-pro', since: '2026-10-01' } }, 'kossi')?.offer.name, 'Encadrant Pro');
   assert.equal(paidSubscription({ kossi: { offerId: 'educator-pro', since: '2026-10-01' } }, 'afi'), null, 'la formule est celle du membre');
+});
+
+test('formules : choix par public, contenus inclus, outils réservés', () => {
+  // Un apprenant choisit entre Découverte et Apprenant+ ; un parent entre gratuit et Famille ; un établissement paie toujours.
+  assert.deepEqual(plansFor('learner').map((p) => p.id), ['learner-free', 'learner-plus']);
+  assert.deepEqual(plansFor('family').map((p) => [p.id, p.price]), [['free', 0], ['family', 2500]]);
+  assert.deepEqual(plansFor('institution').map((p) => p.id), ['institution-essential', 'institution-steering', 'institution-network']);
+  assert.deepEqual(plansFor('advertiser'), []);
+
+  const subs = {
+    afi: { offerId: 'learner-plus', since: '2026-11-18' },
+    akouvi: { offerId: 'family', since: '2026-09-15' },
+    palmiers: { offerId: 'institution-essential', since: '2026-09-01' }
+  };
+  // Contenus payants : Apprenant+, ou la formule Famille d'un parent.
+  assert.equal(contentIncluded(subs, 'afi'), true);
+  assert.equal(contentIncluded(subs, 'elom', ['akouvi']), true);
+  assert.equal(contentIncluded(subs, 'nadege'), false);
+  // Plan de révision et emploi du temps des enfants : formule Famille.
+  assert.equal(familyTools(subs, 'akouvi'), true);
+  assert.equal(familyTools({}, 'akouvi'), false);
+  // Vue d'ensemble et Gantt : Pilotage ou Réseau, pas Essentiel.
+  assert.equal(institutionSteering(subs, 'palmiers'), false);
+  assert.equal(institutionSteering({ palmiers: { offerId: 'institution-steering', since: '' } }, 'palmiers'), true);
 });

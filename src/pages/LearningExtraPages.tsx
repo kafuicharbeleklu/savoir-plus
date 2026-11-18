@@ -55,7 +55,7 @@ interface LearningExtraProps {
    * Contenu payant non acquis : renvoie le prix à afficher (absent pour un mineur, à qui on ne montre
    * pas de prix) et l'action d'achat s'il peut acheter lui-même. Renvoie `null` si l'accès est ouvert.
    */
-  paywall?: (itemId: string) => { priceLabel: string | null; buyLabel?: string; onBuy?: () => void } | null;
+  paywall?: (itemId: string) => { priceLabel: string | null; buyLabel?: string; onBuy?: () => void; planLabel?: string; onPlan?: () => void } | null;
 }
 
 function resolveModProg(
@@ -594,6 +594,11 @@ export function ModuleDetailView({
               {wall.onBuy && (
                 <button className="primary wf-full-btn" onClick={wall.onBuy}>
                   {wall.buyLabel || 'Acheter'}
+                </button>
+              )}
+              {wall.onPlan && (
+                <button type="button" className="text-link wf-plan-link" onClick={wall.onPlan}>
+                  {wall.planLabel}
                 </button>
               )}
             </>

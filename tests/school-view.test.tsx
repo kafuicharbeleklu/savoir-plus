@@ -124,7 +124,15 @@ test('espace famille : enfants, code en attente, achats ; fiche d’un enfant', 
   assert.match(child, /Lundi Mardi Mercredi Jeudi Vendredi Samedi/);
   assert.match(child, /Mathématiques 7 h – 9 h M\. Amétépé · Salle 12/);
   assert.match(child, /Tenir un budget simple Gestion · 1 500 FCFA Acquis pour Elom/);
-  assert.match(child, /Préparer une réunion utile Communication · 1 000 FCFA Acheter/);
+  // Akouvi a la formule Famille : les contenus payants de ses enfants sont inclus.
+  assert.match(child, /Préparer une réunion utile Communication · 1 000 FCFA Inclus dans la formule Famille/);
+  // Sans formule : le contenu s'achète, et le plan de révision et l'emploi du temps renvoient à la formule Famille.
+  const free = text(
+    renderToStaticMarkup(<FamilyPage {...props('akouvi', school, 'elom')} ext={{ ...ext, subscriptions: {} }} calendarOf={calendarOf} />)
+  );
+  assert.match(free, /Préparer une réunion utile Communication · 1 000 FCFA Acheter/);
+  assert.match(free, /Avec la formule Famille, vous suivez le plan de révision et l’emploi du temps d’Elom\./);
+  assert.doesNotMatch(free, /Lundi Mardi Mercredi Jeudi Vendredi Samedi/);
   // Le contenu d'un enseignant de son établissement lui est offert : rien à acheter.
   assert.match(child, /Sauvegarder ses fichiers : la règle 3-2-1 Numérique · 1 000 FCFA Offert par Les Palmiers/);
   assert.match(child, /aucun argent n’est débité/);
@@ -138,6 +146,12 @@ test('espace établissement : demandes, classes et niveaux, une classe en détai
   // Plus d'en-tête de présentation : ni type, ni ville, ni statut quand l'établissement est vérifié.
   assert.doesNotMatch(home, /Complexe scolaire|Établissement vérifié|Vous validez qui rejoint/);
   assert.match(home, /Vue d’ensemble Planification Emploi du temps Classes 3 Bibliothèque \d+ Enseignants 1 Demandes 2 Élèves/);
+  // Formule Essentiel : la vue d'ensemble et la planification renvoient à la formule Pilotage ; l'espace s'ouvre sur les classes.
+  const essential = { ...ext, subscriptions: { palmiers: { offerId: 'institution-essential', since: '2026-09-01' } } };
+  const basic = text(renderToStaticMarkup(<InstitutionPage {...props('palmiers', school)} ext={essential} />));
+  assert.match(basic, /Créer une classe Terminale D/);
+  const lockedPlanning = text(renderToStaticMarkup(<InstitutionPage {...props('palmiers', school, 'planning')} ext={essential} />));
+  assert.match(lockedPlanning, /La planification en diagramme de Gantt fait partie de la formule Pilotage \(35 000 F CFA par mois\)\. Voir les formules/);
   // « Créer une classe » se trouve dans la rubrique des classes.
   assert.match(text(renderToStaticMarkup(<InstitutionPage {...props('palmiers', school, 'classes')} />)), /Créer une classe Terminale D/);
   // La bibliothèque : les contenus de ses enseignants, gratuits pour ses élèves ; un module se donne à une classe.

@@ -98,7 +98,21 @@ export function SponsoredCard({
 const AUDIENCES: OfferAudience[] = ['learner', 'family', 'educator', 'institution', 'advertiser'];
 
 /** Les offres de SAVOIR+, par public, en francs CFA. */
-export function OffersModal({ initial = 'learner', onClose }: { initial?: OfferAudience; onClose: () => void }) {
+export function OffersModal({
+  initial = 'learner',
+  onClose,
+  currentOfferId,
+  viewerAudience,
+  onChoose
+}: {
+  initial?: OfferAudience;
+  onClose: () => void;
+  /** La formule du membre qui regarde. */
+  currentOfferId?: string;
+  /** Le public de ce membre : ses formules portent « Choisir cette formule ». */
+  viewerAudience?: OfferAudience;
+  onChoose?: (offerId: string) => void;
+}) {
   const [audience, setAudience] = useState<OfferAudience>(initial);
   return (
     <Modal open size="lg" title="Offres et tarifs" onClose={onClose}>
@@ -120,6 +134,14 @@ export function OffersModal({ initial = 'learner', onClose }: { initial?: OfferA
                 </li>
               ))}
             </ul>
+            {offer.audience === viewerAudience &&
+              (offer.id === currentOfferId ? (
+                <p className="of-current">Votre formule</p>
+              ) : onChoose && offer.price !== null ? (
+                <button type="button" className="secondary ui-btn-sm of-choose" onClick={() => onChoose(offer.id)}>
+                  Choisir cette formule
+                </button>
+              ) : null)}
           </article>
         ))}
       </div>

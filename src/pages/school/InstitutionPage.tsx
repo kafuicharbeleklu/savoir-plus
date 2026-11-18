@@ -41,6 +41,8 @@ import {
   Tabs
 } from '../../components/ui';
 import { InstitutionOverview, InstitutionPlanning, TimetablePanel } from './InstitutionBoard';
+import { institutionSteering } from '../../offers';
+import { ofName } from '../../french';
 import { LearnerModal, authorIdOf, clock, followUp, followUpSummary, memberName, moduleTitle, plural, weekdayLabel, type SchoolPageProps } from './shared';
 
 type TabId = 'overview' | 'planning' | 'timetable' | 'classes' | 'library' | 'teachers' | 'requests';
@@ -53,7 +55,9 @@ const HOURS = ['07:00', '08:00', '09:00', '09:15', '10:00', '11:00', '11:15', '1
 export function InstitutionPage({ school, saveSchool, ext, user, people, today, catalog, selectedId, nav, setToast }: SchoolPageProps) {
   const institution = institutionOf(school, accountOf(school, user.id).institutionId);
   // L'adresse peut ouvrir une rubrique directement : « institution/requests », « institution/planning »…
-  const [tab, setTab] = useState<TabId>((TAB_IDS as string[]).includes(selectedId) ? (selectedId as TabId) : 'overview');
+  // Formule Pilotage (ou Réseau) : vue d'ensemble et planification en diagramme de Gantt. Sinon, l'espace s'ouvre sur les classes.
+  const steering = institutionSteering(ext.subscriptions, user.id);
+  const [tab, setTab] = useState<TabId>((TAB_IDS as string[]).includes(selectedId) ? (selectedId as TabId) : steering ? 'overview' : 'classes');
   const [classOpen, setClassOpen] = useState(false);
   const [levelFor, setLevelFor] = useState<SchoolClass | null>(null);
   const [learnerId, setLearnerId] = useState<string | null>(null);
@@ -85,7 +89,7 @@ export function InstitutionPage({ school, saveSchool, ext, user, people, today, 
     saveSchool(next);
     const name = memberName(m.userId, people);
     if (status === 'declined') {
-      setToast(`Demande de ${name} refusée`);
+      setToast(`Demande ${ofName(name)} refusée`);
     } else if (m.role === 'teacher') {
       const standing = educatorStanding(next, m.userId);
       setToast(
@@ -196,7 +200,21 @@ export function InstitutionPage({ school, saveSchool, ext, user, people, today, 
         ]}
       />
 
-      {tab === 'overview' && (
+      {(tab === 'overview' || tab === 'planning') && !steering && (
+        <ListCard label="Réservé à la formule Pilotage">
+          <EmptyState
+            title={tab === 'overview' ? 'Vue d’ensemble' : 'Planification du trimestre'}
+            text={
+              tab === 'overview'
+                ? 'La vue d’ensemble et les élèves à accompagner font partie de la formule Pilotage (35 000 F CFA par mois).'
+                : 'La planification en diagramme de Gantt fait partie de la formule Pilotage (35 000 F CFA par mois).'
+            }
+            action={{ label: 'Voir les formules', onClick: () => nav('settings', 'account/plan/institution-steering') }}
+          />
+        </ListCard>
+      )}
+
+      {tab === 'overview' && steering && (
         <InstitutionOverview
           data={{ school, ext, catalog, people, today, classes }}
           teachers={teachers}
@@ -207,7 +225,7 @@ export function InstitutionPage({ school, saveSchool, ext, user, people, today, 
         />
       )}
 
-      {tab === 'planning' && <InstitutionPlanning data={{ school, ext, catalog, people, today, classes }} saveSchool={saveSchool} setToast={setToast} />}
+      {tab === 'planning' && steering && <InstitutionPlanning data={{ school, ext, catalog, people, today, classes }} saveSchool={saveSchool} setToast={setToast} />}
 
       {tab === 'requests' && (
         <ListCard label="Demandes de rattachement">

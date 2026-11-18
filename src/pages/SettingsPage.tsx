@@ -12,10 +12,10 @@ import type { Profile, Relation } from '../data';
 import { currentCloudEmail, sendPasswordReset } from '../data';
 import { resolveProfileVerified, type RoleCapabilities } from '../personas';
 import { Avatar } from '../components/ProfileIdentityCard';
-import { ConfirmDialog, EmptyState, RadioList, SavedIndicator, StatusDot, Toggle, useIsNarrow } from '../components/ui';
-import type { Day } from '../calendar';
-import { IDENTITY_LABEL, accountOf, type SchoolState } from '../school';
-import { paidSubscription, type Subscription } from '../offers';
+import { ConfirmDialog, EmptyState, RadioList, SavedIndicator, Select, StatusDot, Toggle, useIsNarrow } from '../components/ui';
+import { todayDay, type Day } from '../calendar';
+import { IDENTITY_LABEL, accountOf, ageBandOf, type SchoolState } from '../school';
+import { PAYMENT_METHODS, audienceOfKind, paidSubscription, plansFor, priceLabel, type Offer, type Subscription } from '../offers';
 import { IdentityPanel } from './school/IdentityPanel';
 
 type SectionId = 'account' | 'security' | 'visibility' | 'data' | 'notifications';
@@ -142,6 +142,10 @@ export function SettingsView({
   const section: SectionId | null = parsed.section || (narrow ? null : 'account');
   const detail = parsed.detail;
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  // Formule : le choix en cours (la formule actuelle, ou celle choisie dans la fenêtre des offres), le moyen de paiement.
+  const [planChoice, setPlanChoice] = useState('');
+  const [payMethod, setPayMethod] = useState(PAYMENT_METHODS[0]);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const [cloudEmail, setCloudEmail] = useState<string | null>(null);
 
   useEffect(() => setSavedAt(null), [section, detail]);
@@ -170,8 +174,38 @@ export function SettingsView({
     updateExt((prev) => ({ ...prev, appPrefs: { ...prev.appPrefs, ...patch } }));
     saved();
   };
-  // Formule payante du membre : la publicité y devient facultative.
+  // Formule payante du membre : la publicité y devient facultative. Un mineur ne souscrit pas (ses parents, si).
   const paidPlan = paidSubscription(ext.subscriptions, user.id);
+  const audience = audienceOfKind(caps?.accountKind);
+  const plans = plansFor(audience);
+  const adult = !school || ageBandOf(accountOf(school, user.id), today || todayDay()) === 'adult';
+  const currentPlanId = paidPlan?.offer.id || plans.find((p) => p.price === 0)?.id || '';
+  const planParam = (path || '').split('/')[2] || '';
+  useEffect(() => {
+    if (detail === 'plan') setPlanChoice(plans.some((p) => p.id === planParam) ? planParam : currentPlanId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detail, planParam, currentPlanId]);
+  const applyPlan = (target: Offer) => {
+    const day = today || todayDay();
+    updateExt((prev) => ({
+      ...prev,
+      subscriptions: {
+        ...prev.subscriptions,
+        [user.id]: { offerId: target.id, since: day, method: payMethod, showAds: prev.subscriptions?.[user.id]?.showAds }
+      }
+    }));
+    saved();
+    setToast(`Formule ${target.name} activée · paiement simulé (${payMethod})`);
+  };
+  const cancelPlan = () => {
+    updateExt((prev) => {
+      const next = { ...(prev.subscriptions || {}) };
+      delete next[user.id];
+      return { ...prev, subscriptions: next };
+    });
+    saved();
+    setToast('Retour à l’offre gratuite');
+  };
   const patchSubscription = (patch: Partial<Subscription>) => {
     updateExt((prev) => {
       const current = prev.subscriptions?.[user.id];
@@ -264,6 +298,79 @@ export function SettingsView({
             <Toggle label="Réduire les animations" checked={ext.appPrefs.reducedMotion} onChange={(v) => patchPrefs({ reducedMotion: v })} />
           </Detail>
         );
+      case 'account/plan': {
+        if (!adult || plans.length === 0) return null;
+        const target = plans.find((p) => p.id === planChoice) || plans.find((p) => p.id === currentPlanId) || plans[0];
+        const isCurrent = target.id === currentPlanId;
+        const label = isCurrent
+          ? 'Formule actuelle'
+          : target.price === null
+            ? 'Sur devis : nous contacter'
+            : target.price === 0
+              ? 'Revenir à l’offre gratuite'
+              : paidPlan
+                ? `Passer à ${target.name} · ${priceLabel(target)}`
+                : `Souscrire · ${priceLabel(target)}`;
+        return (
+          <Detail
+            title="Formule"
+            description="Ce que votre formule ouvre sur SAVOIR+. Démonstration : le paiement est simulé, aucun argent n’est débité."
+            onBack={back}
+            savedAt={savedAt}
+          >
+            <RadioList
+              name="plan"
+              legend="Formule"
+              value={target.id}
+              onChange={(v) => setPlanChoice(v)}
+              options={plans.map((p) => ({
+                value: p.id,
+                label: `${p.name} · ${priceLabel(p)}${p.id === currentPlanId ? ' · votre formule' : ''}`,
+                hint: p.features.length ? `${p.tagline} ${p.features.join(' · ')}.` : p.tagline
+              }))}
+            />
+            {!isCurrent && target.price !== null && target.price > 0 && (
+              <label className="ui-field st-plan-method">
+                <span>Moyen de paiement (simulé)</span>
+                <Select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
+                  {PAYMENT_METHODS.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+            )}
+            <div className="st-plan-actions">
+              <button
+                type="button"
+                className={target.price === 0 ? 'secondary ui-btn-sm' : 'primary ui-btn-sm'}
+                disabled={isCurrent || target.price === null}
+                onClick={() => (target.price === 0 ? setConfirmCancel(true) : applyPlan(target))}
+              >
+                {label}
+              </button>
+            </div>
+            <ConfirmDialog
+              open={confirmCancel}
+              title="Revenir à l’offre gratuite ?"
+              text={
+                audience === 'family'
+                  ? 'Le plan de révision et l’emploi du temps de vos enfants se referment, leurs contenus payants aussi, et la publicité redevient obligatoire.'
+                  : audience === 'learner'
+                    ? 'Les contenus payants se referment et la publicité redevient obligatoire.'
+                    : 'La publicité redevient obligatoire.'
+              }
+              confirmLabel="Revenir à l’offre gratuite"
+              onCancel={() => setConfirmCancel(false)}
+              onConfirm={() => {
+                setConfirmCancel(false);
+                cancelPlan();
+              }}
+            />
+          </Detail>
+        );
+      }
       case 'account/ads':
         if (!paidPlan) return null;
         return (
@@ -528,10 +635,17 @@ export function SettingsView({
             <Group title="Préférences générales">
               <Row label="Langue" value="Français" onClick={() => go(s, 'language')} />
             </Group>
-            {/* Avec l'offre gratuite, la publicité est obligatoire : le réglage n'existe que pour un abonné. */}
-            {paidPlan && (
-              <Group title="Publicité">
-                <Row label="Carte publicitaire" value={paidPlan.subscription.showAds === false ? 'Masquée' : 'Affichée'} onClick={() => go(s, 'ads')} />
+            {/* Formule (adultes seulement) ; la carte publicitaire ne se règle qu'avec une formule payante. */}
+            {adult && plans.length > 0 && (
+              <Group title="Abonnement">
+                <Row
+                  label="Formule"
+                  value={paidPlan ? `${paidPlan.offer.name} · ${priceLabel(paidPlan.offer)}` : plans.find((p) => p.id === currentPlanId)?.name || 'Gratuite'}
+                  onClick={() => go(s, 'plan')}
+                />
+                {paidPlan && (
+                  <Row label="Carte publicitaire" value={paidPlan.subscription.showAds === false ? 'Masquée' : 'Affichée'} onClick={() => go(s, 'ads')} />
+                )}
               </Group>
             )}
           </>

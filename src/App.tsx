@@ -144,7 +144,7 @@ import { accountOf as schoolAccountOf, ageBandOf, libraryOf } from './school';
 import { addDays as addCalendarDays, dayFromDate } from './calendar';
 import { demoCampaigns } from './ads';
 import { OffersModal, SponsoredCard } from './components/SponsoredCard';
-import { paidSubscription } from './offers';
+import { audienceOfKind, contentIncluded, paidSubscription } from './offers';
 import { rankFeed, recommend, viewerOf } from './personalize';
 import { addUsage, lockApplies, lockState, requestOfDay, requestTime, rulesOf } from './deviceLock';
 import { initialSchoolState } from './seedSchool';
@@ -858,7 +858,9 @@ export default function App() {
     const author = dynamicCatalog.find((c) => c.id === itemId)?.author;
     return author ? networkDirectory.find((p) => p.name === author)?.id : undefined;
   };
-  const isLocked = (itemId: string) => mode === 'local' && !hasAccess(school, uid, itemId, authorIdOfItem(itemId));
+  // Formule Apprenant+ ou Famille (la sienne, ou celle d'un parent) : tous les contenus payants sont inclus.
+  const isLocked = (itemId: string) =>
+    mode === 'local' && !contentIncluded(ext.subscriptions, uid, guardiansOf(school, uid)) && !hasAccess(school, uid, itemId, authorIdOfItem(itemId));
 
   const openReader = (moduleId = activeStudyModuleId || 'phishing', sectionIdx?: number) => {
     if (isLocked(moduleId)) {
@@ -1528,10 +1530,19 @@ export default function App() {
       if (!canSeePrices(school, uid, today)) return { priceLabel: null };
       const priceLabel = formatPrice(priceOf(school, itemId));
       if (caps.accountKind === 'guardian') {
-        return { priceLabel, buyLabel: 'Acheter pour un enfant', onBuy: () => nav('family') };
+        return {
+          priceLabel,
+          buyLabel: 'Acheter pour un enfant',
+          onBuy: () => nav('family'),
+          planLabel: 'Ou tous les contenus de vos enfants avec la formule Famille',
+          onPlan: () => nav('settings', 'account/plan/family')
+        };
       }
       return {
         priceLabel,
+        ...(caps.accountKind === 'learner'
+          ? { planLabel: 'Ou tout le catalogue avec Apprenant+', onPlan: () => nav('settings', 'account/plan/learner-plus') }
+          : {}),
         buyLabel: `Acheter · ${priceLabel} (simulé)`,
         onBuy: () => {
           const result = buyItem(school, uid, uid, itemId, today);
@@ -1585,7 +1596,13 @@ export default function App() {
       )}
       {offersOpen && (
         <OffersModal
-          initial={caps.accountKind === 'institution' ? 'institution' : caps.accountKind === 'guardian' ? 'family' : caps.accountKind === 'educator' ? 'educator' : 'learner'}
+          initial={audienceOfKind(caps.accountKind)}
+          viewerAudience={audienceOfKind(caps.accountKind)}
+          currentOfferId={paidPlan?.offer.id || (caps.accountKind === 'learner' ? 'learner-free' : undefined)}
+          onChoose={(offerId) => {
+            setOffersOpen(false);
+            nav('settings', `account/plan/${offerId}`);
+          }}
           onClose={() => setOffersOpen(false)}
         />
       )}
