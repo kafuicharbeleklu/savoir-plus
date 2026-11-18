@@ -198,8 +198,51 @@ export interface SchoolState {
   plans: PlanItem[];
   purchases: Purchase[];
   identityRequests: IdentityRequest[];
+  /** Verrouillage de SAVOIR+ réglé par le parent d'un enfant de moins de 12 ans (src/deviceLock.ts). */
+  deviceRules: DeviceRules[];
+  /** Minutes passées sur SAVOIR+ par un enfant verrouillable, jour par jour. */
+  screenUsage: ScreenUsage[];
+  /** Demandes de temps en plus, de l'enfant au parent. */
+  timeRequests: TimeRequest[];
   /** Prix de démonstration, en francs CFA. Absent : contenu gratuit. */
   prices: Record<string, number>;
+}
+
+/** Règles de verrouillage d'un enfant, choisies par son parent selon son besoin. */
+export interface DeviceRules {
+  childId: string;
+  /** Mis en pause par le parent, jusqu'à ce qu'il déverrouille. */
+  lockedNow: boolean;
+  /** Minutes par jour ; 0 : sans limite. */
+  weekdayMinutes: number;
+  weekendMinutes: number;
+  /** Plages autorisées, « HH:MM » ; de 00:00 à 24:00 : toute la journée. */
+  weekdayFrom: string;
+  weekdayTo: string;
+  weekendFrom: string;
+  weekendTo: string;
+  /** Ce qui reste ouvert en dehors des modules et de la bibliothèque. */
+  allowFeed: boolean;
+  allowMessages: boolean;
+  /** Minutes accordées en plus pour un jour, en réponse à une demande. */
+  bonus?: { day: Day; minutes: number };
+}
+
+export interface ScreenUsage {
+  childId: string;
+  day: Day;
+  minutes: number;
+}
+
+export interface TimeRequest {
+  id: string;
+  childId: string;
+  day: Day;
+  /** Heure de la demande, « 17 h 05 ». */
+  at: string;
+  status: 'pending' | 'granted' | 'declined';
+  /** Minutes accordées. */
+  minutes?: number;
 }
 
 export const emptySchoolState = (): SchoolState => ({
@@ -214,6 +257,9 @@ export const emptySchoolState = (): SchoolState => ({
   plans: [],
   purchases: [],
   identityRequests: [],
+  deviceRules: [],
+  screenUsage: [],
+  timeRequests: [],
   prices: {}
 });
 
@@ -233,6 +279,9 @@ export function normalizeSchoolState(raw: Partial<SchoolState> | undefined | nul
     plans: list(raw.plans, base.plans),
     purchases: list(raw.purchases, base.purchases),
     identityRequests: list(raw.identityRequests, base.identityRequests),
+    deviceRules: list(raw.deviceRules, base.deviceRules),
+    screenUsage: list(raw.screenUsage, base.screenUsage),
+    timeRequests: list(raw.timeRequests, base.timeRequests),
     prices: { ...base.prices, ...(raw.prices || {}) }
   };
 }

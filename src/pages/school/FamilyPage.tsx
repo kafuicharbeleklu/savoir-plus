@@ -26,6 +26,9 @@ import {
 } from '../../school';
 import { ActionMenu, EmptyState, IconTile, ListCard, ListRow, Modal, PageHeader, Select, StatusDot } from '../../components/ui';
 import { ChildBoard, ChildCard, childSnapshot } from './FamilyBoard';
+import { DeviceLockPanel, TimeRequestBanner } from './DeviceLockPanel';
+import { lockApplies, requestOfDay, rulesOf } from '../../deviceLock';
+import { dayFromDate } from '../../calendar';
 import { FollowUpList, IdentityDot, authorIdOf, followUp, memberName, moduleTitle, plural, type SchoolPageProps } from './shared';
 
 export interface ChildCalendar {
@@ -68,6 +71,12 @@ export function FamilyPage({
     const schoolClass = classesOfStudent(school, uid)[0];
     return schoolClass ? `${schoolClass.name} · ${institutionOf(school, schoolClass.institutionId)?.name || ''}` : 'Sans classe';
   };
+  // Sur la carte d'un enfant de moins de 12 ans : SAVOIR+ en pause, ou une demande de temps à traiter.
+  const lockNote = (uid: string) => {
+    if (!lockApplies(school, uid, today)) return '';
+    if (requestOfDay(school, uid, dayFromDate(new Date()))?.status === 'pending') return ' · demande plus de temps';
+    return rulesOf(school, uid).lockedNow ? ' · SAVOIR+ en pause' : '';
+  };
   const moduleIdsOf = (uid: string) => Array.from(new Set(classesOfStudent(school, uid).flatMap((c) => c.moduleIds)));
 
   /* ---------------------------------------------------------------- Un enfant */
@@ -100,7 +109,16 @@ export function FamilyPage({
           subtitle={`${classLine(child)}${birth ? ` · ${ageOn(birth, today)} ans` : ''}`}
         />
 
+        {lockApplies(school, child, today) && (
+          <TimeRequestBanner school={school} saveSchool={saveSchool} childId={child} firstName={firstName} now={new Date()} setToast={setToast} />
+        )}
+
         <ChildBoard name={name} rows={rows} calendar={calendar} slots={slotsFor(school, child)} people={people} today={today} />
+
+        {/* Moins de 12 ans : le parent règle le verrouillage de SAVOIR+ selon son besoin. */}
+        {lockApplies(school, child, today) && (
+          <DeviceLockPanel school={school} saveSchool={saveSchool} childId={child} firstName={firstName} now={new Date()} setToast={setToast} />
+        )}
 
         <div className="ui-section-title">
           <h2>Modules de sa classe</h2>
@@ -222,7 +240,7 @@ export function FamilyPage({
           {children.map((id) => {
             const name = memberName(id, people);
             const rows = moduleIdsOf(id).map((m) => followUp(ext, catalog, id, m));
-            return <ChildCard key={id} name={name} classLine={classLine(id)} snapshot={childSnapshot(name, rows, calendarOf(id), today)} onOpen={() => nav('family', id)} />;
+            return <ChildCard key={id} name={name} classLine={`${classLine(id)}${lockNote(id)}`} snapshot={childSnapshot(name, rows, calendarOf(id), today)} onOpen={() => nav('family', id)} />;
           })}
         </div>
       )}

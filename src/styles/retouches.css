@@ -1312,3 +1312,16 @@ b, strong { font-weight: 600; }
 .sober-card .sober-reason { margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.75rem; line-height: 1.4; color: var(--accent-brand); }
 /* Contexte d'une publication du fil (lien personnel) : même filet que le bandeau de repartage. */
 .li-context-line { margin-bottom: 4px; }
+/* -- Verrouillage d'un enfant de moins de 12 ans ------------------------------------------------ */
+.sc-lock-art { position: relative; height: 150px; margin: -24px -24px 4px; overflow: hidden; border-bottom: 1px solid var(--border-hairline); border-radius: var(--angle) var(--angle) 0 0; }
+.sc-lock-art > .art-scene { position: absolute; inset: 0; }
+.sc-gate-card .sc-lock-rules { padding: 10px 12px; border-radius: var(--angle); background: var(--bg-subtle); font-size: 0.875rem; color: var(--fg-primary); }
+.sc-gate-card .sc-lock-rules b { font-weight: 600; }
+.sc-gate-card .sc-lock-answer { font-weight: 500; color: var(--fg-primary); }
+.sc-lock-card > .primary { align-self: flex-start; }
+.sc-lock-window { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; padding: 0; border: 0; }
+.sc-lock-window legend { grid-column: 1 / -1; padding: 0; margin-bottom: 6px; font-size: 0.875rem; font-weight: 600; color: var(--fg-primary); }
+.sc-request { border-color: color-mix(in srgb, var(--accent-brand) 35%, var(--border-hairline)); }
+.sc-request p { color: var(--fg-primary); }
+.sc-request b { font-weight: 600; }
+.sc-request-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }

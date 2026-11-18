@@ -130,6 +130,7 @@ import {
   classesOfTeacher,
   contactRefusal,
   formatPrice,
+  guardiansOf,
   hasAccess,
   learnersOf,
   normalizeSchoolState,
@@ -139,10 +140,11 @@ import {
   type SchoolState
 } from './school';
 import { accountOf as schoolAccountOf, ageBandOf, libraryOf } from './school';
-import { addDays as addCalendarDays } from './calendar';
+import { addDays as addCalendarDays, dayFromDate } from './calendar';
 import { demoCampaigns } from './ads';
 import { OffersModal, SponsoredCard } from './components/SponsoredCard';
 import { rankFeed, recommend, viewerOf } from './personalize';
+import { addUsage, lockApplies, lockState, requestOfDay, requestTime, rulesOf } from './deviceLock';
 import { initialSchoolState } from './seedSchool';
 
 import { TopBar } from './components/TopBar';
@@ -199,6 +201,7 @@ import {
 import { CommunityComposeView, CommunityThreadView } from './pages/CommunityPages';
 import { CalendarPage } from './pages/CalendarPage';
 import { GuardianGate } from './pages/school/GuardianGate';
+import { DeviceLockScreen } from './pages/school/DeviceLockScreen';
 import { FamilyPage } from './pages/school/FamilyPage';
 import { TeachingPage } from './pages/school/TeachingPage';
 import { InstitutionPage } from './pages/school/InstitutionPage';
@@ -721,17 +724,49 @@ export default function App() {
     }
   }, [page, selectedId]);
 
+  // Verrouillage d'un enfant de moins de 12 ans par son parent (src/deviceLock.ts). Une minute est comptée par
+  // minute d'écran visible tant que SAVOIR+ est ouvert ; la même horloge relit la plage horaire.
+  const childLock = mode === 'local' && lockApplies(school, uid, today);
+  const studyPage = page === 'reader' || page === 'quiz-intro' || page === 'quiz' || page === 'result';
+  const studyPageRef = useRef(studyPage);
+  studyPageRef.current = studyPage;
+  const [, setLockClock] = useState(0);
+  useEffect(() => {
+    if (!childLock) return;
+    const timer = window.setInterval(() => {
+      setLockClock((n) => n + 1);
+      if (document.visibilityState !== 'visible') return;
+      updateExt((prev) => {
+        const current = normalizeSchoolState(prev.school, baseSchool);
+        const now = new Date();
+        if (lockState(current, uid, now, studyPageRef.current).locked) return prev;
+        return { ...prev, school: addUsage(current, uid, dayFromDate(now)) };
+      });
+    }, 60_000);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [childLock, uid]);
+  const childRules = childLock ? rulesOf(school, uid) : null;
+  const feedOff = Boolean(childRules && !childRules.allowFeed);
+  const messagesOff = Boolean(childRules && !childRules.allowMessages);
+  const areaClosed = (feedOff && page.startsWith('community')) || (messagesOff && page === 'messages');
+
   // Route guard: Studio / Governance pages typed in the URL fall back to home without the matching role.
   // Même règle pour la page de publication quand le profil ne publie pas (parent ou tuteur, classe « stricte »).
   // Un établissement n'est pas une personne : ni accueil d'apprenant, ni fil, ni progression. Son accueil est son espace.
   const institutionAway =
     caps.accountKind === 'institution' &&
     ['home', 'community', 'community-compose', 'learning', 'calendar', 'progression', 'reader', 'quiz-intro', 'quiz', 'result'].includes(page);
-  const routeAllowed = !institutionAway && canAccessRoute(page, caps) && !(page === 'community-compose' && !caps.canPublish);
+  const routeAllowed = !institutionAway && !areaClosed && canAccessRoute(page, caps) && !(page === 'community-compose' && !caps.canPublish);
   useEffect(() => {
     if (routeAllowed) return;
     if (institutionAway) {
       nav('institution');
+      return;
+    }
+    if (areaClosed) {
+      setToast('Ton parent a fermé cette partie de SAVOIR+.');
+      nav('home');
       return;
     }
     setToast(
@@ -745,6 +780,32 @@ export default function App() {
     );
     nav('home');
   }, [page, routeAllowed]);
+
+  // L'enfant demande du temps : la demande part à son parent, avec une alerte.
+  const handleRequestTime = () => {
+    const now = new Date();
+    updateExt((prev) => {
+      const current = normalizeSchoolState(prev.school, baseSchool);
+      const next = requestTime(current, uid, now);
+      if (next === current) return prev;
+      const firstName = user.name.split(' ')[0];
+      const alerts = guardiansOf(current, uid).map((guardianId, i) => ({
+        id: `nt-time-${uid}-${now.getTime()}-${i}`,
+        category: 'Compte' as const,
+        actorId: uid,
+        actorName: user.name,
+        title: `${firstName} demande plus de temps sur SAVOIR+`,
+        detail: 'Son temps du jour est écoulé. Vous pouvez lui accorder 15 ou 30 minutes depuis votre espace famille.',
+        date: 'À l’instant',
+        read: false,
+        targetPage: 'family',
+        targetId: uid,
+        recipientId: guardianId
+      }));
+      return { ...prev, school: next, notifications: [...alerts, ...prev.notifications] };
+    });
+    setToast('Demande envoyée à ton parent');
+  };
 
   // Mémorise le personnage de démo pour cet onglet (un rechargement ne ramène plus à Afi).
   // Sur l'accueil visiteur (première visite ou déconnexion), rien n'est mémorisé et l'ancien choix est oublié.
@@ -1294,6 +1355,30 @@ export default function App() {
     );
   }
 
+  // Moins de 12 ans : SAVOIR+ verrouillé par le parent (pause, plage horaire, temps du jour écoulé).
+  const childLockState = childLock ? lockState(school, uid, new Date(), studyPage) : null;
+  if (childLockState?.locked) {
+    return (
+      <>
+        <DeviceLockScreen
+          user={user}
+          lock={childLockState}
+          rules={rulesOf(school, uid)}
+          request={requestOfDay(school, uid, today)}
+          onRequest={handleRequestTime}
+          onExit={signOut}
+          onSwitchAccount={() => setAuthModalOpen(true)}
+        />
+        {authModal}
+        {toast && (
+          <div className="toast" role="status" aria-live="polite">
+            {toast}
+          </div>
+        )}
+      </>
+    );
+  }
+
   // Focused Study Routes (Auto HTB Dark)
   if (page === 'reader' || page === 'quiz-intro' || page === 'quiz') {
     return (
@@ -1739,13 +1824,16 @@ export default function App() {
             </>
 
 
-            <div className="home-section-head">
-              <h2>Fil d’entraide</h2>
-              <p className="muted">Questions, méthodes et réponses de la communauté.</p>
-            </div>
+            {/* Fil d'entraide : le parent d'un enfant de moins de 12 ans peut le fermer. */}
+            {!feedOff && (
+              <div className="home-section-head">
+                <h2>Fil d’entraide</h2>
+                <p className="muted">Questions, méthodes et réponses de la communauté.</p>
+              </div>
+            )}
 
             {/* Unified Community Stream */}
-            {(
+            {!feedOff && (
               <section className="wf-stack" aria-label="Fil d’entraide et publications">
                 {visibleFeedPosts.length === 0 ? (
                   <div className="empty">
@@ -2828,6 +2916,7 @@ export default function App() {
         setTopQuery={setTopQuery}
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onEnterVisitor={signOut}
+        hideMessaging={messagesOff}
         onOpenMessaging={() => {
           setDrawerOpen(false);
           nav('messages');
@@ -2979,7 +3068,7 @@ export default function App() {
         </div>
       </div>
 
-      {page !== 'messages' && page !== 'settings' && (
+      {page !== 'messages' && page !== 'settings' && !messagesOff && (
         <MessagingDrawer
           open={drawerOpen}
           setOpen={setDrawerOpen}
@@ -3029,6 +3118,7 @@ export default function App() {
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onOpenComposer={caps.canPublish ? () => setComposerOpen(true) : undefined}
         onEnterVisitor={signOut}
+        hideMessaging={messagesOff}
       />
 
       <PostComposerModal

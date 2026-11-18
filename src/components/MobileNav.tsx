@@ -29,7 +29,8 @@ export function MobileNav({
   unreadNotifs,
   onOpenAuthModal,
   onOpenComposer,
-  onEnterVisitor
+  onEnterVisitor,
+  hideMessaging = false
 }: {
   page: string;
   nav: (p: any, id?: string) => void;
@@ -42,6 +43,8 @@ export function MobileNav({
   /** Ouvre la fenêtre de publication (accès mobile, le bloc de saisie n'étant pas affiché dans le fil). */
   onOpenComposer?: () => void;
   onEnterVisitor: () => void;
+  /** Messagerie fermée par le parent d'un enfant de moins de 12 ans. */
+  hideMessaging?: boolean;
 }) {
   useEffect(() => {
     if (!moreOpen) return;
@@ -81,10 +84,12 @@ export function MobileNav({
           </span>
           <span>Relations</span>
         </button>
-        <button className={isMessages ? 'active' : ''} onClick={() => go('messages')}>
-          <MessageCircle size={20} />
-          <span>Messagerie</span>
-        </button>
+        {!hideMessaging && (
+          <button className={isMessages ? 'active' : ''} onClick={() => go('messages')}>
+            <MessageCircle size={20} />
+            <span>Messagerie</span>
+          </button>
+        )}
         <button
           className={moreOpen || isPlus ? 'active' : ''}
           aria-expanded={moreOpen}

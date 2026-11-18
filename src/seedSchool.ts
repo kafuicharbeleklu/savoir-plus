@@ -256,6 +256,10 @@ export function initialSchoolState(today: Day): SchoolState {
       { id: 'KYC-001', userId: 'kossi', document: 'passeport', submittedOn: addDays(today, -72), status: 'verified' }
     ],
     plans: seedPlans(today),
+    // Aucun verrouillage au départ : chaque parent règle selon son besoin.
+    deviceRules: [],
+    screenUsage: [],
+    timeRequests: [],
     // « Sauvegarder ses fichiers » (Kossi Agbo) est payant pour le public, offert aux élèves des établissements où il enseigne.
     prices: { budget: 1500, reunion: 1000, sauvegarde: 1000 }
   };

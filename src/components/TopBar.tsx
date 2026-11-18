@@ -39,7 +39,8 @@ export function TopBar({
   setTopQuery,
   onOpenAuthModal,
   onEnterVisitor,
-  onOpenMessaging
+  onOpenMessaging,
+  hideMessaging = false
 }: {
   page: string;
   nav: (p: any, id?: string) => void;
@@ -56,6 +57,8 @@ export function TopBar({
   onOpenAuthModal: () => void;
   onEnterVisitor: () => void;
   onOpenMessaging: () => void;
+  /** Messagerie fermée par le parent d'un enfant de moins de 12 ans. */
+  hideMessaging?: boolean;
 }) {
   const [vousOpen, setVousOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -243,14 +246,16 @@ export function TopBar({
             </span>
             <span>Relations</span>
           </button>
-          <button
-            className={`topbar-action-btn ${page === 'messages' ? 'active' : ''}`}
-            onClick={onOpenMessaging}
-            aria-label="Messagerie"
-          >
-            <MessageCircle size={18} />
-            <span>Messagerie</span>
-          </button>
+          {!hideMessaging && (
+            <button
+              className={`topbar-action-btn ${page === 'messages' ? 'active' : ''}`}
+              onClick={onOpenMessaging}
+              aria-label="Messagerie"
+            >
+              <MessageCircle size={18} />
+              <span>Messagerie</span>
+            </button>
+          )}
           <button
             className={`topbar-action-btn ${page === 'notifications' || page === 'report' ? 'active' : ''}`}
             onClick={() => nav('notifications')}
