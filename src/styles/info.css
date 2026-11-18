@@ -1,0 +1,136 @@
+/*
+ * Pages d'information du pied de page, sur le modèle des pages LinkedIn équivalentes (relevées le
+ * 18 novembre 2026) : bandeau de 64 px réduit au logo, colonne de 744 px, grands titres en graisse
+ * normale (32 px / 40 px, sous-titre 24 px / 32 px), texte 16 px / 24 px, encadrés clairs de 24 px de
+ * marge intérieure avec un pictogramme rond de 56 px ; Centre d'aide sur bandeau de couleur avec
+ * recherche de 40 px, colonne principale et colonne « Autres moyens de vous aider ». Couleurs et angles
+ * de SAVOIR+ (jetons), pour suivre aussi le thème sombre.
+ */
+.ip-shell { background: var(--bg-surface); }
+.ip-shell .shell-scroll-viewport { background: var(--bg-surface); }
+
+/* -- Bandeau réduit au logo ------------------------------------------------------------------------ */
+.ip-header { position: sticky; top: 0; z-index: 5; background: var(--bg-surface); border-bottom: 1px solid var(--border-hairline); }
+.ip-header-inner { display: flex; align-items: center; gap: 12px; height: 64px; width: min(1128px, 100% - 32px); margin: 0 auto; }
+.ip-logo { padding: 0; border: 0; background: none; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; color: var(--fg-primary); cursor: pointer; }
+.ip-logo span { color: var(--accent-brand); }
+.ip-header-label { font-size: 1.25rem; font-weight: 400; color: var(--fg-primary); }
+.ip-header.is-inverted { position: static; background: transparent; border-bottom: 0; }
+.ip-header.is-inverted .ip-logo,
+.ip-header.is-inverted .ip-logo span,
+.ip-header.is-inverted .ip-header-label { color: #fff; }
+
+/* -- Liens dans le texte ------------------------------------------------------------------------- */
+.ip-link { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: var(--accent-brand); cursor: pointer; text-align: left; }
+.ip-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ip-muted { color: var(--fg-muted); }
+
+/* -- Pictogramme rond ---------------------------------------------------------------------------- */
+.ip-pic { flex: none; display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--accent-brand-soft); color: var(--accent-brand); }
+
+/* -- Colonne de lecture -------------------------------------------------------------------------- */
+.ip-column { width: min(744px, 100% - 32px); margin: 0 auto; padding: 32px 0 64px; }
+.ip-column p,
+.ip-column li { font-size: 1rem; line-height: 1.5; color: var(--fg-primary); }
+.ip-lead { margin: 16px 0 24px; }
+
+/* -- À propos et Hackathon ----------------------------------------------------------------------- */
+.ip-about { padding-bottom: 64px; }
+.ip-about-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px 16px 56px;
+  text-align: center;
+  background-color: var(--bg-subtle);
+  background-image: radial-gradient(color-mix(in srgb, var(--accent-brand) 16%, transparent) 1.5px, transparent 1.6px);
+  background-size: 22px 22px;
+}
+.ip-mark { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: var(--angle); background: var(--accent-brand); color: #fff; font-size: 1.25rem; font-weight: 700; }
+.ip-mark span { color: #F2B29F; }
+.ip-about-hero h1 { margin: 4px 0 0; max-width: 18ch; font-size: clamp(2rem, 4vw, 3.25rem); line-height: 1.15; font-weight: 300; color: var(--fg-primary); }
+.ip-about-hero p { margin: 0; max-width: 60ch; font-size: 1.0625rem; line-height: 1.55; color: var(--fg-muted); }
+.ip-about-block { width: min(744px, 100% - 32px); margin: 48px auto 0; text-align: center; }
+.ip-about-block h2 { margin: 0 0 8px; font-size: 2rem; line-height: 1.25; font-weight: 300; color: var(--fg-primary); }
+.ip-about-block p { margin: 0 auto; max-width: 60ch; font-size: 1rem; line-height: 1.6; color: var(--fg-primary); }
+.ip-audiences { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 20px 0 0; padding: 0; list-style: none; text-align: center; }
+.ip-audiences li { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.ip-audiences b { font-size: 1rem; font-weight: 600; color: var(--fg-primary); }
+.ip-audiences span:not(.ip-pic) { font-size: 0.875rem; line-height: 1.45; color: var(--fg-muted); }
+.ip-about-actions { display: flex; justify-content: center; gap: 24px; }
+
+/* -- Accessibilité ------------------------------------------------------------------------------- */
+.ip-access-hero { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 24px; align-items: center; }
+.ip-access-hero h1 { margin: 0; font-size: 2rem; line-height: 1.25; font-weight: 400; color: var(--fg-primary); }
+.ip-access-hero h2 { margin: 8px 0 0; font-size: 1.5rem; line-height: 1.33; font-weight: 400; color: var(--fg-muted); }
+.ip-access-art { position: relative; height: 150px; border-radius: var(--angle); overflow: hidden; }
+.ip-access-art > .art-scene { position: absolute; inset: 0; }
+.ip-card { display: flex; gap: 20px; margin-top: 16px; padding: 24px; border-radius: var(--angle); background: var(--bg-subtle); }
+.ip-card h2 { margin: 0 0 8px; font-size: 1.375rem; line-height: 1.25; font-weight: 400; color: var(--fg-primary); }
+.ip-card p { margin: 0; }
+.ip-card ul { margin: 0; padding-left: 20px; list-style: disc; display: grid; gap: 6px; }
+
+/* -- Centre d'aide ------------------------------------------------------------------------------- */
+.ip-help-band { background: var(--accent-brand); color: #fff; }
+.ip-help-hero { width: min(1128px, 100% - 32px); margin: 0 auto; padding: 8px 0 28px; }
+.ip-help-hero h1 { margin: 0 0 16px; max-width: 24ch; font-size: 2rem; line-height: 1.25; font-weight: 400; color: #fff; }
+.ip-help-search { display: flex; flex-direction: row; align-items: center; gap: 8px; width: min(600px, 100%); height: 40px; padding: 0 12px; border-radius: var(--angle); background: var(--bg-surface); color: var(--fg-muted); }
+.ip-help-search input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; background: transparent; font-size: 0.9375rem; color: var(--fg-primary); outline: none; }
+.ip-help-search:focus-within { box-shadow: 0 0 0 2px #fff, 0 0 0 4px color-mix(in srgb, #fff 45%, transparent); }
+.ip-help-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; width: min(1128px, 100% - 32px); margin: 0 auto; padding: 28px 0 64px; }
+.ip-help-main section + section { margin-top: 32px; }
+.ip-help-main h2,
+.ip-help-aside h2 { margin: 0 0 12px; font-size: 1.125rem; line-height: 1.33; font-weight: 600; color: var(--fg-primary); }
+.ip-help-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ip-shortcuts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; margin: 0; padding: 0; list-style: none; }
+.ip-topics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.ip-topic { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 92px; padding: 16px 12px; border: 1px solid var(--border-hairline); border-radius: var(--angle); background: var(--bg-surface); color: var(--accent-brand); font-size: 0.875rem; font-weight: 600; text-align: center; cursor: pointer; }
+.ip-topic:hover { border-color: var(--accent-brand); }
+.ip-topic.is-on { border-color: var(--accent-brand); background: var(--accent-brand-soft); }
+.ip-articles { display: grid; gap: 20px; margin: 0; padding: 0; list-style: none; }
+.ip-article-link { padding: 0; border: 0; background: none; font-size: 1rem; font-weight: 600; color: var(--accent-brand); text-align: left; cursor: pointer; }
+.ip-article-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.ip-articles small { display: block; margin-top: 2px; font-size: 0.75rem; color: var(--fg-muted); }
+.ip-articles p { margin: 4px 0 0; font-size: 0.875rem; line-height: 1.5; color: var(--fg-primary); }
+.ip-help-aside { padding-left: 24px; border-left: 1px solid var(--border-hairline); }
+.ip-help-aside ul { display: grid; gap: 20px; margin: 0; padding: 0; list-style: none; }
+.ip-help-aside li { display: flex; gap: 12px; }
+.ip-aside-icon { flex: none; display: inline-grid; place-items: center; width: 32px; height: 32px; color: var(--accent-brand); }
+.ip-help-aside b { display: block; font-size: 0.9375rem; font-weight: 600; color: var(--fg-primary); }
+.ip-help-aside p { margin: 2px 0 6px; font-size: 0.8125rem; line-height: 1.45; color: var(--fg-muted); }
+.ip-article h1 { margin: 8px 0 16px; font-size: 1.75rem; line-height: 1.25; font-weight: 400; color: var(--fg-primary); }
+.ip-article > p { margin: 0 0 12px; max-width: 70ch; font-size: 1rem; line-height: 1.6; color: var(--fg-primary); }
+.ip-crumbs { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; color: var(--fg-muted); }
+.ip-article-actions { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 8px; }
+.ip-related { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border-hairline); }
+.ip-related ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ip-back { margin-top: 28px; }
+
+/* -- Documents juridiques ------------------------------------------------------------------------ */
+.ip-legal-nav { border-bottom: 1px solid var(--border-hairline); background: var(--bg-surface); }
+.ip-legal-nav-inner { display: flex; gap: 8px; width: min(1128px, 100% - 32px); margin: 0 auto; overflow-x: auto; scrollbar-width: none; }
+.ip-legal-nav button { flex: none; padding: 14px 12px 12px; border: 0; border-bottom: 2px solid transparent; background: none; font-size: 0.875rem; color: var(--fg-muted); cursor: pointer; }
+.ip-legal-nav button:hover { color: var(--fg-primary); }
+.ip-legal-nav button.is-current { color: var(--fg-primary); font-weight: 600; border-bottom-color: var(--accent-brand); }
+.ip-legal-hero { display: grid; place-items: center; min-height: 200px; padding: 32px 16px; background: var(--bg-subtle); text-align: center; }
+.ip-legal-hero h1 { margin: 0; max-width: 16ch; font-size: clamp(2.25rem, 5vw, 3.25rem); line-height: 1.15; font-weight: 300; color: var(--fg-primary); }
+.ip-effective { margin: 0 0 24px; font-size: 0.875rem; font-style: italic; font-weight: 600; color: var(--accent-brand); }
+.ip-legal-body section + section { margin-top: 32px; }
+.ip-legal-body h2 { margin: 0 0 12px; font-size: 1.75rem; line-height: 1.25; font-weight: 300; color: var(--fg-primary); }
+.ip-legal-body p { margin: 0 0 12px; }
+.ip-legal-actions { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 24px; }
+
+/* -- Petits écrans ------------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .ip-help-body { grid-template-columns: minmax(0, 1fr); }
+  .ip-help-aside { padding-left: 0; border-left: 0; border-top: 1px solid var(--border-hairline); padding-top: 24px; }
+  .ip-audiences { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .ip-access-hero { grid-template-columns: minmax(0, 1fr); }
+  .ip-access-art { display: none; }
+  .ip-topics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ip-shortcuts { grid-template-columns: minmax(0, 1fr); }
+  .ip-card { flex-direction: column; }
+}

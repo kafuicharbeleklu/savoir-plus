@@ -1432,6 +1432,30 @@ export default function App() {
     );
   }
 
+  // Pages d'information du pied de page, comme sur LinkedIn : elles sortent de l'application (bandeau réduit
+  // au logo, ni colonne de gauche ni barre de navigation) et chacune a sa mise en page (src/pages/InfoPage.tsx).
+  if (page === 'info') {
+    return (
+      <>
+        <InfoPage
+          path={selectedId}
+          nav={nav}
+          firstName={user.name.split(' ')[0]}
+          canPublish={caps.canPublish}
+          learns={caps.accountKind === 'learner' || caps.accountKind === 'educator'}
+          isGuardian={caps.accountKind === 'guardian'}
+          isLocal={mode === 'local'}
+          onStartTour={mode === 'local' ? () => setTourIndex(0) : undefined}
+        />
+        {toast && (
+          <div className="toast" role="status" aria-live="polite">
+            {toast}
+          </div>
+        )}
+      </>
+    );
+  }
+
   // Focused Study Routes (Auto HTB Dark)
   if (page === 'reader' || page === 'quiz-intro' || page === 'quiz') {
     return (
@@ -1544,9 +1568,7 @@ export default function App() {
     page === 'auth-flows' ||
     page === 'profile' ||
     page === 'settings' ||
-    page === 'member' ||
-    // Pages d'information du pied de page : une page seule, sans colonne de gauche.
-    page === 'info';
+    page === 'member';
 
   // Common props passed to subpages
   const extraProps = {
@@ -2909,18 +2931,6 @@ export default function App() {
     if (page === 'community-compose') return <CommunityComposeView {...communityProps} />;
     if (page === 'community-thread') return <CommunityThreadView {...communityProps} />;
 
-    // Pages d'information du pied de page : de vraies pages, plus des fenêtres superposées.
-    if (page === 'info')
-      return (
-        <InfoPage
-          topic={selectedId}
-          nav={nav}
-          canPublish={caps.canPublish}
-          isGuardian={caps.accountKind === 'guardian'}
-          isLocal={mode === 'local'}
-          onStartTour={mode === 'local' ? () => setTourIndex(0) : undefined}
-        />
-      );
     if (page === 'notifications')
       return (
         <NotificationsView
