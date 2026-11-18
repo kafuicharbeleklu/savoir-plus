@@ -192,7 +192,8 @@ export function CatalogContentCard({
   onOpenAuthor,
   footerActions,
   showAuthor = false,
-  compactBanner = false
+  compactBanner = false,
+  reason
 }: {
   item: CatalogItem;
   pct?: number;
@@ -204,6 +205,8 @@ export function CatalogContentCard({
   footerActions?: React.ReactNode;
   showAuthor?: boolean;
   compactBanner?: boolean;
+  /** Pourquoi ce contenu est proposé à ce membre (une ligne). */
+  reason?: string;
 }) {
   const showProgressRow = item.type !== 'resource' && pct > 0;
   const durationLabel = formatShortDuration(item.duration, item);
@@ -213,6 +216,11 @@ export function CatalogContentCard({
       <CatalogCardBanner item={item} compact={compactBanner} />
 
       <div className="sober-card-body">
+        {reason && (
+          <p className="sober-reason" title={reason}>
+            {reason}
+          </p>
+        )}
         <div className="sober-type-row">
           <ContentTypeMark type={item.type} />
         </div>

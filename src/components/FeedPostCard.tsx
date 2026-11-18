@@ -42,6 +42,8 @@ export interface FeedPostCardProps {
   communityMemberIds?: string[];
   /** Lecture seule : ni réaction, ni commentaire, ni repartage (parent ou tuteur, classe « stricte »). */
   readOnly?: boolean;
+  /** Pourquoi cette publication arrive en tête de ce fil (lien personnel), en une ligne. */
+  context?: string;
 }
 
 export function FeedPostCard({
@@ -66,7 +68,8 @@ export function FeedPostCard({
   setToast,
   defaultExpandedComments = false,
   communityMemberIds,
-  readOnly = false
+  readOnly = false,
+  context
 }: FeedPostCardProps) {
   const authorMeta = useMemo(
     () => resolveCommunityAuthor(post.authorId, post.authorName, people, ext),
@@ -329,6 +332,11 @@ export function FeedPostCard({
 
   return (
     <article className={`wf-card feed-post-card${readOnly ? ' is-read-only' : ''}`} aria-label={`Contribution : ${post.title}`}>
+      {context && !post.repostedFrom && (
+        <div className="li-repost-banner li-context-line">
+          <span>{context}</span>
+        </div>
+      )}
       {post.repostedFrom && (
         <div className="li-repost-banner">
           <Repeat2 size={14} aria-hidden="true" />

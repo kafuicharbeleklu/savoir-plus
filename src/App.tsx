@@ -142,6 +142,7 @@ import { accountOf as schoolAccountOf, ageBandOf, libraryOf } from './school';
 import { addDays as addCalendarDays } from './calendar';
 import { demoCampaigns } from './ads';
 import { OffersModal, SponsoredCard } from './components/SponsoredCard';
+import { rankFeed, recommend, viewerOf } from './personalize';
 import { initialSchoolState } from './seedSchool';
 
 import { TopBar } from './components/TopBar';
@@ -1551,6 +1552,22 @@ export default function App() {
     if (page === 'home' || page === 'community') {
       const lvl = computeGlobalLevel(totalXP);
       const visibleFeedPosts = filterHomeFeed(ext.posts, homeFeedTab, myFollowing);
+      // Accueil propre à ce profil : ce que l'école a donné, les personnes liées, les abonnements, les intérêts.
+      const homeViewer = viewerOf({
+        uid,
+        kind: caps.accountKind,
+        interests: ext.profileDetails[uid]?.interests,
+        following: myFollowing,
+        school,
+        nameOf: (id) => networkDirectory.find((p) => p.id === id)?.name || id,
+        contentIds: playableModuleIds,
+        moduleState: (id) => (isModuleValidated(id) ? 'done' : modulePct(id) > 0 ? 'started' : 'new')
+      });
+      const recommendations = recommend(dynamicCatalog, homeViewer, {
+        authorIdOf: (item) => networkDirectory.find((p) => p.name === item.author)?.id,
+        limit: 8
+      });
+      const feedEntries = rankFeed(visibleFeedPosts, homeViewer);
       const openHelpPosts = ext.posts.filter((p) => p.kind === 'question' && !p.solutionReplyId);
       const discoverMembers = resolveAlgorithmicDiscoverProfiles(suggestable, uid, myFollowing, ext, 3).map(
         (entry) => entry.profile
@@ -1615,49 +1632,52 @@ export default function App() {
 
             {/* Pedagogical Resume Card + Popular Carousel (All / Modules) */}
             <>
-                <article
-                  className="htb-card home-resume"
-                  onClick={() =>
-                    resumeProg.lessons.length >= (MODULES_CONTENT[resumeModuleId]?.lessons.length || 3) && !resumeValidated
-                      ? (setActiveStudyModuleId(resumeModuleId), nav('quiz-intro', resumeModuleId))
-                      : openReader(resumeModuleId)
-                  }
-                >
-                  <div className="home-resume-visual">
-                    <CatalogCardBanner item={resumeCatalog} />
-                  </div>
-                  <div className="home-resume-body">
-                    <span className="home-resume-kicker">Reprise · Module</span>
-                    <h2>
-                      {/* Le titre est le bouton (clavier) ; le clic sur toute la carte remonte à l'article */}
-                      <button
-                        type="button"
-                        className="home-resume-link"
-                        aria-label={`${resumePct === 0 ? 'Commencer' : resumePct === 100 ? 'Revoir' : 'Reprendre'} le module ${resumeCatalog.title}`}
-                      >
-                        {resumeCatalog.title}
-                      </button>
-                    </h2>
-                    <p className="home-resume-summary">{resumeCatalog.summary}</p>
-                    <div className="home-resume-progress">
-                      <ProgressBar value={resumePct} label="Progression du module en cours" tone="htb" />
-                      <b className="tabular-nums">{resumePct} %</b>
+                {/* Reprendre un module : seulement pour un compte qui apprend (un parent n'a pas de module en cours). */}
+                {learnsHere && (
+                  <article
+                    className="htb-card home-resume"
+                    onClick={() =>
+                      resumeProg.lessons.length >= (MODULES_CONTENT[resumeModuleId]?.lessons.length || 3) && !resumeValidated
+                        ? (setActiveStudyModuleId(resumeModuleId), nav('quiz-intro', resumeModuleId))
+                        : openReader(resumeModuleId)
+                    }
+                  >
+                    <div className="home-resume-visual">
+                      <CatalogCardBanner item={resumeCatalog} />
                     </div>
-                    <p className="home-resume-next">
-                      {resumeNextIdx !== undefined
-                        ? `Prochaine section : 0${resumeNextIdx + 1} · ${MODULES_CONTENT[resumeModuleId]?.lessons[resumeNextIdx]?.title}`
-                        : resumeValidated
-                          ? 'Module validé — révision libre'
-                          : resumeProg.submitted
-                            ? 'Quiz à retenter pour valider le module'
-                            : 'Sections lues — prêt pour le quiz final'}
-                    </p>
-                    <p className="home-resume-meta">
-                      {resumeCatalog.domain} · {resumeCatalog.duration} · {resumeCatalog.level} ·{' '}
-                      <span className="tabular-nums">{resumeCatalog.xpReward || 150} XP</span>
-                    </p>
-                  </div>
-                </article>
+                    <div className="home-resume-body">
+                      <span className="home-resume-kicker">Reprise · Module</span>
+                      <h2>
+                        {/* Le titre est le bouton (clavier) ; le clic sur toute la carte remonte à l'article */}
+                        <button
+                          type="button"
+                          className="home-resume-link"
+                          aria-label={`${resumePct === 0 ? 'Commencer' : resumePct === 100 ? 'Revoir' : 'Reprendre'} le module ${resumeCatalog.title}`}
+                        >
+                          {resumeCatalog.title}
+                        </button>
+                      </h2>
+                      <p className="home-resume-summary">{resumeCatalog.summary}</p>
+                      <div className="home-resume-progress">
+                        <ProgressBar value={resumePct} label="Progression du module en cours" tone="htb" />
+                        <b className="tabular-nums">{resumePct} %</b>
+                      </div>
+                      <p className="home-resume-next">
+                        {resumeNextIdx !== undefined
+                          ? `Prochaine section : 0${resumeNextIdx + 1} · ${MODULES_CONTENT[resumeModuleId]?.lessons[resumeNextIdx]?.title}`
+                          : resumeValidated
+                            ? 'Module validé — révision libre'
+                            : resumeProg.submitted
+                              ? 'Quiz à retenter pour valider le module'
+                              : 'Sections lues — prêt pour le quiz final'}
+                      </p>
+                      <p className="home-resume-meta">
+                        {resumeCatalog.domain} · {resumeCatalog.duration} · {resumeCatalog.level} ·{' '}
+                        <span className="tabular-nums">{resumeCatalog.xpReward || 150} XP</span>
+                      </p>
+                    </div>
+                  </article>
+                )}
 
                 <section className="wf-card home-recommended">
                   <div className="between wf-mb-sm">
@@ -1686,7 +1706,7 @@ export default function App() {
                       className="popular-carousel-track"
                       onScroll={syncPopularScroll}
                     >
-                      {dynamicCatalog.map((item) => {
+                      {recommendations.map(({ item, reason }) => {
                         const stepInfo = computeCatalogCardSteps(item, getModuleProgress, LESSON_COUNTS);
                         const targetPage = item.type === 'resource' ? 'resource-detail' : item.type === 'path' ? 'path-detail' : 'module-detail';
                         return (
@@ -1697,6 +1717,7 @@ export default function App() {
                             doneSteps={stepInfo.doneSteps}
                             totalSteps={stepInfo.totalSteps}
                             compactBanner
+                            reason={reason}
                             onOpen={() => nav(targetPage, item.id)}
                           />
                         );
@@ -1738,10 +1759,11 @@ export default function App() {
                     )}
                   </div>
                 ) : (
-                  visibleFeedPosts.map((post) => (
+                  feedEntries.map(({ post, context }) => (
                     <FeedPostCard
                       key={post.id}
                       post={post}
+                      context={context}
                       currentUser={user}
                       people={people}
                       ext={ext}

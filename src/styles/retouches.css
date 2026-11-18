@@ -1308,3 +1308,7 @@ b, strong { font-weight: 600; }
 }
 /* Action d'une rubrique, alignée à droite au-dessus de sa liste. */
 .sc-tab-actions { display: flex; justify-content: flex-end; margin: -4px 0 0; }
+/* Raison d'une recommandation, au-dessus du type de contenu : une ligne, coupée si besoin. */
+.sober-card .sober-reason { margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.75rem; line-height: 1.4; color: var(--accent-brand); }
+/* Contexte d'une publication du fil (lien personnel) : même filet que le bandeau de repartage. */
+.li-context-line { margin-bottom: 4px; }
