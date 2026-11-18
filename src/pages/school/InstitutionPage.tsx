@@ -1,10 +1,11 @@
 /**
  * Espace établissement : vue d'ensemble chiffrée, planification en diagramme de Gantt, grille
- * d'emploi du temps, classes et leur niveau de restriction, enseignants, demandes de rattachement.
- * Centré sur l'apprentissage : ni appel, ni notes, ni bulletins.
+ * d'emploi du temps, classes et leur niveau de restriction, bibliothèque, enseignants, demandes.
+ * Centré sur l'apprentissage : ni appel, ni notes, ni bulletins. Un établissement n'est pas une
+ * personne : il n'a ni XP, ni progression, ni fil ; cet espace est son accueil.
  */
-import React, { useState } from 'react';
-import { Users } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { BookOpen, FileText, Layers, Users } from 'lucide-react';
 import { formatDayShort } from '../../calendar';
 import {
   RESTRICTION_DETAIL,
@@ -13,10 +14,13 @@ import {
   addClass,
   educatorStanding,
   institutionOf,
+  libraryOf,
+  priceOf,
   setClassRestriction,
   setMembershipStatus,
   slotConflict,
   studentsOfClass,
+  toggleClassModule,
   type Membership,
   type RestrictionLevel,
   type SchoolClass,
@@ -37,10 +41,11 @@ import {
   Tabs
 } from '../../components/ui';
 import { InstitutionOverview, InstitutionPlanning, TimetablePanel } from './InstitutionBoard';
-import { LearnerModal, clock, followUp, followUpSummary, memberName, moduleTitle, plural, weekdayLabel, type SchoolPageProps } from './shared';
+import { LearnerModal, authorIdOf, clock, followUp, followUpSummary, memberName, moduleTitle, plural, weekdayLabel, type SchoolPageProps } from './shared';
 
-type TabId = 'overview' | 'planning' | 'timetable' | 'classes' | 'teachers' | 'requests';
-const TAB_IDS: TabId[] = ['overview', 'planning', 'timetable', 'classes', 'teachers', 'requests'];
+type TabId = 'overview' | 'planning' | 'timetable' | 'classes' | 'library' | 'teachers' | 'requests';
+const TAB_IDS: TabId[] = ['overview', 'planning', 'timetable', 'classes', 'library', 'teachers', 'requests'];
+const TYPE_LABEL: Record<string, string> = { module: 'Module', resource: 'Ressource', path: 'Parcours' };
 
 const LEVELS: RestrictionLevel[] = [1, 2, 3];
 const HOURS = ['07:00', '08:00', '09:00', '09:15', '10:00', '11:00', '11:15', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '18:30', '19:00', '20:00', '20:30'];
@@ -54,6 +59,10 @@ export function InstitutionPage({ school, saveSchool, ext, user, people, today, 
   const [learnerId, setLearnerId] = useState<string | null>(null);
   const [slotOpen, setSlotOpen] = useState(false);
   const [timetableClass, setTimetableClass] = useState('');
+  // Un lien vers une rubrique (barre de gauche, profil) l'ouvre aussi quand la page est déjà affichée.
+  useEffect(() => {
+    if ((TAB_IDS as string[]).includes(selectedId)) setTab(selectedId as TabId);
+  }, [selectedId]);
 
   if (!institution) {
     return (
@@ -69,6 +78,7 @@ export function InstitutionPage({ school, saveSchool, ext, user, people, today, 
   const teachers = members.filter((m) => m.role === 'teacher' && m.status === 'active');
   const className = (id: string) => classes.find((c) => c.id === id)?.name || 'Classe';
   const openClass = classes.find((c) => c.id === selectedId);
+  const library = libraryOf(school, institution.id, catalog, (item) => authorIdOf(people, item));
 
   const decide = (m: Membership, status: 'active' | 'declined') => {
     const next = setMembershipStatus(school, m.id, status);
@@ -171,17 +181,16 @@ export function InstitutionPage({ school, saveSchool, ext, user, people, today, 
       <Tabs<TabId>
         label="Rubriques de l’établissement"
         value={tab}
-        onChange={setTab}
-        trailing={
-          <button type="button" className="primary ui-btn-sm" onClick={() => setClassOpen(true)}>
-            Créer une classe
-          </button>
-        }
+        onChange={(id) => {
+          setTab(id);
+          nav('institution', id === 'overview' ? '' : id);
+        }}
         items={[
           { id: 'overview', label: 'Vue d’ensemble' },
           { id: 'planning', label: 'Planification' },
           { id: 'timetable', label: 'Emploi du temps' },
           { id: 'classes', label: 'Classes', count: classes.length },
+          { id: 'library', label: 'Bibliothèque', count: library.length },
           { id: 'teachers', label: 'Enseignants', count: teachers.length },
           { id: 'requests', label: 'Demandes', count: requests.length || undefined }
         ]}
@@ -235,26 +244,94 @@ export function InstitutionPage({ school, saveSchool, ext, user, people, today, 
       )}
 
       {tab === 'classes' && (
-        <ListCard label="Classes de l’établissement">
-          {classes.length === 0 ? (
-            <EmptyState title="Aucune classe" text="Créez une classe pour y rattacher des élèves et des enseignants." />
-          ) : (
-            classes.map((c) => {
-              const count = studentsOfClass(school, c.id).length;
-              const teacherCount = teachers.filter((t) => t.classIds.includes(c.id)).length;
-              return (
-                <ListRow
-                  key={c.id}
-                  leading={<IconTile tone="brand">{<Users size={20} aria-hidden="true" />}</IconTile>}
-                  title={c.name}
-                  meta={`${c.level} · ${plural(count, 'élève', 'élèves')} · ${plural(teacherCount, 'enseignant', 'enseignants')} · niveau « ${RESTRICTION_LABEL[c.restriction].toLowerCase()} »`}
-                  onClick={() => nav('institution', c.id)}
-                  trailing={<ActionMenu label={`Plus d’actions pour ${c.name}`} items={[{ label: 'Modifier le niveau de restriction', onSelect: () => setLevelFor(c) }]} />}
-                />
-              );
-            })
-          )}
-        </ListCard>
+        <>
+          {/* L'action de la rubrique, au-dessus de sa liste (la ligne d'onglets est pleine). */}
+          <div className="sc-tab-actions">
+            <button type="button" className="primary ui-btn-sm" onClick={() => setClassOpen(true)}>
+              Créer une classe
+            </button>
+          </div>
+          <ListCard label="Classes de l’établissement">
+            {classes.length === 0 ? (
+              <EmptyState title="Aucune classe" text="Créez une classe pour y rattacher des élèves et des enseignants." />
+            ) : (
+              classes.map((c) => {
+                const count = studentsOfClass(school, c.id).length;
+                const teacherCount = teachers.filter((t) => t.classIds.includes(c.id)).length;
+                return (
+                  <ListRow
+                    key={c.id}
+                    leading={<IconTile tone="brand">{<Users size={20} aria-hidden="true" />}</IconTile>}
+                    title={c.name}
+                    meta={`${c.level} · ${plural(count, 'élève', 'élèves')} · ${plural(teacherCount, 'enseignant', 'enseignants')} · niveau « ${RESTRICTION_LABEL[c.restriction].toLowerCase()} »`}
+                    onClick={() => nav('institution', c.id)}
+                    trailing={<ActionMenu label={`Plus d’actions pour ${c.name}`} items={[{ label: 'Modifier le niveau de restriction', onSelect: () => setLevelFor(c) }]} />}
+                  />
+                );
+              })
+            )}
+          </ListCard>
+        </>
+      )}
+
+      {tab === 'library' && (
+        <>
+          <ListCard label="Bibliothèque de l’établissement">
+            {library.length === 0 ? (
+              <EmptyState
+                title="Aucun contenu pour le moment"
+                text="Les contenus que vos enseignants publient sur SAVOIR+ s’ajoutent ici, gratuits pour vos élèves."
+              />
+            ) : (
+              library.map((item) => {
+                const using = classes.filter((c) => c.moduleIds.includes(item.id));
+                const paid = priceOf(school, item.id) > 0;
+                return (
+                  <ListRow
+                    key={item.id}
+                    leading={
+                      <IconTile tone="brand">
+                        {item.type === 'path' ? (
+                          <Layers size={20} aria-hidden="true" />
+                        ) : item.type === 'resource' ? (
+                          <FileText size={20} aria-hidden="true" />
+                        ) : (
+                          <BookOpen size={20} aria-hidden="true" />
+                        )}
+                      </IconTile>
+                    }
+                    title={item.title}
+                    meta={[TYPE_LABEL[item.type] || 'Contenu', item.author, using.length ? using.map((c) => c.name).join(', ') : 'aucune classe'].join(' · ')}
+                    onClick={() => nav(item.type === 'resource' ? 'resource-detail' : item.type === 'path' ? 'path-detail' : 'module-detail', item.id)}
+                    trailing={
+                      <>
+                        {paid && <StatusDot tone="info">Offert à vos élèves</StatusDot>}
+                        <ActionMenu
+                          label={`Plus d’actions pour ${item.title}`}
+                          items={[
+                            // Un module se donne à une classe ; son avancement apparaît alors dans le suivi.
+                            ...(item.type === 'module'
+                              ? classes.map((c) => ({
+                                  label: c.moduleIds.includes(item.id) ? `Retirer de ${c.name}` : `Donner à ${c.name}`,
+                                  onSelect: () => {
+                                    const given = !c.moduleIds.includes(item.id);
+                                    saveSchool(toggleClassModule(school, c.id, item.id));
+                                    setToast(given ? `« ${item.title} » donné à ${c.name}` : `« ${item.title} » retiré de ${c.name}`);
+                                  }
+                                }))
+                              : []),
+                            { label: 'Ouvrir le contenu', onSelect: () => nav(item.type === 'resource' ? 'resource-detail' : item.type === 'path' ? 'path-detail' : 'module-detail', item.id) }
+                          ]}
+                        />
+                      </>
+                    }
+                  />
+                );
+              })
+            )}
+          </ListCard>
+          {library.length > 0 && <p className="sc-note">Publiés par vos enseignants, ces contenus sont gratuits pour les élèves de l’établissement.</p>}
+        </>
       )}
 
       {tab === 'teachers' && (

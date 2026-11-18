@@ -125,6 +125,8 @@ test('espace famille : enfants, code en attente, achats ; fiche d’un enfant', 
   assert.match(child, /Mathématiques 7 h – 9 h M\. Amétépé · Salle 12/);
   assert.match(child, /Tenir un budget simple Gestion · 1 500 FCFA Acquis pour Elom/);
   assert.match(child, /Préparer une réunion utile Communication · 1 000 FCFA Acheter/);
+  // Le contenu d'un enseignant de son établissement lui est offert : rien à acheter.
+  assert.match(child, /Sauvegarder ses fichiers : la règle 3-2-1 Numérique · 1 000 FCFA Offert par Les Palmiers/);
   assert.match(child, /aucun argent n’est débité/);
   // Un enfant qui n'est pas le sien : l'adresse n'ouvre rien, elle retombe sur l'accueil de l'espace.
   assert.match(text(renderToStaticMarkup(<FamilyPage {...props('akouvi', school, 'tle-01')} calendarOf={calendarOf} />)), /Mes enfants/);
@@ -135,7 +137,15 @@ test('espace établissement : demandes, classes et niveaux, une classe en détai
   const home = text(renderToStaticMarkup(<InstitutionPage {...props('palmiers', school)} />));
   // Plus d'en-tête de présentation : ni type, ni ville, ni statut quand l'établissement est vérifié.
   assert.doesNotMatch(home, /Complexe scolaire|Établissement vérifié|Vous validez qui rejoint/);
-  assert.match(home, /Vue d’ensemble Planification Emploi du temps Classes 3 Enseignants 1 Demandes 2 Créer une classe/);
+  assert.match(home, /Vue d’ensemble Planification Emploi du temps Classes 3 Bibliothèque \d+ Enseignants 1 Demandes 2 Élèves/);
+  // « Créer une classe » se trouve dans la rubrique des classes.
+  assert.match(text(renderToStaticMarkup(<InstitutionPage {...props('palmiers', school, 'classes')} />)), /Créer une classe Terminale D/);
+  // La bibliothèque : les contenus de ses enseignants, gratuits pour ses élèves ; un module se donne à une classe.
+  const library = text(renderToStaticMarkup(<InstitutionPage {...props('palmiers', school, 'library')} />));
+  assert.match(library, /Ne tombez plus dans le piège Module · Kossi Agbo · Troisième A|Ne tombez plus dans le piège Module · Kossi Agbo/);
+  assert.match(library, /Sauvegarder ses fichiers : la règle 3-2-1 Module · Kossi Agbo · Terminale D Offert à vos élèves/);
+  assert.doesNotMatch(library, /Écrire un e-mail professionnel clair/, 'Ama Dossou n’est pas encore rattachée');
+  assert.match(library, /gratuits pour les élèves de l’établissement/);
   // La vue d'ensemble : chiffres clés, avancement des classes face à l'attendu, élèves à accompagner.
   assert.match(home, /Élèves 24 3 classes Enseignants 1 rattachés et actifs Heures de cours 30 par semaine/);
   assert.match(home, /Terminale D 10 élèves · Sauvegarder ses fichiers \d+ % (En avance|Dans les temps|En retard)/);

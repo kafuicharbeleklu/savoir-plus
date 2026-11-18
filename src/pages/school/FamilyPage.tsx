@@ -19,13 +19,14 @@ import {
   hasAccess,
   institutionOf,
   issueGuardianCode,
+  offeringInstitution,
   priceOf,
   slotsFor,
   GUARDIAN_CODE_DAYS
 } from '../../school';
 import { ActionMenu, EmptyState, IconTile, ListCard, ListRow, Modal, PageHeader, Select, StatusDot } from '../../components/ui';
 import { ChildBoard, ChildCard, childSnapshot } from './FamilyBoard';
-import { FollowUpList, IdentityDot, followUp, memberName, moduleTitle, plural, type SchoolPageProps } from './shared';
+import { FollowUpList, IdentityDot, authorIdOf, followUp, memberName, moduleTitle, plural, type SchoolPageProps } from './shared';
 
 export interface ChildCalendar {
   events: CalendarEvent[];
@@ -111,6 +112,8 @@ export function FamilyPage({
         </div>
         <ListCard label="Contenus payants">
           {paid.map((item) => {
+            // Contenu d'un enseignant de son établissement : offert à l'enfant, rien à acheter.
+            const offeredBy = offeringInstitution(school, child, authorIdOf(people, item));
             const owned = hasAccess(school, child, item.id);
             return (
               <ListRow
@@ -119,7 +122,9 @@ export function FamilyPage({
                 title={item.title}
                 meta={`${item.domain} · ${formatPrice(priceOf(school, item.id))}`}
                 trailing={
-                  owned ? (
+                  offeredBy ? (
+                    <StatusDot tone="info">Offert par {offeredBy.name}</StatusDot>
+                  ) : owned ? (
                     <StatusDot tone="info">Acquis pour {firstName}</StatusDot>
                   ) : (
                     <button type="button" className="li-text-link" onClick={() => setBuying(item.id)}>

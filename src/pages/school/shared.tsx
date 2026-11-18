@@ -33,6 +33,9 @@ export const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? 
 const EMPTY: Progress = { lessons: [], answers: [], submitted: false };
 
 /** Nom d'un membre : sa fiche s'il en a une, sinon le nom enregistré par l'établissement. */
+/** Identifiant du membre auteur d'un contenu (le catalogue ne porte que son nom). */
+export const authorIdOf = (people: Profile[], item: { author: string }): string | undefined => people.find((p) => p.name === item.author)?.id;
+
 export const memberName = (id: string, people: Profile[]): string =>
   people.find((p) => p.id === id)?.name || SCHOOL_MEMBER_NAMES[id] || 'Membre';
 

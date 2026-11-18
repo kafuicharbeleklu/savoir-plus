@@ -23,9 +23,11 @@ import {
   hasAccess,
   issueGuardianCode,
   learnersOf,
+  libraryOf,
   makeGuardianCode,
   needsGuardianCode,
   normalizeSchoolState,
+  offeringInstitution,
   redeemGuardianCode,
   relationBetween,
   requestMembership,
@@ -36,6 +38,7 @@ import {
   slotsFor,
   studentsOfClass,
   submitIdentity,
+  toggleClassModule,
   visibleInSuggestions,
   type SchoolState
 } from '../src/school';
@@ -459,4 +462,37 @@ test('état enregistré par une ancienne version : complété à partir de l’�
   assert.equal(restored.accounts.kossi.kind, 'educator', 'les comptes absents de l’enregistrement reviennent');
   assert.equal(restored.classes.length, base.classes.length);
   assert.deepEqual(emptySchoolState().institutions, []);
+});
+
+test('bibliothèque d’établissement : contenus de ses enseignants, offerts à ses élèves ; un établissement ne publie pas', () => {
+  let school = seed();
+  const items = [
+    { id: 'sauvegarde', author: 'kossi' },
+    { id: 'email-pro', author: 'ama' },
+    { id: 'budget', author: 'edem' }
+  ];
+  const byAuthor = (item: { author: string }) => item.author;
+  // Kossi enseigne aux Palmiers ; Ama attend encore la validation de son rattachement.
+  assert.deepEqual(libraryOf(school, 'inst-palmiers', items, byAuthor).map((i) => i.id), ['sauvegarde']);
+  assert.deepEqual(libraryOf(school, 'inst-horizon', items, byAuthor).map((i) => i.id), ['sauvegarde']);
+
+  // Payant pour le public, offert aux élèves des établissements où Kossi enseigne.
+  assert.equal(offeringInstitution(school, 'elom', 'kossi')?.name, 'Les Palmiers');
+  assert.equal(offeringInstitution(school, 'afi', 'kossi')?.name, 'Centre Horizon');
+  assert.equal(offeringInstitution(school, 'nadege', 'kossi'), undefined);
+  assert.equal(hasAccess(school, 'elom', 'sauvegarde', 'kossi'), true);
+  assert.equal(hasAccess(school, 'nadege', 'sauvegarde', 'kossi'), false);
+  assert.equal(hasAccess(school, 'elom', 'sauvegarde'), false, 'sans auteur connu, rien n’est offert');
+
+  // Rattachement validé : les contenus d'Ama entrent dans la bibliothèque des Palmiers.
+  school = setMembershipStatus(school, 'mb-ama-palmiers', 'active');
+  assert.deepEqual(libraryOf(school, 'inst-palmiers', items, byAuthor).map((i) => i.id), ['sauvegarde', 'email-pro']);
+
+  // L'établissement donne un module à une classe, ou le lui retire.
+  const given = toggleClassModule(school, 'cl-cm2', 'sauvegarde');
+  assert.ok(given.classes.find((c) => c.id === 'cl-cm2')!.moduleIds.includes('sauvegarde'));
+  assert.ok(!toggleClassModule(given, 'cl-cm2', 'sauvegarde').classes.find((c) => c.id === 'cl-cm2')!.moduleIds.includes('sauvegarde'));
+
+  // Pas de fil pour un établissement : il ne publie pas.
+  assert.equal(canPublish(school, 'palmiers', TODAY), false);
 });

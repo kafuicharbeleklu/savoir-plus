@@ -45,6 +45,12 @@ interface ProfilePageProps {
   totalXP: number;
   getModuleProgress: (modId: string) => Progress;
   lessonCounts: Record<string, number>;
+  /** Le compte apprend (apprenant, encadrant) ; un parent ou un établissement n'a ni XP ni progression. */
+  learns?: boolean;
+  /** Celui qui regarde peut suivre (un établissement n'a pas de fil, il ne suit personne). */
+  canFollow?: boolean;
+  /** Bibliothèque de l'établissement consulté. */
+  library?: CatalogItem[];
   onSaveProfile?: (name: string, tagline: string, location: string, bio: string, interests: string) => Promise<void>;
   onToggleFollow: (id: string) => void;
   onOpenChatDrawer: (relId: string) => void;
@@ -170,6 +176,9 @@ export function ProfilePage({
   getModuleProgress,
   onSaveProfile,
   onToggleFollow,
+  learns = true,
+  canFollow = true,
+  library,
   onOpenChatDrawer,
   onRequestContact,
   onReportTarget,
@@ -236,7 +245,7 @@ export function ProfilePage({
 
   // Préférences › Visibilité du membre consulté.
   const profilePrivate = !isOwnProfile && details?.profileVisibility === 'Moi uniquement';
-  const showProgression = isOwnProfile || (details?.xpVisibility || 'Moi uniquement') === 'Membres';
+  const showProgression = learns && (isOwnProfile || (details?.xpVisibility || 'Moi uniquement') === 'Membres');
   const contactPolicy = details?.contactPolicy || 'Membres autorisés';
   const targetFollowsMe = (ext.followingIds[target.id] || []).includes(currentUser.id);
   const acceptsMyRequest =
@@ -365,7 +374,9 @@ export function ProfilePage({
   }
   const talkIsPrimary = isFollowed && talk && !talk.disabled;
 
-  const networkLine = `${plural(stats.followersCount, 'abonné', 'abonnés')} · ${plural(stats.acceptedRelationsCount, 'relation', 'relations')}`;
+  const networkLine = learns
+    ? `${plural(stats.followersCount, 'abonné', 'abonnés')} · ${plural(stats.acceptedRelationsCount, 'relation', 'relations')}`
+    : plural(stats.acceptedRelationsCount, 'relation', 'relations');
 
   const topCard = (
     <section className="pf-card pf-top" aria-label="Présentation">
@@ -467,13 +478,13 @@ export function ProfilePage({
                 trigger="Plus"
                 items={[
                   { label: 'Préférences de visibilité', onSelect: () => openSettingsTab('privacy') },
-                  { label: 'Voir ma progression', onSelect: () => nav('progression') }
+                  { label: 'Voir ma progression', hidden: !learns, onSelect: () => nav('progression') }
                 ]}
               />
             </>
           ) : (
             <>
-              {!profilePrivate && !isFollowed && (
+              {canFollow && !profilePrivate && !isFollowed && (
                 <button type="button" className="primary ui-btn-sm" onClick={() => onToggleFollow(target.id)}>
                   <Plus size={16} aria-hidden="true" /> Suivre
                 </button>
@@ -488,7 +499,7 @@ export function ProfilePage({
                   {talk.label}
                 </button>
               )}
-              {!profilePrivate && isFollowed && (
+              {canFollow && !profilePrivate && isFollowed && (
                 <button
                   type="button"
                   className="secondary ui-btn-sm"
@@ -535,8 +546,8 @@ export function ProfilePage({
       <div className="pf-main">
         {topCard}
 
-        {/* Statistiques — privées, comme « Analyses » sur LinkedIn */}
-        {isOwnProfile && (
+        {/* Statistiques — privées, comme « Analyses » sur LinkedIn ; seulement pour un compte qui apprend */}
+        {isOwnProfile && learns && (
           <Section
             title="Statistiques"
             sub={
@@ -599,6 +610,41 @@ export function ProfilePage({
           </Section>
         )}
 
+        {/* Bibliothèque d'un établissement : les contenus de ses enseignants */}
+        {library && (library.length > 0 || isOwnProfile) && (
+          <Section
+            title="Bibliothèque"
+            sub={<span className="tabular-nums">{plural(library.length, 'contenu publié', 'contenus publiés')} par ses enseignants</span>}
+            footer={isOwnProfile ? { label: 'Gérer la bibliothèque', onClick: () => nav('institution', 'library') } : undefined}
+          >
+            {library.length === 0 ? (
+              <EmptyState title="Aucun contenu pour le moment" />
+            ) : (
+              <div className="pf-entries">
+                {library.slice(0, 4).map((c) => (
+                  <Entry
+                    key={c.id}
+                    leading={
+                      <IconTile tone="brand">
+                        {c.type === 'path' ? (
+                          <Layers size={20} aria-hidden="true" />
+                        ) : c.type === 'resource' ? (
+                          <FileText size={20} aria-hidden="true" />
+                        ) : (
+                          <BookOpen size={20} aria-hidden="true" />
+                        )}
+                      </IconTile>
+                    }
+                    title={c.title}
+                    meta={`${itemMeta(c)} · ${c.author}`}
+                    onClick={() => nav(detailRoute(c.type), c.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </Section>
+        )}
+
         {/* Progression */}
         {showProgression && (
           <Section title="Progression" footer={{ label: 'Voir le détail de la progression', onClick: () => openProgression('progression') }}>
@@ -655,80 +701,82 @@ export function ProfilePage({
           </Section>
         )}
 
-        {/* Activité */}
-        <Section
-          title="Activité"
-          sub={<span className="tabular-nums">{plural(stats.followersCount, 'abonné', 'abonnés')}</span>}
-          action={
-            isOwnProfile && onOpenComposer ? (
-              <button type="button" className="secondary ui-btn-sm" onClick={onOpenComposer}>
-                Créer un post
-              </button>
-            ) : undefined
-          }
-          footer={
-            (activityTab === 'posts' ? memberPosts.length : memberComments.length) > 0
-              ? { label: 'Voir le fil d’entraide', onClick: () => nav('home') }
-              : undefined
-          }
-        >
-          <div className="pf-chips" role="tablist" aria-label="Type d’activité">
-            {(
-              [
-                { id: 'posts', label: 'Publications', count: memberPosts.length },
-                { id: 'comments', label: 'Commentaires', count: memberComments.length }
-              ] as const
-            ).map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={activityTab === t.id}
-                className={`pf-chip ${activityTab === t.id ? 'is-selected' : ''}`}
-                onClick={() => setActivityTab(t.id)}
-              >
-                {t.label} <span className="tabular-nums">{t.count}</span>
-              </button>
-            ))}
-          </div>
-          {activityTab === 'posts' &&
-            (memberPosts.length === 0 ? (
-              <EmptyState
-                title={isOwnProfile ? 'Vous n’avez encore rien publié' : `${firstName} n’a encore rien publié`}
-                text={isOwnProfile ? 'Posez une question ou partagez une méthode avec la communauté.' : undefined}
-              />
-            ) : (
-              <div className="pf-posts">
-                {memberPosts.slice(0, 3).map((p) => (
-                  <button key={p.id} type="button" className="pf-post" onClick={() => nav('community-thread', p.id)}>
-                    <small>
-                      {p.kind === 'question' ? 'Question d’entraide' : 'Publication'} · {p.createdAt}
-                    </small>
-                    <b>{p.title}</b>
-                    <p>
-                      <RichText text={p.body} />
-                    </p>
-                    <small className="tabular-nums">
-                      {p.domain} · {plural(p.helpfulBy?.length || 0, 'utile', 'utiles')} · {plural(p.replies.length, 'réponse', 'réponses')}
-                    </small>
-                  </button>
-                ))}
-              </div>
-            ))}
-          {activityTab === 'comments' &&
-            (memberComments.length === 0 ? (
-              <EmptyState title={isOwnProfile ? 'Vous n’avez encore rien commenté' : `${firstName} n’a encore rien commenté`} />
-            ) : (
-              <div className="pf-posts">
-                {memberComments.slice(0, 3).map(({ post, reply }) => (
-                  <button key={reply.id} type="button" className="pf-post" onClick={() => nav('community-thread', post.id)}>
-                    <small>En réponse à « {post.title} » · {reply.createdAt}</small>
-                    <p>{reply.text}</p>
-                  </button>
-                ))}
-              </div>
-            ))}
-        </Section>
+        {/* Activité — un parent ou un établissement ne publie pas : pas de fil, pas d'abonnés */}
+        {learns && (
+          <Section
+            title="Activité"
+            sub={<span className="tabular-nums">{plural(stats.followersCount, 'abonné', 'abonnés')}</span>}
+            action={
+              isOwnProfile && onOpenComposer ? (
+                <button type="button" className="secondary ui-btn-sm" onClick={onOpenComposer}>
+                  Créer un post
+                </button>
+              ) : undefined
+            }
+            footer={
+              (activityTab === 'posts' ? memberPosts.length : memberComments.length) > 0
+                ? { label: 'Voir le fil d’entraide', onClick: () => nav('home') }
+                : undefined
+            }
+          >
+            <div className="pf-chips" role="tablist" aria-label="Type d’activité">
+              {(
+                [
+                  { id: 'posts', label: 'Publications', count: memberPosts.length },
+                  { id: 'comments', label: 'Commentaires', count: memberComments.length }
+                ] as const
+              ).map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activityTab === t.id}
+                  className={`pf-chip ${activityTab === t.id ? 'is-selected' : ''}`}
+                  onClick={() => setActivityTab(t.id)}
+                >
+                  {t.label} <span className="tabular-nums">{t.count}</span>
+                </button>
+              ))}
+            </div>
+            {activityTab === 'posts' &&
+              (memberPosts.length === 0 ? (
+                <EmptyState
+                  title={isOwnProfile ? 'Vous n’avez encore rien publié' : `${firstName} n’a encore rien publié`}
+                  text={isOwnProfile ? 'Posez une question ou partagez une méthode avec la communauté.' : undefined}
+                />
+              ) : (
+                <div className="pf-posts">
+                  {memberPosts.slice(0, 3).map((p) => (
+                    <button key={p.id} type="button" className="pf-post" onClick={() => nav('community-thread', p.id)}>
+                      <small>
+                        {p.kind === 'question' ? 'Question d’entraide' : 'Publication'} · {p.createdAt}
+                      </small>
+                      <b>{p.title}</b>
+                      <p>
+                        <RichText text={p.body} />
+                      </p>
+                      <small className="tabular-nums">
+                        {p.domain} · {plural(p.helpfulBy?.length || 0, 'utile', 'utiles')} · {plural(p.replies.length, 'réponse', 'réponses')}
+                      </small>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            {activityTab === 'comments' &&
+              (memberComments.length === 0 ? (
+                <EmptyState title={isOwnProfile ? 'Vous n’avez encore rien commenté' : `${firstName} n’a encore rien commenté`} />
+              ) : (
+                <div className="pf-posts">
+                  {memberComments.slice(0, 3).map(({ post, reply }) => (
+                    <button key={reply.id} type="button" className="pf-post" onClick={() => nav('community-thread', post.id)}>
+                      <small>En réponse à « {post.title} » · {reply.createdAt}</small>
+                      <p>{reply.text}</p>
+                    </button>
+                  ))}
+                </div>
+              ))}
+          </Section>
+        )}
 
         {/* Apprentissage — modules réellement commencés */}
         {showProgression && (startedModules.length > 0 || isOwnProfile) && (
@@ -826,7 +874,7 @@ export function ProfilePage({
         )}
 
         {/* Centres d'intérêt */}
-        {(interests.length > 0 || isOwnProfile) && (
+        {learns && (interests.length > 0 || isOwnProfile) && (
           <Section
             title="Centres d’intérêt"
             action={isOwnProfile ? <EditIcon label="Modifier les centres d’intérêt" onClick={() => setEditOpen(true)} /> : undefined}
@@ -867,7 +915,7 @@ export function ProfilePage({
           </div>
         </section>
 
-        {suggestPeople.length > 0 && (
+        {canFollow && suggestPeople.length > 0 && (
           <section className="pf-card pf-rail-card">
             <h2>Personnes que vous pourriez connaître</h2>
             <div className="pf-suggest-list">
@@ -900,7 +948,7 @@ export function ProfilePage({
           </section>
         )}
 
-        {suggestedCatalog.length > 0 && (
+        {learns && suggestedCatalog.length > 0 && (
           <section className="pf-card pf-rail-card">
             <h2>Vous aimerez peut-être</h2>
             <div className="pf-suggest-list">

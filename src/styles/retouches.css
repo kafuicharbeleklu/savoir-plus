@@ -1306,3 +1306,5 @@ b, strong { font-weight: 600; }
   .ui-tabs-bar > .ui-tabs { flex-basis: 100%; border-bottom: 1px solid var(--border-hairline); }
   .ui-tabs-trailing { margin-left: auto; }
 }
+/* Action d'une rubrique, alignée à droite au-dessus de sa liste. */
+.sc-tab-actions { display: flex; justify-content: flex-end; margin: -4px 0 0; }

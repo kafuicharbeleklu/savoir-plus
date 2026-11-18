@@ -440,7 +440,8 @@ export function canViewPerformance(school: SchoolState, viewerId: string, learne
 /** Publier, commenter, réagir : jamais pour un parent, un compte en attente de code ou une classe « stricte ». */
 export function canPublish(school: SchoolState, uid: string, today: Day): boolean {
   const account = accountOf(school, uid);
-  if (account.kind === 'guardian') return false;
+  // Un parent consulte ; un établissement n'a pas de fil : ni l'un ni l'autre ne publie.
+  if (account.kind === 'guardian' || account.kind === 'institution') return false;
   if (needsGuardianCode(school, uid, today)) return false;
   return restrictionFor(school, uid, today) < 3;
 }
@@ -496,8 +497,61 @@ export const priceOf = (school: SchoolState, itemId: string): number => school.p
 export const formatPrice = (amount: number): string => (amount > 0 ? `${amount.toLocaleString('fr-FR').replace(/ | /g, ' ')} FCFA` : 'Gratuit');
 
 /** Un contenu payant est accessible s'il a été acheté pour ce membre. */
-export function hasAccess(school: SchoolState, uid: string, itemId: string): boolean {
-  return priceOf(school, itemId) === 0 || school.purchases.some((p) => p.forUserId === uid && p.itemId === itemId);
+/* ------------------------------------------------------------------ Bibliothèque d'établissement */
+
+/** Enseignants rattachés (rattachement actif) à un établissement. */
+export const activeTeachersOf = (school: SchoolState, institutionId: string): string[] =>
+  school.memberships.filter((m) => m.institutionId === institutionId && m.role === 'teacher' && m.status === 'active').map((m) => m.userId);
+
+/** Établissements dont un membre est élève (rattachement actif). */
+export const institutionsOfStudent = (school: SchoolState, uid: string): string[] =>
+  Array.from(new Set(school.memberships.filter((m) => m.userId === uid && m.role === 'student' && m.status === 'active').map((m) => m.institutionId)));
+
+/**
+ * Bibliothèque d'un établissement : les contenus publiés par ses enseignants. Un établissement
+ * n'apprend pas (ni XP, ni progression, ni fil) ; il gère cette bibliothèque, gratuite pour ses élèves.
+ */
+export function libraryOf<T extends { id: string }>(
+  school: SchoolState,
+  institutionId: string,
+  items: T[],
+  authorIdOf: (item: T) => string | undefined
+): T[] {
+  const teachers = new Set(activeTeachersOf(school, institutionId));
+  return items.filter((item) => {
+    const author = authorIdOf(item);
+    return Boolean(author && teachers.has(author));
+  });
+}
+
+/** L'établissement qui offre un contenu à un élève : celui dont l'un des enseignants en est l'auteur. */
+export function offeringInstitution(school: SchoolState, uid: string, authorId: string | undefined): Institution | undefined {
+  if (!authorId) return undefined;
+  return institutionOf(
+    school,
+    institutionsOfStudent(school, uid).find((id) => activeTeachersOf(school, id).includes(authorId))
+  );
+}
+
+/** Donne un module à une classe, ou le lui retire. */
+export function toggleClassModule(school: SchoolState, classId: string, moduleId: string): SchoolState {
+  return {
+    ...school,
+    classes: school.classes.map((c) =>
+      c.id !== classId
+        ? c
+        : { ...c, moduleIds: c.moduleIds.includes(moduleId) ? c.moduleIds.filter((id) => id !== moduleId) : [...c.moduleIds, moduleId] }
+    )
+  };
+}
+
+/** Accès à un contenu : gratuit, acheté pour ce membre, ou offert par son établissement (contenu de l'un de ses enseignants). */
+export function hasAccess(school: SchoolState, uid: string, itemId: string, authorId?: string): boolean {
+  return (
+    priceOf(school, itemId) === 0 ||
+    school.purchases.some((p) => p.forUserId === uid && p.itemId === itemId) ||
+    Boolean(offeringInstitution(school, uid, authorId))
+  );
 }
 
 export type PurchaseFailure = 'minor' | 'unverified' | 'not-child' | 'free' | 'owned';

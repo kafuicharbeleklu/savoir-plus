@@ -138,7 +138,7 @@ import {
   visibleInSuggestions,
   type SchoolState
 } from './school';
-import { accountOf as schoolAccountOf, ageBandOf } from './school';
+import { accountOf as schoolAccountOf, ageBandOf, libraryOf } from './school';
 import { addDays as addCalendarDays } from './calendar';
 import { demoCampaigns } from './ads';
 import { OffersModal, SponsoredCard } from './components/SponsoredCard';
@@ -722,9 +722,17 @@ export default function App() {
 
   // Route guard: Studio / Governance pages typed in the URL fall back to home without the matching role.
   // Même règle pour la page de publication quand le profil ne publie pas (parent ou tuteur, classe « stricte »).
-  const routeAllowed = canAccessRoute(page, caps) && !(page === 'community-compose' && !caps.canPublish);
+  // Un établissement n'est pas une personne : ni accueil d'apprenant, ni fil, ni progression. Son accueil est son espace.
+  const institutionAway =
+    caps.accountKind === 'institution' &&
+    ['home', 'community', 'community-compose', 'learning', 'calendar', 'progression', 'reader', 'quiz-intro', 'quiz', 'result'].includes(page);
+  const routeAllowed = !institutionAway && canAccessRoute(page, caps) && !(page === 'community-compose' && !caps.canPublish);
   useEffect(() => {
     if (routeAllowed) return;
+    if (institutionAway) {
+      nav('institution');
+      return;
+    }
     setToast(
       page === 'community-compose'
         ? 'Ce profil consulte les contenus sans publier.'
@@ -771,7 +779,12 @@ export default function App() {
   }, [page, activeStudyModuleId]);
 
   /** Contenu payant non acquis par le membre (démonstration locale ; les achats sont simulés). */
-  const isLocked = (itemId: string) => mode === 'local' && !hasAccess(school, uid, itemId);
+  // Le catalogue ne porte que le nom de l'auteur : un contenu d'un enseignant est offert à ses élèves.
+  const authorIdOfItem = (itemId: string) => {
+    const author = dynamicCatalog.find((c) => c.id === itemId)?.author;
+    return author ? networkDirectory.find((p) => p.name === author)?.id : undefined;
+  };
+  const isLocked = (itemId: string) => mode === 'local' && !hasAccess(school, uid, itemId, authorIdOfItem(itemId));
 
   const openReader = (moduleId = activeStudyModuleId || 'phishing', sectionIdx?: number) => {
     if (isLocked(moduleId)) {
@@ -1375,6 +1388,17 @@ export default function App() {
   const activeSpace = resolveActiveSpace(page, caps.canModerate || caps.canAdmin);
   // Un parent ou tuteur et un établissement n'ont ni apprentissages, ni calendrier, ni progression propres.
   const learnsHere = caps.accountKind === 'learner' || caps.accountKind === 'educator';
+  // Un compte apprend s'il est apprenant ou encadrant ; un parent ou un établissement n'a ni XP ni progression.
+  const accountLearns = (id: string) => {
+    const kind = schoolAccountOf(school, id).kind;
+    return kind === 'learner' || kind === 'educator';
+  };
+  // Bibliothèque d'un établissement : les contenus publiés par ses enseignants.
+  const institutionLibrary = (id: string) => {
+    const account = schoolAccountOf(school, id);
+    if (account.kind !== 'institution' || !account.institutionId) return undefined;
+    return libraryOf(school, account.institutionId, dynamicCatalog, (item) => networkDirectory.find((p) => p.name === item.author)?.id);
+  };
   const isFullWidth =
     page === 'messages' ||
     page === 'auth-flows' ||
@@ -1768,24 +1792,6 @@ export default function App() {
                 </button>
               </section>
             )}
-            {caps.canManageInstitution && (
-              <section className="rail-card" aria-label="Mon établissement">
-                <h2 className="discover-feed-title">Mon établissement</h2>
-                <div className="rail-stat-list tabular-nums">
-                  <div className="rail-stat-row">
-                    <span>Demandes en attente</span>
-                    <b>{school.memberships.filter((m) => m.institutionId === school.accounts[uid]?.institutionId && m.status === 'pending').length}</b>
-                  </div>
-                  <div className="rail-stat-row">
-                    <span>Classes</span>
-                    <b>{school.classes.filter((c) => c.institutionId === school.accounts[uid]?.institutionId).length}</b>
-                  </div>
-                </div>
-                <button type="button" className="rail-card-foot" onClick={() => nav('institution')}>
-                  Ouvrir mon établissement <ArrowRight size={16} aria-hidden="true" />
-                </button>
-              </section>
-            )}
             {caps.canTeach && (
               <section className="rail-card" aria-label="Mes classes">
                 <h2 className="discover-feed-title">Mes classes</h2>
@@ -2131,17 +2137,32 @@ export default function App() {
                         <p className="tiny muted">{p.bio}</p>
                         <small className="tiny muted">{entry.suggestionReason}</small>
                         <div className="connect-card-footer">
-                          <button
-                            type="button"
-                            className="follow-btn follow-btn-sm is-idle"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFollowPerson(p.id);
-                            }}
-                            aria-pressed={false}
-                          >
-                            <UserPlus size={13} /> Suivre
-                          </button>
+                          {caps.accountKind === 'institution' ? (
+                            !rel && (
+                              <button
+                                type="button"
+                                className="follow-btn follow-btn-sm is-idle"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRequestContact(p);
+                                }}
+                              >
+                                <UserPlus size={13} /> Demander le contact
+                              </button>
+                            )
+                          ) : (
+                            <button
+                              type="button"
+                              className="follow-btn follow-btn-sm is-idle"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFollowPerson(p.id);
+                              }}
+                              aria-pressed={false}
+                            >
+                              <UserPlus size={13} /> Suivre
+                            </button>
+                          )}
                           {rel?.status === 'accepted' ? (
                             <button
                               type="button"
@@ -2369,6 +2390,9 @@ export default function App() {
           totalXP={totalXP}
           getModuleProgress={getModuleProgress}
           lessonCounts={LESSON_COUNTS}
+          learns={accountLearns(target.id)}
+          canFollow={caps.accountKind !== 'institution' && accountLearns(target.id)}
+          library={institutionLibrary(target.id)}
           onToggleFollow={toggleFollowPerson}
           onOpenChatDrawer={openConversation}
           onRequestContact={handleRequestContact}
@@ -2397,6 +2421,9 @@ export default function App() {
           totalXP={totalXP}
           getModuleProgress={getModuleProgress}
           lessonCounts={LESSON_COUNTS}
+          learns={learnsHere}
+          canFollow={caps.accountKind !== 'institution'}
+          library={institutionLibrary(uid)}
           onSaveProfile={async (newName, tagline, location, bio, interests) => {
             if (newName.trim()) {
               await saveName(mode, uid, newName.trim());
@@ -2765,13 +2792,13 @@ export default function App() {
   return (
     <div className="app-root">
       <TopBar
-        page={page}
+        page={caps.accountKind === 'institution' && page === 'institution' ? 'home' : page}
         nav={nav}
         user={user}
         caps={caps}
         ext={ext}
         people={people}
-        activeLab={activeLab}
+        activeLab={learnsHere ? activeLab : null}
         onOpenActiveLab={(id) => openReader(id)}
         pendingCount={pendingIncoming.length}
         unreadNotifs={unreadNotifs}
@@ -2825,14 +2852,14 @@ export default function App() {
                         </button>
                       )}
                       {caps.canManageInstitution && (
-                        <button className={`rail-nav-btn ${page === 'institution' ? 'active' : ''}`} onClick={() => nav('institution')}>
+                        <button className={`rail-nav-btn ${page === 'institution' && selectedId !== 'library' ? 'active' : ''}`} onClick={() => nav('institution')}>
                           <span><ClipboardList size={16} /> Mon établissement</span>
                         </button>
                       )}
                       <div className="vous-divider" />
                     </>
                   )}
-                  <span className="left-rail-section-label">Apprentissage</span>
+                  <span className="left-rail-section-label">{caps.accountKind === 'institution' ? 'Ressources' : 'Apprentissage'}</span>
                   {/* Un parent ou un établissement consulte la bibliothèque ; il n'a ni apprentissages ni calendrier propres. */}
                   {learnsHere && (
                     <button className={`rail-nav-btn ${page === 'learning' ? 'active' : ''}`} onClick={() => nav('learning')}>
@@ -2844,9 +2871,19 @@ export default function App() {
                       <span><CalendarDays size={16} /> Calendrier</span>
                     </button>
                   )}
-                  <button className={`rail-nav-btn ${page === 'catalog' ? 'active' : ''}`} onClick={() => nav('catalog')}>
-                    <span><Compass size={16} /> Bibliothèque</span>
-                  </button>
+                  {/* La bibliothèque d'un établissement : les contenus de ses enseignants, dans son espace. */}
+                  {caps.accountKind === 'institution' ? (
+                    <button
+                      className={`rail-nav-btn ${page === 'institution' && selectedId === 'library' ? 'active' : ''}`}
+                      onClick={() => nav('institution', 'library')}
+                    >
+                      <span><Compass size={16} /> Bibliothèque</span>
+                    </button>
+                  ) : (
+                    <button className={`rail-nav-btn ${page === 'catalog' ? 'active' : ''}`} onClick={() => nav('catalog')}>
+                      <span><Compass size={16} /> Bibliothèque</span>
+                    </button>
+                  )}
                   {learnsHere && (
                     <button className={`rail-nav-btn ${page === 'progression' ? 'active' : ''}`} onClick={() => nav('progression')}>
                       <span><Award size={16} /> Progression & Badges</span>
