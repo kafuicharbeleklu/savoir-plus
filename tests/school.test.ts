@@ -496,3 +496,26 @@ test('bibliothèque d’établissement : contenus de ses enseignants, offerts à
   // Pas de fil pour un établissement : il ne publie pas.
   assert.equal(canPublish(school, 'palmiers', TODAY), false);
 });
+
+test('prochain cours : celui en cours, sinon le suivant dans la semaine ; heures en français', async () => {
+  const { nextSlot, clockLabel } = await import('../src/school');
+  // Jeudi 19 novembre 2026 : un cours de 10 h à 12 h ; vendredi, un cours à 8 h.
+  const slots = [
+    { id: 'a', classId: 'c1', weekday: 4, start: '10:00', end: '12:00', subject: 'Informatique' },
+    { id: 'b', classId: 'c2', weekday: 5, start: '08:00', end: '10:00', subject: 'Réseaux', room: 'Salle 2' }
+  ];
+  const at = (h: number, m = 0) => h * 60 + m;
+  assert.deepEqual(nextSlot(slots, '2026-11-19', at(9)), { slot: slots[0], day: '2026-11-19', live: false });
+  assert.equal(nextSlot(slots, '2026-11-19', at(11))?.live, true, 'cours en ce moment');
+  assert.deepEqual(nextSlot(slots, '2026-11-19', at(13)), { slot: slots[1], day: '2026-11-20', live: false });
+  assert.equal(nextSlot([], '2026-11-19', at(9)), null);
+  assert.equal(clockLabel('07:00'), '7 h');
+  assert.equal(clockLabel('10:30'), '10 h 30');
+});
+
+test('badge d’un module : celui que son quiz débloque à lui seul', async () => {
+  const { moduleBadge } = await import('../src/personas');
+  assert.equal(moduleBadge('phishing')?.title, 'Vigilance Phishing');
+  assert.equal(moduleBadge('email-pro')?.title, 'Plume Claire');
+  assert.equal(moduleBadge('inconnu'), null);
+});

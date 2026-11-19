@@ -12,7 +12,7 @@
  * La vérification d'identité et les paiements sont SIMULÉS : aucun document, aucun visage,
  * aucun argent ne quitte l'appareil.
  */
-import { addDays, diffDays, type Day } from './calendar';
+import { addDays, diffDays, weekdayOf, type Day } from './calendar';
 import type { PlanItem } from './planning';
 import type { WeekSnapshot } from './trends';
 
@@ -726,6 +726,29 @@ export function slotsFor(school: SchoolState, uid: string): TimetableSlot[] {
 }
 
 const minutesOf = (clock: string) => Number(clock.slice(0, 2)) * 60 + Number(clock.slice(3, 5));
+
+/**
+ * Le prochain cours d'un emploi du temps à partir d'un jour et d'une heure (minutes depuis minuit) :
+ * le cours en cours s'il y en a un, sinon le suivant dans les sept jours. `null` sans cours.
+ */
+export function nextSlot(slots: TimetableSlot[], today: Day, nowMinutes: number): { slot: TimetableSlot; day: Day; live: boolean } | null {
+  for (let offset = 0; offset < 7; offset++) {
+    const day = addDays(today, offset);
+    const weekday = weekdayOf(day);
+    const candidates = slots
+      .filter((s) => s.weekday === weekday && (offset > 0 || minutesOf(s.end) > nowMinutes))
+      .sort((a, b) => minutesOf(a.start) - minutesOf(b.start));
+    if (candidates.length) return { slot: candidates[0], day, live: offset === 0 && minutesOf(candidates[0].start) <= nowMinutes };
+  }
+  return null;
+}
+
+/** « 07:00 » → « 7 h », « 10:30 » → « 10 h 30 ». */
+export const clockLabel = (clock: string): string => {
+  const h = Number(clock.slice(0, 2));
+  const m = clock.slice(3, 5);
+  return m === '00' ? `${h} h` : `${h} h ${m}`;
+};
 
 /** Minutes de cours un jour de la semaine (0 = dimanche … 6 = samedi). */
 export function busyMinutes(slots: TimetableSlot[], weekday: number): number {

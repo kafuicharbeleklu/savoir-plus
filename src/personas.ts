@@ -1315,10 +1315,27 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
   ];
 }
 
-
-
-
-
-
-
-
+/**
+ * Le badge qu'un module débloque à lui seul (« Vigilance Phishing » pour le module sur le phishing) :
+ * celui qui s'obtient dès que son quiz est réussi, et pas autrement. `null` si le module n'en a pas.
+ */
+export function moduleBadge(moduleId: string): { id: string; title: string } | null {
+  const none: BadgeInputMetrics = {
+    totalXp: 0,
+    level: 1,
+    completedModules: [],
+    passedQuizzes: [],
+    perfectQuizzes: [],
+    completedLessonsCount: 0,
+    postsCount: 0,
+    repliesCount: 0,
+    solutionsCount: 0,
+    helpfulGivenCount: 0,
+    followingCount: 0,
+    acceptedRelationsCount: 0,
+    streakWeeks: 0
+  };
+  const before = new Set(computeSavoirBadges(none).filter((b) => b.earned).map((b) => b.id));
+  const unlocked = computeSavoirBadges({ ...none, passedQuizzes: [moduleId] }).find((b) => b.earned && !before.has(b.id) && b.category === 'modules');
+  return unlocked ? { id: unlocked.id, title: unlocked.title } : null;
+}

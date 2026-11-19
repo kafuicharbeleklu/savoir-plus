@@ -32,6 +32,7 @@ import { setAiPrefill } from '../../aiPrefill';
 import type { StudioContent } from '../../wireframeData';
 import { DOMAINS } from '../studio/shared';
 import { formatDayShort } from '../../calendar';
+import { planStatus, plansOfClass } from '../../planning';
 import { InlineMeter } from '../../components/Charts';
 import { EmptyState, IconTile, ListCard, ListRow, Modal, PageHeader, Select, StatusDot, Tabs } from '../../components/ui';
 import { KpiRow, KpiTile } from '../../components/PlanningTools';
@@ -121,6 +122,18 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
     const belowThreshold = questions.filter((q) => q.correctRate < PASS_THRESHOLD);
     const focus = belowThreshold[0] || null;
     const shortTitle = (id: string) => moduleTitle(catalog, id);
+    // Où en sont les séquences de la classe : la dernière terminée, celle en cours, la prochaine évaluation.
+    const plans = plansOfClass(school.plans, openClass.id);
+    const lastDone = plans.filter((p) => p.kind === 'sequence' && planStatus(p, today) === 'done').pop();
+    const running = plans.find((p) => p.kind === 'sequence' && planStatus(p, today) === 'current');
+    const nextExam = plans.find((p) => p.kind === 'exam' && planStatus(p, today) !== 'done');
+    const sequenceLine = [
+      lastDone ? `Séquence « ${lastDone.title} » terminée` : '',
+      running ? `« ${running.title} » en cours` : '',
+      nextExam ? `${nextExam.title.charAt(0).toLowerCase()}${nextExam.title.slice(1)} le ${formatDayShort(nextExam.start)}` : ''
+    ]
+      .filter(Boolean)
+      .join(' · ');
 
     const prepareFiche = (q: WeakQuestion) => {
       const domain = catalog.find((c) => c.id === q.moduleId)?.domain as StudioContent['domain'] | undefined;
@@ -140,6 +153,7 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
           title={openClass.name}
           subtitle={`${institution?.name || 'Établissement'} · ${openClass.level} · niveau « ${RESTRICTION_LABEL[openClass.restriction].toLowerCase()} »`}
         />
+        {sequenceLine && <p className="cm-context">{sequenceLine}</p>}
 
         <KpiRow label={`Chiffres clés de ${openClass.name}`}>
           <KpiTile label="Élèves actifs" value={active} unit={`sur ${students.length}`} hint="au moins une section lue" />

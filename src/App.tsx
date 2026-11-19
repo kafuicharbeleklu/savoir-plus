@@ -148,10 +148,11 @@ import {
   visibleInSuggestions,
   type SchoolState
 } from './school';
-import { accountOf as schoolAccountOf, ageBandOf, institutionOf, libraryOf, studentsOfClass } from './school';
+import { accountOf as schoolAccountOf, ageBandOf, institutionOf, libraryOf, nextSlot, studentsOfClass } from './school';
 import { addDays as addCalendarDays, dayFromDate } from './calendar';
 import { demoCampaigns } from './ads';
 import { OwnAdCard, SponsoredCard } from './components/SponsoredCard';
+import { NextCourseCard } from './components/NextCourseCard';
 import { audienceOfKind, contentIncluded, institutionSteering, paidSubscription } from './offers';
 import { rankFeed, recommend, viewerOf } from './personalize';
 import { addUsage, lockApplies, lockState, requestOfDay, requestTime, rulesOf } from './deviceLock';
@@ -1657,6 +1658,15 @@ export default function App() {
     domain: catalogDomain,
     setDomain: setCatalogDomain,
     setToast,
+    // Ce que le module prépare : la prochaine séance du plan qui le travaille, l'évaluation à venir qui le couvre.
+    moduleAgenda: (moduleId: string) => {
+      const exam = calendarEvents
+        .filter((e) => e.exam?.moduleIds?.includes(moduleId) && e.start >= today)
+        .sort((a, b) => a.start.localeCompare(b.start))[0];
+      const session = revisionPlan.sessions.filter((x) => x.moduleId === moduleId && x.day >= today).sort((a, b) => a.day.localeCompare(b.day))[0];
+      if (!exam && !session) return null;
+      return { sessionDay: session?.day, exam: exam ? { title: exam.exam?.subject || exam.title, day: exam.start } : undefined };
+    },
     // Contenu payant : le prix n'est montré qu'à un adulte ; un parent achète depuis son espace famille.
     paywall: (itemId: string) => {
       if (!isLocked(itemId)) return null;
@@ -3188,7 +3198,28 @@ export default function App() {
             ]
           : [])
       ];
-      return { label: 'Rubriques de l’espace encadrant', mark: accountMark, title: 'Enseigner', subtitle: user.name, groups };
+      // Le cours en cours ou le prochain, d'après son emploi du temps.
+      const now = new Date();
+      const course = nextSlot(slotsFor(school, uid), today, now.getHours() * 60 + now.getMinutes());
+      const courseClass = course ? classes.find((c) => c.id === course.slot.classId) : undefined;
+      return {
+        label: 'Rubriques de l’espace encadrant',
+        mark: accountMark,
+        title: 'Enseigner',
+        subtitle: user.name,
+        groups,
+        aside:
+          course && courseClass ? (
+            <NextCourseCard
+              slot={course.slot}
+              day={course.day}
+              today={today}
+              live={course.live}
+              className={courseClass.name}
+              onOpen={() => nav('teaching', courseClass.id)}
+            />
+          ) : undefined
+      };
     }
     if (workSpaceId === 'family') {
       const kids = childrenOf(school, uid);

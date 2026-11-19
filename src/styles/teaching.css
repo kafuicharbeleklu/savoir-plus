@@ -227,3 +227,11 @@
   .cm-map tbody tr:hover th.cm-name { background: var(--bg-subtle); }
   .cm-name button { padding-left: 16px; }
 }
+
+/* -- Encadrant : où en sont les séquences de la classe, prochain cours sous les rubriques ---------- */
+.cm-context { margin: -8px 0 0; font-size: 0.875rem; line-height: 1.5; color: var(--fg-muted); }
+.next-course { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 14px; border: 1px solid var(--border-hairline); border-radius: var(--angle); background: var(--bg-surface); }
+.next-course-kicker { margin: 0; font-size: 0.75rem; color: var(--fg-muted); }
+.next-course-title { margin: 0; font-size: 0.875rem; font-weight: 600; line-height: 1.35; color: var(--fg-primary); }
+.next-course-meta { margin: 0 0 4px; font-size: 0.8125rem; line-height: 1.4; color: var(--fg-muted); }
+.next-course .li-text-link { font-size: 0.8125rem; }

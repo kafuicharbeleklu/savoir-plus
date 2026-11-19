@@ -4,7 +4,9 @@ import {
   Check,
   ArrowLeft,
   ArrowRight,
+  Award,
   BookOpen,
+  CalendarDays,
   CheckCircle2,
   ChevronDown,
   Clock,
@@ -26,8 +28,10 @@ import {
 } from '../wireframeData';
 import type { Profile, Progress, Relation } from '../data';
 import { MODULES_CONTENT, builtInAnswerKey } from '../content';
-import { isQuizPassed, moduleProgressPercent } from '../domain.mjs';
-import { computeCatalogCardSteps } from '../personas';
+import { isQuizPassed, moduleProgressPercent, quizPassThreshold } from '../domain.mjs';
+import { computeCatalogCardSteps, moduleBadge } from '../personas';
+import { formatDayLong } from '../calendar';
+import { PHOTOS } from '../media';
 import { DifficultyMeter, ProgressBar } from '../components/ProfileIdentityCard';
 import { CatalogCardBanner, CatalogContentCard, ContentTypeMark, XpBadgeInline } from '../components/CatalogVisuals';
 
@@ -56,6 +60,8 @@ interface LearningExtraProps {
    * pas de prix) et l'action d'achat s'il peut acheter lui-même. Renvoie `null` si l'accès est ouvert.
    */
   paywall?: (itemId: string) => { priceLabel: string | null; buyLabel?: string; onBuy?: () => void; planLabel?: string; onPlan?: () => void } | null;
+  /** Ce que le module prépare : la prochaine séance du plan qui le travaille, l'évaluation à venir qui le couvre. */
+  moduleAgenda?: (moduleId: string) => { sessionDay?: string; exam?: { title: string; day: string } } | null;
 }
 
 function resolveModProg(
@@ -476,7 +482,8 @@ export function ModuleDetailView({
   userId = 'afi',
   getModuleProgress,
   setToast,
-  paywall
+  paywall,
+  moduleAgenda
 }: LearningExtraProps) {
   const catalog = buildDynamicCatalog(ext);
   const item = catalog.find((c) => c.id === selectedItemId && c.type === 'module') || catalog[0];
@@ -503,7 +510,13 @@ export function ModuleDetailView({
         })),
         {
           title: 'Quiz final',
-          meta: `${questionCount} question${questionCount > 1 ? 's' : ''}${modProg.submitted && !quizPassed ? ' · à retenter' : ''}`,
+          meta: [
+            `${questionCount} question${questionCount > 1 ? 's' : ''}`,
+            questionCount ? `${quizPassThreshold(questionCount)} bonnes réponses pour valider` : '',
+            modProg.submitted && !quizPassed ? 'à retenter' : ''
+          ]
+            .filter(Boolean)
+            .join(' · '),
           done: quizPassed
         }
       ]
@@ -512,6 +525,31 @@ export function ModuleDetailView({
   const readingLeft = content ? content.lessons.reduce((sum, lesson, i) => sum + (modProg.lessons.includes(i) ? 0 : minutesOf(lesson.minutes)), 0) : 0;
   const leftParts = [readingLeft ? `${readingLeft} min de lecture` : '', !quizPassed && questionCount ? `le quiz (${questionCount} questions)` : ''].filter(Boolean);
   const verb = pct === 100 ? 'Revoir le module' : pct === 0 ? 'Commencer le module' : current >= 0 && current === rows.length - 1 && content ? 'Reprendre au quiz final' : 'Reprendre le module';
+
+  // Le temps du module par activité : la lecture (ses sections), puis l'exercice (le reste de la durée annoncée).
+  const totalMinutes = minutesOf(item.duration);
+  const readingMinutes = content ? content.lessons.reduce((sum, lesson) => sum + minutesOf(lesson.minutes), 0) : 0;
+  const exerciseMinutes = content && content.labType !== 'generic' ? Math.max(0, totalMinutes - readingMinutes) : 0;
+  // Ce que le module prépare et débloque : la séance prévue, l'évaluation qu'il couvre, son badge.
+  const agenda = moduleAgenda?.(item.id) || null;
+  const badge = isInteractive ? moduleBadge(item.id) : null;
+  const dayMonth = (day: string) => formatDayLong(day).replace(/^\S+\s/, '');
+  // Le créateur : sa fiche (selon ce qu'il montre) et ses modules publiés.
+  const authorDetails = authorId ? ext.profileDetails[authorId] : undefined;
+  const authorBio = authorDetails && authorDetails.profileVisibility !== 'Moi uniquement' ? authorDetails.bio : '';
+  const authorModules = catalog.filter((c) => c.type === 'module' && c.author === item.author).length;
+  // Dans le même parcours : les autres modules, avec l'avancement de l'apprenant.
+  const path = catalog.find((c) => c.type === 'path' && c.pathModules?.some((pm) => pm.id === item.id));
+  const siblings = (path?.pathModules || [])
+    .filter((pm) => pm.id !== item.id)
+    .map((pm) => {
+      const sibling = catalog.find((c) => c.id === pm.id);
+      const siblingProgress = resolveModProg(pm.id, progress, ext, userId, getModuleProgress);
+      const siblingPct = sibling?.interactive
+        ? moduleProgressPercent(siblingProgress, MODULES_CONTENT[pm.id]?.lessons.length || 3, builtInAnswerKey(pm.id))
+        : 0;
+      return { id: pm.id, title: sibling?.title || pm.title.replace(/^\d+\s+/, ''), duration: sibling?.duration, pct: siblingPct };
+    });
 
   const togglePlanned = () => {
     updateExt((prev) => ({
@@ -613,16 +651,46 @@ export function ModuleDetailView({
 
       <div className="md-body">
         <div className="md-main">
-          <section className="md-card" aria-label="Ce que vous saurez faire">
-            <h2>Ce que vous saurez faire</h2>
-            <ul className="md-goals">
-              {item.objectives.map((o) => (
-                <li key={o}>
-                  <CheckCircle2 size={18} aria-hidden="true" /> {o}
-                </li>
-              ))}
-            </ul>
-          </section>
+          <div className="md-pair">
+            <section className="md-card" aria-label="Ce que vous saurez faire">
+              <h2>Ce que vous saurez faire</h2>
+              <ul className="md-goals">
+                {item.objectives.map((o) => (
+                  <li key={o}>
+                    <CheckCircle2 size={18} aria-hidden="true" /> {o}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            {totalMinutes > 0 && (
+              <section className="md-card md-time-card" aria-label="Le temps du module">
+                <h2>Le temps du module</h2>
+                <p className="md-time-total">
+                  <b>{totalMinutes} min</b>
+                  {questionCount ? `, puis un quiz de ${questionCount} questions` : ''}
+                </p>
+                {readingMinutes > 0 && (
+                  <>
+                    <div className="md-time" role="img" aria-label={`Lecture ${readingMinutes} min${exerciseMinutes ? `, exercice ${exerciseMinutes} min` : ''}`}>
+                      <i className="is-read" style={{ flexGrow: readingMinutes }} />
+                      {exerciseMinutes > 0 && <i className="is-lab" style={{ flexGrow: exerciseMinutes }} />}
+                    </div>
+                    <p className="md-time-legend">
+                      <span>
+                        <i className="is-read" aria-hidden="true" /> Lecture · {readingMinutes} min
+                      </span>
+                      {exerciseMinutes > 0 && (
+                        <span>
+                          <i className="is-lab" aria-hidden="true" /> Exercice · {exerciseMinutes} min
+                        </span>
+                      )}
+                    </p>
+                  </>
+                )}
+              </section>
+            )}
+          </div>
 
           <section className="md-card" aria-label="Programme du module">
             <header className="md-card-head">
@@ -669,10 +737,89 @@ export function ModuleDetailView({
             <p className="md-text">
               {pct === 100 ? 'Module terminé : vous pouvez le revoir quand vous voulez.' : leftParts.length ? `Il reste ${leftParts.join(' et ')}.` : 'Prêt à commencer.'}
             </p>
-            <button type="button" className="li-text-link md-report" onClick={() => openReport(`Module : ${item.title} (${item.version})`)}>
-              <Flag size={14} aria-hidden="true" /> Signaler un problème
-            </button>
+            {(agenda?.sessionDay || agenda?.exam || badge) && (
+              <ul className="md-next">
+                {agenda?.sessionDay && (
+                  <li>
+                    <CalendarDays size={16} aria-hidden="true" />
+                    <span>
+                      Prévu dans votre plan : <b>{formatDayLong(agenda.sessionDay).toLowerCase()}</b>
+                    </span>
+                  </li>
+                )}
+                {agenda?.exam && (
+                  <li>
+                    <Target size={16} aria-hidden="true" />
+                    <span>
+                      Prépare l’évaluation <b>{agenda.exam.title}</b> du {dayMonth(agenda.exam.day)}
+                    </span>
+                  </li>
+                )}
+                {badge && (
+                  <li>
+                    <Award size={16} aria-hidden="true" />
+                    <span>
+                      {quizPassed ? 'Badge obtenu' : 'Débloque le badge'} <b>{badge.title}</b>
+                    </span>
+                  </li>
+                )}
+              </ul>
+            )}
+            {agenda && (
+              <button type="button" className="li-text-link md-plan-link" onClick={() => nav('calendar', 'plan')}>
+                Voir le plan de révision
+              </button>
+            )}
           </section>
+
+          {authorId && (
+            <section className="md-card md-creator" aria-label="Le créateur du module">
+              <div
+                className="md-creator-cover"
+                aria-hidden="true"
+                style={{ backgroundImage: `url(${authorDetails?.coverDataUrl || PHOTOS.bibliotheque})` }}
+              />
+              <div className="md-creator-body">
+                <span className="md-creator-avatar" aria-hidden="true">
+                  {authorDetails?.photoDataUrl ? <img src={authorDetails.photoDataUrl} alt="" /> : item.author.charAt(0)}
+                </span>
+                <b className="md-creator-name">{item.author}</b>
+                {authorDetails?.tagline && <small className="md-creator-tagline">{authorDetails.tagline}</small>}
+                <p className="md-text">
+                  {authorBio ? `${authorBio} ` : ''}
+                  {authorModules} module{authorModules > 1 ? 's' : ''} publié{authorModules > 1 ? 's' : ''} sur SAVOIR+.
+                </p>
+                <button type="button" className="li-text-link" onClick={() => nav('member', authorId)}>
+                  Voir le profil
+                </button>
+              </div>
+            </section>
+          )}
+
+          {path && siblings.length > 0 && (
+            <section className="md-card" aria-label="Dans le même parcours">
+              <h2>Dans le même parcours</h2>
+              <button type="button" className="li-text-link md-path-name" onClick={() => nav('path-detail', path.id)}>
+                {path.title}
+              </button>
+              <ul className="md-siblings">
+                {siblings.map((sibling) => (
+                  <li key={sibling.id}>
+                    <button type="button" onClick={() => nav('module-detail', sibling.id)}>
+                      <b>{sibling.title}</b>
+                      <small>
+                        {[sibling.duration, sibling.pct === 100 ? 'validé' : sibling.pct > 0 ? `${sibling.pct} %` : 'à commencer'].filter(Boolean).join(' · ')}
+                      </small>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <button type="button" className="li-text-link md-report" onClick={() => openReport(`Module : ${item.title} (${item.version})`)}>
+            <Flag size={14} aria-hidden="true" /> Signaler un problème
+          </button>
         </aside>
       </div>
     </div>
