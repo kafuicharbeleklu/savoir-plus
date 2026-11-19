@@ -51,10 +51,13 @@ export function FamilyPage({
   selectedId,
   nav,
   setToast,
-  calendarOf
+  calendarOf,
+  onWrite
 }: SchoolPageProps & {
   /** Calendrier et plan de révision d'un enfant, tels qu'il les voit lui-même. */
   calendarOf: (uid: string) => ChildCalendar;
+  /** Ouvre la messagerie avec un enfant, un mot déjà rédigé dans la zone de saisie (le parent le relit). */
+  onWrite?: (peerId: string, draft: string) => void;
 }) {
   const [codeOpen, setCodeOpen] = useState(false);
   const [childName, setChildName] = useState('');
@@ -106,11 +109,21 @@ export function FamilyPage({
 
     return (
       <div className="sc-page">
-        <PageHeader
-          back={{ label: 'Espace famille', onClick: () => nav('family') }}
-          title={name}
-          subtitle={`${classLine(child)}${birth ? ` · ${ageOn(birth, today)} ans` : ''}`}
-        />
+        {/* La barre latérale mène d'un enfant à l'autre : l'en-tête dit seulement de qui il s'agit. */}
+        <header className="fm-head">
+          <span className="fm-head-initial" aria-hidden="true">
+            {name.charAt(0)}
+          </span>
+          <div className="fm-head-text">
+            <h1>{name}</h1>
+            <p>{`${classLine(child)}${birth ? ` · ${ageOn(birth, today)} ans` : ''}`}</p>
+          </div>
+          {onWrite && (
+            <button type="button" className="li-text-link" onClick={() => onWrite(child, '')}>
+              Écrire à {firstName}
+            </button>
+          )}
+        </header>
 
         {lockApplies(school, child, today) && (
           <TimeRequestBanner school={school} saveSchool={saveSchool} childId={child} firstName={firstName} now={new Date()} setToast={setToast} />
@@ -125,6 +138,7 @@ export function FamilyPage({
           today={today}
           planIncluded={familyPlan}
           onUpgrade={() => nav('settings', 'account/plan/family')}
+          onWrite={onWrite ? (draft) => onWrite(child, draft) : undefined}
         />
 
         {/* Moins de 12 ans : le parent règle le verrouillage de SAVOIR+ selon son besoin. */}

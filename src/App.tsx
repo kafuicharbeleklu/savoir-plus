@@ -56,6 +56,7 @@ import {
   profiles,
   decideContact,
   cancelContact,
+  openFamilyThread,
   requestContact,
   resetDemo,
   saveName,
@@ -2948,7 +2949,22 @@ export default function App() {
         nav,
         setToast
       };
-      if (page === 'family') return <FamilyPage {...schoolProps} calendarOf={calendarOf} />;
+      if (page === 'family')
+        return (
+          <FamilyPage
+            {...schoolProps}
+            calendarOf={calendarOf}
+            onWrite={(peerId, text) => {
+              // Parent et enfant se parlent sans demande préalable : le lien familial est déjà vérifié.
+              const relId = mode === 'local' ? openFamilyThread(uid, peerId) : '';
+              setDrawerOpen(false);
+              setMessagesPeerId(peerId);
+              if (relId) setSelectedRelId(relId);
+              setDraft(text);
+              nav('messages');
+            }}
+          />
+        );
       if (page === 'teaching') return <TeachingPage {...schoolProps} />;
       return <InstitutionPage {...schoolProps} />;
     }

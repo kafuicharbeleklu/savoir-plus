@@ -53,7 +53,7 @@ button.pl-row:hover { background: var(--bg-subtle); }
 .pl-note-action { margin: 0; font-size: 0.9375rem; line-height: 1.5; color: var(--fg-primary); }
 
 /* -- Diagramme de Gantt ------------------------------------------------------------------------ */
-.pl-gantt { --pl-label: 168px; overflow-x: auto; border: 1px solid var(--border-hairline); border-radius: var(--angle); background: var(--bg-surface); }
+.pl-gantt { --pl-label: 184px; overflow-x: auto; border: 1px solid var(--border-hairline); border-radius: var(--angle); background: var(--bg-surface); }
 .pl-gantt-inner { min-width: 760px; }
 .pl-gantt-head,
 .pl-gantt-row { display: grid; grid-template-columns: var(--pl-label) minmax(0, 1fr); }
@@ -262,4 +262,101 @@ button.pl-grid-slot:hover { filter: brightness(0.97); }
 .pl-gantt-today em { display: none; }
 /* Titre posé au-dessus d'une barre trop courte quand la suite de la ligne est occupée */
 .pl-gantt-toplabel { position: absolute; top: 6px; z-index: 3; padding-right: 4px; font-size: 0.6875rem; font-weight: 500; line-height: 14px; color: var(--fg-muted); background: var(--bg-surface); white-space: nowrap; pointer-events: none; }
-.pl-note { margin: 0; font-size: 0.8125rem; line-height: 1.45; color: var(--fg-muted); }
+.pl-readonly-note { margin: 0; font-size: 0.8125rem; line-height: 1.45; color: var(--fg-muted); }
+
+/* ==========================================================================
+   Espace famille : en-tête de l’enfant, lettre de la semaine, repères ronds,
+   révision de la semaine, semaine de l’enfant (cours et révisions).
+   ========================================================================== */
+:root { --font-editorial: 'Newsreader', ui-serif, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif; }
+
+.fm-head { display: flex; align-items: center; gap: 12px; min-width: 0; margin-bottom: 4px; }
+.fm-head-initial { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--accent-brand-soft); color: var(--accent-brand); font-size: 1.0625rem; font-weight: 600; }
+.fm-head-text { flex: 1 1 auto; min-width: 0; }
+.fm-head-text h1 { margin: 0; font-size: 1.25rem; font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; color: var(--fg-primary); }
+.fm-head-text p { margin: 0; font-size: 0.8125rem; line-height: 1.4; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.fm-top { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 16px; align-items: start; }
+.fm-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+/* Lettre de la semaine : une photo, un titre à empattements, trois phrases, un geste */
+.fm-letter { min-width: 0; overflow: hidden; border: 1px solid var(--border-hairline); border-radius: var(--angle); background: var(--bg-surface); }
+.fm-letter-photo { position: relative; height: 120px; overflow: hidden; background: var(--bg-subtle); }
+.fm-letter-photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 60%; }
+.fm-letter-photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(15, 16, 30, 0) 30%, rgba(15, 16, 30, 0.6)); }
+.fm-letter-photo span { position: absolute; left: 24px; bottom: 12px; z-index: 1; font-size: 0.8125rem; font-weight: 600; color: #FFFFFF; }
+.fm-letter-body { padding: 20px 24px 22px; }
+.fm-letter-title { margin: 0; font-family: var(--font-editorial); font-size: 1.625rem; font-weight: 400; line-height: 1.2; letter-spacing: -0.01em; color: var(--fg-primary); text-wrap: balance; }
+.fm-letter-text { display: flex; flex-direction: column; gap: 9px; margin-top: 12px; }
+.fm-letter-text p { margin: 0; font-size: 0.9375rem; line-height: 1.6; color: var(--fg-primary); }
+.fm-letter-text b { font-weight: 600; }
+.fm-letter-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 18px; }
+.fm-letter-actions .primary { display: inline-flex; align-items: center; gap: 8px; }
+.fm-letter-actions .li-text-link { display: inline-flex; align-items: center; gap: 6px; }
+.fm-letter-why { margin: 12px 0 0; font-size: 0.8125rem; line-height: 1.5; color: var(--fg-muted); }
+
+/* Repères ronds : l’icône dans un rond, le chiffre à côté, ce qu’il dit en clair */
+.fm-marks { display: grid; gap: 12px; margin: 0; padding: 10px 16px 16px; list-style: none; }
+.fm-mark { display: grid; grid-template-columns: 34px auto minmax(0, 1fr); align-items: center; gap: 10px; min-width: 0; }
+.fm-mark-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--bg-subtle); color: var(--fg-muted); }
+.fm-mark.is-brand .fm-mark-icon { background: var(--accent-brand-soft); color: var(--accent-brand); }
+.fm-mark.is-warm .fm-mark-icon { background: var(--accent-warm-soft); color: var(--accent-warm); }
+.fm-mark b { font-size: 0.9375rem; font-weight: 600; color: var(--fg-primary); white-space: nowrap; }
+.fm-mark.is-off b { color: var(--fg-muted); }
+.fm-mark > span:last-child { font-size: 0.8125rem; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Révision de la semaine : une barre par jour */
+.fm-bars { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; height: 112px; padding: 8px 16px 0; }
+.fm-bar { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0; }
+.fm-bar-value { height: 14px; font-size: 0.6875rem; line-height: 14px; color: var(--fg-muted); }
+.fm-bar-track { display: flex; align-items: flex-end; flex: 1 1 auto; width: 18px; border-bottom: 1px solid var(--border-hairline); }
+.fm-bar-track i { display: block; width: 100%; border-radius: 3px 3px 0 0; background: var(--chart-main); }
+.fm-bar-day { font-size: 0.6875rem; color: var(--fg-muted); }
+.fm-bar.is-today .fm-bar-day { color: var(--accent-brand); font-weight: 600; }
+.fm-bars-note { margin: 0; padding: 6px 16px 14px; font-size: 0.75rem; color: var(--fg-muted); }
+
+/* Sa semaine : cours et révisions, jour par jour */
+.fm-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; padding: 12px 16px 6px; overflow-x: auto; }
+.fm-day { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fm-day-head { display: flex; align-items: baseline; justify-content: space-between; padding: 0 2px 6px; border-bottom: 1px solid var(--border-hairline); font-size: 0.75rem; color: var(--fg-muted); }
+.fm-day-head b { font-size: 0.9375rem; font-weight: 600; color: var(--fg-primary); }
+.fm-day.is-today .fm-day-head { border-bottom-color: var(--accent-brand); }
+.fm-day.is-today .fm-day-head b,
+.fm-day.is-today .fm-day-head span { color: var(--accent-brand); }
+.fm-course { padding: 0 2px; font-size: 0.75rem; line-height: 1.45; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fm-course span { font-weight: 500; color: var(--fg-primary); }
+.fm-sess { min-width: 0; padding: 6px 8px; border-radius: var(--angle); font-size: 0.75rem; line-height: 1.35; }
+.fm-sess b { display: block; font-size: 0.8125rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fm-sess.is-done { background: var(--accent-brand-soft); color: var(--accent-brand); }
+.fm-sess.is-plan { border: 1px dashed var(--border-hairline); color: var(--fg-muted); }
+.fm-sess.is-plan b { color: var(--fg-primary); }
+.fm-sess.is-catchup { border-style: solid; border-color: transparent; background: var(--accent-warm-soft); color: var(--accent-warm); }
+.fm-sess.is-catchup b { color: var(--accent-warm); }
+.fm-sess.is-exam { background: var(--accent-warm); color: var(--badge-warm-ink); }
+.fm-day-empty { margin: 2px 0 0; padding: 0 2px; font-size: 0.75rem; color: var(--fg-muted); }
+.fm-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0; padding: 6px 16px 14px; font-size: 0.75rem; color: var(--fg-muted); }
+.fm-key { display: inline-block; width: 10px; height: 10px; margin-left: 8px; border-radius: 2px; vertical-align: -1px; }
+.fm-key:first-child { margin-left: 0; }
+.fm-key.is-class { background: var(--bg-subtle); box-shadow: inset 0 0 0 1px var(--border-hairline); }
+.fm-key.is-done { background: var(--accent-brand-soft); }
+.fm-key.is-catchup { background: var(--accent-warm-soft); }
+.fm-key.is-plan { border: 1px dashed var(--fg-muted); }
+.fm-key.is-exam { background: var(--accent-warm); }
+
+/* Carte d’un enfant sur l’accueil de l’espace */
+.fm-card { display: grid; gap: 10px; padding: 16px 18px 18px; }
+.fm-card-head { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.fm-card-head .fm-head-initial { width: 40px; height: 40px; font-size: 1rem; }
+.fm-card-head .pl-row-title { flex: 1 1 auto; }
+.fm-card-title { margin: 4px 0 0; font-family: var(--font-editorial); font-size: 1.375rem; font-weight: 400; line-height: 1.25; letter-spacing: -0.01em; color: var(--fg-primary); }
+.fm-card-text { margin: 0; font-size: 0.875rem; line-height: 1.55; color: var(--fg-primary); }
+.fm-card-text b { font-weight: 600; }
+.fm-card-facts { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 2px 0 0; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--fg-muted); }
+.fm-card-facts b { font-weight: 600; color: var(--fg-primary); }
+
+@media (max-width: 1119px) {
+  .fm-top { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  .fm-week { grid-template-columns: repeat(7, minmax(110px, 1fr)); }
+}

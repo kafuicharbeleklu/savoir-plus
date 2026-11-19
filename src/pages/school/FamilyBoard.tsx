@@ -1,29 +1,32 @@
 /**
- * Les outils de l'espace famille : pour chaque enfant, le message de la semaine (une phrase sur ce
- * qui mérite attention, une sur ce que le parent peut faire), les chiffres clés, le plan de
- * révision en diagramme de Gantt et la grille d'emploi du temps.
+ * Les outils de l'espace famille, pour chaque enfant : la lettre de la semaine (trois phrases au plus
+ * et un geste pour le parent), les repères de la semaine, la préparation des compositions en
+ * diagramme de Gantt et sa semaine, cours et révisions ensemble. Tout vient de son plan de
+ * révision, de ses séances, de ses quiz et de son emploi du temps ; rien n'est transmis à l'école.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { ofName } from '../../french';
-import { ArrowRight, CalendarClock, CheckCircle2, Flame, Hourglass } from 'lucide-react';
+import { CalendarClock, CheckCircle2, ClipboardCheck, Flame, Send, Volume2 } from 'lucide-react';
 import {
   SCHOOL_CALENDAR,
   addDays,
   countdownLabel,
   examStatusLabel,
+  formatDayShort,
   planGauges,
+  weekdayOf,
   type CalendarEvent,
   type Day,
   type RevisionPlan,
   type SessionLog
 } from '../../calendar';
-import { ganttWindow, weeklyNote, type ChildSnapshot, type WeeklyNote } from '../../planning';
+import { ganttWindow, mondayOf, weeklyLetter, type ChildSnapshot, type WeeklyLetter } from '../../planning';
 import type { TimetableSlot } from '../../school';
 import type { Profile } from '../../data';
-import { GanttChart, GanttLegend, KpiRow, KpiTile, type GanttRow } from '../../components/PlanningTools';
+import { GanttChart, GanttLegend, type GanttRow } from '../../components/PlanningTools';
 import { EmptyState } from '../../components/ui';
-import { TimetablePanel } from './InstitutionBoard';
-import type { ModuleFollowUp } from './shared';
+import { PHOTOS } from '../../media';
+import { clock, type ModuleFollowUp } from './shared';
 
 export interface ChildCalendarData {
   events: CalendarEvent[];
@@ -32,6 +35,16 @@ export interface ChildCalendarData {
 }
 
 const capital = (text: string) => text.replace(/^./, (c) => c.toLocaleUpperCase('fr'));
+const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+const DAY_SHORT = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.', 'Dim.'];
+
+const duration = (minutes: number) => {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m ? `${h} h ${String(m).padStart(2, '0')}` : `${h} h`;
+};
 
 /** Ce que l'on sait d'un enfant cette semaine, tiré de ses modules et de son plan de révision. */
 export function childSnapshot(name: string, rows: ModuleFollowUp[], calendar: ChildCalendarData, today: Day): ChildSnapshot {
@@ -49,19 +62,204 @@ export function childSnapshot(name: string, rows: ModuleFollowUp[], calendar: Ch
   };
 }
 
-export function WeeklyNoteCard({ note, firstName }: { note: WeeklyNote; firstName: string }) {
+/* ------------------------------------------------------------------ Lettre de la semaine */
+
+function WeeklyLetterCard({
+  letter,
+  firstName,
+  weekLabel,
+  onWrite
+}: {
+  letter: WeeklyLetter;
+  firstName: string;
+  weekLabel: string;
+  /** Ouvre la messagerie avec le mot proposé, que le parent relit avant de l'envoyer. */
+  onWrite?: () => void;
+}) {
+  const [why, setWhy] = useState(false);
+  const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+  const speak = () => {
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const spoken = [letter.headline, letter.opening, letter.text, `Ce que vous pouvez faire : ${letter.action}`].filter(Boolean).join('. ');
+    const utterance = new SpeechSynthesisUtterance(spoken);
+    utterance.lang = 'fr-FR';
+    utterance.rate = 0.95;
+    synth.speak(utterance);
+  };
   return (
-    <section className={`pl-note${note.tone === 'warn' ? ' is-warn' : ''}`} aria-label={`Message de la semaine pour ${firstName}`}>
-      <p className="pl-note-kicker">Le message de la semaine</p>
-      <p className="pl-note-text">{note.text}</p>
-      <p className="pl-note-action">
-        <b>Ce que vous pouvez faire.</b> {note.action}
-      </p>
+    <article className={`fm-letter${letter.tone === 'warn' ? ' is-warn' : ''}`} aria-label={`Lettre de la semaine pour ${firstName}`}>
+      <div className="fm-letter-photo">
+        <img src={PHOTOS.ecriture} alt="" loading="lazy" />
+        <span>La lettre de la semaine · {weekLabel}</span>
+      </div>
+      <div className="fm-letter-body">
+        <h2 className="fm-letter-title">{letter.headline}</h2>
+        <div className="fm-letter-text">
+          {letter.opening && <p>{letter.opening}</p>}
+          <p>{letter.text}</p>
+          <p>
+            <b>Ce que vous pouvez faire.</b> {letter.action}
+          </p>
+        </div>
+        <div className="fm-letter-actions">
+          {onWrite && (
+            <button type="button" className="primary ui-btn-sm" onClick={onWrite}>
+              <Send size={15} aria-hidden="true" /> {letter.gesture}
+            </button>
+          )}
+          {canSpeak && (
+            <button type="button" className="li-text-link" onClick={speak}>
+              <Volume2 size={15} aria-hidden="true" /> Écouter la lettre
+            </button>
+          )}
+          <button type="button" className="li-text-link" aria-expanded={why} onClick={() => setWhy((v) => !v)}>
+            Pourquoi ce résumé ?
+          </button>
+        </div>
+        {why && (
+          <p className="fm-letter-why">
+            Rédigée à partir du plan de révision de {firstName}, de ses séances faites et de ses quiz sur SAVOIR+. Un seul sujet à la fois, le plus pressant
+            d’abord : une information courte et régulière aide plus qu’un long bilan. Rien n’est transmis à l’école.
+          </p>
+        )}
+      </div>
+    </article>
+  );
+}
+
+/* ------------------------------------------------------------------ Repères ronds */
+
+type MarkTone = 'off' | 'brand' | 'warm';
+
+function Mark({ icon, tone, value, label }: { icon: React.ReactNode; tone: MarkTone; value: string; label: string }) {
+  return (
+    <li className={`fm-mark is-${tone}`}>
+      <span className="fm-mark-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <b className="tabular-nums">{value}</b>
+      <span>{label}</span>
+    </li>
+  );
+}
+
+function ChildMarks({ snapshot, weekDone, weekTotal }: { snapshot: ChildSnapshot; weekDone: number; weekTotal: number }) {
+  const exam = snapshot.nextExam;
+  return (
+    <ul className="fm-marks" aria-label="Repères de la semaine">
+      <Mark
+        icon={<Flame size={17} />}
+        tone={snapshot.streak > 0 ? 'warm' : 'off'}
+        value={String(snapshot.streak)}
+        label={snapshot.streak > 0 ? `${snapshot.streak > 1 ? 'jours' : 'jour'} de révision de suite` : 'pas de série en cours'}
+      />
+      <Mark
+        icon={<ClipboardCheck size={17} />}
+        tone={weekDone > 0 ? 'brand' : 'off'}
+        value={String(weekDone)}
+        label={weekTotal > 0 ? `${weekDone > 1 ? 'séances faites' : 'séance faite'} sur ${weekTotal} cette semaine` : 'séance prévue cette semaine'}
+      />
+      <Mark
+        icon={<CalendarClock size={17} />}
+        tone={!exam ? 'off' : exam.inDays <= 7 ? 'warm' : 'brand'}
+        value={exam ? `J-${exam.inDays}` : '–'}
+        label={exam ? exam.title : 'aucun examen à venir'}
+      />
+      <Mark
+        icon={<CheckCircle2 size={17} />}
+        tone={snapshot.validated > 0 ? 'brand' : 'off'}
+        value={`${snapshot.validated} / ${snapshot.total}`}
+        label="modules de sa classe validés"
+      />
+    </ul>
+  );
+}
+
+/* ------------------------------------------------------------------ Révision de la semaine */
+
+function WeekRevision({ log, today, firstName }: { log: SessionLog[]; today: Day; firstName: string }) {
+  const monday = mondayOf(today);
+  const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+  const minutes = days.map((d) => log.filter((e) => e.day === d).reduce((sum, e) => sum + e.minutes, 0));
+  const total = minutes.reduce((a, b) => a + b, 0);
+  const top = Math.max(60, ...minutes);
+  return (
+    <section className="pl-panel" aria-label={`Révision ${ofName(firstName)} cette semaine`}>
+      <header className="pl-panel-head">
+        <h2>Révision de la semaine</h2>
+        <small>{total ? `${duration(total)} depuis lundi` : 'aucune séance faite'}</small>
+      </header>
+      <div className="fm-bars" role="img" aria-label={days.map((d, i) => `${DAY_SHORT[i]} ${minutes[i]} minutes`).join(', ')}>
+        {days.map((d, i) => (
+          <div key={d} className={`fm-bar${d === today ? ' is-today' : ''}${d > today ? ' is-future' : ''}`}>
+            <span className="fm-bar-value tabular-nums">{minutes[i] ? minutes[i] : ''}</span>
+            <span className="fm-bar-track">
+              <i style={{ height: `${Math.round((minutes[i] / top) * 100)}%` }} />
+            </span>
+            <span className="fm-bar-day">{DAY_LETTERS[i]}</span>
+          </div>
+        ))}
+      </div>
+      <p className="fm-bars-note">En minutes, d’après les séances qu’il a cochées</p>
     </section>
   );
 }
 
-/** Carte de synthèse d'un enfant, sur l'accueil de l'espace famille. */
+/* ------------------------------------------------------------------ Sa semaine : cours et révisions */
+
+function ChildWeek({ slots, calendar, today }: { slots: TimetableSlot[]; calendar: ChildCalendarData; today: Day }) {
+  const monday = mondayOf(today);
+  const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+  const subjectOf = (examId: string) => calendar.plan.exams.find((x) => x.examId === examId)?.subject || 'Révision';
+  return (
+    <div className="fm-week" role="list">
+      {days.map((d, i) => {
+        const courses = slots.filter((s) => s.weekday === weekdayOf(d)).sort((a, b) => a.start.localeCompare(b.start));
+        const done = calendar.log.filter((e) => e.day === d);
+        const planned = d >= today ? calendar.plan.sessions.filter((s) => s.day === d) : [];
+        const exams = calendar.plan.exams.filter((x) => x.examDay === d);
+        const empty = courses.length + done.length + planned.length + exams.length === 0;
+        return (
+          <div key={d} className={`fm-day${d === today ? ' is-today' : ''}`} role="listitem" aria-label={`${DAY_SHORT[i]} ${formatDayShort(d)}`}>
+            <div className="fm-day-head">
+              <span>{DAY_SHORT[i]}</span>
+              <b className="tabular-nums">{Number(d.slice(8))}</b>
+            </div>
+            {courses.map((c) => (
+              <div key={c.id} className="fm-course">
+                <span className="tabular-nums">{clock(c.start)}</span> {c.subject}
+              </div>
+            ))}
+            {exams.map((x) => (
+              <div key={x.examId} className="fm-sess is-exam">
+                <b>{x.title}</b>Épreuve
+              </div>
+            ))}
+            {done.map((e, k) => (
+              <div key={`${e.examId}-${k}`} className="fm-sess is-done">
+                <b>{subjectOf(e.examId)}</b>
+                {duration(e.minutes)}, faite
+              </div>
+            ))}
+            {planned.map((s) => (
+              <div key={s.key} className={`fm-sess is-plan${s.catchUp ? ' is-catchup' : ''}`}>
+                <b>{s.subject}</b>
+                {duration(s.minutes)}
+                {s.catchUp ? ', à rattraper' : d === today ? ', ce soir' : ''}
+              </div>
+            ))}
+            {empty && <p className="fm-day-empty">{i === 6 ? 'Repos' : '—'}</p>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ Carte d'un enfant (accueil) */
+
+/** Carte d'un enfant sur l'accueil de l'espace famille : le titre de sa lettre et ses repères. */
 export function ChildCard({
   name,
   classLine,
@@ -73,57 +271,51 @@ export function ChildCard({
   snapshot: ChildSnapshot;
   onOpen: () => void;
 }) {
-  const note = weeklyNote(snapshot);
+  const letter = weeklyLetter(snapshot);
   return (
-    <article className="pl-panel pl-child">
-      <header className="pl-child-head">
-        <span className="sc-initial" aria-hidden="true">
+    <article className={`pl-panel fm-card${letter.tone === 'warn' ? ' is-warn' : ''}`}>
+      <header className="fm-card-head">
+        <span className="fm-head-initial" aria-hidden="true">
           {name.charAt(0)}
         </span>
         <span className="pl-row-title">
           <b>{name}</b>
           <small>{classLine}</small>
         </span>
-        <button type="button" className="secondary ui-btn-sm" onClick={onOpen}>
-          Voir le suivi <ArrowRight size={15} aria-hidden="true" />
+        <button type="button" className="li-text-link" onClick={onOpen}>
+          Voir le suivi
         </button>
       </header>
-      <div className={`pl-note${note.tone === 'warn' ? ' is-warn' : ''}`}>
-        <p className="pl-note-text">{note.text}</p>
-        <p className="pl-note-action">
-          <b>Ce que vous pouvez faire.</b> {note.action}
-        </p>
-      </div>
-      <dl className="pl-child-facts tabular-nums">
-        <div>
-          <dt>Modules validés</dt>
-          <dd>
-            {snapshot.validated} / {snapshot.total}
-          </dd>
-        </div>
-        <div>
-          <dt>Révision</dt>
-          <dd>{snapshot.streak > 0 ? `${snapshot.streak} jour${snapshot.streak > 1 ? 's' : ''} de suite` : 'pas de série en cours'}</dd>
-        </div>
-        <div>
-          <dt>Prochain examen</dt>
-          <dd>{snapshot.nextExam ? capital(countdownLabel(snapshot.nextExam.inDays)) : 'aucun'}</dd>
-        </div>
-      </dl>
+      <p className="fm-card-title">{letter.headline}</p>
+      <p className="fm-card-text">
+        {letter.text} <b>Ce que vous pouvez faire.</b> {letter.action}
+      </p>
+      <ul className="fm-card-facts tabular-nums">
+        <li>
+          <b>{snapshot.validated} / {snapshot.total}</b> modules validés
+        </li>
+        <li>
+          <b>{snapshot.streak > 0 ? plural(snapshot.streak, 'jour', 'jours') : 'Aucune'}</b> {snapshot.streak > 0 ? 'de révision de suite' : 'série en cours'}
+        </li>
+        <li>
+          <b>{snapshot.nextExam ? capital(countdownLabel(snapshot.nextExam.inDays)) : 'Aucun'}</b> {snapshot.nextExam ? snapshot.nextExam.title : 'examen à venir'}
+        </li>
+      </ul>
     </article>
   );
 }
 
-/** Le tableau de bord d'un enfant. */
+/* ------------------------------------------------------------------ Tableau de bord d'un enfant */
+
 export function ChildBoard({
   name,
   rows,
   calendar,
   slots,
-  people,
   today,
   planIncluded = true,
-  onUpgrade
+  onUpgrade,
+  onWrite
 }: {
   name: string;
   rows: ModuleFollowUp[];
@@ -134,9 +326,16 @@ export function ChildBoard({
   /** Formule Famille : le plan de révision et l'emploi du temps de l'enfant. */
   planIncluded?: boolean;
   onUpgrade?: () => void;
+  /** Écrire à l'enfant, avec un mot déjà rédigé que le parent relit. */
+  onWrite?: (draft: string) => void;
 }) {
   const firstName = name.split(' ')[0];
   const snapshot = childSnapshot(name, rows, calendar, today);
+  const letter = weeklyLetter(snapshot);
+  const monday = mondayOf(today);
+  const sunday = addDays(monday, 6);
+  const weekDone = calendar.log.filter((e) => e.day >= monday && e.day <= sunday).length;
+  const weekTotal = weekDone + calendar.plan.sessions.filter((s) => s.day >= today && s.day <= sunday).length;
   const window = ganttWindow(today, 1, 6);
   const exams = calendar.plan.exams.filter((e) => e.status !== 'past');
 
@@ -149,10 +348,12 @@ export function ChildBoard({
     const eve = addDays(exam.examDay, -1);
     const start = days[0] && days[0] <= eve ? days[0] : eve;
     const flagged = exam.status === 'late' || exam.status === 'overload';
+    // La matière fait le titre de la ligne (« Mathématiques ») ; le type d'épreuve et l'échéance passent dessous.
+    const kind = exam.subject && exam.title.includes('·') ? exam.title.split('·')[0].trim() : '';
     return {
       id: exam.examId,
-      label: exam.title,
-      sub: `${capital(countdownLabel(exam.daysLeft))}${flagged ? ` · ${examStatusLabel(exam).toLowerCase()}` : ''}`,
+      label: exam.subject || exam.title,
+      sub: `${kind ? `${kind}, ` : ''}${countdownLabel(exam.daysLeft)}${flagged ? ` · ${examStatusLabel(exam).toLowerCase()}` : ''}`,
       bars: [
         {
           id: `${exam.examId}-rev`,
@@ -170,31 +371,25 @@ export function ChildBoard({
   const shades = SCHOOL_CALENDAR.entries.filter((e) => e.kind === 'break').map((e) => ({ start: e.start, end: e.end || e.start, label: e.title }));
 
   return (
-    <div className="pl-board">
-      <WeeklyNoteCard note={weeklyNote(snapshot)} firstName={firstName} />
-
-      <KpiRow label={`Chiffres clés ${ofName(firstName)}`}>
-        <KpiTile label="Modules validés" value={`${snapshot.validated} / ${snapshot.total}`} hint="de sa classe" icon={<CheckCircle2 size={15} aria-hidden="true" />} />
-        <KpiTile
-          label="Révision"
-          value={snapshot.streak}
-          hint={snapshot.streak > 1 ? 'jours de suite' : 'jour de suite'}
-          icon={<Flame size={15} aria-hidden="true" />}
+    <div className="pl-board fm-board">
+      <div className="fm-top">
+        <WeeklyLetterCard
+          letter={letter}
+          firstName={firstName}
+          weekLabel={`semaine du ${formatDayShort(monday)}`}
+          onWrite={onWrite ? () => onWrite(letter.draft) : undefined}
         />
-        <KpiTile
-          label="Prochain examen"
-          value={snapshot.nextExam ? `J-${snapshot.nextExam.inDays}` : '—'}
-          hint={snapshot.nextExam ? snapshot.nextExam.title : 'aucun dans son calendrier'}
-          icon={<CalendarClock size={15} aria-hidden="true" />}
-        />
-        <KpiTile
-          label="Séances en retard"
-          value={snapshot.lateSessions}
-          tone={snapshot.lateSessions > 0 ? 'warn' : 'plain'}
-          hint={snapshot.lateSessions > 0 ? 'déjà replacées dans son plan' : 'à jour'}
-          icon={<Hourglass size={15} aria-hidden="true" />}
-        />
-      </KpiRow>
+        <div className="fm-side">
+          <section className="pl-panel" aria-label="Repères de la semaine">
+            <header className="pl-panel-head">
+              <h2>Repères</h2>
+              <small>cette semaine</small>
+            </header>
+            <ChildMarks snapshot={snapshot} weekDone={weekDone} weekTotal={weekTotal} />
+          </section>
+          <WeekRevision log={calendar.log} today={today} firstName={firstName} />
+        </div>
+      </div>
 
       {!planIncluded ? (
         <section className="pl-panel">
@@ -206,37 +401,39 @@ export function ChildBoard({
         </section>
       ) : (
         <>
-          <div className="pl-toolbar">
-            <div>
+          <section className="pl-panel pl-panel-gantt" aria-label="Plan de révision">
+            <header className="pl-panel-head">
               <h2>Plan de révision</h2>
-              <p>Une ligne par examen : la période de révision se remplit à mesure que {firstName} fait ses séances.</p>
-            </div>
-          </div>
-          {ganttRows.length === 0 ? (
-            <section className="pl-panel">
+              <small>Le remplissage montre les séances faites</small>
+            </header>
+            {ganttRows.length === 0 ? (
               <EmptyState title="Aucun examen dans son calendrier" text={`${firstName} n’a pas encore ajouté d’examen à préparer.`} />
-            </section>
-          ) : (
-            <>
-              <GanttChart window={window} rows={ganttRows} today={today} shades={shades} label={`Plan de révision ${ofName(firstName)}`} />
-              <GanttLegend
-                items={[
-                  { tone: 'brand', label: 'Révisions (remplissage : séances faites)' },
-                  { tone: 'warm', label: 'Épreuve' },
-                  { tone: 'shade', label: 'Congés' },
-                  { tone: 'today', label: 'Aujourd’hui' }
-                ]}
-              />
-            </>
-          )}
+            ) : (
+              <div className="pl-gantt-embed">
+                <GanttChart window={window} rows={ganttRows} today={today} shades={shades} label={`Plan de révision ${ofName(firstName)}`} />
+                <GanttLegend
+                  items={[
+                    { tone: 'brand', label: 'Révisions (remplissage : séances faites)' },
+                    { tone: 'warm', label: 'Épreuve' },
+                    { tone: 'shade', label: 'Congés' },
+                    { tone: 'today', label: 'Aujourd’hui' }
+                  ]}
+                />
+              </div>
+            )}
+          </section>
 
-          <div className="pl-toolbar">
-            <div>
-              <h2>Emploi du temps</h2>
-              <p>Sa semaine de cours, telle que son établissement l’a saisie.</p>
-            </div>
-          </div>
-          <TimetablePanel slots={slots} people={people} today={today} label={`Emploi du temps ${ofName(firstName)}`} />
+          <section className="pl-panel" aria-label={`La semaine ${ofName(firstName)}`}>
+            <header className="pl-panel-head">
+              <h2>La semaine {ofName(firstName)}</h2>
+              <small>Cours et révisions</small>
+            </header>
+            <ChildWeek slots={slots} calendar={calendar} today={today} />
+            <p className="fm-legend">
+              <span className="fm-key is-class" /> Cours <span className="fm-key is-done" /> Révision faite <span className="fm-key is-catchup" /> À rattraper{' '}
+              <span className="fm-key is-plan" /> Prévue <span className="fm-key is-exam" /> Épreuve
+            </p>
+          </section>
         </>
       )}
     </div>

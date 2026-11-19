@@ -551,7 +551,7 @@ export function InstitutionPlanning({
         <>
           <GanttChart window={window} rows={rows} today={today} shades={shades} label="Planification des classes" onBarClick={(id) => setOpenId(id)} />
           <GanttLegend items={PLANNING_LEGEND} />
-          {readOnly && <p className="pl-note">La planification est tenue par l’établissement : vous la consultez.</p>}
+          {readOnly && <p className="pl-readonly-note">La planification est tenue par l’établissement : vous la consultez.</p>}
         </>
       )}
 

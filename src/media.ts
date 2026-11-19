@@ -20,3 +20,25 @@ export function hostedVideo(src: string): string {
   const match = /videos\.pexels\.com\/video-files\/(\d+)\//.exec(src);
   return (match && HOSTED_VIDEOS[match[1]]) || src;
 }
+
+/**
+ * Photos d'illustration hébergées avec le site (`public/media/photos`) : images fixes tirées des
+ * vidéos ci-dessus (Yan Krukau, Pexels). Des personnes réelles en lumière naturelle, jamais des
+ * images d'interface ; on les montre dans les espaces, la publicité et les pages publiques.
+ */
+export const PHOTOS = {
+  /** Deux élèves à une table de bibliothèque. */
+  etude: 'media/photos/etude.jpg',
+  /** Deux élèves penchés sur un livre ouvert. */
+  entraide: 'media/photos/entraide.jpg',
+  /** Un élève note une idée sur un papillon adhésif. */
+  ecriture: 'media/photos/ecriture.jpg',
+  /** Un étudiant révise sous une lampe de bureau. */
+  revision: 'media/photos/revision.jpg',
+  /** Le même, en portrait. */
+  revisionPortrait: 'media/photos/revision-portrait.jpg',
+  /** Une bibliothèque, deux élèves au travail (portrait). */
+  bibliotheque: 'media/photos/bibliotheque.jpg'
+} as const;
+
+export const PHOTO_CREDIT = 'Photo : Yan Krukau, Pexels';

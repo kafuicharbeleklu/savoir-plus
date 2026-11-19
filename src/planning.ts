@@ -221,3 +221,81 @@ export function weeklyNote(child: ChildSnapshot): WeeklyNote {
     action: 'Dites-le-lui avec un fait précis : un encouragement concret porte plus qu’un compliment général.'
   };
 }
+
+/** La lettre de la semaine : le message, avec un titre, une phrase d'ouverture et un mot à envoyer à l'enfant. */
+export interface WeeklyLetter extends WeeklyNote {
+  /** Ce que dit la semaine, en quelques mots (titre de la lettre). */
+  headline: string;
+  /** Un fait positif pour commencer, quand le message parle d'autre chose ; sinon null. */
+  opening: string | null;
+  /** Le geste proposé au parent, sur le bouton. */
+  gesture: string;
+  /** Le mot que le parent peut envoyer à l'enfant, qu'il relit avant de l'envoyer. */
+  draft: string;
+}
+
+/**
+ * Lettre de la semaine pour le parent : trois phrases au plus (un fait positif, ce qui mérite
+ * attention, ce que le parent peut faire) et un geste. Courte, régulière, tournée vers ce qui peut
+ * s'améliorer (Kraft et Rogers, 2015 ; Bergman et Chan, 2021 ; York, Loeb et Doss, 2019).
+ */
+export function weeklyLetter(child: ChildSnapshot): WeeklyLetter {
+  const note = weeklyNote(child);
+  const first = child.name.split(' ')[0];
+  const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+  const opening =
+    note.tone === 'good'
+      ? null
+      : child.streak > 1
+        ? `${first} a révisé ${child.streak} jours de suite.`
+        : child.validated > 0
+          ? `${first} a validé ${plural(child.validated, 'module', 'modules')} sur ${child.total}.`
+          : null;
+  if (child.lateSessions > 0) {
+    const what = child.lateSessions > 1 ? `${child.lateSessions} séances à rattraper` : 'une séance à rattraper';
+    return {
+      ...note,
+      opening,
+      headline: child.streak > 1 ? `Une semaine régulière, ${what}` : `${what.charAt(0).toLocaleUpperCase('fr')}${what.slice(1)}`,
+      gesture: 'Proposer la séance',
+      draft: `Ce soir, on cale trente minutes de révision${child.nextExam ? ` pour « ${child.nextExam.title} »` : ''} ? Je peux t’aider à démarrer.`
+    };
+  }
+  if (child.nextExam && child.nextExam.inDays <= 7) {
+    return {
+      ...note,
+      opening,
+      headline: `« ${child.nextExam.title} » ${days(child.nextExam.inDays)}`,
+      gesture: `Écrire à ${first}`,
+      draft: `« ${child.nextExam.title} » approche : tu veux m’expliquer un point du cours ce soir ?`
+    };
+  }
+  if (child.readyForQuiz) {
+    return {
+      ...note,
+      opening,
+      headline: 'Il ne reste que le quiz',
+      gesture: 'Proposer le quiz',
+      draft: `Tu as fini de lire « ${child.readyForQuiz} » : on passe le quiz cette semaine ?`
+    };
+  }
+  if (child.slowest && child.slowest.percent < 50) {
+    return {
+      ...note,
+      opening,
+      headline: 'Un module à relancer',
+      gesture: 'Proposer de s’y remettre',
+      draft: `On regarde ensemble la première partie de « ${child.slowest.title} » ? Dix minutes suffisent.`
+    };
+  }
+  return {
+    ...note,
+    opening,
+    headline: 'Une semaine sur le bon rythme',
+    gesture: `Encourager ${first}`,
+    draft:
+      child.validated > 0
+        ? `J’ai vu que tu as validé ${plural(child.validated, 'module', 'modules')} : bravo, continue comme ça !`
+        : 'J’ai vu que tu avances dans tes modules : bravo, continue comme ça !'
+  };
+}

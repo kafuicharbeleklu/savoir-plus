@@ -283,6 +283,25 @@ export async function requestContact(mode: string, uid: string, other: string) {
   }
 }
 
+/**
+ * Un parent ou tuteur écrit directement à son enfant (le lien est déjà établi par le code parental ou
+ * par l'établissement) : la discussion s'ouvre sans demande, comme une relation acceptée. Un blocage
+ * posé par l'un des deux est respecté. Démonstration seulement : la vie scolaire n'est pas dans Supabase.
+ */
+export function openFamilyThread(uid: string, other: string): string {
+  const id = pairId(uid, other);
+  const s = read();
+  const existing = s.relations.find((r) => r.id === id);
+  if (!existing) {
+    s.relations.push({ id, members: [uid, other].sort(), requester: uid, recipient: other, status: 'accepted', blockedBy: [] });
+    write(s);
+  } else if (existing.status !== 'accepted' && existing.blockedBy.length === 0) {
+    existing.status = 'accepted';
+    write(s);
+  }
+  return id;
+}
+
 export async function decideContact(mode: string, uid: string, r: Relation, status: 'accepted' | 'declined') {
   if (r.recipient !== uid || r.status !== 'pending' || r.blockedBy.length) throw Error('Cette demande ne peut pas être traitée.');
   if (mode === 'local') {

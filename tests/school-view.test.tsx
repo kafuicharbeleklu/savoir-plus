@@ -116,28 +116,30 @@ test('espace famille : enfants, code en attente, achats ; fiche d’un enfant', 
   const home = text(renderToStaticMarkup(<FamilyPage {...props('akouvi', school)} calendarOf={calendarOf} />));
   assert.match(home, /Espace famille/);
   assert.match(home, /Créer un code/);
-  // Une carte par enfant : le message de la semaine, puis trois repères.
+  // Une carte par enfant : le titre de sa lettre de la semaine, le message, puis trois repères.
   assert.match(home, /Elom Dogbé Terminale D · Les Palmiers Voir le suivi/);
   assert.match(home, /Elom a 1 séance de révision en retard avant « Composition · Mathématiques » \(dans 13 jours\)\. Ce que vous pouvez faire\./);
-  assert.match(home, /Modules validés 1 \/ 3 Révision 3 jours de suite Prochain examen Dans 13 jours/);
+  assert.match(home, /Elom Dogbé Terminale D · Les Palmiers Voir le suivi Une semaine régulière, une séance à rattraper/);
+  assert.match(home, /1 \/ 3 modules validés 3 jours de révision de suite Dans 13 jours Composition · Mathématiques/);
   assert.match(home, /PAR-7K3Q-9M2X Pour Kokou · valable jusqu’au 22 nov\. Valide/);
   assert.match(home, /Tenir un budget simple 1 500 FCFA · pour Elom Dogbé · 11 nov\. · reçu REC-DEMO-001 Simulé/);
   assert.doesNotMatch(home, /Kokou Dogbé CM2/, 'Kokou n’est pas rattaché tant que le code n’est pas saisi');
 
-  const child = text(renderToStaticMarkup(<FamilyPage {...props('akouvi', school, 'elom')} calendarOf={calendarOf} />));
+  const child = text(renderToStaticMarkup(<FamilyPage {...props('akouvi', school, 'elom')} calendarOf={calendarOf} onWrite={() => {}} />));
   assert.match(child, /Elom Dogbé Terminale D · Les Palmiers · 17 ans/);
-  assert.match(child, /Le message de la semaine Elom a 1 séance de révision en retard/);
-  assert.match(child, /Modules validés 1 \/ 3 de sa classe/);
-  assert.match(child, /Révision 3 jours de suite/);
-  assert.match(child, /Prochain examen J-13 Composition · Mathématiques/);
-  assert.match(child, /Séances en retard 1 déjà replacées dans son plan/);
+  assert.match(child, /La lettre de la semaine · semaine du \d+ nov\. Une semaine régulière, une séance à rattraper Elom a révisé 3 jours de suite\. Elom a 1 séance de révision en retard/);
+  assert.match(child, /Proposer la séance/);
+  assert.match(child, /1 \/ 3 modules de sa classe validés/);
+  assert.match(child, /3 jours de révision de suite/);
+  assert.match(child, /J-13 Composition · Mathématiques/);
+  assert.match(child, /à rattraper/);
   // Le plan de révision : une ligne par examen, avec les séances faites.
   assert.match(child, /Plan de révision/);
-  assert.match(child, /Composition · Physique-chimie/);
+  assert.match(child, /Physique-chimie Composition, dans \d+ jours/);
   assert.match(child, /Révisions · 3 \/ 11/);
-  // L'emploi du temps est une grille : un bloc par cours.
-  assert.match(child, /Lundi Mardi Mercredi Jeudi Vendredi Samedi/);
-  assert.match(child, /Mathématiques 7 h – 9 h M\. Amétépé · Salle 12/);
+  // Sa semaine réunit cours et révisions, jour par jour.
+  assert.match(child, /La semaine d’Elom Cours et révisions Lun\. \d+/);
+  assert.match(child, /7 h Mathématiques/);
   assert.match(child, /Tenir un budget simple Gestion · 1 500 FCFA Acquis pour Elom/);
   // Akouvi a la formule Famille : les contenus payants de ses enfants sont inclus.
   assert.match(child, /Préparer une réunion utile Communication · 1 000 FCFA Inclus dans la formule Famille/);
@@ -147,7 +149,7 @@ test('espace famille : enfants, code en attente, achats ; fiche d’un enfant', 
   );
   assert.match(free, /Préparer une réunion utile Communication · 1 000 FCFA Acheter/);
   assert.match(free, /Avec la formule Famille, vous suivez le plan de révision et l’emploi du temps d’Elom\./);
-  assert.doesNotMatch(free, /Lundi Mardi Mercredi Jeudi Vendredi Samedi/);
+  assert.doesNotMatch(free, /La semaine d’Elom/);
   // Le contenu d'un enseignant de son établissement lui est offert : rien à acheter.
   assert.match(child, /Sauvegarder ses fichiers : la règle 3-2-1 Numérique · 1 000 FCFA Offert par Les Palmiers/);
   assert.match(child, /aucun argent n’est débité/);
