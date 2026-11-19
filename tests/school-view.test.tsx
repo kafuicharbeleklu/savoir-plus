@@ -88,10 +88,12 @@ test('espace encadrant : intitulé, classes, questions à revoir, cours de la se
 
   const oneClass = text(renderToStaticMarkup(<TeachingPage {...props('kossi', school, 'cl-tle-d')} />));
   assert.match(oneClass, /Terminale D Les Palmiers · Lycée · niveau « encadré »/);
-  assert.match(oneClass, /Où la classe bute/);
+  assert.match(oneClass, /Carte de la classe/);
   assert.match(oneClass, /Protéger ses comptes/);
-  assert.match(oneClass, /Question 2 : \d+ %/, 'la question la moins réussie est signalée');
-  assert.match(oneClass, /Elom Dogbé 1 module validé sur 3/);
+  assert.match(oneClass, /Questions les moins réussies/);
+  assert.match(oneClass, /Question \d · à reprendre/, 'une question sous le seuil est signalée');
+  assert.match(oneClass, /Elom Dogbé/);
+  assert.match(oneClass, /Préparer la fiche avec l’IA/);
   assert.match(oneClass, /Aucune réponse individuelle n’est montrée/);
   // Une classe qui n'est pas la sienne : l'adresse ne l'ouvre pas, il retombe sur l'accueil de l'espace.
   assert.match(text(renderToStaticMarkup(<TeachingPage {...props('kossi', school, 'cl-cm2')} />)), /Vue d’ensemble/);

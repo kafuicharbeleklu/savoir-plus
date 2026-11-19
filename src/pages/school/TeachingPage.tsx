@@ -5,7 +5,7 @@
  * ses apprenants suivis. Pour chaque classe : où elle bute, question par question, en agrégé.
  */
 import React, { useEffect, useState } from 'react';
-import { CircleHelp, Users } from 'lucide-react';
+import { CircleHelp, Sparkles, Users } from 'lucide-react';
 import type { Progress } from '../../data';
 import {
   accountOf,
@@ -18,9 +18,22 @@ import {
   type SchoolClass
 } from '../../school';
 import { computeModuleStat, type ModuleStat } from '../../studioStats';
+import {
+  MASTERY_LABELS,
+  PASS_THRESHOLD,
+  classMapRows,
+  remediationSource,
+  remediationTitle,
+  weakQuestions,
+  type MasteryLevel,
+  type WeakQuestion
+} from '../../classMap';
+import { setAiPrefill } from '../../aiPrefill';
+import type { StudioContent } from '../../wireframeData';
+import { DOMAINS } from '../studio/shared';
 import { formatDayShort } from '../../calendar';
 import { InlineMeter } from '../../components/Charts';
-import { EmptyState, IconTile, ListCard, ListRow, Modal, PageHeader, RowTitle, Select, StatusDot, Tabs } from '../../components/ui';
+import { EmptyState, IconTile, ListCard, ListRow, Modal, PageHeader, Select, StatusDot, Tabs } from '../../components/ui';
 import { KpiRow, KpiTile } from '../../components/PlanningTools';
 import { ClassesOverview, InstitutionPlanning, TimetablePanel, TrendKpis, boardMeasures, useWeekRecord } from './InstitutionBoard';
 import { weekSeries } from '../../trends';
@@ -30,6 +43,7 @@ import {
   followUp,
   followUpSummary,
   memberName,
+  moduleTitle,
   plural,
   progressOf,
   type SchoolPageProps
@@ -40,12 +54,12 @@ const started = (p: Progress) => p.lessons.length > 0 || p.submitted;
 type TabId = 'overview' | 'planning' | 'timetable' | 'classes';
 const TAB_IDS: TabId[] = ['overview', 'planning', 'timetable', 'classes'];
 
-/** Question la moins réussie d'un module, si elle l'est par moins de 60 % des élèves. */
+/** Question la moins réussie d'un module, si elle l'est par moins de 60 % des élèves (seuil de la carte de classe). */
 const weakestQuestion = (stat: ModuleStat) => {
   const answered = stat.questions.filter((q) => q.correctRate !== null);
   if (stat.submitted === 0 || answered.length === 0) return null;
   const weakest = answered.reduce((low, q) => ((q.correctRate as number) < (low.correctRate as number) ? q : low));
-  return (weakest.correctRate as number) < 60 ? weakest : null;
+  return (weakest.correctRate as number) < PASS_THRESHOLD ? weakest : null;
 };
 
 export function TeachingPage({ school, saveSchool, ext, user, people, today, catalog, selectedId, nav, setToast }: SchoolPageProps) {
@@ -96,6 +110,28 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
     const submitted = stats.reduce((sum, x) => sum + x.stat.submitted, 0);
     const validated = stats.reduce((sum, x) => sum + x.stat.validated, 0);
     const opened = stats.find((x) => x.id === moduleOpen);
+    // La carte : une ligne par élève, une colonne par module, les élèves à accompagner en premier.
+    const map = classMapRows(
+      students.map((uid) => ({ uid, name: memberName(uid, people), rows: openClass.moduleIds.map((id) => followUp(ext, catalog, uid, id)) }))
+    );
+    const active = map.filter((row) => row.cells.some((cell) => cell.level > 0)).length;
+    const pairs = students.length * openClass.moduleIds.length;
+    const validatedPairs = map.reduce((sum, row) => sum + row.validated, 0);
+    const questions = weakQuestions(stats.map((x) => x.stat), Infinity);
+    const belowThreshold = questions.filter((q) => q.correctRate < PASS_THRESHOLD);
+    const focus = belowThreshold[0] || null;
+    const shortTitle = (id: string) => moduleTitle(catalog, id);
+
+    const prepareFiche = (q: WeakQuestion) => {
+      const domain = catalog.find((c) => c.id === q.moduleId)?.domain as StudioContent['domain'] | undefined;
+      setAiPrefill({
+        title: remediationTitle(q.moduleTitle, q.index),
+        domain: domain && DOMAINS.includes(domain) ? domain : 'Numérique',
+        source: remediationSource(q.moduleId, q.index, q.correctRate),
+        origin: `Pour ${openClass.name} : la question ${q.index + 1} de « ${q.moduleTitle} » est réussie par ${q.correctRate} % de la classe. Le texte ci-dessous reprend votre module ; complétez-le si besoin.`
+      });
+      nav('studio-ocr');
+    };
 
     return (
       <div className="sc-page">
@@ -105,71 +141,174 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
           subtitle={`${institution?.name || 'Établissement'} · ${openClass.level} · niveau « ${RESTRICTION_LABEL[openClass.restriction].toLowerCase()} »`}
         />
 
-        <div className="ui-kpis tabular-nums">
-          <div className="ui-kpi">
-            <b>{students.length}</b>
-            <span>{students.length > 1 ? 'Élèves' : 'Élève'}</span>
-          </div>
-          <div className="ui-kpi">
-            <b>{openClass.moduleIds.length}</b>
-            <span>{openClass.moduleIds.length > 1 ? 'Modules donnés' : 'Module donné'}</span>
-          </div>
-          <div className="ui-kpi">
-            <b>{submitted > 0 ? `${Math.round((validated / submitted) * 100)} %` : '—'}</b>
-            <span>Quiz réussis</span>
-          </div>
-        </div>
+        <KpiRow label={`Chiffres clés de ${openClass.name}`}>
+          <KpiTile label="Élèves actifs" value={active} unit={`sur ${students.length}`} hint="au moins une section lue" />
+          <KpiTile
+            label="Modules validés"
+            value={validatedPairs}
+            unit={`sur ${pairs}`}
+            hint={`${plural(openClass.moduleIds.length, 'module', 'modules')} par élève`}
+            meter={pairs > 0 ? { value: Math.round((validatedPairs / pairs) * 100), expected: null, label: 'Part des modules validés' } : undefined}
+          />
+          <KpiTile label="Quiz réussis" value={submitted > 0 ? Math.round((validated / submitted) * 100) : '—'} unit={submitted > 0 ? '%' : undefined} hint={`${validated} sur ${plural(submitted, 'quiz envoyé', 'quiz envoyés')}`} />
+          <KpiTile
+            label="Questions à reprendre"
+            value={belowThreshold.length}
+            unit={`sur ${questions.length}`}
+            tone={belowThreshold.length > 0 ? 'warn' : 'plain'}
+            hint={`réussies par moins de ${PASS_THRESHOLD} % de la classe`}
+          />
+        </KpiRow>
 
-        <div className="ui-section-title">
-          <h2>Où la classe bute</h2>
-        </div>
-        <ListCard label="Modules de la classe">
-          {stats.length === 0 ? (
-            <EmptyState title="Aucun module donné à cette classe" text="L’établissement choisit les modules de la classe." />
-          ) : (
-            stats.map(({ id, stat }) => {
-              const weak = weakestQuestion(stat);
-              return (
-                <ListRow
-                  key={id}
-                  leading={<IconTile tone={weak ? 'danger' : 'brand'}>{<Users size={20} aria-hidden="true" />}</IconTile>}
-                  title={
-                    <RowTitle state={weak ? 'alert' : 'ok'} hint={weak ? `${weak.label} réussie par ${weak.correctRate} % des élèves` : undefined}>
-                      {stat.title}
-                    </RowTitle>
-                  }
-                  meta={`${plural(stat.learners, 'élève a commencé', 'élèves ont commencé')} · ${plural(stat.submitted, 'quiz envoyé', 'quiz envoyés')}`}
-                  onClick={() => setModuleOpen(id)}
-                  trailing={weak ? <StatusDot tone="danger">{`${weak.label} : ${weak.correctRate} %`}</StatusDot> : undefined}
-                />
-              );
-            })
-          )}
-        </ListCard>
+        <div className="cm-layout">
+          <section className="pl-panel cm-map-card" aria-label="Carte de la classe">
+            <header className="cm-head">
+              <div>
+                <h2>Carte de la classe</h2>
+                <p>Chaque élève sur chaque module, les élèves à accompagner en premier.</p>
+              </div>
+            </header>
+            {students.length === 0 || openClass.moduleIds.length === 0 ? (
+              <EmptyState
+                title={students.length === 0 ? 'Aucun élève dans cette classe' : 'Aucun module donné à cette classe'}
+                text={students.length === 0 ? undefined : 'L’établissement choisit les modules de la classe.'}
+              />
+            ) : (
+              <div className="cm-scroll">
+                <table className="cm-map">
+                  <caption className="sr-only">Niveau de chaque élève sur chaque module de {openClass.name}</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" className="cm-name">
+                        Élève
+                      </th>
+                      {openClass.moduleIds.map((id) => (
+                        <th key={id} scope="col" className="cm-module">
+                          <button type="button" onClick={() => setModuleOpen(id)} title={`Détail de « ${shortTitle(id)} »`}>
+                            {shortTitle(id)}
+                          </button>
+                        </th>
+                      ))}
+                      <th scope="col" className="cm-end">
+                        Validés
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {map.map((row) => (
+                      <tr key={row.uid}>
+                        <th scope="row" className="cm-name">
+                          <button type="button" onClick={() => setLearnerId(row.uid)}>
+                            <span className="cm-initial" aria-hidden="true">
+                              {row.name.charAt(0)}
+                            </span>
+                            <span className="cm-name-text">
+                              <b>{row.name}</b>
+                            </span>
+                          </button>
+                        </th>
+                        {row.cells.map((cell) => (
+                          <td key={cell.moduleId}>
+                            <span
+                              className={`cm-cell is-l${cell.level}`}
+                              role="img"
+                              aria-label={`${shortTitle(cell.moduleId)} : ${MASTERY_LABELS[cell.level]}, ${cell.detail}`}
+                              title={`${row.name} · ${shortTitle(cell.moduleId)}\n${MASTERY_LABELS[cell.level]} · ${cell.detail}`}
+                            />
+                          </td>
+                        ))}
+                        <td className="cm-end">
+                          <b className="tabular-nums">
+                            {row.validated}/{row.cells.length}
+                            <span className="sr-only"> {row.validated > 1 ? 'modules validés' : 'module validé'}</span>
+                          </b>
+                          {row.toRetake > 0 && <small className="cm-retake">{plural(row.toRetake, 'quiz à retenter', 'quiz à retenter')}</small>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <footer className="cm-foot">
+              <p className="cm-legend" aria-label="Légende">
+                {([0, 1, 2, 3, 4] as MasteryLevel[]).map((level) => (
+                  <span key={level}>
+                    <i className={`cm-cell is-l${level}`} aria-hidden="true" /> {MASTERY_LABELS[level]}
+                  </span>
+                ))}
+              </p>
+              <p className="cm-rule">Acquis : quiz réussi · Maîtrisé : sans faute</p>
+            </footer>
+          </section>
 
-        <div className="ui-section-title">
-          <h2>Élèves</h2>
+          <div className="cm-side">
+            <section className="pl-panel cm-questions" aria-label="Questions les moins réussies">
+              <header className="cm-head">
+                <div>
+                  <h2>Questions les moins réussies</h2>
+                  <p>Part de bonnes réponses, seuil à {PASS_THRESHOLD} %</p>
+                </div>
+              </header>
+              {questions.length === 0 ? (
+                <p className="cm-empty">Aucun quiz envoyé pour le moment.</p>
+              ) : (
+                <ol className="cm-qlist">
+                  {questions.slice(0, 4).map((q) => {
+                    const low = q.correctRate < PASS_THRESHOLD;
+                    return (
+                      <li key={`${q.moduleId}-${q.index}`}>
+                        <button type="button" onClick={() => setModuleOpen(q.moduleId)}>
+                          <span className="cm-q-top">
+                            <b className="cm-q-text">{q.text}</b>
+                            <b className={`cm-q-rate tabular-nums${low ? ' is-low' : ''}`}>{q.correctRate} %</b>
+                          </span>
+                          <small>
+                            {q.moduleTitle} · {q.label}
+                            {low ? ' · à reprendre' : ''}
+                          </small>
+                          <span className="cm-q-meter" aria-hidden="true">
+                            <i className={low ? 'is-low' : undefined} style={{ width: `${q.correctRate}%` }} />
+                            <em style={{ left: `${PASS_THRESHOLD}%` }} />
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </section>
+
+            <section className="pl-panel cm-fiche" aria-label="Fiche de rattrapage">
+              <p className="cm-fiche-kicker">
+                <Sparkles size={15} aria-hidden="true" /> Fiche de rattrapage
+              </p>
+              {focus ? (
+                <>
+                  <h2 className="cm-fiche-title">{focus.text}</h2>
+                  <p className="cm-fiche-meta">
+                    {focus.moduleTitle} · {focus.label}
+                  </p>
+                  <p className="cm-fiche-text">
+                    Réussie par {focus.correctRate} % de la classe. L’IA prépare une fiche courte à partir de votre module : quelques sections, un quiz
+                    d’entraînement et une fiche pas à pas.
+                  </p>
+                  <button type="button" className="primary" onClick={() => prepareFiche(focus)}>
+                    Préparer la fiche avec l’IA
+                  </button>
+                  <p className="cm-fiche-note">Vous relisez chaque bloc dans le Studio. Rien n’est publié ni envoyé sans vous.</p>
+                </>
+              ) : (
+                <p className="cm-fiche-text">
+                  {questions.length === 0
+                    ? 'Dès que la classe enverra ses quiz, la question la moins réussie apparaîtra ici.'
+                    : `Toutes les questions sont réussies par au moins ${PASS_THRESHOLD} % de la classe : pas de rattrapage à prévoir.`}
+                </p>
+              )}
+            </section>
+          </div>
         </div>
-        <ListCard label={`Élèves de ${openClass.name}`}>
-          {students.length === 0 ? (
-            <EmptyState title="Aucun élève dans cette classe" />
-          ) : (
-            students.map((uid) => {
-              const rows = openClass.moduleIds.map((id) => followUp(ext, catalog, uid, id));
-              const failed = rows.some((r) => r.quiz === 'failed');
-              return (
-                <ListRow
-                  key={uid}
-                  leading={<span className="sc-initial" aria-hidden="true">{memberName(uid, people).charAt(0)}</span>}
-                  title={<RowTitle state={failed ? 'alert' : 'ok'} hint={failed ? 'Un quiz à retenter' : undefined}>{memberName(uid, people)}</RowTitle>}
-                  meta={followUpSummary(rows)}
-                  onClick={() => setLearnerId(uid)}
-                />
-              );
-            })
-          )}
-        </ListCard>
-        <p className="sc-note">Les chiffres de la classe sont des totaux. Aucune réponse individuelle n’est montrée.</p>
+        <p className="sc-note">La carte montre l’avancement et la note au quiz de chaque élève. Les questions sont des totaux de la classe. Aucune réponse individuelle n’est montrée.</p>
 
         {opened && (
           <Modal open size="md" title={opened.stat.title} onClose={() => setModuleOpen(null)}>
@@ -195,7 +334,7 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
               ) : (
                 <ul className="sc-meters">
                   {opened.stat.questions.map((question) => (
-                    <li key={question.label} className={(question.correctRate ?? 100) < 60 ? 'is-weak' : ''}>
+                    <li key={question.label} className={(question.correctRate ?? 100) < PASS_THRESHOLD ? 'is-weak' : ''}>
                       <span>{question.text}</span>
                       <InlineMeter value={question.correctRate} />
                     </li>
