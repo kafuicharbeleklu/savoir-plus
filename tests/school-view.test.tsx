@@ -66,12 +66,14 @@ test('espace encadrant : intitulé, classes, questions à revoir, cours de la se
   // Les outils de l'établissement, pour ses classes : la page ouvre sur la vue d'ensemble.
   assert.match(home, /Espace encadrant Vue d’ensemble Planification Emploi du temps Classes 3/);
   assert.doesNotMatch(home, /Faire vérifier mon identité/);
-  assert.match(home, /Élèves 21 3 classes Heures de cours \d+ par semaine Questions à revoir \d+/);
-  assert.match(home, /Avancement des classes/);
+  assert.match(home, /Avancement du trimestre \d+ % Attendu à ce jour : \d+ %/);
+  assert.match(home, /Quiz réussis \d+ %/);
+  assert.match(home, /Questions à revoir \d+/);
+  assert.match(home, /Classes Le trait marque l’attendu à ce jour/);
   assert.match(home, /Élèves à accompagner/);
   // La planification de ses classes, en lecture : l'établissement la tient.
   const planning = text(renderToStaticMarkup(<TeachingPage {...props('kossi', school, 'planning')} />));
-  assert.match(planning, /planifiées par l’établissement/);
+  assert.match(planning, /tenue par l’établissement/);
   assert.doesNotMatch(planning, /Ajouter une période/);
   // L'emploi du temps est une grille.
   const grid = text(renderToStaticMarkup(<TeachingPage {...props('kossi', school, 'timetable')} />));
@@ -158,7 +160,7 @@ test('espace établissement : demandes, classes et niveaux, une classe en détai
   const home = text(renderToStaticMarkup(<InstitutionPage {...props('palmiers', school)} />));
   // Plus d'en-tête de présentation : ni type, ni ville, ni statut quand l'établissement est vérifié.
   assert.doesNotMatch(home, /Complexe scolaire|Établissement vérifié|Vous validez qui rejoint/);
-  assert.match(home, /Vue d’ensemble Planification Emploi du temps Classes 3 Bibliothèque \d+ Enseignants 1 Demandes 2 Élèves/);
+  assert.match(home, /Vue d’ensemble Planification Emploi du temps Classes 3 Bibliothèque \d+ Enseignants 1 Demandes 2 Avancement du trimestre/);
   // Formule Essentiel : la vue d'ensemble et la planification renvoient à la formule Pilotage ; l'espace s'ouvre sur les classes.
   const essential = { ...ext, subscriptions: { palmiers: { offerId: 'institution-essential', since: '2026-09-01' } } };
   const basic = text(renderToStaticMarkup(<InstitutionPage {...props('palmiers', school)} ext={essential} />));
@@ -174,15 +176,16 @@ test('espace établissement : demandes, classes et niveaux, une classe en détai
   assert.doesNotMatch(library, /Écrire un e-mail professionnel clair/, 'Ama Dossou n’est pas encore rattachée');
   assert.match(library, /gratuits pour les élèves de l’établissement/);
   // La vue d'ensemble : chiffres clés, avancement des classes face à l'attendu, élèves à accompagner.
-  assert.match(home, /Élèves 24 3 classes Enseignants 1 rattachés et actifs Heures de cours 30 par semaine/);
+  assert.match(home, /Demandes de rattachement 2 1 enseignant · 1 élève · Traiter/);
+  assert.match(home, /Avancement du trimestre \d+ %/);
   assert.match(home, /Terminale D 10 élèves · Sauvegarder ses fichiers \d+ % (En avance|Dans les temps|En retard)/);
   assert.match(home, /Élèves à accompagner/);
-  assert.match(home, /(Quiz à retenter|En retard sur) /);
+  assert.match(home, /(Quiz à retenter|lus sur \d+ % attendus)/);
   assert.doesNotMatch(home, /classement/i, 'aucun classement d’élèves');
 
   // La planification : une ligne par classe, ses séquences, ses révisions, sa composition.
   const planning = text(renderToStaticMarkup(<InstitutionPage {...props('palmiers', school, 'planning')} />));
-  assert.match(planning, /Planification du trimestre/);
+  assert.match(planning, /Ajouter une période/);
   assert.match(planning, /Terminale D 10 élèves/);
   assert.match(planning, /Sauvegarder ses fichiers/);
   assert.match(planning, /Composition du trimestre/);

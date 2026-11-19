@@ -5,7 +5,7 @@
  * ses apprenants suivis. Pour chaque classe : où elle bute, question par question, en agrégé.
  */
 import React, { useEffect, useState } from 'react';
-import { CircleHelp, Clock, GraduationCap, UserCheck, Users } from 'lucide-react';
+import { CircleHelp, Users } from 'lucide-react';
 import type { Progress } from '../../data';
 import {
   accountOf,
@@ -22,8 +22,8 @@ import { formatDayShort } from '../../calendar';
 import { InlineMeter } from '../../components/Charts';
 import { EmptyState, IconTile, ListCard, ListRow, Modal, PageHeader, RowTitle, Select, StatusDot, Tabs } from '../../components/ui';
 import { KpiRow, KpiTile } from '../../components/PlanningTools';
-import { weeklyHours } from '../../planning';
-import { ClassesOverview, InstitutionPlanning, TimetablePanel } from './InstitutionBoard';
+import { ClassesOverview, InstitutionPlanning, TimetablePanel, TrendKpis, boardMeasures, useWeekRecord } from './InstitutionBoard';
+import { weekSeries } from '../../trends';
 import {
   IdentityDot,
   LearnerModal,
@@ -65,6 +65,10 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
   }, [selectedId]);
   // Élève ouvert depuis la vue d'ensemble : son suivi sur les modules de sa classe.
   const [classLearner, setClassLearner] = useState<{ uid: string; classId: string } | null>(null);
+  // Vue d'ensemble de ses classes ; la semaine en cours s'ajoute à ses relevés (courbes des chiffres clés).
+  const board = { school, ext, catalog, people, today, classes };
+  const overview = boardMeasures(board);
+  useWeekRecord(school, saveSchool, user.id, overview.measures, today);
 
   const statFor = (schoolClass: SchoolClass, moduleId: string): ModuleStat | null => {
     const item = catalog.find((c) => c.id === moduleId);
@@ -208,9 +212,7 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
   }
 
   /* ---------------------------------------------------------------- Accueil de l'espace */
-  const board = { school, ext, catalog, people, today, classes };
-  const studentCount = new Set(classes.flatMap((c) => studentsOfClass(school, c.id))).size;
-  const hours = weeklyHours(slotsFor(school, user.id));
+  const series = weekSeries(school.snapshots, user.id, overview.measures, today);
   const weakCount = classes.reduce(
     (sum, c) =>
       sum +
@@ -257,24 +259,25 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
       {tab === 'overview' && (
         <ClassesOverview
           data={board}
+          board={overview}
+          series={series}
           emptyText="Une classe vous est confiée quand un établissement valide votre rattachement."
           onOpenClass={(id) => nav('teaching', id)}
+          onOpenPlanning={() => nav('teaching', 'planning')}
           onOpenLearner={(uid) => {
             const schoolClass = classes.find((c) => studentsOfClass(school, c.id).includes(uid));
             if (schoolClass) setClassLearner({ uid, classId: schoolClass.id });
           }}
           kpis={
             <KpiRow label="Chiffres clés de vos classes">
-              <KpiTile label="Élèves" value={studentCount} hint={plural(classes.length, 'classe', 'classes')} icon={<GraduationCap size={15} aria-hidden="true" />} />
-              <KpiTile label="Heures de cours" value={hours} hint="par semaine" icon={<Clock size={15} aria-hidden="true" />} />
+              <TrendKpis board={overview} series={series} />
               <KpiTile
                 label="Questions à revoir"
                 value={weakCount}
                 tone={weakCount > 0 ? 'warn' : 'plain'}
-                hint={weakCount > 0 ? 'réussies par moins de 60 %' : 'aucune'}
+                hint={weakCount > 0 ? 'réussies par moins de 60 % de la classe' : 'aucune'}
                 icon={<CircleHelp size={15} aria-hidden="true" />}
               />
-              <KpiTile label="Apprenants suivis" value={mentored.length} hint="en accompagnement" icon={<UserCheck size={15} aria-hidden="true" />} />
             </KpiRow>
           }
         />

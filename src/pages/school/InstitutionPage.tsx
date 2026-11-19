@@ -217,11 +217,14 @@ export function InstitutionPage({ school, saveSchool, ext, user, people, today, 
       {tab === 'overview' && steering && (
         <InstitutionOverview
           data={{ school, ext, catalog, people, today, classes }}
+          institutionId={institution.id}
           teachers={teachers}
           requests={requests}
+          saveSchool={saveSchool}
           onOpenClass={(id) => nav('institution', id)}
           onOpenLearner={setLearnerId}
-          onShowRequests={() => setTab('requests')}
+          onShowRequests={() => nav('institution', 'requests')}
+          onOpenPlanning={() => nav('institution', 'planning')}
         />
       )}
 

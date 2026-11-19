@@ -9,6 +9,7 @@ import { addDays, todayDay, type Day } from './calendar';
 import { MODULES_CONTENT } from './content';
 import type { Profile, Progress } from './data';
 import { mondayOf, type PlanItem } from './planning';
+import { seedSnapshots } from './trends';
 import { normalizeSchoolState, type AccountRecord, type Membership, type SchoolState, type TimetableSlot } from './school';
 
 /** Personnages jouables ajoutés à ceux d'origine (Afi, Kossi, Nadège). */
@@ -261,7 +262,9 @@ export function initialSchoolState(today: Day): SchoolState {
     screenUsage: [],
     timeRequests: [],
     // « Sauvegarder ses fichiers » (Kossi Agbo) est payant pour le public, offert aux élèves des établissements où il enseigne.
-    prices: { budget: 1500, reunion: 1000, sauvegarde: 1000 }
+    prices: { budget: 1500, reunion: 1000, sauvegarde: 1000 },
+    // Sept semaines de relevés des tableaux de bord, avant la semaine du jour (src/trends.ts).
+    snapshots: seedSnapshots(today)
   };
 }
 

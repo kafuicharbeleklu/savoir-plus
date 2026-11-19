@@ -14,6 +14,7 @@
  */
 import { addDays, diffDays, type Day } from './calendar';
 import type { PlanItem } from './planning';
+import type { WeekSnapshot } from './trends';
 
 /* ------------------------------------------------------------------ Comptes */
 
@@ -206,6 +207,8 @@ export interface SchoolState {
   timeRequests: TimeRequest[];
   /** Prix de démonstration, en francs CFA. Absent : contenu gratuit. */
   prices: Record<string, number>;
+  /** Relevés hebdomadaires des tableaux de bord (src/trends.ts). Absent dans un état enregistré avant eux. */
+  snapshots?: WeekSnapshot[];
 }
 
 /** Règles de verrouillage d'un enfant, choisies par son parent selon son besoin. */
@@ -282,7 +285,8 @@ export function normalizeSchoolState(raw: Partial<SchoolState> | undefined | nul
     deviceRules: list(raw.deviceRules, base.deviceRules),
     screenUsage: list(raw.screenUsage, base.screenUsage),
     timeRequests: list(raw.timeRequests, base.timeRequests),
-    prices: { ...base.prices, ...(raw.prices || {}) }
+    prices: { ...base.prices, ...(raw.prices || {}) },
+    snapshots: list(raw.snapshots, base.snapshots || [])
   };
 }
 

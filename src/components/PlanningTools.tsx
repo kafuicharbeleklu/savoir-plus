@@ -2,33 +2,85 @@
  * Outils de pilotage : diagramme de Gantt, grille d'emploi du temps, tuiles de chiffres clés.
  * Les calculs de position viennent de `planning.ts` ; ces composants ne font que dessiner.
  */
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { formatDayShort, formatRange, type Day } from '../calendar';
-import { barGeometry, dayPosition, gridBounds, slotGeometry, type GanttWindow } from '../planning';
+import { barGeometry, dayPosition, gridBounds, mondayOf, slotGeometry, type BarGeometry, type GanttWindow } from '../planning';
+
+/** Largeur estimée d'un titre de barre (12 px, demi-gras), marges comprises. */
+const labelWidth = (text: string) => text.length * 6.7 + 18;
+/** Largeur estimée d'un titre posé au-dessus de sa barre (11 px). */
+const topLabelWidth = (text: string) => text.length * 6.1;
+
+export type LabelPlace = 'inside' | 'after' | 'above' | 'hidden';
+
+/**
+ * Où écrire le titre de chaque barre : dedans s'il tient ; sinon juste après, si la place est libre
+ * jusqu'à la barre suivante ; sinon au-dessus, s'il tient avant le début de la barre suivante ;
+ * sinon nulle part (l'infobulle et les lecteurs d'écran le donnent). Jamais de titre coupé par « … ».
+ * Tant que la largeur n'est pas connue (rendu côté serveur, tests), le titre reste dans sa barre.
+ */
+export function placeLabels(bars: GanttBar[], window: GanttWindow, trackPx: number): { bar: GanttBar; at: BarGeometry; place: LabelPlace }[] {
+  const placed = bars
+    .map((bar) => ({ bar, at: barGeometry(bar.start, bar.end, window) }))
+    .filter((p): p is { bar: GanttBar; at: BarGeometry } => p.at !== null)
+    .sort((a, b) => a.at.left - b.at.left);
+  return placed.map(({ bar, at }, i) => {
+    const keep = (place: LabelPlace) => ({ bar, at, place });
+    if (!trackPx) return keep('inside');
+    const need = labelWidth(bar.label);
+    if (need <= (at.width / 100) * trackPx) return keep('inside');
+    const nextLeft = i + 1 < placed.length ? placed[i + 1].at.left : 100;
+    const room = ((nextLeft - (at.left + at.width)) / 100) * trackPx;
+    if (need - 6 <= room) return keep('after');
+    const span = ((nextLeft - at.left) / 100) * trackPx;
+    return keep(topLabelWidth(bar.label) <= span - 8 ? 'above' : 'hidden');
+  });
+}
 
 /* ------------------------------------------------------------------ Chiffres clés */
 
 export function KpiTile({
   label,
   value,
+  unit,
   hint,
   tone = 'plain',
-  icon
+  icon,
+  trend,
+  meter
 }: {
   label: string;
   value: React.ReactNode;
+  /** Unité ou dénominateur, plus petit que le chiffre (« sur 24 »). */
+  unit?: string;
   /** Ce qui met le chiffre en perspective : une unité, une échéance, un écart. */
   hint?: React.ReactNode;
   tone?: 'plain' | 'brand' | 'warn';
   icon?: React.ReactNode;
+  /** Évolution sur les dernières semaines : une petite courbe à droite du chiffre. */
+  trend?: React.ReactNode;
+  /** Jauge sous le chiffre, avec le trait de l'attendu. */
+  meter?: { value: number; expected: number | null; label: string };
 }) {
   return (
-    <div className={`pl-kpi is-${tone}`}>
+    <div className={`pl-kpi is-${tone}${trend ? ' has-trend' : ''}`}>
       <span className="pl-kpi-label">
         {icon}
         {label}
       </span>
-      <b className="pl-kpi-value tabular-nums">{value}</b>
+      <span className="pl-kpi-figure">
+        <b className="pl-kpi-value">
+          {value}
+          {unit && <small>{unit}</small>}
+        </b>
+        {trend && <span className="pl-kpi-trend">{trend}</span>}
+      </span>
+      {meter && (
+        <span className="pl-kpi-meter" role="img" aria-label={meter.label}>
+          <i style={{ width: `${Math.max(0, Math.min(100, meter.value))}%` }} />
+          {meter.expected !== null && <em style={{ left: `${Math.max(0, Math.min(100, meter.expected))}%` }} />}
+        </span>
+      )}
       {hint && <span className="pl-kpi-hint">{hint}</span>}
     </div>
   );
@@ -83,14 +135,29 @@ export function GanttChart({
 }) {
   const todayAt = dayPosition(today, window);
   const weekWidth = 100 / window.weeks.length;
+  // Largeur réelle de la frise : décide si un titre tient dans sa barre, juste après, ou pas du tout
+  // (il reste alors dans l'infobulle et pour les lecteurs d'écran). Jamais de titre coupé par « … ».
+  const weeksRef = useRef<HTMLDivElement>(null);
+  const [trackPx, setTrackPx] = useState(0);
+  useLayoutEffect(() => {
+    const el = weeksRef.current;
+    if (!el) return;
+    const measure = () => setTrackPx(el.getBoundingClientRect().width);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   return (
     <div className="pl-gantt" role="group" aria-label={label}>
      <div className="pl-gantt-inner">
       <div className="pl-gantt-head">
         <span className="pl-gantt-corner" aria-hidden="true" />
-        <div className="pl-gantt-weeks" aria-hidden="true">
+        <div className="pl-gantt-weeks" aria-hidden="true" ref={weeksRef}>
+          {/* La semaine en cours se repère dans l'en-tête ; le trait d'aujourd'hui traverse les lignes. */}
           {window.weeks.map((monday) => (
-            <span key={monday} style={{ width: `${weekWidth}%` }}>
+            <span key={monday} style={{ width: `${weekWidth}%` }} className={monday === mondayOf(today) ? 'is-now' : undefined}>
               {formatDayShort(monday)}
             </span>
           ))}
@@ -125,33 +192,45 @@ export function GanttChart({
               {row.sub && <small>{row.sub}</small>}
             </div>
             <div className="pl-gantt-track">
-              {row.bars.map((bar) => {
-                const at = barGeometry(bar.start, bar.end, window);
-                if (!at) return null;
+              {placeLabels(row.bars, window, trackPx).map(({ bar, at, place }) => {
                 const spoken = `${bar.label}, ${formatRange(bar.start, bar.end)}${bar.detail ? `, ${bar.detail}` : ''}`;
                 const classes = `pl-gantt-bar is-${bar.tone}${at.clippedStart ? ' is-cut-start' : ''}${at.clippedEnd ? ' is-cut-end' : ''}`;
                 const inner = (
                   <>
                     {bar.progress !== undefined && <i className="pl-gantt-fill" style={{ width: `${Math.max(0, Math.min(100, bar.progress))}%` }} />}
-                    <span>{bar.label}</span>
+                    {place === 'inside' && <span>{bar.label}</span>}
                   </>
                 );
-                return onBarClick ? (
-                  <button
-                    key={bar.id}
-                    type="button"
-                    className={classes}
-                    style={{ left: `${at.left}%`, width: `${at.width}%` }}
-                    title={spoken}
-                    aria-label={spoken}
-                    onClick={() => onBarClick(bar.id, row.id)}
-                  >
-                    {inner}
-                  </button>
-                ) : (
-                  <span key={bar.id} className={classes} style={{ left: `${at.left}%`, width: `${at.width}%` }} title={spoken} role="img" aria-label={spoken}>
-                    {inner}
-                  </span>
+                const after =
+                  place === 'after' ? (
+                    <span className="pl-gantt-outlabel" style={{ left: `calc(${at.left + at.width}% + 6px)` }} aria-hidden="true">
+                      {bar.label}
+                    </span>
+                  ) : place === 'above' ? (
+                    <span className="pl-gantt-toplabel" style={{ left: `${at.left}%` }} aria-hidden="true">
+                      {bar.label}
+                    </span>
+                  ) : null;
+                return (
+                  <React.Fragment key={bar.id}>
+                    {onBarClick ? (
+                      <button
+                        type="button"
+                        className={classes}
+                        style={{ left: `${at.left}%`, width: `${at.width}%` }}
+                        title={spoken}
+                        aria-label={spoken}
+                        onClick={() => onBarClick(bar.id, row.id)}
+                      >
+                        {inner}
+                      </button>
+                    ) : (
+                      <span className={classes} style={{ left: `${at.left}%`, width: `${at.width}%` }} title={spoken} role="img" aria-label={spoken}>
+                        {inner}
+                      </span>
+                    )}
+                    {after}
+                  </React.Fragment>
                 );
               })}
             </div>

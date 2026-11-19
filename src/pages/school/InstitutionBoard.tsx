@@ -3,8 +3,8 @@
  * élèves à accompagner, échéances), la planification en diagramme de Gantt et la grille d'emploi
  * du temps. Aucun classement d'élèves : on compare chaque classe à ce qui était prévu pour elle.
  */
-import React, { useState } from 'react';
-import { CalendarRange, Clock, GraduationCap, Inbox, Presentation, Users } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { CalendarRange, CircleCheck, Inbox, LifeBuoy, TrendingUp } from 'lucide-react';
 import { SCHOOL_CALENDAR, formatRange, weekdayOf, type Day } from '../../calendar';
 import {
   PACE_LABEL,
@@ -15,12 +15,12 @@ import {
   planProblem,
   planStatus,
   plansOfClass,
-  weeklyHours,
-  type Pace,
   type PlanItem,
   type PlanKind
 } from '../../planning';
 import { studentsOfClass, type Membership, type SchoolClass, type SchoolState, type TimetableSlot } from '../../school';
+import { recordWeek, weekDelta, weekSeries, type WeekMeasures, type WeekSnapshot } from '../../trends';
+import { Sparkline } from '../../components/Sparkline';
 import { GanttChart, GanttLegend, KpiRow, KpiTile, TimetableGrid, type GanttBar } from '../../components/PlanningTools';
 import { EmptyState, Modal, Select, StatusDot } from '../../components/ui';
 import type { CatalogItem, ExtendedDemoState } from '../../wireframeData';
@@ -38,17 +38,399 @@ interface BoardData {
 
 const mean = (values: number[]) => (values.length ? Math.round(values.reduce((sum, v) => sum + v, 0) / values.length) : 0);
 
-/** Où en est une classe : sa séquence en cours, l'avancement réel et celui qui était prévu aujourd'hui. */
+/** Où en est une classe sur sa séquence en cours : l'avancement réel et celui qui était prévu aujourd'hui. */
 function classStanding({ school, ext, catalog, today }: BoardData, schoolClass: SchoolClass) {
   const students = studentsOfClass(school, schoolClass.id);
   const current = plansOfClass(school.plans, schoolClass.id).find((p) => p.kind === 'sequence' && planStatus(p, today) === 'current');
-  const overall = mean(students.flatMap((uid) => schoolClass.moduleIds.map((m) => followUp(ext, catalog, uid, m).percent)));
-  if (!current?.moduleId || students.length === 0) {
-    return { students, current, actual: schoolClass.moduleIds.length ? overall : null, expected: null as number | null, pace: null as Pace | null };
-  }
-  const actual = mean(students.map((uid) => followUp(ext, catalog, uid, current.moduleId as string).percent));
-  const expected = expectedProgress(current, today);
-  return { students, current, actual, expected, pace: paceOf(actual, expected) };
+  if (!current?.moduleId || students.length === 0) return { students, current, expected: null as number | null };
+  return { students, current, expected: expectedProgress(current, today) };
+}
+
+/**
+ * Avancement du trimestre d'une classe : la part moyenne de ses modules déjà faite par ses élèves,
+ * face à ce que la planification attendait à ce jour (un module pas encore planifié compte 0).
+ */
+function termStanding(data: BoardData, schoolClass: SchoolClass) {
+  const { school, ext, catalog, today } = data;
+  const students = studentsOfClass(school, schoolClass.id);
+  const modules = schoolClass.moduleIds;
+  const rows = students.flatMap((uid) => modules.map((m) => followUp(ext, catalog, uid, m)));
+  const sequences = plansOfClass(school.plans, schoolClass.id).filter((p) => p.kind === 'sequence');
+  const planned = modules.some((m) => sequences.some((p) => p.moduleId === m));
+  const actual = rows.length ? mean(rows.map((r) => r.percent)) : null;
+  const expected = planned
+    ? mean(
+        modules.map((m) => {
+          const plan = sequences.find((p) => p.moduleId === m);
+          return plan ? expectedProgress(plan, today) : 0;
+        })
+      )
+    : null;
+  const submitted = rows.filter((r) => r.quiz !== 'none');
+  const current = sequences.find((p) => planStatus(p, today) === 'current');
+  return {
+    students,
+    current,
+    actual,
+    expected,
+    pace: actual !== null && expected !== null ? paceOf(actual, expected) : null,
+    submitted: submitted.length,
+    passed: submitted.filter((r) => r.quiz === 'passed').length
+  };
+}
+
+export interface StudentFlag {
+  uid: string;
+  classId: string;
+  className: string;
+  kind: 'quiz' | 'late';
+  reason: string;
+}
+
+/** Élèves à accompagner : un quiz à retenter, ou un net retard sur la séquence en cours. */
+function studentFlags(data: BoardData): StudentFlag[] {
+  const { ext, catalog, classes } = data;
+  return classes
+    .flatMap((schoolClass) => {
+      const { students, current, expected } = classStanding(data, schoolClass);
+      return students.map((uid): StudentFlag | null => {
+        const failed = schoolClass.moduleIds.map((m) => followUp(ext, catalog, uid, m)).find((r) => r.quiz === 'failed');
+        if (failed) return { uid, classId: schoolClass.id, className: schoolClass.name, kind: 'quiz', reason: `Quiz à retenter · ${failed.title}` };
+        const onCurrent = current?.moduleId ? followUp(ext, catalog, uid, current.moduleId) : null;
+        if (onCurrent && expected !== null && expected - onCurrent.percent >= 30) {
+          return { uid, classId: schoolClass.id, className: schoolClass.name, kind: 'late', reason: `${onCurrent.percent} % lus sur ${expected} % attendus · ${onCurrent.title}` };
+        }
+        return null;
+      });
+    })
+    .filter((f): f is StudentFlag => f !== null)
+    .sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'quiz' ? -1 : 1));
+}
+
+/** Tout ce que montre une vue d'ensemble, et les mesures de la semaine qu'elle enregistre. */
+export function boardMeasures(data: BoardData) {
+  const terms = data.classes.map((schoolClass) => ({ schoolClass, ...termStanding(data, schoolClass) }));
+  const flags = studentFlags(data);
+  const withActual = terms.filter((t) => t.actual !== null);
+  const withExpected = terms.filter((t) => t.expected !== null);
+  const submitted = terms.reduce((sum, t) => sum + t.submitted, 0);
+  const passed = terms.reduce((sum, t) => sum + t.passed, 0);
+  const measures: WeekMeasures = {
+    progress: mean(withActual.map((t) => t.actual as number)),
+    expected: withExpected.length ? mean(withExpected.map((t) => t.expected as number)) : null,
+    flagged: flags.length,
+    quizRate: submitted ? Math.round((passed / submitted) * 100) : null,
+    classGaps: Object.fromEntries(
+      terms.filter((t) => t.actual !== null && t.expected !== null).map((t) => [t.schoolClass.id, (t.actual as number) - (t.expected as number)])
+    )
+  };
+  return { terms, flags, measures, submitted, passed };
+}
+
+export type BoardMeasures = ReturnType<typeof boardMeasures>;
+
+/**
+ * Relevé de la semaine : la semaine en cours s'enregistre (ou se met à jour) quand le tableau de bord
+ * s'affiche ; les semaines suivantes s'ajoutent ainsi à la courbe.
+ */
+export function useWeekRecord(
+  school: SchoolState,
+  saveSchool: ((next: SchoolState) => void) | undefined,
+  scope: string,
+  measures: WeekMeasures,
+  today: Day
+) {
+  const key = JSON.stringify(measures);
+  useEffect(() => {
+    if (!saveSchool) return;
+    const next = recordWeek(school.snapshots, scope, measures, today);
+    if (next) saveSchool({ ...school, snapshots: next });
+    // Les mesures sont comparées par leur contenu : un nouvel objet identique ne réécrit rien.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, scope, today]);
+}
+
+/** Les quatre chiffres clés partagés : avancement du trimestre, élèves à accompagner, quiz réussis. */
+export function TrendKpis({ board, series }: { board: BoardMeasures; series: WeekSnapshot[] }) {
+  const { measures, flags, submitted, passed } = board;
+  const late = flags.filter((f) => f.kind === 'late').length;
+  const quiz = flags.filter((f) => f.kind === 'quiz').length;
+  const progressDelta = weekDelta(series, (s) => s.progress);
+  const weeks = series.length;
+  return (
+    <>
+      <KpiTile
+        label="Avancement du trimestre"
+        value={`${measures.progress} %`}
+        icon={<TrendingUp size={15} aria-hidden="true" />}
+        meter={{
+          value: measures.progress,
+          expected: measures.expected,
+          label: `Avancement ${measures.progress} %${measures.expected !== null ? `, attendu ${measures.expected} %` : ''}`
+        }}
+        hint={
+          measures.expected !== null
+            ? `Attendu à ce jour : ${measures.expected} %${progressDelta !== null ? ` · ${signed(progressDelta)} pts en une semaine` : ''}`
+            : 'Aucune séquence planifiée'
+        }
+        trend={
+          <Sparkline
+            values={series.map((s) => s.progress)}
+            label={`Avancement du trimestre sur ${weeks} semaines : de ${series[0].progress} % à ${measures.progress} %`}
+          />
+        }
+      />
+      <KpiTile
+        label="Élèves à accompagner"
+        value={measures.flagged}
+        tone={measures.flagged > 0 ? 'warn' : 'plain'}
+        icon={<LifeBuoy size={15} aria-hidden="true" />}
+        hint={measures.flagged > 0 ? [late && plural(late, 'en retard', 'en retard'), quiz && plural(quiz, 'quiz à retenter', 'quiz à retenter')].filter(Boolean).join(' · ') : 'Personne en net retard'}
+        trend={
+          <Sparkline
+            tone="warm"
+            values={series.map((s) => s.flagged)}
+            label={`Élèves à accompagner sur ${weeks} semaines : de ${series[0].flagged} à ${measures.flagged}`}
+          />
+        }
+      />
+      <KpiTile
+        label="Quiz réussis"
+        value={measures.quizRate !== null ? `${measures.quizRate} %` : '—'}
+        icon={<CircleCheck size={15} aria-hidden="true" />}
+        hint={submitted ? `${passed} sur ${plural(submitted, 'quiz rendu', 'quiz rendus')}` : 'Aucun quiz rendu'}
+        trend={
+          measures.quizRate !== null ? (
+            <Sparkline values={series.map((s) => s.quizRate)} label={`Quiz réussis sur ${weeks} semaines, jusqu’à ${measures.quizRate} %`} />
+          ) : undefined
+        }
+      />
+    </>
+  );
+}
+
+const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+
+/* ------------------------------------------------------------------ Vue d'ensemble */
+
+export function InstitutionOverview({
+  data,
+  institutionId,
+  teachers,
+  requests,
+  saveSchool,
+  onOpenClass,
+  onOpenLearner,
+  onShowRequests,
+  onOpenPlanning
+}: {
+  data: BoardData;
+  institutionId: string;
+  teachers: Membership[];
+  requests: Membership[];
+  saveSchool?: (next: SchoolState) => void;
+  onOpenClass: (classId: string) => void;
+  onOpenLearner: (userId: string) => void;
+  onShowRequests: () => void;
+  onOpenPlanning: () => void;
+}) {
+  const board = boardMeasures(data);
+  useWeekRecord(data.school, saveSchool, institutionId, board.measures, data.today);
+  const series = weekSeries(data.school.snapshots, institutionId, board.measures, data.today);
+  const teacherRequests = requests.filter((m) => m.role === 'teacher').length;
+  const studentRequests = requests.length - teacherRequests;
+  return (
+    <ClassesOverview
+      data={data}
+      board={board}
+      series={series}
+      onOpenClass={onOpenClass}
+      onOpenLearner={onOpenLearner}
+      onOpenPlanning={onOpenPlanning}
+      kpis={
+        <KpiRow label="Chiffres clés de l’établissement">
+          <TrendKpis board={board} series={series} />
+          <KpiTile
+            label="Demandes de rattachement"
+            value={requests.length}
+            icon={<Inbox size={15} aria-hidden="true" />}
+            hint={
+              requests.length ? (
+                <>
+                  {[teacherRequests && plural(teacherRequests, 'enseignant', 'enseignants'), studentRequests && plural(studentRequests, 'élève', 'élèves')]
+                    .filter(Boolean)
+                    .join(' · ')}{' '}
+                  ·{' '}
+                  <button type="button" className="rd-link" onClick={onShowRequests}>
+                    Traiter
+                  </button>
+                </>
+              ) : (
+                `${plural(teachers.length, 'enseignant rattaché', 'enseignants rattachés')}, aucune demande`
+              )
+            }
+          />
+        </KpiRow>
+      }
+    />
+  );
+}
+
+/**
+ * La vue d'ensemble d'un établissement (toutes ses classes) ou d'un encadrant (les siennes) :
+ * chiffres clés, classes face à l'attendu, élèves à accompagner, planification du trimestre.
+ * Aucun classement d'élèves : chaque classe est comparée à ce qui était prévu pour elle.
+ */
+export function ClassesOverview({
+  data,
+  board,
+  series,
+  kpis,
+  onOpenClass,
+  onOpenLearner,
+  onOpenPlanning,
+  emptyText = 'Créez une classe pour suivre son avancement.'
+}: {
+  data: BoardData;
+  board: BoardMeasures;
+  series: WeekSnapshot[];
+  /** Rangée de chiffres clés propre à celui qui regarde. */
+  kpis: React.ReactNode;
+  onOpenClass: (classId: string) => void;
+  onOpenLearner: (userId: string) => void;
+  onOpenPlanning: () => void;
+  emptyText?: string;
+}) {
+  const { people, classes } = data;
+  const { terms, flags } = board;
+  // Une seule échelle pour toutes les petites courbes d'écart : les classes se comparent d'un coup d'œil.
+  const gaps = series.flatMap((s) => Object.values(s.classGaps));
+  const gapDomain: [number, number] = [Math.min(-10, ...gaps), Math.max(10, ...gaps)];
+  const shown = flags.slice(0, 6);
+
+  return (
+    <div className="pl-board">
+      {kpis}
+
+      <div className="pl-split is-wide">
+        <section className="pl-panel" aria-label="Classes">
+          <header className="pl-panel-head">
+            <h2>Classes</h2>
+            <small>Le trait marque l’attendu à ce jour</small>
+          </header>
+          {terms.length === 0 ? (
+            <EmptyState title="Aucune classe" text={emptyText} />
+          ) : (
+            <div className="pl-table-wrap">
+              <table className="pl-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Classe</th>
+                    <th scope="col">Avancement du trimestre</th>
+                    <th scope="col" className="num">
+                      Quiz réussis
+                    </th>
+                    <th scope="col" className="num">
+                      À suivre
+                    </th>
+                    <th scope="col" className="num">
+                      {series.length} semaines
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {terms.map(({ schoolClass, students, current, actual, expected, pace, submitted, passed }) => {
+                    const followed = flags.filter((f) => f.classId === schoolClass.id).length;
+                    const gapSeries = series.map((s) => (s.classGaps[schoolClass.id] ?? null));
+                    return (
+                      <tr key={schoolClass.id}>
+                        <td>
+                          <button type="button" className="pl-table-link" onClick={() => onOpenClass(schoolClass.id)}>
+                            <b>{schoolClass.name}</b>
+                            <small>
+                              {plural(students.length, 'élève', 'élèves')} · {current ? current.title : 'aucune séquence en cours'}
+                            </small>
+                          </button>
+                        </td>
+                        <td>
+                          {actual === null ? (
+                            <span className="pl-muted">Aucun module donné</span>
+                          ) : (
+                            <span className="pl-pace">
+                              <PaceBar actual={actual} expected={expected} />
+                              {pace ? <StatusDot tone={pace === 'late' ? 'warn' : pace === 'ahead' ? 'info' : 'neutral'}>{PACE_LABEL[pace]}</StatusDot> : <span className="pl-muted">Pas encore planifié</span>}
+                            </span>
+                          )}
+                        </td>
+                        <td className="num tabular-nums">{submitted ? `${Math.round((passed / submitted) * 100)} %` : <span className="pl-muted">À venir</span>}</td>
+                        <td className={`num tabular-nums${followed ? ' is-warn' : ''}`}>{followed}</td>
+                        <td className="num">
+                          <Sparkline
+                            values={gapSeries}
+                            width={64}
+                            height={22}
+                            domain={gapDomain}
+                            reference={0}
+                            tone={pace === 'late' ? 'warm' : 'brand'}
+                            label={`Écart à l’attendu de ${schoolClass.name}, semaine par semaine`}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="pl-panel" aria-label="Élèves à accompagner">
+          <header className="pl-panel-head">
+            <h2>À accompagner</h2>
+            <small>{flags.length ? plural(flags.length, 'élève', 'élèves') : ''}</small>
+          </header>
+          {flags.length === 0 ? (
+            <p className="pl-panel-text">Aucun élève en net retard, aucun quiz à retenter.</p>
+          ) : (
+            <ul className="pl-follow">
+              {shown.map((f) => {
+                const name = memberName(f.uid, people);
+                return (
+                  <li key={f.uid}>
+                    <span className="pl-follow-initial" aria-hidden="true">
+                      {name.charAt(0)}
+                    </span>
+                    <span className="pl-follow-text">
+                      <b>
+                        {name} <span>· {f.className}</span>
+                      </b>
+                      <small>{f.reason}</small>
+                    </span>
+                    <button type="button" className="li-text-link" onClick={() => onOpenLearner(f.uid)} aria-label={`Voir le suivi de ${name}`}>
+                      Voir le suivi
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {flags.length > shown.length && <p className="pl-panel-text">Et {plural(flags.length - shown.length, 'autre élève', 'autres élèves')}.</p>}
+        </section>
+      </div>
+
+      {classes.length > 0 && (
+        <section className="pl-panel pl-panel-gantt" aria-label="Planification du trimestre">
+          <header className="pl-panel-head">
+            <h2>Planification du trimestre</h2>
+            <button type="button" className="li-text-link" onClick={onOpenPlanning}>
+              Ouvrir la planification
+            </button>
+          </header>
+          <PlanningGantt data={data} />
+        </section>
+      )}
+    </div>
+  );
 }
 
 /** Barre d'avancement avec, en repère, l'avancement attendu à ce jour. */
@@ -65,186 +447,55 @@ function PaceBar({ actual, expected }: { actual: number | null; expected: number
   );
 }
 
-/* ------------------------------------------------------------------ Vue d'ensemble */
-
-export function InstitutionOverview({
-  data,
-  teachers,
-  requests,
-  onOpenClass,
-  onOpenLearner,
-  onShowRequests
-}: {
-  data: BoardData;
-  teachers: Membership[];
-  requests: Membership[];
-  onOpenClass: (classId: string) => void;
-  onOpenLearner: (userId: string) => void;
-  onShowRequests: () => void;
-}) {
-  const { school, classes } = data;
-  const studentIds = new Set(classes.flatMap((c) => studentsOfClass(school, c.id)));
-  const classIds = new Set(classes.map((c) => c.id));
-  const hours = weeklyHours(school.timetable.filter((s) => classIds.has(s.classId)));
-  return (
-    <ClassesOverview
-      data={data}
-      onOpenClass={onOpenClass}
-      onOpenLearner={onOpenLearner}
-      kpis={
-          <KpiRow label="Chiffres clés de l’établissement">
-            <KpiTile label="Élèves" value={studentIds.size} hint={plural(classes.length, 'classe', 'classes')} icon={<GraduationCap size={15} aria-hidden="true" />} />
-            <KpiTile label="Enseignants" value={teachers.length} hint="rattachés et actifs" icon={<Presentation size={15} aria-hidden="true" />} />
-            <KpiTile label="Heures de cours" value={hours} hint="par semaine, toutes classes" icon={<Clock size={15} aria-hidden="true" />} />
-            <KpiTile
-              label="Demandes"
-              value={requests.length}
-              tone={requests.length ? 'warn' : 'plain'}
-              hint={
-                requests.length ? (
-                  <button type="button" className="rd-link" onClick={onShowRequests}>
-                    À traiter
-                  </button>
-                ) : (
-                  'aucune en attente'
-                )
-              }
-              icon={<Inbox size={15} aria-hidden="true" />}
-            />
-          </KpiRow>
-      }
-    />
-  );
+/** Lignes du diagramme de Gantt : les périodes de chaque classe, remplies de l'avancement réel. */
+function planningRows(data: BoardData) {
+  const { school, ext, catalog, today, classes } = data;
+  const progressOfPlan = (plan: PlanItem): number | undefined => {
+    if (plan.kind !== 'sequence' || !plan.moduleId) return undefined;
+    const students = studentsOfClass(school, plan.classId);
+    return students.length ? mean(students.map((uid) => followUp(ext, catalog, uid, plan.moduleId as string).percent)) : undefined;
+  };
+  return {
+    progressOfPlan,
+    rows: classes.map((c) => ({
+      id: c.id,
+      label: c.name,
+      sub: plural(studentsOfClass(school, c.id).length, 'élève', 'élèves'),
+      bars: plansOfClass(school.plans, c.id).map((p): GanttBar => {
+        const progress = progressOfPlan(p);
+        const status = planStatus(p, today);
+        return {
+          id: p.id,
+          label: p.title,
+          start: p.start,
+          end: p.end,
+          tone: p.kind === 'exam' ? 'warm' : p.kind === 'revision' ? 'soft' : status === 'done' ? 'done' : 'brand',
+          progress,
+          detail: `${PLAN_KIND_LABEL[p.kind].toLowerCase()}${progress !== undefined ? `, avancement ${progress} %` : ''}`
+        };
+      })
+    }))
+  };
 }
 
-/**
- * Avancement des classes face à l'attendu, échéances des deux semaines, élèves à accompagner :
- * pour l'établissement (toutes ses classes) comme pour un encadrant (les siennes).
- */
-export function ClassesOverview({
-  data,
-  kpis,
-  onOpenClass,
-  onOpenLearner,
-  emptyText = 'Créez une classe pour suivre son avancement.'
-}: {
-  data: BoardData;
-  /** Rangée de chiffres clés propre à celui qui regarde. */
-  kpis: React.ReactNode;
-  onOpenClass: (classId: string) => void;
-  onOpenLearner: (userId: string) => void;
-  emptyText?: string;
-}) {
-  const { school, ext, catalog, people, today, classes } = data;
-  const standings = classes.map((c) => ({ schoolClass: c, ...classStanding(data, c) }));
-  const classIds = new Set(classes.map((c) => c.id));
+const breaksOf = () => SCHOOL_CALENDAR.entries.filter((e) => e.kind === 'break').map((e) => ({ start: e.start, end: e.end || e.start, label: e.title }));
 
-  // Élèves à accompagner : un quiz à retenter, ou un net retard sur la séquence en cours.
-  const flags = standings
-    .flatMap(({ schoolClass, students, current, expected }) =>
-      students.map((uid) => {
-        const rows = schoolClass.moduleIds.map((m) => followUp(ext, catalog, uid, m));
-        const failed = rows.find((r) => r.quiz === 'failed');
-        const onCurrent = current?.moduleId ? followUp(ext, catalog, uid, current.moduleId) : null;
-        const gap = onCurrent && expected !== null ? expected - onCurrent.percent : 0;
-        if (failed) return { uid, className: schoolClass.name, weight: 2, reason: `Quiz à retenter : « ${failed.title} »` };
-        if (onCurrent && gap >= 30) return { uid, className: schoolClass.name, weight: 1, reason: `En retard sur « ${onCurrent.title} » : ${onCurrent.percent} % lus, ${expected} % attendus` };
-        return null;
-      })
-    )
-    .filter((f): f is { uid: string; className: string; weight: number; reason: string } => f !== null)
-    .sort((a, b) => b.weight - a.weight)
-    .slice(0, 5);
+const PLANNING_LEGEND: { tone: GanttBar['tone'] | 'shade' | 'today'; label: string }[] = [
+  { tone: 'brand', label: 'Séquence en cours ou à venir' },
+  { tone: 'done', label: 'Séquence terminée' },
+  { tone: 'soft', label: 'Révisions' },
+  { tone: 'warm', label: 'Évaluation' },
+  { tone: 'shade', label: 'Congés' },
+  { tone: 'today', label: 'Aujourd’hui' }
+];
 
-  // Échéances : ce qui est en cours ou commence dans les deux semaines.
-  const upcoming = school.plans
-    .filter((p) => classIds.has(p.classId) && p.kind !== 'sequence' && planStatus(p, today) !== 'done' && p.start <= (ganttWindow(today, 0, 2).weeks[2] || p.start))
-    .sort((a, b) => a.start.localeCompare(b.start))
-    .slice(0, 4);
-
+/** Le diagramme du trimestre en lecture seule, tel qu'il paraît dans la vue d'ensemble. */
+function PlanningGantt({ data }: { data: BoardData }) {
+  const { rows } = planningRows(data);
   return (
-    <div className="pl-board">
-      {kpis}
-
-      <div className="pl-split">
-        <section className="pl-panel" aria-label="Avancement des classes">
-          <header className="pl-panel-head">
-            <h2>Avancement des classes</h2>
-            <small>Le trait marque l’attendu à ce jour</small>
-          </header>
-          {standings.length === 0 ? (
-            <EmptyState title="Aucune classe" text={emptyText} />
-          ) : (
-            <ul className="pl-rows">
-              {standings.map(({ schoolClass, students, current, actual, expected, pace }) => (
-                <li key={schoolClass.id}>
-                  <button type="button" className="pl-row" onClick={() => onOpenClass(schoolClass.id)}>
-                    <span className="pl-row-title">
-                      <b>{schoolClass.name}</b>
-                      <small>
-                        {plural(students.length, 'élève', 'élèves')} · {current ? current.title : 'aucune séquence en cours'}
-                      </small>
-                    </span>
-                    <PaceBar actual={actual} expected={expected} />
-                    {pace ? <StatusDot tone={pace === 'late' ? 'warn' : 'info'}>{PACE_LABEL[pace]}</StatusDot> : <span />}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="pl-panel" aria-label="Échéances des deux prochaines semaines">
-          <header className="pl-panel-head">
-            <h2>Échéances</h2>
-            <small>Deux prochaines semaines</small>
-          </header>
-          {upcoming.length === 0 ? (
-            <p className="pl-panel-text">Ni révisions ni évaluation dans les deux semaines.</p>
-          ) : (
-            <ul className="pl-rows">
-              {upcoming.map((p) => (
-                <li key={p.id} className="pl-row is-plain">
-                  <span className="pl-row-title">
-                    <b>{p.title}</b>
-                    <small>
-                      {classes.find((c) => c.id === p.classId)?.name} · {formatRange(p.start, p.end)}
-                    </small>
-                  </span>
-                  <StatusDot tone={p.kind === 'exam' ? 'warn' : 'neutral'}>{PLAN_KIND_LABEL[p.kind]}</StatusDot>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-
-      <section className="pl-panel" aria-label="Élèves à accompagner">
-        <header className="pl-panel-head">
-          <h2>Élèves à accompagner</h2>
-          <small>{flags.length ? 'Ouvrez le suivi pour décider quoi faire' : ''}</small>
-        </header>
-        {flags.length === 0 ? (
-          <p className="pl-panel-text">Aucun élève en net retard, aucun quiz à retenter.</p>
-        ) : (
-          <ul className="pl-rows">
-            {flags.map((f) => (
-              <li key={f.uid}>
-                <button type="button" className="pl-row is-reason" onClick={() => onOpenLearner(f.uid)}>
-                  <span className="pl-row-title">
-                    <b>{memberName(f.uid, people)}</b>
-                    <small>{f.className}</small>
-                  </span>
-                  <span className="pl-row-title">
-                    <small>{f.reason}</small>
-                  </span>
-                  <StatusDot tone="neutral">Voir le suivi</StatusDot>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+    <div className="pl-gantt-embed">
+      <GanttChart window={ganttWindow(data.today, 3, 7)} rows={rows} today={data.today} shades={breaksOf()} label="Planification des classes" />
+      <GanttLegend items={PLANNING_LEGEND} />
     </div>
   );
 }
@@ -265,59 +516,29 @@ export function InstitutionPlanning({
   /** Encadrant : il lit la planification de ses classes, l'établissement la tient. */
   readOnly?: boolean;
 }) {
-  const { school, ext, catalog, today, classes } = data;
+  const { school, catalog, today, classes } = data;
   const [openId, setOpenId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const window = ganttWindow(today, 3, 7);
 
-  const progressOfPlan = (plan: PlanItem): number | undefined => {
-    if (plan.kind !== 'sequence' || !plan.moduleId) return undefined;
-    const students = studentsOfClass(school, plan.classId);
-    return students.length ? mean(students.map((uid) => followUp(ext, catalog, uid, plan.moduleId as string).percent)) : undefined;
-  };
-
-  const rows = classes.map((c) => ({
-    id: c.id,
-    label: c.name,
-    sub: plural(studentsOfClass(school, c.id).length, 'élève', 'élèves'),
-    bars: plansOfClass(school.plans, c.id).map((p): GanttBar => {
-      const progress = progressOfPlan(p);
-      const status = planStatus(p, today);
-      return {
-        id: p.id,
-        label: p.title,
-        start: p.start,
-        end: p.end,
-        tone: p.kind === 'exam' ? 'warm' : p.kind === 'revision' ? 'soft' : status === 'done' ? 'done' : 'brand',
-        progress,
-        detail: `${PLAN_KIND_LABEL[p.kind].toLowerCase()}${progress !== undefined ? `, avancement ${progress} %` : ''}`
-      };
-    })
-  }));
-
-  const shades = SCHOOL_CALENDAR.entries.filter((e) => e.kind === 'break').map((e) => ({ start: e.start, end: e.end || e.start, label: e.title }));
+  const { rows, progressOfPlan } = planningRows(data);
+  const shades = breaksOf();
   const open = school.plans.find((p) => p.id === openId);
   const openProgress = open ? progressOfPlan(open) : undefined;
   const openExpected = open && planStatus(open, today) === 'current' ? expectedProgress(open, today) : null;
 
   return (
     <div className="pl-board">
-      <div className="pl-toolbar">
-        <div>
-          <h2>Planification du trimestre</h2>
-          <p>
-            {readOnly ? 'Séquences, révisions et évaluations de vos classes, planifiées par l’établissement.' : 'Séquences de cours, révisions et évaluations de chaque classe.'}{' '}
-            Le remplissage d’une barre montre l’avancement réel des élèves.
-          </p>
-        </div>
-        {!readOnly && (
+      {/* Rubrique de premier niveau : pas de titre ni de phrase d'introduction, l'action au bout de la ligne. */}
+      {!readOnly && (
+        <div className="pl-toolbar is-actions-only">
           <div className="pl-toolbar-actions">
             <button type="button" className="secondary ui-btn-sm" disabled={classes.length === 0} onClick={() => setAdding(true)}>
               <CalendarRange size={16} aria-hidden="true" /> Ajouter une période
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {classes.length === 0 ? (
         <section className="pl-panel">
@@ -329,16 +550,8 @@ export function InstitutionPlanning({
       ) : (
         <>
           <GanttChart window={window} rows={rows} today={today} shades={shades} label="Planification des classes" onBarClick={(id) => setOpenId(id)} />
-          <GanttLegend
-            items={[
-              { tone: 'brand', label: 'Séquence en cours ou à venir' },
-              { tone: 'done', label: 'Séquence terminée' },
-              { tone: 'soft', label: 'Révisions' },
-              { tone: 'warm', label: 'Évaluation' },
-              { tone: 'shade', label: 'Congés' },
-              { tone: 'today', label: 'Aujourd’hui' }
-            ]}
-          />
+          <GanttLegend items={PLANNING_LEGEND} />
+          {readOnly && <p className="pl-note">La planification est tenue par l’établissement : vous la consultez.</p>}
         </>
       )}
 
