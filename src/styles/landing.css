@@ -15,11 +15,11 @@
 }
 .lg-left { display: flex; flex-direction: column; align-items: center; gap: 24px; min-width: 0; padding: 24px 32px; }
 .lg-intro { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 620px; text-align: center; }
-/* Le titre d'accueil est le seul texte du site en caractères à empattements : fin, grand, calme.
-   Polices du système seulement, pour ne rien charger de plus. */
+/* Le titre d'accueil, en caractères à empattements : fin, grand, calme. Newsreader est servie avec le
+   site (aucun appel extérieur) : la marque est la même sur tous les appareils. */
 .lg-intro h1 {
   margin: 0;
-  font-family: ui-serif, 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  font-family: var(--font-editorial);
   font-size: 3rem;
   line-height: 1.12;
   font-weight: 400;

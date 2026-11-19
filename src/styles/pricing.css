@@ -70,3 +70,19 @@
   .pr-plans.is-2 { --pr-cols: 1; max-width: 520px; }
   .pr-foot .ip-link { margin-left: 0; }
 }
+
+/* Écran étroit : les publics en une rangée qui défile ; la comparaison garde la colonne des fonctions
+   à gauche pendant qu'on fait glisser les formules, et chaque cellule réduit son texte à un signe. */
+@media (max-width: 640px) {
+  .pr-page { padding-top: 24px; }
+  .pr-seg { display: flex; flex-wrap: nowrap; max-width: 100%; overflow-x: auto; border-radius: 12px; scrollbar-width: none; }
+  .pr-seg::-webkit-scrollbar { display: none; }
+  .pr-seg button { flex: none; }
+  .pr-compare table { min-width: 460px; }
+  .pr-compare th,
+  .pr-compare td { padding: 12px 10px; }
+  .pr-compare th[scope='row'],
+  .pr-compare thead th:first-child { position: sticky; left: 0; z-index: 1; width: 150px; min-width: 150px; background: var(--bg-surface); box-shadow: 1px 0 0 var(--border-hairline); }
+  .pr-no { font-size: 0; }
+  .pr-no svg { width: 16px; height: 16px; }
+}

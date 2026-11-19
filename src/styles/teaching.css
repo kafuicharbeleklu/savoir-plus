@@ -220,3 +220,10 @@
   .sx-review-layout { grid-template-columns: minmax(0, 1fr); }
   .sx-source-pane { position: static; max-height: 280px; }
 }
+
+/* Écran étroit : la carte défile dans son cadre, la colonne des élèves reste à gauche. */
+@media (max-width: 640px) {
+  .cm-map th.cm-name { position: sticky; left: 0; z-index: 1; min-width: 128px; background: var(--bg-surface); box-shadow: 1px 0 0 var(--border-hairline); }
+  .cm-map tbody tr:hover th.cm-name { background: var(--bg-subtle); }
+  .cm-name button { padding-left: 16px; }
+}

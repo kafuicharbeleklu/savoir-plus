@@ -420,7 +420,7 @@ export function CalendarPage({
   events: CalendarEvent[];
   plan: RevisionPlan;
   today: Day;
-  /** Jour à ouvrir (AAAA-MM-JJ) ou « plan », venu de l'adresse. */
+  /** Jour à ouvrir (AAAA-MM-JJ), « plan », « timetable » ou « new » (nouvelle date), venu de l'adresse. */
   initialTarget?: string;
   moduleOptions: { id: string; title: string }[];
   onChange: (next: CalendarUserState) => void;
@@ -435,7 +435,8 @@ export function CalendarPage({
   );
   const [selected, setSelected] = useState<Day>(startDay);
   const [cursor, setCursor] = useState({ year: Number(startDay.slice(0, 4)), month: Number(startDay.slice(5, 7)) - 1 });
-  const [editing, setEditing] = useState<{ event: CalendarEvent | null } | null>(null);
+  // « new » dans l'adresse (fenêtre de commande) : le formulaire d'une nouvelle date s'ouvre.
+  const [editing, setEditing] = useState<{ event: CalendarEvent | null } | null>(initialTarget === 'new' ? { event: null } : null);
   const [rhythmOpen, setRhythmOpen] = useState(false);
   const [sessionKey, setSessionKey] = useState<string | null>(null);
   const [examId, setExamId] = useState<string | null>(null);

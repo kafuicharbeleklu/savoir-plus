@@ -268,7 +268,7 @@ button.pl-grid-slot:hover { filter: brightness(0.97); }
    Espace famille : en-tête de l’enfant, lettre de la semaine, repères ronds,
    révision de la semaine, semaine de l’enfant (cours et révisions).
    ========================================================================== */
-:root { --font-editorial: 'Newsreader', ui-serif, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif; }
+:root { --font-editorial: 'Newsreader Variable', 'Newsreader', ui-serif, Georgia, serif; }
 
 .fm-head { display: flex; align-items: center; gap: 12px; min-width: 0; margin-bottom: 4px; }
 .fm-head-initial { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--accent-brand-soft); color: var(--accent-brand); font-size: 1.0625rem; font-weight: 600; }

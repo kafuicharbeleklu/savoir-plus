@@ -3,6 +3,8 @@ import App from './App.tsx';
 import { installTooltips } from './tooltips';
 // Police de lecture du lecteur de modules, servie avec le site (aucun appel extérieur).
 import '@fontsource-variable/inter';
+// Police éditoriale (titre de la connexion, d'un module, lettre aux parents, Formules), servie avec le site elle aussi.
+import '@fontsource-variable/newsreader/standard.css';
 import './index.css';
 import './styles/ui.css';
 import './styles/settings.css';
@@ -24,6 +26,7 @@ import './styles/work.css';
 import './styles/learner.css';
 import './styles/teaching.css';
 import './styles/pricing.css';
+import './styles/command.css';
 import './styles/angles.css';
 
 installTooltips();

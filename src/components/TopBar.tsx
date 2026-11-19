@@ -38,6 +38,7 @@ export function TopBar({
   unreadNotifs,
   topQuery,
   setTopQuery,
+  onOpenCommands,
   onOpenAuthModal,
   onEnterVisitor,
   onOpenMessaging,
@@ -56,6 +57,8 @@ export function TopBar({
   unreadNotifs: number;
   topQuery: string;
   setTopQuery: (q: string) => void;
+  /** Ouvre la fenêtre de commande (Ctrl K). */
+  onOpenCommands?: () => void;
   onOpenAuthModal: () => void;
   onEnterVisitor: () => void;
   onOpenMessaging: () => void;
@@ -138,7 +141,7 @@ export function TopBar({
                   }
                 }}
               />
-              {topQuery && (
+              {topQuery ? (
                 <button
                   className="search-clear"
                   aria-label="Effacer la recherche"
@@ -146,6 +149,13 @@ export function TopBar({
                 >
                   <X size={13} />
                 </button>
+              ) : (
+                onOpenCommands && (
+                  <button type="button" className="top-search-kbd" onClick={onOpenCommands} title="Rechercher et agir au clavier">
+                    <kbd>Ctrl K</kbd>
+                    <span className="sr-only">Ouvrir la fenêtre de commande</span>
+                  </button>
+                )
               )}
             </div>
 
