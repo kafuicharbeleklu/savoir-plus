@@ -12,7 +12,7 @@
 }
 .today-main { position: relative; min-height: 214px; }
 /* L’illustration du module en fond de carte, nette, fondue sous le texte */
-.today-art { position: absolute; top: 0; right: 0; bottom: 0; width: 50%; overflow: hidden; }
+.today-art { position: absolute; top: 0; right: 0; bottom: 0; width: 46%; overflow: hidden; }
 .today-art .sober-card-banner { height: 100%; border-radius: 0; }
 .today-main::after {
   content: "";

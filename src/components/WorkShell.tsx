@@ -43,6 +43,7 @@ export function WorkShell({
   currentSpace,
   groups,
   extra,
+  aside,
   footer,
   children
 }: {
@@ -59,6 +60,8 @@ export function WorkShell({
   groups: WorkNavGroup[];
   /** Contenu propre à l'espace, sous l'identité (sélecteur de vue de la gouvernance). */
   extra?: React.ReactNode;
+  /** Sous les rubriques : une carte (annonce en cours, prochain cours…). */
+  aside?: React.ReactNode;
   footer?: React.ReactNode;
   children: React.ReactNode;
 }) {
@@ -162,6 +165,8 @@ export function WorkShell({
             </div>
           ))}
         </nav>
+
+        {aside && <div className="work-side-card">{aside}</div>}
 
         {footer && <div className="work-side-foot">{footer}</div>}
       </aside>

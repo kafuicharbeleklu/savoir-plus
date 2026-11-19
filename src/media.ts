@@ -42,3 +42,13 @@ export const PHOTOS = {
 } as const;
 
 export const PHOTO_CREDIT = 'Photo : Yan Krukau, Pexels';
+
+/** Photos des annonces : une par annonce, toujours la même ; l'annonce maison garde son illustration. */
+const AD_PHOTOS = [PHOTOS.entraide, PHOTOS.etude, PHOTOS.bibliotheque, PHOTOS.ecriture];
+
+export function adPhoto(campaign: { id: string; advertiserKind: string }): string | null {
+  if (campaign.advertiserKind === 'house') return null;
+  let h = 0;
+  for (const ch of campaign.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return AD_PHOTOS[h % AD_PHOTOS.length];
+}

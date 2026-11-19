@@ -1,4 +1,5 @@
 import React, { useSyncExternalStore } from 'react';
+import { PHOTOS } from '../media';
 import { BadgeCheck, MapPin } from 'lucide-react';
 import type { Profile } from '../data';
 import {
@@ -143,7 +144,7 @@ export function ProfileIdentityCard({
         <div
           className="mini-profile-cover"
           aria-hidden="true"
-          style={details?.coverDataUrl ? { backgroundImage: `url(${details.coverDataUrl})` } : undefined}
+          style={{ backgroundImage: `url(${details?.coverDataUrl || PHOTOS.bibliotheque})` }}
         />
       )}
       <button type="button" className="mini-profile-identity" onClick={onOpenProfile}>

@@ -95,7 +95,8 @@ test('la carte publicitaire porte la mention « Publicité » ; obligatoire avec
   );
   assert.match(html, /<section class="ad-card" aria-label="Publicité">/);
   assert.match(html, /Publicité · /);
-  assert.match(html, /class="art-scene/);
+  // Une annonce d'établissement ou d'encadrant porte une photo ; l'annonce maison garde son illustration.
+  assert.match(html, /<img src="media\/photos\/[a-z-]+\.jpg" alt=""/);
   // Offre gratuite : ni pause, ni « Pourquoi cette annonce ? ».
   assert.doesNotMatch(html, /Pourquoi cette annonce/);
   assert.doesNotMatch(html, /ad-card-pause/);

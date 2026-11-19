@@ -1,30 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="t d" font-family="'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif">
   <title id="t">Sauvegarde : la règle 3-2-1</title>
   <desc id="d">Trois copies de vos fichiers, sur deux supports différents, dont une copie conservée ailleurs.</desc>
-  <rect width="1200" height="675" fill="#F4F7F5"/>
-  <text x="80" y="110" font-size="46" font-weight="600" fill="#16201A">Sauvegarde : la règle 3-2-1</text>
-  <text x="80" y="154" font-size="24" fill="#5A6B62">Une seule copie, c’est aucune sauvegarde.</text>
+  <rect width="1200" height="675" fill="#F7F6FB"/>
+  <text x="80" y="110" font-size="46" font-weight="600" fill="#1F2033">Sauvegarde : la règle 3-2-1</text>
+  <text x="80" y="154" font-size="24" fill="#5F6077">Une seule copie, c’est aucune sauvegarde.</text>
 
   <g>
-    <rect x="80" y="210" width="320" height="340" rx="8" fill="#FFFFFF" stroke="#D5DED9" stroke-width="2"/>
-    <text x="240" y="370" font-size="170" font-weight="600" text-anchor="middle" fill="#1F4F3F">3</text>
-    <text x="240" y="440" font-size="28" font-weight="600" text-anchor="middle" fill="#16201A">copies</text>
-    <text x="240" y="480" font-size="21" text-anchor="middle" fill="#5A6B62">l’original et deux</text>
-    <text x="240" y="508" font-size="21" text-anchor="middle" fill="#5A6B62">sauvegardes</text>
+    <rect x="80" y="210" width="320" height="340" rx="8" fill="#FFFFFF" stroke="#DAD9E6" stroke-width="2"/>
+    <text x="240" y="370" font-size="170" font-weight="600" text-anchor="middle" fill="#393C74">3</text>
+    <text x="240" y="440" font-size="28" font-weight="600" text-anchor="middle" fill="#1F2033">copies</text>
+    <text x="240" y="480" font-size="21" text-anchor="middle" fill="#5F6077">l’original et deux</text>
+    <text x="240" y="508" font-size="21" text-anchor="middle" fill="#5F6077">sauvegardes</text>
   </g>
   <g>
-    <rect x="440" y="210" width="320" height="340" rx="8" fill="#FFFFFF" stroke="#D5DED9" stroke-width="2"/>
-    <text x="600" y="370" font-size="170" font-weight="600" text-anchor="middle" fill="#1F4F3F">2</text>
-    <text x="600" y="440" font-size="28" font-weight="600" text-anchor="middle" fill="#16201A">supports différents</text>
-    <text x="600" y="480" font-size="21" text-anchor="middle" fill="#5A6B62">disque externe</text>
-    <text x="600" y="508" font-size="21" text-anchor="middle" fill="#5A6B62">et stockage en ligne</text>
+    <rect x="440" y="210" width="320" height="340" rx="8" fill="#FFFFFF" stroke="#DAD9E6" stroke-width="2"/>
+    <text x="600" y="370" font-size="170" font-weight="600" text-anchor="middle" fill="#393C74">2</text>
+    <text x="600" y="440" font-size="28" font-weight="600" text-anchor="middle" fill="#1F2033">supports différents</text>
+    <text x="600" y="480" font-size="21" text-anchor="middle" fill="#5F6077">disque externe</text>
+    <text x="600" y="508" font-size="21" text-anchor="middle" fill="#5F6077">et stockage en ligne</text>
   </g>
   <g>
-    <rect x="800" y="210" width="320" height="340" rx="8" fill="#1F4F3F"/>
+    <rect x="800" y="210" width="320" height="340" rx="8" fill="#393C74"/>
     <text x="960" y="370" font-size="170" font-weight="600" text-anchor="middle" fill="#FFFFFF">1</text>
     <text x="960" y="440" font-size="28" font-weight="600" text-anchor="middle" fill="#FFFFFF">copie ailleurs</text>
-    <text x="960" y="480" font-size="21" text-anchor="middle" fill="#CFE3DA">hors de chez vous,</text>
-    <text x="960" y="508" font-size="21" text-anchor="middle" fill="#CFE3DA">en cas de vol ou de sinistre</text>
+    <text x="960" y="480" font-size="21" text-anchor="middle" fill="#E4E3F3">hors de chez vous,</text>
+    <text x="960" y="508" font-size="21" text-anchor="middle" fill="#E4E3F3">en cas de vol ou de sinistre</text>
   </g>
-  <text x="80" y="618" font-size="22" fill="#16201A">Et une fois par trimestre : essayez de restaurer un fichier.</text>
+  <text x="80" y="618" font-size="22" fill="#1F2033">Et une fois par trimestre : essayez de restaurer un fichier.</text>
 </svg>

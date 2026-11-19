@@ -1,4 +1,5 @@
 import { ArtScene } from './LessonArt';
+import { SubjectCover, coverFor } from './SubjectCovers';
 import React from 'react';
 import {
   BookMarked,
@@ -172,9 +173,11 @@ export function formatShortDuration(duration: string, item: CatalogItem): string
  */
 export function CatalogCardBanner({ item, compact = false }: { item: CatalogItem; compact?: boolean }) {
   const frame = item.type === 'path' ? 'route' : item.type === 'resource' ? 'sheet' : 'window';
+  // Une couverture par sujet quand le contenu en a une ; sinon l'illustration générique de son type.
+  const cover = coverFor(item);
   return (
-    <div className={`sober-card-banner type-${item.type} ${compact ? 'compact' : ''}`} aria-hidden="true">
-      <ArtScene frame={frame} seed={item.id} icon={<BannerEmblem item={item} size={20} />} />
+    <div className={`sober-card-banner type-${item.type} ${compact ? 'compact' : ''}${cover ? ' has-cover' : ''}`} aria-hidden="true">
+      {cover ? <SubjectCover cover={cover} /> : <ArtScene frame={frame} seed={item.id} icon={<BannerEmblem item={item} size={20} />} />}
     </div>
   );
 }

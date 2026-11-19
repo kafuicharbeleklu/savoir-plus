@@ -151,7 +151,7 @@ import {
 import { accountOf as schoolAccountOf, ageBandOf, institutionOf, libraryOf, studentsOfClass } from './school';
 import { addDays as addCalendarDays, dayFromDate } from './calendar';
 import { demoCampaigns } from './ads';
-import { SponsoredCard } from './components/SponsoredCard';
+import { OwnAdCard, SponsoredCard } from './components/SponsoredCard';
 import { audienceOfKind, contentIncluded, institutionSteering, paidSubscription } from './offers';
 import { rankFeed, recommend, viewerOf } from './personalize';
 import { addUsage, lockApplies, lockState, requestOfDay, requestTime, rulesOf } from './deviceLock';
@@ -3126,12 +3126,15 @@ export default function App() {
           ]
         }
       ];
+      // Son annonce en cours, s'il en a une : la même photo que dans la colonne de droite des membres.
+      const ownAd = demoCampaigns(today, addCalendarDays).find((c) => c.advertiserId === uid && c.start <= today && today <= c.end);
       return {
         label: 'Rubriques de l’établissement',
         mark: <span className="work-mark-square">{accountMark}</span>,
         title: institution?.name || user.name,
         subtitle: paidPlan ? `Formule ${paidPlan.offer.name}` : 'Sans formule',
-        groups
+        groups,
+        aside: ownAd ? <OwnAdCard campaign={ownAd} onOpenOffers={() => nav('info', 'pricing/advertiser')} /> : undefined
       };
     }
     if (workSpaceId === 'teaching') {
@@ -3270,6 +3273,7 @@ export default function App() {
             currentSpace={workSpaceId}
             groups={workShell.groups}
             extra={'extra' in workShell ? workShell.extra : undefined}
+            aside={'aside' in workShell ? workShell.aside : undefined}
             footer={<SidebarCompactFooter nav={nav} canCreate={caps.canCreate} onOpenInfoModal={openInfoPage} />}
           >
             <div key={`${page}:${selectedId}`} className="page-transition">

@@ -76,3 +76,25 @@
    sous un léger voile, pour que le texte posé dessus reste lisible. */
 .home-resume-visual .art-scene { filter: blur(7px); transform: scale(1.08); }
 .home-resume-visual .sober-card-banner::after { content: ''; position: absolute; inset: 0; background: color-mix(in srgb, var(--bg-surface) 38%, transparent); }
+
+/* -- Couvertures par sujet : trois fonds pastel qui suivent le thème ------------------------- */
+:root { --cover-lav: #e4e3f3; --cover-sand: #efe6d2; --cover-peach: #f7e1d7; }
+[data-theme='dark'] {
+  --cover-lav: color-mix(in srgb, var(--accent-brand) 14%, var(--bg-surface));
+  --cover-sand: color-mix(in srgb, #d8c7a0 12%, var(--bg-surface));
+  --cover-peach: color-mix(in srgb, var(--accent-warm) 16%, var(--bg-surface));
+}
+.subject-cover { display: block; width: 100%; height: 100%; }
+.sober-card-banner.has-cover { background: var(--cover-lav); }
+.sober-card-banner > .subject-cover { position: absolute; inset: 0; }
+
+/* -- Photos : annonce, carte de profil, annonce dans l'espace de l'annonceur ------------------ */
+.ad-card-visual > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; }
+.mini-profile-cover { background-size: cover; background-position: 50% 38%; }
+.own-ad { overflow: hidden; border: 1px solid var(--border-hairline); border-radius: var(--angle); background: var(--bg-surface); }
+.own-ad > img { display: block; width: 100%; height: 84px; object-fit: cover; object-position: 50% 40%; }
+.own-ad-body { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px 12px; }
+.own-ad-kicker { margin: 0; font-size: 0.75rem; color: var(--fg-muted); }
+.own-ad-title { margin: 0; font-size: 0.875rem; font-weight: 600; line-height: 1.35; color: var(--fg-primary); }
+.own-ad-meta { margin: 0 0 4px; font-size: 0.75rem; color: var(--fg-muted); }
+.own-ad .li-text-link { font-size: 0.8125rem; }

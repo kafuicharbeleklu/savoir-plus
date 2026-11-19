@@ -187,3 +187,7 @@ button.work-space-btn:hover { background: var(--bg-subtle); }
   .work-side { display: none; }
   .work-canvas { padding: 12px 12px 84px; }
 }
+
+/* Une carte sous les rubriques (annonce en cours) : elle reste en bas de la barre, au-dessus du pied. */
+.work-side-card { margin-top: auto; padding: 12px 0 0; }
+.work-side-card + .work-side-foot { margin-top: 0; }
