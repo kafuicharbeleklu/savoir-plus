@@ -313,7 +313,7 @@ export function ClassesOverview({
       {kpis}
 
       <div className="pl-split is-wide">
-        <section className="pl-panel" aria-label="Classes">
+        <section className="pl-panel" aria-label="Classes face à l’attendu">
           <header className="pl-panel-head">
             <h2>Classes</h2>
             <small>Le trait marque l’attendu à ce jour</small>

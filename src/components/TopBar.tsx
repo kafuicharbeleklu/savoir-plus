@@ -104,6 +104,8 @@ export function TopBar({
 
   const isCatalogActive = ['catalog', 'resource-detail', 'module-detail', 'path-detail'].includes(page);
   const isHomeActive = page === 'home' || page.startsWith('community');
+  const learns = caps.accountKind === 'learner' || caps.accountKind === 'educator';
+  const isLearningActive = ['learning', 'progression', 'calendar', 'catalog', 'resource-detail', 'module-detail', 'path-detail'].includes(page);
   const isNetworkActive = page === 'relations' || page === 'member';
   const isStudioActive = page.startsWith('studio');
   const isAdminActive = page.startsWith('admin') || page === 'moderation';
@@ -243,6 +245,13 @@ export function TopBar({
             <Home size={18} />
             <span>Accueil</span>
           </button>
+          {/* Comme sur mobile : l'apprentissage a sa porte dans la barre du haut (compte qui apprend seulement). */}
+          {learns && (
+            <button className={isLearningActive ? 'active' : ''} onClick={() => nav('learning')}>
+              <BookOpen size={18} />
+              <span>Apprendre</span>
+            </button>
+          )}
           <button className={isNetworkActive ? 'active' : ''} onClick={() => nav('relations')}>
             <span className="top-icon">
               <Users size={18} />

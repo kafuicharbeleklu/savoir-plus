@@ -5,9 +5,12 @@
 import React from 'react';
 import { AlertTriangle, ArrowRight, CalendarClock, ClipboardList, Flame } from 'lucide-react';
 import {
+  addDays,
   buildMonthGrid,
   countdownLabel,
+  diffDays,
   eventCovers,
+  eventEnd,
   formatDayLong,
   formatMonthShort,
   formatMonthTitle,
@@ -23,6 +26,7 @@ import {
   type SessionLog
 } from '../calendar';
 import type { StatusTone } from './ui';
+import { mondayOf } from '../planning';
 
 const WEEKDAYS: { short: string; initial: string; full: string }[] = [
   { short: 'Lun', initial: 'L', full: 'Lundi' },
@@ -290,6 +294,97 @@ export function CalendarCard({
         onOpenPlan={() => onOpen('plan')}
         onOpenExam={() => onOpen(upcoming ? upcoming.start : undefined)}
       />
+      <button type="button" className="rail-card-foot" onClick={() => onOpen()}>
+        Ouvrir le calendrier <ArrowRight size={16} aria-hidden="true" />
+      </button>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ Carte « Cette semaine » */
+
+const WEEK_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+/**
+ * Carte « Cette semaine » de l'accueil : les sept jours en ronds sobres (plein pour aujourd'hui ou un
+ * examen, fond doux pour une séance faite, cerclé pour une séance prévue), puis les deux prochaines
+ * dates. Le mois entier reste sur la page Calendrier : c'est la semaine qui guide les révisions.
+ */
+export function WeekCard({
+  today,
+  events,
+  plan,
+  log,
+  onOpen
+}: {
+  today: Day;
+  events: CalendarEvent[];
+  plan: RevisionPlan;
+  log: SessionLog[];
+  onOpen: (target?: Day | 'plan') => void;
+}) {
+  const monday = mondayOf(today);
+  const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+  const upcoming = events
+    .filter((e) => eventEnd(e) >= today)
+    .sort((a, b) => (a.start === b.start ? a.title.localeCompare(b.title, 'fr') : a.start < b.start ? -1 : 1))
+    .slice(0, 2);
+  return (
+    <section className="rail-card wk-card" aria-label="Cette semaine">
+      <div className="cal-card-head">
+        <h2 className="discover-feed-title">Cette semaine</h2>
+        <span className="cal-card-month">
+          {Number(monday.slice(8))} au {Number(days[6].slice(8))} {formatMonthShort(days[6])}
+        </span>
+      </div>
+      <div className="wk-days" role="group" aria-label="Les sept jours de la semaine">
+        {days.map((d, i) => {
+          const marks = marksForDay(d, events, plan.sessions, log);
+          const state =
+            d === today ? 'is-now' : marks.exam ? 'is-exam' : marks.done > 0 ? 'is-done' : marks.planned > 0 && d > today ? 'is-plan' : marks.break ? 'is-off' : '';
+          const said = [
+            formatDayLong(d),
+            marks.exam ? 'examen' : '',
+            marks.done ? `${marks.done} séance${marks.done > 1 ? 's' : ''} faite${marks.done > 1 ? 's' : ''}` : '',
+            marks.planned && d >= today ? `${marks.planned} séance${marks.planned > 1 ? 's' : ''} prévue${marks.planned > 1 ? 's' : ''}` : '',
+            marks.break ? 'congés' : ''
+          ]
+            .filter(Boolean)
+            .join(', ');
+          return (
+            <button key={d} type="button" className={`wk-day ${state}`} aria-label={said} title={said} onClick={() => onOpen(d)}>
+              <span className="wk-day-letter" aria-hidden="true">
+                {WEEK_LETTERS[i]}
+              </span>
+              <span className="wk-day-num tabular-nums" aria-hidden="true">
+                {Number(d.slice(8))}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {upcoming.length > 0 && (
+        <ul className="wk-dates">
+          {upcoming.map((e) => {
+            const exam = e.kind === 'exam' ? plan.exams.find((x) => x.examDay === e.start) : undefined;
+            const days = diffDays(today, e.start);
+            return (
+              <li key={`${e.start}-${e.title}`}>
+                <button type="button" className="wk-date" onClick={() => onOpen(e.start)}>
+                  <DateTile day={e.start} tone={e.kind === 'exam' ? 'warm' : 'neutral'} />
+                  <span className="wk-date-text">
+                    <b>{e.title}</b>
+                    <small>
+                      {days <= 0 && eventEnd(e) >= today ? 'en cours' : countdownLabel(days)}
+                      {exam ? ` · ${exam.done} séance${exam.done > 1 ? 's' : ''} sur ${exam.total} faite${exam.done > 1 ? 's' : ''}` : ''}
+                    </small>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       <button type="button" className="rail-card-foot" onClick={() => onOpen()}>
         Ouvrir le calendrier <ArrowRight size={16} aria-hidden="true" />
       </button>

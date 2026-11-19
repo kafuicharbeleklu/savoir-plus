@@ -29,7 +29,7 @@ import { MODULES_CONTENT, builtInAnswerKey } from '../content';
 import { isQuizPassed, moduleProgressPercent } from '../domain.mjs';
 import { computeCatalogCardSteps } from '../personas';
 import { DifficultyMeter, ProgressBar } from '../components/ProfileIdentityCard';
-import { CatalogContentCard, ContentTypeMark, XpBadgeInline } from '../components/CatalogVisuals';
+import { CatalogCardBanner, CatalogContentCard, ContentTypeMark, XpBadgeInline } from '../components/CatalogVisuals';
 
 import { Select } from '../components/ui';
 const LESSON_COUNTS: Record<string, number> = Object.fromEntries(
@@ -483,142 +483,196 @@ export function ModuleDetailView({
   const wall = paywall?.(item.id) || null;
   const isInteractive = !!item.interactive;
   const modProg = resolveModProg(item.id, progress, ext, userId, getModuleProgress);
-  const studyLessons = MODULES_CONTENT[item.id]?.lessons.length || Math.max(1, (item.sections?.length || 4) - 1);
-  const pct = isInteractive ? moduleProgressPercent(modProg, studyLessons, builtInAnswerKey(item.id)) : 0;
+  const content = MODULES_CONTENT[item.id];
+  const studyLessons = content?.lessons.length || Math.max(1, (item.sections?.length || 4) - 1);
+  const key = builtInAnswerKey(item.id);
+  const pct = isInteractive ? moduleProgressPercent(modProg, studyLessons, key) : 0;
   const isPlanned = ext.plannedIds.includes(item.id);
   const authorId = resolveAuthorMemberId(item.author);
+  const quizPassed = isInteractive && isQuizPassed(modProg, key);
+  const questionCount = content?.questions.length || 0;
+  const minutesOf = (text: string) => Number(/\d+/.exec(text)?.[0] || 0);
+
+  // Le programme : les sections du module puis son quiz, chacune avec son statut écrit.
+  const rows: { title: string; meta: string; done: boolean }[] = content
+    ? [
+        ...content.lessons.map((lesson, i) => ({
+          title: lesson.title,
+          meta: [lesson.label, lesson.minutes].filter(Boolean).join(' · '),
+          done: isInteractive && modProg.lessons.includes(i)
+        })),
+        {
+          title: 'Quiz final',
+          meta: `${questionCount} question${questionCount > 1 ? 's' : ''}${modProg.submitted && !quizPassed ? ' · à retenter' : ''}`,
+          done: quizPassed
+        }
+      ]
+    : (item.sections || []).map((sec) => ({ title: sec.title.replace(/^\d+\s+/, ''), meta: sec.subtitle, done: sec.status === 'Terminé' }));
+  const current = rows.findIndex((r) => !r.done);
+  const readingLeft = content ? content.lessons.reduce((sum, lesson, i) => sum + (modProg.lessons.includes(i) ? 0 : minutesOf(lesson.minutes)), 0) : 0;
+  const leftParts = [readingLeft ? `${readingLeft} min de lecture` : '', !quizPassed && questionCount ? `le quiz (${questionCount} questions)` : ''].filter(Boolean);
+  const verb = pct === 100 ? 'Revoir le module' : pct === 0 ? 'Commencer le module' : current >= 0 && current === rows.length - 1 && content ? 'Reprendre au quiz final' : 'Reprendre le module';
 
   const togglePlanned = () => {
     updateExt((prev) => ({
       ...prev,
-      plannedIds: prev.plannedIds.includes(item.id)
-        ? prev.plannedIds.filter((x) => x !== item.id)
-        : [...prev.plannedIds, item.id]
+      plannedIds: prev.plannedIds.includes(item.id) ? prev.plannedIds.filter((x) => x !== item.id) : [...prev.plannedIds, item.id]
     }));
     setToast(isPlanned ? 'Retiré de « À commencer »' : 'Ajouté à « Mes apprentissages »');
   };
 
   return (
-    <div className="wf-detail-wrap">
-      <button className="back-link" onClick={() => nav('catalog')}>
-        <ArrowLeft size={16} /> Retour à la bibliothèque
-      </button>
-
-      <div className="wf-two-col">
-        <div className="wf-card">
-          <ContentTypeMark type="module" labelOverride="Module" extra={item.version} />
-          <h1 className="wf-detail-title">{item.title}</h1>
-          <p className="wf-lead">{item.summary}</p>
-          <div className="htb-meta-line detail-meta-line">
-            {item.xpReward ? (
-              <>
-                <XpBadgeInline amount={item.xpReward} />
-                <span aria-hidden="true">·</span>
-              </>
-            ) : null}
-            <DifficultyMeter level={item.level} />
-            <span aria-hidden="true">·</span>
+    <div className="md-page">
+      <section className="md-hero" aria-label={`Module ${item.title}`}>
+        <div className="md-hero-text">
+          <nav className="md-crumbs" aria-label="Fil d’Ariane">
+            <button type="button" onClick={() => nav('catalog')}>
+              Bibliothèque
+            </button>
+            <ChevronRight size={14} aria-hidden="true" />
             <span>{item.domain}</span>
-            <span aria-hidden="true">·</span>
-            <span className="sober-inline-icon">
-              <Clock size={13} aria-hidden="true" /> {item.duration}
-            </span>
-          </div>
-
-          <p className="tiny muted wf-mt-sm">
-            Proposé par{' '}
-            {authorId ? (
-              <button type="button" className="text-link" onClick={() => nav('member', authorId)}>
-                <b>{item.author}</b>
-              </button>
-            ) : (
-              <b>{item.author}</b>
-            )}
+          </nav>
+          <p className="md-type">
+            Module · {item.level} · {item.version}
           </p>
-
-          <div className="wf-divider" />
-          <h3>Objectifs pédagogiques</h3>
-          <ul className="lesson-points">
-            {item.objectives.map((o) => (
-              <li key={o}>
-                <CheckCircle2 size={17} /> {o}
+          <h1 className="md-title">{item.title}</h1>
+          <p className="md-lead">{item.summary}</p>
+          <p className="md-author">
+            <span className="md-author-initial" aria-hidden="true">
+              {item.author.charAt(0)}
+            </span>
+            <span>
+              {authorId ? (
+                <button type="button" className="md-author-name" onClick={() => nav('member', authorId)}>
+                  {item.author}
+                </button>
+              ) : (
+                <b className="md-author-name">{item.author}</b>
+              )}
+              <small>{item.authorRole}</small>
+            </span>
+          </p>
+          <ul className="md-facts">
+            <li>
+              <Clock size={15} aria-hidden="true" /> {item.duration}
+            </li>
+            <li>
+              <BookOpen size={15} aria-hidden="true" /> {studyLessons} section{studyLessons > 1 ? 's' : ''}
+            </li>
+            {content && content.labType !== 'generic' && (
+              <li>
+                <Target size={15} aria-hidden="true" /> 1 exercice
               </li>
-            ))}
+            )}
+            {questionCount > 0 && (
+              <li>
+                <CheckCircle2 size={15} aria-hidden="true" /> Quiz de {questionCount} questions
+              </li>
+            )}
+            {item.xpReward ? (
+              <li>
+                <XpBadgeInline amount={item.xpReward} />
+              </li>
+            ) : null}
           </ul>
-
-          <h3>Prérequis</h3>
-          <p className="wf-muted-text">{item.prerequisites}</p>
-
-          <h3>Programme du module</h3>
-          <div className="wf-program-list">
-            {(item.sections || []).map((sec, idx) => {
-              const isQuizRow = idx === (item.sections?.length || 0) - 1 && sec.title.toLowerCase().includes('acquis');
-              const done = isInteractive
-                ? isQuizRow
-                  ? isQuizPassed(modProg, builtInAnswerKey(item.id))
-                  : modProg.lessons.includes(idx)
-                : sec.status === 'Terminé';
-              return (
-                <div className={`wf-program-item ${done ? 'is-done' : 'is-todo'}`} key={sec.title}>
-                  <div>
-                    <b>{sec.title}</b>
-                    <small>{sec.subtitle}</small>
-                  </div>
-                  {done && <Check size={18} className="wf-program-check" aria-label="Section terminée" />}
-                </div>
-              );
-            })}
+          <div className="md-actions">
+            {wall ? (
+              <>
+                {wall.onBuy && (
+                  <button type="button" className="primary" onClick={wall.onBuy}>
+                    {wall.buyLabel || 'Acheter'}
+                  </button>
+                )}
+                {wall.onPlan && (
+                  <button type="button" className="li-text-link" onClick={wall.onPlan}>
+                    {wall.planLabel}
+                  </button>
+                )}
+              </>
+            ) : (
+              <button type="button" className="primary" onClick={() => openReader(item.id)}>
+                {verb} <ArrowRight size={16} aria-hidden="true" />
+              </button>
+            )}
+            <button type="button" className="li-text-link" onClick={togglePlanned}>
+              {isPlanned ? 'Retirer de mes apprentissages' : 'Ajouter à mes apprentissages'}
+            </button>
           </div>
+          {wall && (
+            <p className="md-wall-note">
+              {wall.priceLabel
+                ? `Contenu payant : ${wall.priceLabel}. Démonstration : aucun paiement réel.`
+                : 'Contenu payant. Demande à ton parent ou tuteur de l’ajouter depuis son espace famille.'}
+            </p>
+          )}
+        </div>
+        <div className="md-hero-art" aria-hidden="true">
+          <CatalogCardBanner item={item} />
+        </div>
+      </section>
+
+      <div className="md-body">
+        <div className="md-main">
+          <section className="md-card" aria-label="Ce que vous saurez faire">
+            <h2>Ce que vous saurez faire</h2>
+            <ul className="md-goals">
+              {item.objectives.map((o) => (
+                <li key={o}>
+                  <CheckCircle2 size={18} aria-hidden="true" /> {o}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="md-card" aria-label="Programme du module">
+            <header className="md-card-head">
+              <h2>Programme</h2>
+              <small>
+                {rows.filter((r) => r.done).length} étape{rows.filter((r) => r.done).length > 1 ? 's' : ''} sur {rows.length}
+              </small>
+            </header>
+            <ol className="md-program">
+              {rows.map((row, i) => (
+                <li key={row.title} className={row.done ? 'is-done' : i === current ? 'is-current' : ''}>
+                  <span className="md-program-mark" aria-hidden="true">
+                    {row.done ? <Check size={14} /> : String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="md-program-text">
+                    <b>{row.title}</b>
+                    <small>{row.meta}</small>
+                  </span>
+                  <span className={`md-program-state${row.done ? '' : i === current ? ' is-next' : ''}`}>
+                    {row.done ? 'Terminé' : i === current ? 'À faire' : 'À venir'}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section className="md-card" aria-label="Prérequis">
+            <h2>Prérequis</h2>
+            <p className="md-text">{item.prerequisites}</p>
+          </section>
         </div>
 
-        <aside className="wf-side-card">
-          <h3>Votre suivi</h3>
-          <div className="between tiny">
-            <span>Avancement</span>
-            <b className="tabular">{pct}%</b>
-          </div>
-          <ProgressBar value={pct} tone="htb" label="Avancement du module" />
-          <p className="tiny muted">
-            {isInteractive
-              ? 'Module interactif complet avec sections guidées, atelier pratique, quiz et reprise sauvegardée.'
-              : 'Module de démonstration.'}
-          </p>
-
-          {wall ? (
-            <>
-              <p className="tiny muted">
-                {wall.priceLabel
-                  ? `Contenu payant : ${wall.priceLabel}. Démonstration : aucun paiement réel.`
-                  : 'Contenu payant. Demande à ton parent ou tuteur de l’ajouter depuis son espace famille.'}
-              </p>
-              {wall.onBuy && (
-                <button className="primary wf-full-btn" onClick={wall.onBuy}>
-                  {wall.buyLabel || 'Acheter'}
-                </button>
-              )}
-              {wall.onPlan && (
-                <button type="button" className="text-link wf-plan-link" onClick={wall.onPlan}>
-                  {wall.planLabel}
-                </button>
-              )}
-            </>
-          ) : (
-            <button className="primary wf-full-btn" onClick={() => openReader(item.id)}>
-              {pct === 100 ? 'Revoir le module' : pct > 0 ? 'Continuer le module' : 'Commencer le module'}{' '}
-              <ArrowRight size={16} />
+        <aside className="md-side">
+          <section className="md-card md-progress" aria-label="Votre avancement">
+            <header className="md-card-head">
+              <h2>Votre avancement</h2>
+              <b className="md-pct">{pct} %</b>
+            </header>
+            <div className="md-steps" role="img" aria-label={`${rows.filter((r) => r.done).length} étapes sur ${rows.length}`}>
+              {rows.map((r, i) => (
+                <i key={i} className={r.done ? 'is-done' : undefined} />
+              ))}
+            </div>
+            <p className="md-text">
+              {pct === 100 ? 'Module terminé : vous pouvez le revoir quand vous voulez.' : leftParts.length ? `Il reste ${leftParts.join(' et ')}.` : 'Prêt à commencer.'}
+            </p>
+            <button type="button" className="li-text-link md-report" onClick={() => openReport(`Module : ${item.title} (${item.version})`)}>
+              <Flag size={14} aria-hidden="true" /> Signaler un problème
             </button>
-          )}
-
-          <button className="secondary wf-full-btn" onClick={togglePlanned}>
-            {isPlanned ? 'Ajouté · Retirer de ma liste' : 'Ajouter à mes apprentissages'}
-          </button>
-
-          <button
-            className="text-link wf-report-link"
-            onClick={() => openReport(`Module : ${item.title} (${item.version})`)}
-          >
-            <Flag size={14} /> Signaler un problème
-          </button>
+          </section>
         </aside>
       </div>
     </div>

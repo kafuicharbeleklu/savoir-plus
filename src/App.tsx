@@ -120,7 +120,9 @@ import {
   HEAVY_CLASS_MINUTES,
   buildRevisionPlan,
   demoCalendarState,
+  nextExam,
   normalizeCalendarState,
+  planGauges,
   resolveEvents,
   todayDay,
   type CalendarUserState,
@@ -158,7 +160,7 @@ import { initialSchoolState } from './seedSchool';
 import { TopBar } from './components/TopBar';
 import { MobileNav } from './components/MobileNav';
 import { Avatar, DifficultyMeter, ProfileIdentityCard, ProgressBar, VerifiedBadge, setAvatarPhotos } from './components/ProfileIdentityCard';
-import { CatalogCardBanner, CatalogContentCard, ContentTypeMark, XpBadgeInline } from './components/CatalogVisuals';
+import { CatalogContentCard, ContentTypeMark, XpBadgeInline } from './components/CatalogVisuals';
 import { MessagingDrawer } from './components/MessagingDrawer';
 import {
   contactStatusLabel,
@@ -172,7 +174,8 @@ import {
   normalizeSearch
 } from './components/MessageThread';
 import { SplashScreen } from './components/SplashScreen';
-import { CalendarCard } from './components/CalendarMonth';
+import { WeekCard } from './components/CalendarMonth';
+import { TodayCard, type TodayStep } from './components/TodayCard';
 import { FeedPostCard } from './components/FeedPostCard';
 import {
   SidebarCompactFooter,
@@ -1769,7 +1772,6 @@ export default function App() {
   const resumeProg = getModuleProgress(resumeModuleId);
   const resumePct = modulePct(resumeModuleId);
   const resumeValidated = isModuleValidated(resumeModuleId);
-  const resumeNextIdx = [0, 1, 2].find((i) => !resumeProg.lessons.includes(i));
 
   const renderMainContent = () => {
     if (!routeAllowed) return null; // redirect to home is in flight (route guard effect)
@@ -1856,48 +1858,45 @@ export default function App() {
 
             {/* Pedagogical Resume Card + Popular Carousel (All / Modules) */}
             <>
-                {/* Reprendre un module : seulement pour un compte qui apprend (un parent n'a pas de module en cours). */}
-                {learnsHere && (
-                  <article
-                    className="htb-card home-resume"
-                    onClick={() => resumeModule(resumeModuleId)}
-                  >
-                    <div className="home-resume-visual">
-                      <CatalogCardBanner item={resumeCatalog} />
-                    </div>
-                    <div className="home-resume-body">
-                      <span className="home-resume-kicker">Reprise · Module</span>
-                      <h2>
-                        {/* Le titre est le bouton (clavier) ; le clic sur toute la carte remonte à l'article */}
-                        <button
-                          type="button"
-                          className="home-resume-link"
-                          aria-label={`${resumePct === 0 ? 'Commencer' : resumePct === 100 ? 'Revoir' : 'Reprendre'} le module ${resumeCatalog.title}`}
-                        >
-                          {resumeCatalog.title}
-                        </button>
-                      </h2>
-                      <p className="home-resume-summary">{resumeCatalog.summary}</p>
-                      <div className="home-resume-progress">
-                        <ProgressBar value={resumePct} label="Progression du module en cours" tone="htb" />
-                        <b className="tabular-nums">{resumePct} %</b>
-                      </div>
-                      <p className="home-resume-next">
-                        {resumeNextIdx !== undefined
-                          ? `Prochaine section : 0${resumeNextIdx + 1} · ${MODULES_CONTENT[resumeModuleId]?.lessons[resumeNextIdx]?.title}`
-                          : resumeValidated
-                            ? 'Module validé — révision libre'
-                            : resumeProg.submitted
-                              ? 'Quiz à retenter pour valider le module'
-                              : 'Sections lues — prêt pour le quiz final'}
-                      </p>
-                      <p className="home-resume-meta">
-                        {resumeCatalog.domain} · {resumeCatalog.duration} · {resumeCatalog.level} ·{' '}
-                        <span className="tabular-nums">{resumeCatalog.xpReward || 150} XP</span>
-                      </p>
-                    </div>
-                  </article>
-                )}
+                {/* Aujourd'hui : la séance du jour et le module à reprendre, une seule action ; seulement pour un compte qui apprend. */}
+                {learnsHere &&
+                  (() => {
+                    const content = MODULES_CONTENT[resumeModuleId];
+                    const lessonCount = content?.lessons.length || 3;
+                    const questionCount = content?.questions.length || 3;
+                    const steps: TodayStep[] = [
+                      ...Array.from({ length: lessonCount }, (_, i) => ({
+                        label: content?.lessons[i]?.title || `Section ${i + 1}`,
+                        done: resumeProg.lessons.includes(i),
+                        kind: 'section' as const
+                      })),
+                      { label: 'Quiz final', done: resumeValidated, kind: 'quiz' as const }
+                    ];
+                    const nextLesson = steps.findIndex((step) => step.kind === 'section' && !step.done);
+                    const lesson = nextLesson >= 0 ? content?.lessons[nextLesson] : undefined;
+                    const next = resumeValidated
+                      ? 'Module validé · révision libre'
+                      : lesson
+                        ? `Section ${nextLesson + 1} · ${lesson.title}${lesson.minutes ? ` · ${lesson.minutes}` : ''}`
+                        : resumeProg.submitted
+                          ? `Quiz à retenter · ${questionCount} questions`
+                          : `Quiz final · ${questionCount} questions`;
+                    const upcomingExam = nextExam(calendarEvents, today);
+                    return (
+                      <TodayCard
+                        today={today}
+                        item={resumeCatalog}
+                        steps={steps}
+                        next={next}
+                        verb={resumeValidated ? 'Revoir' : resumePct === 0 ? 'Commencer' : lesson ? 'Reprendre' : 'Terminer'}
+                        sessionsToday={revisionPlan.sessions.filter((session) => session.day === today)}
+                        gauges={planGauges(revisionPlan, calendarEvents, calendarState.log, today)}
+                        onResume={() => resumeModule(resumeModuleId)}
+                        onOpenPlan={() => nav('calendar', 'plan')}
+                        onOpenExam={() => nav('calendar', upcomingExam ? upcomingExam.start : '')}
+                      />
+                    );
+                  })()}
 
                 <section className="wf-card home-recommended">
                   <div className="between wf-mb-sm">
@@ -2057,7 +2056,7 @@ export default function App() {
             )}
 
             {learnsHere && (
-              <CalendarCard
+              <WeekCard
                 today={today}
                 events={calendarEvents}
                 plan={revisionPlan}
@@ -2066,30 +2065,55 @@ export default function App() {
               />
             )}
 
-            {learnsHere && (
-            <section className="rail-card">
-              <span className="eyebrow">Votre progression</span>
-              <h3 className="tabular-nums">Niveau {lvl.level} · {totalXP} XP</h3>
-              <ProgressBar value={lvl.percent} label="Expérience globale" tone="htb" />
-              <div className="rail-stat-list tabular-nums">
-                <div className="rail-stat-row">
-                  <span>Modules validés</span>
-                  <b>{playableModuleIds.filter((id) => isModuleValidated(id)).length} / {playableModuleIds.length}</b>
-                </div>
-                <div className="rail-stat-row">
-                  <span>Contacts acceptés</span>
-                  <b>{acceptedRelations.length}</b>
-                </div>
-                <div className="rail-stat-row">
-                  <span>Demandes en attente</span>
-                  <b>{pendingIncoming.length}</b>
-                </div>
-              </div>
-              <button type="button" className="rail-card-foot" onClick={() => nav('progression')}>
-                Ma progression détaillée <ArrowRight size={16} aria-hidden="true" />
-              </button>
-            </section>
-            )}
+            {learnsHere &&
+              (() => {
+                // Modules par domaine : validés, en cours, à commencer. Le texte porte les chiffres ; la barre montre la part.
+                const domains = Array.from(new Set(playableModuleIds.map((id) => dynamicCatalog.find((c) => c.id === id)?.domain).filter(Boolean))) as string[];
+                const rows = domains.map((domain) => {
+                  const ids = playableModuleIds.filter((id) => dynamicCatalog.find((c) => c.id === id)?.domain === domain);
+                  const validated = ids.filter((id) => isModuleValidated(id)).length;
+                  const started = ids.filter((id) => !isModuleValidated(id) && modulePct(id) > 0).length;
+                  return { domain, total: ids.length, validated, started, todo: ids.length - validated - started };
+                });
+                return (
+                  <section className="rail-card prog-card" aria-label="Votre progression">
+                    <h2 className="discover-feed-title">Votre progression</h2>
+                    <p className="prog-level tabular-nums">
+                      <b>Niveau {lvl.level}</b> · {totalXP} XP
+                    </p>
+                    <ProgressBar value={lvl.percent} label="Expérience du niveau en cours" tone="htb" />
+                    <p className="prog-next">{lvl.targetXp - lvl.currentXp} XP avant le niveau {lvl.level + 1}</p>
+                    <div className="prog-domains">
+                      <span className="prog-domains-title">Modules par domaine</span>
+                      {rows.map((r) => (
+                        <div key={r.domain} className="prog-domain">
+                          <span className="prog-domain-name">{r.domain}</span>
+                          <span
+                            className="prog-seg"
+                            role="img"
+                            aria-label={`${r.domain} : ${r.validated} validé${r.validated > 1 ? 's' : ''}, ${r.started} en cours, ${r.todo} à commencer`}
+                          >
+                            {r.validated > 0 && <i className="is-done" style={{ flexGrow: r.validated }} />}
+                            {r.started > 0 && <i className="is-started" style={{ flexGrow: r.started }} />}
+                            {r.todo > 0 && <i className="is-todo" style={{ flexGrow: r.todo }} />}
+                          </span>
+                          <b className="tabular-nums">
+                            {r.validated}/{r.total}
+                          </b>
+                        </div>
+                      ))}
+                      <p className="prog-legend">
+                        <span><i className="is-done" /> Validé</span>
+                        <span><i className="is-started" /> En cours</span>
+                        <span><i className="is-todo" /> À commencer</span>
+                      </p>
+                    </div>
+                    <button type="button" className="rail-card-foot" onClick={() => nav('progression')}>
+                      Ma progression détaillée <ArrowRight size={16} aria-hidden="true" />
+                    </button>
+                  </section>
+                );
+              })()}
 
             {adSlot}
 
@@ -2994,7 +3018,7 @@ export default function App() {
           rail={
             <>
               {learnsHere && (
-                <CalendarCard today={today} events={calendarEvents} plan={revisionPlan} log={calendarState.log} onOpen={(day) => nav('calendar', day || '')} />
+                <WeekCard today={today} events={calendarEvents} plan={revisionPlan} log={calendarState.log} onOpen={(day) => nav('calendar', day || '')} />
               )}
               {adSlot}
             </>

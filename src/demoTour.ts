@@ -55,9 +55,9 @@ export const DEMO_TOUR: TourStep[] = [
     role: 'Parent',
     persona: 'akouvi',
     page: 'family',
-    target: '.pl-child',
-    title: 'Le message de la semaine',
-    text: 'Une phrase et une action concrète par enfant : un message hebdomadaire de ce type a réduit de 41 % les échecs dans l’étude de Kraft et Rogers (2015).'
+    target: '.fm-card',
+    title: 'La lettre de la semaine',
+    text: 'Pour chaque enfant, une lettre courte : un fait, ce qui mérite attention, un geste pour ce soir. Un message hebdomadaire de ce type a réduit de 41 % les échecs dans l’étude de Kraft et Rogers (2015).'
   },
   {
     id: 'family-plan',
@@ -83,9 +83,9 @@ export const DEMO_TOUR: TourStep[] = [
     role: 'Établissement',
     persona: 'palmiers',
     page: 'institution',
-    target: '[aria-label="Avancement des classes"]',
+    target: '[aria-label="Classes face à l’attendu"]',
     title: 'Où en est chaque classe',
-    text: 'Chaque classe face à l’attendu du jour, puis les élèves à accompagner. Un établissement n’a ni XP ni fil : il pilote.'
+    text: 'Chaque classe face à l’attendu du jour, avec sa tendance sur huit semaines, puis les élèves à accompagner et leur raison. Un établissement n’a ni XP ni fil : il pilote.'
   },
   {
     id: 'institution-planning',
