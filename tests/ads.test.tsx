@@ -152,3 +152,17 @@ test('formules : choix par public, contenus inclus, outils réservés', () => {
   assert.equal(institutionSteering(subs, 'palmiers'), false);
   assert.equal(institutionSteering({ palmiers: { offerId: 'institution-steering', since: '' } }, 'palmiers'), true);
 });
+
+test('formules : prix par élève, et comparaison où chaque formule reprend la précédente', async () => {
+  const { comparisonRows, formatAmount, pricePerSeat, plansFor: plans } = await import('../src/offers');
+  const [essential, steering, network] = plans('institution');
+  assert.equal(pricePerSeat(essential), 100);
+  assert.equal(pricePerSeat(steering), 70);
+  assert.equal(pricePerSeat(network), null);
+  assert.equal(formatAmount(35000).replace(/\s/g, ' '), '35 000');
+  const rows = comparisonRows([essential, steering, network]);
+  assert.equal(rows.length, 7);
+  assert.ok(rows.every((r) => !/^Tout /.test(r.feature)));
+  assert.deepEqual(rows.find((r) => r.feature.startsWith('La planification'))?.included, [false, true, true]);
+  assert.deepEqual(rows.find((r) => r.feature === 'Un interlocuteur dédié')?.included, [false, false, true]);
+});

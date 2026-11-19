@@ -47,3 +47,23 @@ test('confidentialité et conditions : documents reliés, grand titre, date d’
   assert.match(privacy, /la caméra n’est jamais utilisée/);
   assert.match(page('privacy/ads'), /Publicité Entrée en vigueur .* Qui peut annoncer/);
 });
+
+test('formules : page publique par public, prix en F CFA ramené à l’élève, comparaison, paiement simulé', () => {
+  assert.ok(isInfoTopic('pricing'));
+  const school = page('pricing/institution', { viewerAudience: 'institution', currentOfferId: 'institution-steering' });
+  assert.match(school, /Formules Formules en francs CFA Apprendre reste gratuit\. Les outils se paient\./);
+  assert.match(school, /ses élèves apprennent avec les contenus de leurs enseignants sans rien payer/);
+  assert.match(school, /Essentiel Jusqu’à 150 élèves\. 15 000 F CFA \/ mois soit 100 F CFA par élève et par mois Choisir Essentiel/);
+  assert.match(school, /Pilotage Jusqu’à 500 élèves\. 35 000 F CFA \/ mois soit 70 F CFA par élève et par mois Votre formule/);
+  assert.match(school, /Réseau .* Sur devis selon le nombre d’élèves et de sites Prix établi avec l’équipe SAVOIR\+/);
+  assert.match(school, /Comparer les formules .* La planification du trimestre en diagramme de Gantt Non inclus Inclus Inclus/);
+  assert.match(school, /Paiement Mixx by Yas · Flooz · Carte bancaire Démonstration : le paiement est simulé, aucun argent n’est débité\./);
+  // Les formules d'un autre public : pas de bouton, à qui elles s'adressent.
+  const seenByLearner = page('pricing/institution', { viewerAudience: 'learner', currentOfferId: 'learner-free' });
+  assert.doesNotMatch(seenByLearner, /Choisir Essentiel/);
+  assert.match(seenByLearner, /Pour les comptes établissement/);
+  // Sans public dans l'adresse : celui du compte qui regarde.
+  const family = page('pricing', { viewerAudience: 'family', currentOfferId: 'free' });
+  assert.match(family, /Gratuite .* Votre formule .* Famille .* 2 500 F CFA \/ mois .* Choisir Famille/);
+  assert.doesNotMatch(family, /Comparer les formules/);
+});

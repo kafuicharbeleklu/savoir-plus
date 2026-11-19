@@ -8,6 +8,7 @@
  *   suggérés, et « Autres moyens de vous aider » ; chaque article a sa page.
  * – Confidentialité et conditions : barre reliant les documents juridiques, grand titre sur bandeau
  *   clair, date d'entrée en vigueur, sections.
+ * – Formules : voir src/pages/PricingPage.tsx.
  * Adresse : « #info/<rubrique>[/<article ou document>] ». Rien n'est annoncé que le site ne fasse pas.
  */
 import React, { useState } from 'react';
@@ -42,8 +43,10 @@ import {
   type InfoLink,
   type LegalDocId
 } from '../infoContent';
+import type { OfferAudience } from '../offers';
+import { PricingPage, isPricingAudience } from './PricingPage';
 
-const TOPICS: FooterInfoTopic[] = ['about', 'accessibility', 'help', 'privacy', 'hackathon'];
+const TOPICS: FooterInfoTopic[] = ['about', 'accessibility', 'help', 'privacy', 'hackathon', 'pricing'];
 export const isInfoTopic = (id: string): id is FooterInfoTopic => (TOPICS as string[]).includes(id);
 
 const TOPIC_ICON: Record<HelpTopicId, React.ReactNode> = {
@@ -65,6 +68,9 @@ export interface InfoPageProps {
   isGuardian: boolean;
   isLocal: boolean;
   onStartTour?: () => void;
+  /** Le public des formules du compte qui regarde, et sa formule actuelle (page Formules). */
+  viewerAudience?: OfferAudience;
+  currentOfferId?: string;
 }
 
 export function InfoPage(props: InfoPageProps) {
@@ -77,8 +83,16 @@ export function InfoPage(props: InfoPageProps) {
           <HelpCenter {...props} articleId={sub} />
         ) : (
           <>
-            <InfoHeader nav={props.nav} />
+            <InfoHeader nav={props.nav} label={topic === 'pricing' ? 'Formules' : undefined} />
             {topic === 'about' && <AboutPage {...props} />}
+            {topic === 'pricing' && (
+              <PricingPage
+                audience={isPricingAudience(sub) ? sub : props.viewerAudience || 'learner'}
+                nav={props.nav}
+                viewerAudience={props.viewerAudience}
+                currentOfferId={props.currentOfferId}
+              />
+            )}
             {topic === 'accessibility' && <AccessibilityPage {...props} />}
             {topic === 'privacy' && <LegalPage nav={props.nav} doc={(['privacy', 'terms', 'community', 'ads'] as string[]).includes(sub) ? (sub as LegalDocId) : 'privacy'} />}
             {topic === 'hackathon' && <HackathonPage {...props} />}

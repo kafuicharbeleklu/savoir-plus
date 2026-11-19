@@ -27,6 +27,8 @@ export interface Offer {
   features: string[];
   /** L'offre mise en avant pour ce public. */
   recommended?: boolean;
+  /** Élèves compris (formules d'établissement) : sert au prix par élève. */
+  seats?: number;
 }
 
 export const OFFERS: Offer[] = [
@@ -76,6 +78,7 @@ export const OFFERS: Offer[] = [
     price: 15000,
     period: 'mois',
     tagline: 'Jusqu’à 150 élèves.',
+    seats: 150,
     features: ['Classes, enseignants et demandes de rattachement', 'L’emploi du temps en grille', 'Les niveaux de restriction par classe']
   },
   {
@@ -85,6 +88,7 @@ export const OFFERS: Offer[] = [
     price: 35000,
     period: 'mois',
     tagline: 'Jusqu’à 500 élèves.',
+    seats: 500,
     recommended: true,
     features: ['Tout Essentiel', 'La vue d’ensemble et les élèves à accompagner', 'La planification du trimestre en diagramme de Gantt']
   },
@@ -191,6 +195,32 @@ export const institutionSteering = (subscriptions: Record<string, Subscription> 
 /** « 1 500 F CFA », avec une espace insécable pour les milliers. */
 export function formatCfa(amount: number): string {
   return `${new Intl.NumberFormat('fr-FR').format(amount).replace(/[  ]/g, ' ')} F CFA`;
+}
+
+/** « 1 500 » : le montant seul, pour l'afficher au-dessus de son unité. */
+export const formatAmount = (amount: number): string => formatCfa(amount).replace(/\s*F\s*CFA$/, '');
+
+/** Prix par élève et par mois d'une formule d'établissement, arrondi au franc. */
+export const pricePerSeat = (offer: Offer): number | null => (offer.price && offer.seats ? Math.round(offer.price / offer.seats) : null);
+
+/**
+ * Tableau de comparaison des formules d'un public, de la moins chère à la plus complète : chacune
+ * reprend ce que contient la précédente (« Tout Essentiel »), ces lignes de renvoi ne sont pas répétées.
+ */
+export function comparisonRows(plans: Offer[]): { feature: string; included: boolean[] }[] {
+  const order: string[] = [];
+  const cumulative: Set<string>[] = [];
+  let acc = new Set<string>();
+  for (const plan of plans) {
+    acc = new Set(acc);
+    for (const feature of plan.features) {
+      if (/^Tout /.test(feature)) continue;
+      acc.add(feature);
+      if (!order.includes(feature)) order.push(feature);
+    }
+    cumulative.push(acc);
+  }
+  return order.map((feature) => ({ feature, included: cumulative.map((set) => set.has(feature)) }));
 }
 
 export function priceLabel(offer: Offer): string {

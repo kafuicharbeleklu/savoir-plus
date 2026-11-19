@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
-export type FooterInfoTopic = 'about' | 'privacy' | 'help' | 'accessibility' | 'hackathon';
+export type FooterInfoTopic = 'about' | 'privacy' | 'help' | 'accessibility' | 'hackathon' | 'pricing';
 
 export function RightRailShowcaseCard({
   onOpenInfoModal
@@ -126,6 +126,9 @@ export function SidebarCompactFooter({
         </li>
         <li>
           <button type="button" onClick={() => onOpenInfoModal('privacy')}>Confidentialité et conditions</button>
+        </li>
+        <li>
+          <button type="button" onClick={() => onOpenInfoModal('pricing')}>Formules</button>
         </li>
         <li className="li-footer-more" ref={moreRef}>
           <button

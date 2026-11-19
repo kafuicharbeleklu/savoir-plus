@@ -151,7 +151,7 @@ import {
 import { accountOf as schoolAccountOf, ageBandOf, institutionOf, libraryOf, studentsOfClass } from './school';
 import { addDays as addCalendarDays, dayFromDate } from './calendar';
 import { demoCampaigns } from './ads';
-import { OffersModal, SponsoredCard } from './components/SponsoredCard';
+import { SponsoredCard } from './components/SponsoredCard';
 import { audienceOfKind, contentIncluded, institutionSteering, paidSubscription } from './offers';
 import { rankFeed, recommend, viewerOf } from './personalize';
 import { addUsage, lockApplies, lockState, requestOfDay, requestTime, rulesOf } from './deviceLock';
@@ -374,7 +374,6 @@ export default function App() {
   const [readerAnchor, setReaderAnchor] = useState<'top' | 'practice'>('top');
   // Publicité : le tirage des annonces est fixé pour la visite ; la fenêtre des offres s'ouvre depuis la carte.
   const [adSeed] = useState(() => Math.floor(Math.random() * 1_000_000_000));
-  const [offersOpen, setOffersOpen] = useState(false);
   const [answers, setAnswers] = useState<number[]>([]);
   // Brouillons de quiz non envoyés, par module (conservés pendant la session).
   const quizDraftsRef = useRef<Record<string, number[]>>({});
@@ -1457,6 +1456,10 @@ export default function App() {
 
   // Pages d'information du pied de page, comme sur LinkedIn : elles sortent de l'application (bandeau réduit
   // au logo, ni colonne de gauche ni barre de navigation) et chacune a sa mise en page (src/pages/InfoPage.tsx).
+  // La formule du compte : la payante, sinon l'offre gratuite de son public (un établissement n'en a pas).
+  const currentOfferId =
+    paidSubscription(ext.subscriptions, uid)?.offer.id ||
+    (caps.accountKind === 'learner' ? 'learner-free' : caps.accountKind === 'guardian' || caps.accountKind === 'educator' ? 'free' : undefined);
   if (page === 'info') {
     return (
       <>
@@ -1469,6 +1472,8 @@ export default function App() {
           isGuardian={caps.accountKind === 'guardian'}
           isLocal={mode === 'local'}
           onStartTour={mode === 'local' ? () => setTourIndex(0) : undefined}
+          viewerAudience={audienceOfKind(caps.accountKind)}
+          currentOfferId={currentOfferId}
         />
         {toast && (
           <div className="toast" role="status" aria-live="polite">
@@ -1641,13 +1646,13 @@ export default function App() {
           buyLabel: 'Acheter pour un enfant',
           onBuy: () => nav('family'),
           planLabel: 'Ou tous les contenus de vos enfants avec la formule Famille',
-          onPlan: () => nav('settings', 'account/plan/family')
+          onPlan: () => nav('info', 'pricing/family')
         };
       }
       return {
         priceLabel,
         ...(caps.accountKind === 'learner'
-          ? { planLabel: 'Ou tout le catalogue avec Apprenant+', onPlan: () => nav('settings', 'account/plan/learner-plus') }
+          ? { planLabel: 'Ou tout le catalogue avec Apprenant+', onPlan: () => nav('info', 'pricing/learner') }
           : {}),
         buyLabel: `Acheter · ${priceLabel} (simulé)`,
         onBuy: () => {
@@ -1697,19 +1702,7 @@ export default function App() {
           seed={adSeed}
           canOpen={(id) => networkDirectory.some((p) => p.id === id)}
           onOpenAdvertiser={(id) => nav('member', id)}
-          onOpenOffers={() => setOffersOpen(true)}
-        />
-      )}
-      {offersOpen && (
-        <OffersModal
-          initial={audienceOfKind(caps.accountKind)}
-          viewerAudience={audienceOfKind(caps.accountKind)}
-          currentOfferId={paidPlan?.offer.id || (caps.accountKind === 'learner' ? 'learner-free' : undefined)}
-          onChoose={(offerId) => {
-            setOffersOpen(false);
-            nav('settings', `account/plan/${offerId}`);
-          }}
-          onClose={() => setOffersOpen(false)}
+          onOpenOffers={() => nav('info', `pricing/${audienceOfKind(caps.accountKind)}`)}
         />
       )}
     </>

@@ -209,7 +209,7 @@ export function InstitutionPage({ school, saveSchool, ext, user, people, today, 
                 ? 'La vue d’ensemble et les élèves à accompagner font partie de la formule Pilotage (35 000 F CFA par mois).'
                 : 'La planification en diagramme de Gantt fait partie de la formule Pilotage (35 000 F CFA par mois).'
             }
-            action={{ label: 'Voir les formules', onClick: () => nav('settings', 'account/plan/institution-steering') }}
+            action={{ label: 'Voir les formules', onClick: () => nav('info', 'pricing/institution') }}
           />
         </ListCard>
       )}

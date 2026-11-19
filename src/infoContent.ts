@@ -157,7 +157,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
       'Chaque public a ses formules, en francs CFA : Apprenant+ pour un apprenant, Famille pour un parent, Encadrant Pro, et Essentiel ou Pilotage pour un établissement.',
       'Avec l’offre gratuite, la carte publicitaire est obligatoire ; une formule payante permet de la masquer. Démonstration : aucun argent n’est débité.'
     ],
-    links: [{ label: 'Ma formule', page: 'settings', id: 'account/plan' }]
+    links: [
+      { label: 'Les formules', page: 'info', id: 'pricing' },
+      { label: 'Ma formule', page: 'settings', id: 'account/plan' }
+    ]
   },
   {
     id: 'visibilite',

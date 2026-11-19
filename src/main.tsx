@@ -23,6 +23,7 @@ import './styles/retouches.css';
 import './styles/work.css';
 import './styles/learner.css';
 import './styles/teaching.css';
+import './styles/pricing.css';
 import './styles/angles.css';
 
 installTooltips();

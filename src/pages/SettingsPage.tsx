@@ -329,6 +329,9 @@ export function SettingsView({
                 hint: p.features.length ? `${p.tagline} ${p.features.join(' · ')}.` : p.tagline
               }))}
             />
+            <button type="button" className="li-text-link st-plan-compare" onClick={() => nav('info', `pricing/${audience}`)}>
+              Comparer les formules
+            </button>
             {!isCurrent && target.price !== null && target.price > 0 && (
               <label className="ui-field st-plan-method">
                 <span>Moyen de paiement (simulé)</span>
