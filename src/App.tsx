@@ -25,6 +25,7 @@ import {
   FileUp,
   Flag,
   GraduationCap,
+  Home,
   Image as ImageIcon,
   Inbox,
   Layers,
@@ -3387,13 +3388,8 @@ export default function App() {
                   <span className="left-rail-section-label">{caps.accountKind === 'institution' ? 'Ressources' : 'Apprentissage'}</span>
                   {/* Un parent ou un établissement consulte la bibliothèque ; il n'a ni apprentissages ni calendrier propres. */}
                   {learnsHere && (
-                    <button className={`rail-nav-btn ${page === 'learning' ? 'active' : ''}`} onClick={() => nav('learning')}>
-                      <span><BookOpen size={16} /> Mes apprentissages</span>
-                    </button>
-                  )}
-                  {learnsHere && (
-                    <button className={`rail-nav-btn ${page === 'calendar' ? 'active' : ''}`} onClick={() => nav('calendar')}>
-                      <span><CalendarDays size={16} /> Calendrier</span>
+                    <button className={`rail-nav-btn ${page === 'home' ? 'active' : ''}`} onClick={() => nav('home')}>
+                      <span><Home size={16} /> Aujourd’hui</span>
                     </button>
                   )}
                   {/* La bibliothèque d'un établissement : les contenus de ses enseignants, dans son espace. */}
@@ -3410,8 +3406,13 @@ export default function App() {
                     </button>
                   )}
                   {learnsHere && (
+                    <button className={`rail-nav-btn ${page === 'calendar' ? 'active' : ''}`} onClick={() => nav('calendar')}>
+                      <span><CalendarDays size={16} /> Calendrier</span>
+                    </button>
+                  )}
+                  {learnsHere && (
                     <button className={`rail-nav-btn ${page === 'progression' ? 'active' : ''}`} onClick={() => nav('progression')}>
-                      <span><Award size={16} /> Progression & Badges</span>
+                      <span><Award size={16} /> Progression</span>
                     </button>
                   )}
                   {(caps.canCreate || caps.canModerate || caps.canAdmin) && (
