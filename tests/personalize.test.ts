@@ -104,7 +104,25 @@ test('alertes : une phrase avec son auteur, et une publication qui s’ouvre dan
     }),
     { actor: 'Kossi Agbo', text: 'a répondu à la question de Maya « À quoi sert la passerelle par défaut ? »' }
   );
-  assert.equal(notificationSentence({ title: 'Bienvenue sur SAVOIR+', detail: 'Commencez…', actorName: 'Nadège Koffi' }), null);
+  assert.deepEqual(notificationSentence({ title: 'Bienvenue sur SAVOIR+', detail: 'Commencez…', actorName: 'Nadège Koffi' }), {
+    actor: 'Nadège Koffi',
+    text: 'vous souhaite la bienvenue sur SAVOIR+',
+    detail: 'Commencez…'
+  });
+  const report = {
+    kind: 'report-update' as const,
+    params: { id: 'SIG-2026-001', status: 'Précisions demandées' },
+    title: 'Votre signalement a été mis à jour',
+    detail: 'Dossier SIG-2026-001',
+    actorName: 'Nadège Koffi'
+  };
+  assert.deepEqual(notificationSentence(report, { reportOf: () => ({ status: 'En cours d’examen', targetLabel: 'Échange signalé' }) }), {
+    actor: 'Nadège Koffi',
+    text: 'vous demande des précisions sur votre signalement SIG-2026-001',
+    detail: 'Échange signalé'
+  });
+  assert.deepEqual(notificationTarget({ ...report, targetPage: 'report' }), { page: 'report', id: 'SIG-2026-001' });
+  assert.equal(notificationSentence({ title: 'Un titre inconnu', detail: '…', actorName: 'Kossi Agbo' }), null);
   assert.deepEqual(notificationTarget({ targetPage: 'community-thread', targetId: 'post-1' }), { page: 'community', id: 'post-1' });
   assert.deepEqual(notificationTarget({ targetPage: 'module-detail', targetId: 'phishing' }), { page: 'module-detail', id: 'phishing' });
 });

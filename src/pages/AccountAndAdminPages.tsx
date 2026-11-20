@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { notificationSentence, notificationTarget } from '../notificationText';
 import {
   AlertTriangle,
@@ -38,6 +38,8 @@ interface AccountAdminProps {
   setToast: (msg: string) => void;
   /** Colonne de droite de la page des alertes. */
   rail?: React.ReactNode;
+  /** Élément ouvert par l'adresse (« report/SIG-2026-001 » : ce signalement). */
+  selectedId?: string;
 }
 
 export function NotificationsView({ ext, updateExt, nav, people, user, setToast, rail }: AccountAdminProps) {
@@ -117,7 +119,7 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
           <div className="wf-notif-list" role="list">
             {shown.map((n) => {
               const actor = resolveActor(n);
-              const sentence = notificationSentence(n);
+              const sentence = notificationSentence(n, { reportOf: (id) => ext.reports.find((r) => r.id === id) });
               return (
                 <button
                   type="button"
@@ -129,9 +131,12 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
                   <Avatar person={actor} />
                   <div className="wf-notif-body">
                     {sentence ? (
-                      <p className="wf-notif-text">
-                        <b>{sentence.actor}</b> {sentence.text}
-                      </p>
+                      <>
+                        <p className="wf-notif-text">
+                          {sentence.actor && <b>{sentence.actor}</b>} {sentence.text}
+                        </p>
+                        {sentence.detail && <p className="wf-notif-detail">{sentence.detail}</p>}
+                      </>
                     ) : (
                       <>
                         <p className="wf-notif-text">
@@ -159,8 +164,17 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
   );
 }
 
-export function ReportView({ ext, updateExt, nav, reportTarget, setToast }: AccountAdminProps) {
+export function ReportView({ ext, updateExt, nav, reportTarget, setToast, selectedId }: AccountAdminProps) {
   const [reason, setReason] = useState('Contenu trompeur ou désinformation');
+  // Ouverte depuis une alerte (« report/SIG-2026-001 ») : la page défile jusqu'au dossier.
+  const focusId = selectedId && ext.reports.some((r) => r.id === selectedId) ? selectedId : '';
+  useEffect(() => {
+    if (!focusId) return;
+    const t = window.setTimeout(() => {
+      document.getElementById(`report-${focusId}`)?.scrollIntoView({ block: 'center', behavior: ext.appPrefs.reducedMotion ? 'auto' : 'smooth' });
+    }, 260);
+    return () => window.clearTimeout(t);
+  }, [focusId]);
   const [details, setDetails] = useState('');
   const [extraReply, setExtraReply] = useState('');
 
@@ -251,7 +265,7 @@ export function ReportView({ ext, updateExt, nav, reportTarget, setToast }: Acco
           <h3>Mes signalements (Suivi privé)</h3>
           <div className="wf-stack-sm wf-mt-sm">
             {ext.reports.map((rep) => (
-              <div className="wf-report-item" key={rep.id}>
+              <div id={`report-${rep.id}`} className={`wf-report-item${rep.id === focusId ? ' is-focused' : ''}`} key={rep.id}>
                 <div className="between">
                   <b>{rep.id}</b>
                   <span className="status-tag">{rep.status}</span>

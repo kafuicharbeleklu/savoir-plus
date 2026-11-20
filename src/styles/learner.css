@@ -324,3 +324,11 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 @media (prefers-reduced-motion: reduce) {
   .feed-post-card.is-focused { animation: none; box-shadow: 0 0 0 2px var(--accent-brand); }
 }
+
+/* -- Signalements : le dossier ouvert depuis une alerte est encadré un instant --------------------- */
+.wf-report-item { scroll-margin-top: 16px; }
+.wf-report-item.is-focused { animation: post-focus 2.8s ease-out both; }
+[data-reduced-motion='true'] .wf-report-item.is-focused { animation: none; box-shadow: 0 0 0 2px var(--accent-brand); }
+@media (prefers-reduced-motion: reduce) {
+  .wf-report-item.is-focused { animation: none; box-shadow: 0 0 0 2px var(--accent-brand); }
+}

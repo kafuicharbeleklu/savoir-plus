@@ -864,6 +864,7 @@ export default function App() {
       const alerts = guardiansOf(current, uid).map((guardianId, i) => ({
         id: `nt-time-${uid}-${now.getTime()}-${i}`,
         category: 'Compte' as const,
+        kind: 'time-request' as const,
         actorId: uid,
         actorName: user.name,
         title: `${firstName} demande plus de temps sur SAVOIR+`,
@@ -1764,7 +1765,8 @@ export default function App() {
     reportTarget: reportTarget || 'Élément général',
     settingsTab,
     setSettingsTab,
-    setToast
+    setToast,
+    selectedId
   };
 
   const studioProps = {

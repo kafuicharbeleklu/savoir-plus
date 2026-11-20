@@ -401,9 +401,31 @@ export interface StudioMedia {
   sizeLabel?: string;
 }
 
+/** Le type d'une alerte : il donne sa phrase (src/notificationText.ts). */
+export type NotificationKind =
+  | 'welcome'
+  | 'question-reply'
+  | 'post-comment'
+  | 'comment-reply'
+  | 'post-helpful'
+  | 'solution-chosen'
+  | 'new-follower'
+  | 'contact-request'
+  | 'contact-accepted'
+  | 'report-update'
+  | 'appeal-decision'
+  | 'time-request'
+  | 'module-given'
+  | 'badge-earned'
+  | 'content-published'
+  | 'content-changes';
+
 export interface NotificationItem {
   id: string;
   category: 'Relations' | 'Communauté' | 'Apprentissage' | 'Compte';
+  /** Type de l'alerte et ses paramètres (titre d'une question, numéro d'un signalement…). */
+  kind?: NotificationKind;
+  params?: Record<string, string>;
   actorId?: string;
   actorName?: string;
   actorInitials?: string;
@@ -920,6 +942,7 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       actorName: 'Nadège Koffi',
       actorInitials: 'NK',
       actorColor: 'mint',
+      kind: 'welcome',
       title: 'Bienvenue sur SAVOIR+',
       detail: 'Commencez par le module « Ne tombez plus dans le piège » : 3 sections, un atelier et un quiz.',
       date: '14 nov. 2026 · 08 h 30',
@@ -934,6 +957,8 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       actorName: 'Kossi Agbo',
       actorInitials: 'KA',
       actorColor: 'lavender',
+      kind: 'question-reply',
+      params: { owner: 'Maya', title: 'À quoi sert la passerelle par défaut ?' },
       title: 'Nouvelle réponse dans une question d’entraide',
       detail: 'Question de Maya : À quoi sert la passerelle par défaut ?',
       date: '14 nov. 2026 · 11 h 05',
@@ -949,6 +974,8 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       actorName: 'Nadège Koffi',
       actorInitials: 'NK',
       actorColor: 'mint',
+      kind: 'report-update',
+      params: { id: 'SIG-2026-001', status: 'Précisions demandées' },
       title: 'Votre signalement a été mis à jour',
       detail: 'Dossier SIG-2026-001 · Consultez les informations qui vous sont destinées.',
       date: '13 nov. 2026 · 17 h 30',

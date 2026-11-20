@@ -722,6 +722,8 @@ export function AppealView({ ext, updateExt, nav, user, caps, setToast }: GovPro
         {
           id: `not-appeal-${Date.now()}`,
           category: 'Compte',
+          kind: 'appeal-decision',
+          params: { accepted: accept ? 'oui' : 'non' },
           actorId: user.id,
           actorName: user.name,
           actorInitials: user.initials,
