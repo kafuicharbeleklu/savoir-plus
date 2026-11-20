@@ -55,7 +55,8 @@ export function MobileNav({
     return () => window.removeEventListener('keydown', onKey);
   }, [moreOpen, setMoreOpen]);
 
-  const isLearning = ['learning', 'progression', 'catalog', 'resource-detail', 'module-detail', 'path-detail'].includes(page);
+  // Comme la barre du haut : la Bibliothèque (ouverte depuis « Plus ») n'allume pas « Apprendre ».
+  const isLearning = ['learning', 'progression'].includes(page);
   const isNetwork = page === 'relations' || page === 'member';
   const isMessages = page === 'messages';
   const isHomeOrCommunity = page === 'home' || page.startsWith('community');
