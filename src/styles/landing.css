@@ -1,11 +1,11 @@
 /* ==========================================================================
    Page de connexion — formulaire à gauche, film à droite, aux proportions de la
    connexion de Claude web, mesurées le 19 novembre 2026 sur une capture à 1 370 px
-   de large (écran à 125 %) : logo de 25 px à 60 px du bord, titre de 56 px et
-   sous-titre de 18 px à empattements, carte de 415 px aux marges de 26 px, champs et
-   boutons de 38 px (texte de 15 px), un bouton secondaire 22 px sous la carte, visuel
-   en portrait 4:5 de 512 × 640 px ; centres des deux colonnes à 27 % et 73 % de la
-   largeur. Les arrondis restent ceux du site (var(--angle)), les couleurs aussi.
+   de large (écran à 125 %) : logo de 25 px à 60 px du bord, carte de 415 px aux marges
+   de 26 px, champs et boutons de 38 px (texte de 15 px), un bouton secondaire 22 px sous
+   la carte, visuel en portrait 4:5 de 512 × 640 px ; centres des deux colonnes à 27 % et
+   73 % de la largeur. La police, les arrondis et les couleurs restent ceux du site : le
+   titre en Inter a la hauteur de minuscules du titre de Claude (26 px), d'où 48 px.
    ========================================================================== */
 
 .landing-topbar { background: transparent; backdrop-filter: none; border-bottom: 0; padding: 0 32px; }
@@ -20,26 +20,23 @@
 }
 .lg-left { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 24px 32px; }
 .lg-intro { display: flex; flex-direction: column; width: 100%; max-width: 600px; text-align: center; }
-/* Le titre d'accueil, en caractères à empattements : fin, grand, calme. Newsreader est servie avec le
-   site (aucun appel extérieur) : la marque est la même sur tous les appareils. */
+/* Le titre d'accueil, dans la police du site : grand, d'un poids moyen, serré. */
 .lg-intro h1 {
   margin: 0;
-  font-family: var(--font-editorial);
-  font-size: 3.5rem;
-  line-height: 1.08;
-  font-weight: 400;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  line-height: 1.1;
+  font-weight: 500;
+  letter-spacing: -0.03em;
   color: var(--fg-primary);
   text-wrap: balance;
 }
-/* Le sous-titre suit le titre : même police, même couleur, plus petit. */
 .lg-lead {
   margin: 14px auto 0;
   max-width: 34em;
-  font-family: var(--font-editorial);
-  font-size: 1.125rem;
-  line-height: 1.4;
-  color: var(--fg-primary);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  color: var(--fg-muted);
   text-wrap: balance;
 }
 
@@ -214,7 +211,7 @@
 
 /* Écrans peu hauts (petits portables) : tailles resserrées */
 @media (min-width: 961px) and (max-height: 700px) {
-  .lg-intro h1 { font-size: 2.75rem; }
+  .lg-intro h1 { font-size: 2.5rem; }
   .lg-lead { margin-top: 10px; font-size: 1rem; }
   .landing .landing-auth { margin-top: 20px; padding: 20px; gap: 12px; }
   .landing .landing-form { gap: 12px; }
@@ -223,7 +220,7 @@
   .lg-left:not(.is-login) .lg-intro { display: none; }
 }
 @media (min-width: 961px) and (max-height: 600px) {
-  .lg-intro h1 { font-size: 2.25rem; }
+  .lg-intro h1 { font-size: 2rem; }
   .lg-lead { display: none; }
   .landing .landing-auth { padding: 16px 20px; }
 }
@@ -234,6 +231,6 @@
   .lg-grid { grid-template-columns: minmax(0, 1fr); max-width: 520px; margin: 0 auto; padding: 8px 16px 32px; }
   .lg-left { padding: 16px 0 0; }
   .lg-right { display: none; }
-  .lg-intro h1 { font-size: 2.25rem; }
+  .lg-intro h1 { font-size: 2rem; }
   .lg-lead { font-size: 1rem; }
 }
