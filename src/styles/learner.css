@@ -278,3 +278,8 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
   .shared-module-cover { min-height: 120px; border-right: 0; border-bottom: 1px solid var(--border-hairline); }
   .shared-module-arrow { display: none; }
 }
+
+/* -- Cartes « en bref » des colonnes : la valeur plus grande que son libellé ---------------------- */
+.rail-stat-list { gap: 10px; }
+.rail-stat-row { align-items: baseline; }
+.rail-stat-row b { font-size: 1.125rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; color: var(--fg-primary); font-variant-numeric: tabular-nums; }
