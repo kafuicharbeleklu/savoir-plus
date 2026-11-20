@@ -332,3 +332,10 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 @media (prefers-reduced-motion: reduce) {
   .wf-report-item.is-focused { animation: none; box-shadow: 0 0 0 2px var(--accent-brand); }
 }
+
+/* -- Relations : pas de colonne de profil ; « Réseau en bref » et la publicité à gauche ------------ */
+@media (min-width: 1120px) {
+  .dashboard-grid.relations-grid { grid-template-columns: 300px minmax(0, 1fr); }
+  .relations-grid > .right-rail { grid-column: 1; grid-row: 1; }
+  .relations-grid > .dashboard-main { grid-column: 2; grid-row: 1; }
+}

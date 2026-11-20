@@ -1647,7 +1647,9 @@ export default function App() {
     if (account.kind !== 'institution' || !account.institutionId) return undefined;
     return libraryOf(school, account.institutionId, dynamicCatalog, (item) => networkDirectory.find((p) => p.name === item.author)?.id);
   };
+  // Pages sans la colonne de gauche (profil et menu). Relations : sa colonne « Réseau en bref » passe à gauche.
   const isFullWidth =
+    page === 'relations' ||
     page === 'messages' ||
     page === 'auth-flows' ||
     page === 'profile' ||
@@ -2371,7 +2373,7 @@ export default function App() {
       );
 
       return (
-        <div className="dashboard-grid">
+        <div className="dashboard-grid relations-grid">
           <div className="dashboard-main">
             <h1 className="sr-only">Relations</h1>
 
@@ -3362,8 +3364,7 @@ export default function App() {
 
               {(activeSpace === 'learner' || activeSpace === 'community') && (
                 <nav className="rail-nav-card" aria-label="Espaces d’apprentissage">
-                  {/* Raccourci de publication : pas sur la page Relations, qui sert à gérer son réseau. */}
-                  {activeSpace === 'community' && caps.canPublish && page !== 'relations' && (
+                  {activeSpace === 'community' && caps.canPublish && (
                     <>
                       <span className="left-rail-section-label">Communauté</span>
                       <button
