@@ -109,7 +109,9 @@ export function TopBar({
   const isCatalogActive = ['catalog', 'resource-detail', 'module-detail', 'path-detail'].includes(page);
   const isHomeActive = page === 'home' || page.startsWith('community');
   const learns = caps.accountKind === 'learner' || caps.accountKind === 'educator';
-  const isLearningActive = ['learning', 'progression', 'calendar', 'catalog', 'resource-detail', 'module-detail', 'path-detail'].includes(page);
+  // « Apprendre » = mes apprentissages, ma progression, mon calendrier. La Bibliothèque est une autre entrée
+  // (menu de gauche) : y être n'allume pas « Apprendre ».
+  const isLearningActive = ['learning', 'progression', 'calendar'].includes(page);
   const isNetworkActive = page === 'relations' || page === 'member';
   const isStudioActive = page.startsWith('studio');
   const isAdminActive = page.startsWith('admin') || page === 'moderation';

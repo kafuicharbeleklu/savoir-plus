@@ -2449,9 +2449,11 @@ export default function App() {
           {visible.length === 0 ? (
             <div className="empty">
               <p>Aucun module dans l’onglet « {learningTab} » pour le moment.</p>
-              <button className="primary" onClick={() => nav('catalog')}>
-                Explorer la bibliothèque
-              </button>
+              {learningTab !== 'Terminés' && (
+                <button className="primary" onClick={() => nav('catalog')}>
+                  Explorer la bibliothèque
+                </button>
+              )}
             </div>
           ) : (
             <div className="course-grid">

@@ -757,6 +757,12 @@ export function ReportDialog({
 }) {
   const [reason, setReason] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  // Chaque étape entre en glissant : depuis la droite en avançant, depuis la gauche avec « Retour ».
+  const [back, setBack] = useState(false);
+  const choose = (label: string | null) => {
+    setBack(label === null);
+    setReason(label);
+  };
   const [done, setDone] = useState<string[]>([]);
   // Les suites sont figées à l'envoi : « Ne plus suivre » reste affiché, coché, une fois fait.
   const [shownFollowUps, setShownFollowUps] = useState<ReportFollowUp[]>([]);
@@ -764,6 +770,7 @@ export function ReportDialog({
   const close = () => {
     setReason(null);
     setSent(false);
+    setBack(false);
     setDone([]);
     setShownFollowUps([]);
     onClose();
@@ -814,7 +821,7 @@ export function ReportDialog({
       <div className="modal report-modal">
         <div className="report-head">
           {chosen && !sent && (
-            <button type="button" className="icon-btn" aria-label="Retour aux motifs" onClick={() => setReason(null)}>
+            <button type="button" className="icon-btn" aria-label="Retour aux motifs" onClick={() => choose(null)}>
               <ArrowLeft size={18} />
             </button>
           )}
@@ -825,7 +832,14 @@ export function ReportDialog({
         </div>
 
         {sent ? (
-          <div className="report-body">
+          <div className="report-body report-step report-done" key="sent">
+            {/* Validation : le cercle se trace, la coche suit, puis un léger rebond. */}
+            <span className="report-success" aria-hidden="true">
+              <svg viewBox="0 0 52 52">
+                <circle className="report-success-ring" cx="26" cy="26" r="24" />
+                <path className="report-success-check" d="M15 27l7 7 15-15" />
+              </svg>
+            </span>
             <h3>Merci de votre signalement</h3>
             <p>
               {gone ? `${gone} ` : ''}Notre équipe va examiner ce contenu et prendra les mesures nécessaires s’il enfreint nos
@@ -861,7 +875,7 @@ export function ReportDialog({
             </div>
           </div>
         ) : chosen ? (
-          <div className="report-body">
+          <div className={`report-body report-step${back ? ' is-back' : ''}`} key={`reason-${chosen.label}`}>
             <h3>{chosen.label}</h3>
             <p>{chosen.hint}</p>
             <p className="tiny muted">
@@ -869,7 +883,7 @@ export function ReportDialog({
               signalé.
             </p>
             <div className="modal-actions">
-              <button type="button" className="secondary" onClick={() => setReason(null)}>
+              <button type="button" className="secondary" onClick={() => choose(null)}>
                 Retour
               </button>
               <button type="button" className="primary" onClick={submit}>
@@ -878,11 +892,11 @@ export function ReportDialog({
             </div>
           </div>
         ) : (
-          <div className="report-body">
+          <div className={`report-body report-step${back ? ' is-back' : ''}`} key="reasons">
             <h3>Pourquoi signalez-vous ceci ?</h3>
             <div className="report-reasons" role="list">
               {REPORT_REASONS.map((r) => (
-                <button key={r.label} type="button" role="listitem" className="report-reason" onClick={() => setReason(r.label)}>
+                <button key={r.label} type="button" role="listitem" className="report-reason" onClick={() => choose(r.label)}>
                   {r.label}
                 </button>
               ))}
