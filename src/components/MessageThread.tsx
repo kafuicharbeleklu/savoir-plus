@@ -1,6 +1,16 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, Lock, MoreHorizontal } from 'lucide-react';
-import type { Message, Profile, Relation } from '../data';
+import { ArrowDown, FileText, Image as ImageIcon, Lock, MoreHorizontal, Paperclip, Smile, X } from 'lucide-react';
+import type { Message, MessageAttachment, Profile, Relation } from '../data';
+import { readImageAsDataUrl } from './ContextualModals';
+import {
+  EMOJI_GROUPS,
+  GifView,
+  MAX_ATTACHMENT_BYTES,
+  MessageAttachmentView,
+  formatBytes,
+  readFileAsDataUrl,
+  searchGifs
+} from './MessageExtras';
 import { Avatar } from './ProfileIdentityCard';
 
 /** Deux messages d'une même personne à moins de 5 minutes d'écart sont regroupés (comme LinkedIn). */
@@ -70,9 +80,10 @@ export function MessageThread({ messages, people }: { messages: Message[]; peopl
                       </time>
                     </div>
                     {item.messages.map((m) => (
-                      <p key={m.id} className="li-thread-text">
-                        {m.text}
-                      </p>
+                      <React.Fragment key={m.id}>
+                        {m.text && <p className="li-thread-text">{m.text}</p>}
+                        {m.attachment && <MessageAttachmentView attachment={m.attachment} />}
+                      </React.Fragment>
                     ))}
                   </div>
                 </>
@@ -85,30 +96,144 @@ export function MessageThread({ messages, people }: { messages: Message[]; peopl
   );
 }
 
-/** Zone de saisie au style LinkedIn : grand champ sur fond gris, barre d'envoi en dessous. */
+/**
+ * Zone de saisie au style LinkedIn : grand champ sur fond gris, puis la barre — image, pièce jointe, GIF,
+ * émoticônes à gauche, « Envoyer » à droite. Une image ou un fichier choisi s'affiche au-dessus de la
+ * barre jusqu'à l'envoi ; un GIF part dès qu'on le choisit (avec le texte déjà saisi).
+ */
 export function MessageComposer({
   draft,
   setDraft,
   onSend,
   busy,
-  compact = false
+  compact = false,
+  attachments = false
 }: {
   draft: string;
   setDraft: (v: string) => void;
-  onSend: () => void;
+  /** Renvoie `false` si l'envoi a échoué : la pièce jointe reste alors en attente. */
+  onSend: (attachment?: MessageAttachment) => void | Promise<boolean | void>;
   busy: boolean;
   compact?: boolean;
+  /** Images, fichiers et GIF (démonstration locale) ; les émoticônes sont toujours proposées. */
+  attachments?: boolean;
 }) {
-  const canSubmit = !busy && draft.trim().length > 0;
+  const [pending, setPending] = useState<MessageAttachment | null>(null);
+  const [panel, setPanel] = useState<'emoji' | 'gif' | null>(null);
+  const [emojiGroup, setEmojiGroup] = useState(EMOJI_GROUPS[0].id);
+  const [gifQuery, setGifQuery] = useState('');
+  const [error, setError] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
+  const imageRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // Un panneau ouvert (émoticônes, GIF) se ferme d'un clic ailleurs ou avec Échap.
+  useEffect(() => {
+    if (!panel) return;
+    const onDown = (e: MouseEvent) => {
+      if (!formRef.current?.contains(e.target as Node)) setPanel(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      setPanel(null);
+      textRef.current?.focus();
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey, true);
+    };
+  }, [panel]);
+
+  const canSubmit = !busy && (draft.trim().length > 0 || Boolean(pending));
+  const send = (attachment?: MessageAttachment) => {
+    setError('');
+    Promise.resolve(onSend(attachment)).then((ok) => {
+      if (ok !== false && attachment === pending) setPending(null);
+    });
+  };
+  const submit = () => {
+    if (!canSubmit) return;
+    setPanel(null);
+    send(pending || undefined);
+  };
+
+  const insertEmoji = (emoji: string) => {
+    const el = textRef.current;
+    const start = el?.selectionStart ?? draft.length;
+    const end = el?.selectionEnd ?? draft.length;
+    const next = draft.slice(0, start) + emoji + draft.slice(end);
+    if (next.length > 1000) return;
+    setDraft(next);
+    requestAnimationFrame(() => {
+      if (!el) return;
+      el.focus();
+      const pos = start + emoji.length;
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
+  const pickImage = async (file?: File) => {
+    if (!file) return;
+    setError('');
+    if (!file.type.startsWith('image/')) {
+      setError('Choisissez une image (JPEG, PNG, GIF ou WebP).');
+      return;
+    }
+    try {
+      // Un GIF animé garde son animation : il n'est pas redessiné, mais il est limité à 1 Mo.
+      if (file.type === 'image/gif') {
+        if (file.size > MAX_ATTACHMENT_BYTES) {
+          setError(`GIF trop lourd (${formatBytes(file.size)}) : 1 Mo au plus.`);
+          return;
+        }
+        setPending({ kind: 'image', name: file.name, dataUrl: await readFileAsDataUrl(file) });
+      } else {
+        setPending({ kind: 'image', name: file.name, dataUrl: await readImageAsDataUrl(file) });
+      }
+    } catch {
+      setError('Impossible de lire cette image.');
+    }
+  };
+
+  const pickFile = async (file?: File) => {
+    if (!file) return;
+    setError('');
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      setError(`Fichier trop lourd (${formatBytes(file.size)}) : 1 Mo au plus.`);
+      return;
+    }
+    try {
+      setPending({
+        kind: 'file',
+        name: file.name,
+        size: file.size,
+        type: file.type || 'application/octet-stream',
+        dataUrl: await readFileAsDataUrl(file)
+      });
+    } catch {
+      setError('Impossible de lire ce fichier.');
+    }
+  };
+
+  const group = EMOJI_GROUPS.find((g) => g.id === emojiGroup) || EMOJI_GROUPS[0];
+  const gifs = searchGifs(gifQuery);
+  const toggle = (which: 'emoji' | 'gif') => setPanel((v) => (v === which ? null : which));
+
   return (
     <form
+      ref={formRef}
       className={`li-compose ${compact ? 'is-compact' : ''}`}
       onSubmit={(e) => {
         e.preventDefault();
-        if (canSubmit) onSend();
+        submit();
       }}
     >
       <textarea
+        ref={textRef}
         aria-label="Écrire un message"
         placeholder="Écrire un message…"
         maxLength={1000}
@@ -118,11 +243,151 @@ export function MessageComposer({
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
             e.preventDefault();
-            if (canSubmit) onSend();
+            submit();
           }
         }}
       />
+
+      {pending && (
+        <div className="li-compose-attachment">
+          {pending.kind === 'image' ? (
+            <img src={pending.dataUrl} alt="" />
+          ) : (
+            <span className="li-compose-attachment-icon" aria-hidden="true">
+              <FileText size={20} />
+            </span>
+          )}
+          <span className="li-compose-attachment-name">
+            <b>{pending.kind === 'gif' ? 'GIF' : pending.name || 'Image'}</b>
+            {pending.kind === 'file' && <small>{formatBytes(pending.size)}</small>}
+          </span>
+          <button type="button" className="li-icon-btn" aria-label="Retirer la pièce jointe" title="Retirer" onClick={() => setPending(null)}>
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+      {error && (
+        <p className="li-compose-error" role="alert">
+          {error}
+        </p>
+      )}
+
+      {panel === 'emoji' && (
+        <div className="li-compose-pop li-emoji-pop" role="dialog" aria-label="Émoticônes">
+          <div className="li-emoji-tabs" role="tablist" aria-label="Catégories">
+            {EMOJI_GROUPS.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                role="tab"
+                aria-selected={g.id === group.id}
+                aria-label={g.label}
+                title={g.label}
+                className={g.id === group.id ? 'is-on' : ''}
+                onClick={() => setEmojiGroup(g.id)}
+              >
+                {g.emojis[0]}
+              </button>
+            ))}
+          </div>
+          <p className="li-emoji-title">{group.label}</p>
+          <div className="li-emoji-grid">
+            {group.emojis.map((emoji) => (
+              <button key={emoji} type="button" aria-label={`Insérer ${emoji}`} onClick={() => insertEmoji(emoji)}>
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {panel === 'gif' && (
+        <div className="li-compose-pop li-gif-pop" role="dialog" aria-label="GIF">
+          <input
+            type="search"
+            className="li-gif-search"
+            placeholder="Rechercher un GIF"
+            aria-label="Rechercher un GIF"
+            value={gifQuery}
+            onChange={(e) => setGifQuery(e.target.value)}
+            autoFocus
+          />
+          <div className="li-gif-grid">
+            {gifs.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                className="li-gif-tile"
+                aria-label={`Envoyer le GIF « ${g.caption} »`}
+                disabled={busy}
+                onClick={() => {
+                  setPanel(null);
+                  setGifQuery('');
+                  send({ kind: 'gif', id: g.id });
+                }}
+              >
+                <GifView id={g.id} size="tile" />
+              </button>
+            ))}
+            {gifs.length === 0 && <p className="li-gif-empty">Aucun GIF pour « {gifQuery.trim()} ».</p>}
+          </div>
+        </div>
+      )}
+
       <div className="li-compose-bar">
+        <div className="li-compose-tools">
+          {attachments && (
+            <>
+              <button type="button" className="li-icon-btn" aria-label="Joindre une image" title="Image" onClick={() => imageRef.current?.click()}>
+                <ImageIcon size={20} aria-hidden="true" />
+              </button>
+              <button type="button" className="li-icon-btn" aria-label="Joindre un fichier" title="Pièce jointe" onClick={() => fileRef.current?.click()}>
+                <Paperclip size={20} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className={`li-icon-btn${panel === 'gif' ? ' is-on' : ''}`}
+                aria-label="Choisir un GIF"
+                aria-expanded={panel === 'gif'}
+                title="GIF"
+                onClick={() => toggle('gif')}
+              >
+                <span className="li-gif-icon" aria-hidden="true">
+                  GIF
+                </span>
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            className={`li-icon-btn${panel === 'emoji' ? ' is-on' : ''}`}
+            aria-label="Ouvrir les émoticônes"
+            aria-expanded={panel === 'emoji'}
+            title="Émoticônes"
+            onClick={() => toggle('emoji')}
+          >
+            <Smile size={20} aria-hidden="true" />
+          </button>
+          <input
+            ref={imageRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) => {
+              void pickImage(e.target.files?.[0]);
+              e.target.value = '';
+            }}
+          />
+          <input
+            ref={fileRef}
+            type="file"
+            hidden
+            onChange={(e) => {
+              void pickFile(e.target.files?.[0]);
+              e.target.value = '';
+            }}
+          />
+        </div>
         <span className="li-compose-hint">Entrée pour envoyer · Maj + Entrée pour aller à la ligne</span>
         <button type="submit" className="primary li-send-btn" disabled={!canSubmit}>
           Envoyer

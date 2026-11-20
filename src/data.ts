@@ -27,11 +27,18 @@ export type Relation = {
   blockedBy: string[];
 };
 
+/** Ce qu'un message peut porter en plus du texte (démonstration locale : rangé dans le navigateur). */
+export type MessageAttachment =
+  | { kind: 'image'; name: string; dataUrl: string }
+  | { kind: 'file'; name: string; size: number; type: string; dataUrl: string }
+  | { kind: 'gif'; id: string };
+
 export type Message = {
   id: string;
   author: string;
   text: string;
   createdAt: number;
+  attachment?: MessageAttachment;
 };
 
 export type Snapshot = {
@@ -348,6 +355,11 @@ export async function toggleBlock(mode: string, uid: string, r: Relation) {
   }
 }
 
+/** Date du dernier message d'une discussion (démonstration locale), 0 s'il n'y en a pas. */
+export function latestMessageAt(relId: string): number {
+  return (read().messages[relId] || []).reduce((latest, m) => Math.max(latest, m.createdAt), 0);
+}
+
 export function observeMessages(mode: string, id: string, fn: (s: Message[]) => void, fail: (s: string) => void) {
   if (mode === 'local') {
     const run = () => fn(read().messages[id] || []);
@@ -374,14 +386,22 @@ export function observeMessages(mode: string, id: string, fn: (s: Message[]) => 
   };
 }
 
-export async function sendMessage(mode: string, uid: string, r: Relation, text: string, id: string) {
-  if (!text.trim() || text.length > 1000) throw Error('Écrivez un message de 1 à 1 000 caractères.');
+export async function sendMessage(mode: string, uid: string, r: Relation, text: string, id: string, attachment?: MessageAttachment) {
+  if ((!text.trim() && !attachment) || text.length > 1000) throw Error('Écrivez un message de 1 à 1 000 caractères.');
+  if (attachment && mode !== 'local') throw Error('Images, fichiers et GIF : disponibles en démonstration locale seulement.');
   if (mode === 'local') {
     const s = read();
     if (!canSend(s.relations.find((x) => x.id === r.id), uid)) throw Error('Discussion non autorisée.');
     s.messages[r.id] ||= [];
-    if (!s.messages[r.id].some((m) => m.id === id)) s.messages[r.id].push({ id, author: uid, text: text.trim(), createdAt: Date.now() });
-    write(s);
+    if (!s.messages[r.id].some((m) => m.id === id))
+      s.messages[r.id].push({ id, author: uid, text: text.trim(), createdAt: Date.now(), ...(attachment ? { attachment } : {}) });
+    try {
+      write(s);
+    } catch (e) {
+      // Le navigateur garde environ 5 Mo pour tout le site : une pièce jointe peut ne plus y tenir.
+      if (attachment) throw Error('Pièce jointe trop lourde pour la mémoire de ce navigateur.');
+      throw e;
+    }
   } else {
     const result = await db.from('messages').insert({ id, relation_id: r.id, author: uid, text: text.trim() });
     if (result.error) {

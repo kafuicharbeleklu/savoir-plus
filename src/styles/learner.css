@@ -367,3 +367,166 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 .saved-posts-head { padding: var(--card-pad, 20px); }
 .saved-posts-head h1 { margin: 0 0 4px; font-size: 1.25rem; font-weight: 600; }
 .saved-posts-head p { margin: 0; font-size: 0.875rem; }
+
+/* -- Messagerie : barre de saisie façon LinkedIn (image, pièce jointe, GIF, émoticônes) ------------ */
+.li-compose { position: relative; }
+.li-compose-tools { display: flex; align-items: center; gap: 2px; margin-left: -6px; }
+.li-compose-tools .li-icon-btn { width: 32px; height: 32px; flex-basis: 32px; border-radius: var(--angle); color: var(--fg-muted); }
+.li-compose-tools .li-icon-btn:hover { background: var(--bg-subtle); color: var(--fg-primary); }
+.li-compose-tools .li-icon-btn.is-on { background: var(--accent-brand-soft); color: var(--accent-brand); }
+.li-gif-icon {
+  display: inline-flex;
+  align-items: center;
+  height: 17px;
+  padding: 0 3px;
+  border: 1.5px solid currentColor;
+  border-radius: calc(var(--angle) / 2);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.li-compose-tools + .li-compose-hint { margin-left: 8px; }
+
+/* Pièce jointe en attente, au-dessus de la barre */
+.li-compose-attachment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 12px 0;
+  padding: 6px;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--angle);
+  background: var(--bg-surface);
+}
+.li-compose-attachment img,
+.li-compose-attachment-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: calc(var(--angle) - 2px);
+  object-fit: cover;
+}
+.li-compose-attachment-icon { display: grid; place-items: center; background: var(--bg-subtle); color: var(--fg-muted); }
+.li-compose-attachment-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.li-compose-attachment-name b { overflow: hidden; font-size: 0.8125rem; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.li-compose-attachment-name small { font-size: 0.75rem; color: var(--fg-muted); }
+.li-compose-error { margin: 6px 12px 0; font-size: 0.75rem; color: var(--accent-danger); }
+
+/* Panneaux émoticônes et GIF, ouverts au-dessus de la barre */
+.li-compose-pop {
+  position: absolute;
+  left: 12px;
+  bottom: 54px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  width: min(320px, calc(100% - 24px));
+  max-height: 300px;
+  overflow: hidden;
+  border-radius: var(--angle);
+  background: var(--bg-elevated, var(--bg-surface));
+  box-shadow: 0 0 0 1px rgba(31, 32, 51, 0.1), 0 8px 24px rgba(31, 32, 51, 0.16);
+}
+[data-theme="dark"] .li-compose-pop { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14), 0 8px 24px rgba(0, 0, 0, 0.5); }
+.li-compose-pop button { min-height: 0; padding: 0; border: 0; background: none; line-height: 1; cursor: pointer; }
+.li-emoji-tabs { display: flex; gap: 2px; padding: 6px; border-bottom: 1px solid var(--border-hairline); }
+.li-emoji-tabs button { width: 38px; height: 32px; border-radius: var(--angle); font-size: 1.125rem; }
+.li-emoji-tabs button:hover { background: var(--bg-subtle); }
+.li-emoji-tabs button.is-on { background: var(--accent-brand-soft); }
+.li-emoji-title { margin: 8px 10px 2px; font-size: 0.75rem; font-weight: 600; color: var(--fg-muted); }
+.li-emoji-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-auto-rows: max-content; align-content: start; gap: 2px; min-height: 0; padding: 4px 6px 8px; overflow-y: auto; }
+.li-emoji-grid button { height: 34px; border-radius: var(--angle); font-size: 1.25rem; }
+.li-emoji-grid button:hover { background: var(--bg-subtle); }
+.li-compose-pop button:focus-visible { outline: 2px solid var(--accent-brand); outline-offset: -2px; }
+
+.li-gif-search {
+  flex-shrink: 0;
+  height: 34px;
+  margin: 8px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--angle);
+  background: var(--bg-subtle);
+  font-size: 0.8125rem;
+  color: var(--fg-primary);
+  box-shadow: none;
+}
+.li-gif-search:focus { outline: none; box-shadow: inset 0 0 0 1px var(--accent-brand); }
+/* Lignes à la hauteur de leur vignette : la grille défile au lieu de les écraser. */
+.li-gif-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: max-content; align-content: start; gap: 6px; min-height: 0; padding: 0 8px 8px; overflow-y: auto; }
+/* La vignette prend la hauteur de son GIF (4/3), pas celle d'un bouton ordinaire. */
+.li-compose-pop .li-gif-tile { display: block; width: 100%; height: auto; border-radius: var(--angle); overflow: hidden; }
+.li-gif.li-gif--tile { display: flex; padding: 6px 4px; }
+.li-gif-tile:hover .li-gif { filter: brightness(0.96); }
+.li-gif-empty { grid-column: 1 / -1; margin: 12px 4px; font-size: 0.8125rem; text-align: center; color: var(--fg-muted); }
+
+/* Un GIF de la collection : émoticône animée et légende sur fond teinté */
+.li-gif {
+  --gif-ink: var(--accent-brand);
+  --gif-bg: var(--accent-brand-soft);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  overflow: hidden;
+  border-radius: var(--angle);
+  background: radial-gradient(circle at 50% 38%, var(--bg-surface) 0%, var(--gif-bg) 72%);
+  user-select: none;
+}
+.li-gif--warm { --gif-ink: var(--accent-warm); --gif-bg: var(--accent-warm-soft); }
+.li-gif--calm { --gif-ink: var(--accent-ok); --gif-bg: var(--accent-ok-soft); }
+.li-gif--soft { --gif-ink: var(--accent-danger); --gif-bg: var(--accent-danger-soft); }
+.li-gif--message { width: 200px; height: 150px; }
+.li-gif--tile { width: 100%; aspect-ratio: 4 / 3; gap: 3px; }
+.li-gif-emoji { display: block; font-size: 3.5rem; line-height: 1; }
+.li-gif--tile .li-gif-emoji { font-size: 1.75rem; }
+.li-gif-caption { font-size: 0.9375rem; font-weight: 700; letter-spacing: -0.01em; color: var(--gif-ink); }
+.li-gif--tile .li-gif-caption { font-size: 0.6875rem; }
+.li-gif--missing { width: 200px; height: 60px; font-size: 0.8125rem; color: var(--fg-muted); }
+
+.li-gif--pulse .li-gif-emoji { animation: gif-pulse 0.9s ease-in-out infinite; }
+.li-gif--bob .li-gif-emoji { animation: gif-bob 1.4s ease-in-out infinite alternate; }
+.li-gif--pop .li-gif-emoji { animation: gif-pop 1.2s ease-in-out infinite; }
+.li-gif--shake .li-gif-emoji { animation: gif-shake 0.5s ease-in-out infinite; }
+.li-gif--wave .li-gif-emoji { transform-origin: 70% 75%; animation: gif-wave 1.4s ease-in-out infinite; }
+.li-gif--wobble .li-gif-emoji { animation: gif-wobble 0.8s ease-in-out infinite; }
+.li-gif--tilt .li-gif-emoji { animation: gif-tilt 2s ease-in-out infinite alternate; }
+.li-gif--bounce .li-gif-emoji { transform-origin: 50% 100%; animation: gif-bounce 1s cubic-bezier(0.3, 0, 0.4, 1) infinite; }
+.li-gif--beat .li-gif-emoji { animation: gif-beat 1.2s ease-in-out infinite; }
+.li-gif--flicker .li-gif-emoji { transform-origin: 50% 100%; animation: gif-flicker 0.6s ease-in-out infinite alternate; }
+@keyframes gif-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.16); } }
+@keyframes gif-bob { from { transform: translateY(2px); } to { transform: translateY(-7px); } }
+@keyframes gif-pop { 0%, 100% { transform: scale(0.88) rotate(-6deg); } 50% { transform: scale(1.1) rotate(6deg); } }
+@keyframes gif-shake { 0%, 100% { transform: rotate(-9deg); } 50% { transform: rotate(9deg); } }
+@keyframes gif-wave { 0%, 60%, 100% { transform: rotate(0); } 15%, 45% { transform: rotate(18deg); } 30% { transform: rotate(-8deg); } }
+@keyframes gif-wobble { 0%, 100% { transform: translateX(0) rotate(0); } 25% { transform: translateX(-4px) rotate(-8deg); } 75% { transform: translateX(4px) rotate(8deg); } }
+@keyframes gif-tilt { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+@keyframes gif-bounce { 0%, 100% { transform: translateY(2px) scale(1.06, 0.94); } 40% { transform: translateY(-9px) scale(0.97, 1.03); } 60% { transform: translateY(-7px); } }
+@keyframes gif-beat { 0%, 40%, 100% { transform: scale(1); } 15% { transform: scale(1.2); } 30% { transform: scale(1.08); } }
+@keyframes gif-flicker { from { transform: scale(1) rotate(-3deg); } to { transform: scale(1.1, 1.14) rotate(3deg); } }
+[data-reduced-motion="true"] .li-gif-emoji { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .li-gif-emoji { animation: none !important; } }
+
+/* Dans la discussion : image, fichier, GIF */
+.li-msg-attachment { margin-top: 6px; }
+.li-msg-image { display: block; max-width: min(280px, 100%); max-height: 320px; border: 1px solid var(--border-hairline); border-radius: var(--angle); }
+.li-msg-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(320px, 100%);
+  padding: 10px 12px;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--angle);
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  text-decoration: none;
+}
+.li-msg-file:hover { background: var(--bg-subtle); }
+.li-msg-file > svg:first-child { flex-shrink: 0; color: var(--accent-brand); }
+.li-msg-file > svg:last-child { flex-shrink: 0; color: var(--fg-muted); }
+.li-msg-file-text { display: flex; flex-direction: column; min-width: 0; }
+.li-msg-file-text b { overflow: hidden; font-size: 0.8125rem; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.li-msg-file-text small { font-size: 0.75rem; color: var(--fg-muted); }

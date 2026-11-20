@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { ConfirmDialog } from './components/ui';
 import {
   Clock,
   ArrowRight,
@@ -59,6 +60,7 @@ import {
   cancelContact,
   openFamilyThread,
   openFriendThread,
+  latestMessageAt,
   requestContact,
   resetDemo,
   saveName,
@@ -66,6 +68,7 @@ import {
   sendMessage,
   toggleBlock,
   type Message,
+  type MessageAttachment,
   type Profile,
   type Progress,
   type Relation
@@ -402,6 +405,9 @@ export default function App() {
   const [reportTarget, setReportTarget] = useState<string | null>(null);
   // Publications masquées pendant cette visite : un bandeau « Annuler » reste à leur place jusqu'au rechargement.
   const [hiddenThisVisit, setHiddenThisVisit] = useState<string[]>([]);
+  // Discussion dont la suppression attend confirmation (menu « … » de la discussion).
+  const [deleteThread, setDeleteThread] = useState<{ relId: string; name: string } | null>(null);
+  const cancelDeleteThread = useCallback(() => setDeleteThread(null), []);
 
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -1018,8 +1024,15 @@ export default function App() {
   const isFriend = (id: string) => myFollowing.includes(id) && (ext.followingIds?.[id] || []).includes(uid);
   // Messagerie : personnes à qui on a déjà écrit ou qui nous ont écrit (discussion acceptée,
   // ou demande envoyée / reçue avec son premier message) — pas les simples abonnements.
+  // Discussion supprimée par ce membre : ses messages d'avant restent cachés ; elle revient au message suivant.
+  const clearedThreadAt = (relId: string) => ext.clearedThreads?.[uid]?.[relId] || 0;
+  const threadVisible = (relId: string) => {
+    const cleared = clearedThreadAt(relId);
+    return !cleared || relId === selectedRelId || (mode === 'local' && latestMessageAt(relId) > cleared);
+  };
+  const shownMessages = messages.filter((m) => m.createdAt > clearedThreadAt(selectedRelId));
   const conversationContacts = relations
-    .filter((r) => r.status !== 'declined' && r.members.includes(uid))
+    .filter((r) => r.status !== 'declined' && r.members.includes(uid) && threadVisible(r.id))
     .flatMap((r) => {
       const peerId = r.members.find((id) => id !== uid) || '';
       const profile = networkDirectory.find((p) => p.id === peerId) || people.find((p) => p.id === peerId);
@@ -1068,6 +1081,21 @@ export default function App() {
       return { ...prev, hiddenPosts: { ...prev.hiddenPosts, [uid]: mine } };
     });
     setHiddenThisVisit((v) => v.filter((id) => id !== postId));
+  };
+
+  const confirmDeleteThread = () => {
+    if (!deleteThread) return;
+    const { relId } = deleteThread;
+    const peerId = relations.find((r) => r.id === relId)?.members.find((id) => id !== uid) || '';
+    updateExt((prev) => ({
+      ...prev,
+      clearedThreads: { ...prev.clearedThreads, [uid]: { ...(prev.clearedThreads?.[uid] || {}), [relId]: Date.now() } }
+    }));
+    if (selectedRelId === relId) setSelectedRelId('');
+    if (peerId && drawerPeerId === peerId) setDrawerPeerId('');
+    if (peerId && messagesPeerId === peerId) setMessagesPeerId('');
+    setDeleteThread(null);
+    setToast('Discussion supprimée');
   };
 
   const handleRequestContact = async (targetProfile: Profile) => {
@@ -1169,19 +1197,21 @@ export default function App() {
     }
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (attachment?: MessageAttachment): Promise<boolean> => {
     const activeRel = relations.find((r) => r.id === selectedRelId);
-    if (!activeRel || !draft.trim()) return;
+    if (!activeRel || (!draft.trim() && !attachment)) return false;
     if (caps.isRestricted) {
       setToast('Envoi temporairement restreint sur votre compte.');
-      return;
+      return false;
     }
     setBusy(true);
     try {
-      await sendMessage(mode, uid, activeRel, draft.trim(), `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`);
+      await sendMessage(mode, uid, activeRel, draft.trim(), `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, attachment);
       setDraft('');
+      return true;
     } catch (e: any) {
       setToast(e?.message || 'Échec de l’envoi du message');
+      return false;
     } finally {
       setBusy(false);
     }
@@ -2926,6 +2956,11 @@ export default function App() {
                             ? [
                                 { label: 'Signaler cet échange', onSelect: () => setReportTarget(`Conversation avec ${other.name}`) },
                                 {
+                                  label: 'Supprimer la discussion',
+                                  danger: true,
+                                  onSelect: () => setDeleteThread({ relId: activeRel.id, name: other.name })
+                                },
+                                {
                                   label: activeRel.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer',
                                   danger: true,
                                   disabled: busy,
@@ -2936,15 +2971,18 @@ export default function App() {
                         ]}
                       />
                     </div>
-                    <ThreadScroll className="chat-messages" watch={isAccepted ? messages : activeRel?.status}>
-                      <ConversationIntro person={other} onOpenProfile={() => nav('member', other.id)} />
+                    <ThreadScroll className="chat-messages" watch={isAccepted ? shownMessages : activeRel?.status}>
+                      {/* La carte de présentation s'efface dès le premier message, comme sur LinkedIn. */}
+                      {!(isAccepted && activeRel && selectedRelId === activeRel.id && shownMessages.length > 0) && (
+                        <ConversationIntro person={other} onOpenProfile={() => nav('member', other.id)} />
+                      )}
                       {isAccepted && activeRel && selectedRelId === activeRel.id && (
-                        <MessageThread messages={messages} people={[user, other, ...people]} />
+                        <MessageThread messages={shownMessages} people={[user, other, ...people]} />
                       )}
                     </ThreadScroll>
                     {isAccepted && activeRel ? (
                       canSend(activeRel, uid) ? (
-                        <MessageComposer draft={draft} setDraft={setDraft} onSend={handleSendMessage} busy={busy} />
+                        <MessageComposer draft={draft} setDraft={setDraft} onSend={handleSendMessage} busy={busy} attachments={mode === 'local'} />
                       ) : (
                         <div className="chat-blocked">
                           <Lock size={14} /> Envoi impossible : un blocage est actif sur cette relation.
@@ -3546,13 +3584,15 @@ export default function App() {
           relations={relations}
           selected={selectedRelId}
           setSelected={setSelectedRelId}
-          messages={messages}
+          messages={shownMessages}
           draft={draft}
           setDraft={setDraft}
           busy={busy}
           error={error}
           onSend={handleSendMessage}
+          attachments={mode === 'local'}
           onToggleBlock={handleToggleBlock}
+          onDeleteThread={(rel, peer) => setDeleteThread({ relId: rel.id, name: peer.name })}
           onOpenFullMessaging={() => {
             if (drawerPeerId) setMessagesPeerId(drawerPeerId);
             setDrawerPeerId('');
@@ -3629,6 +3669,20 @@ export default function App() {
           updateExt((prev) => ({ ...prev, scheduledPosts: (prev.scheduledPosts || []).filter((p) => p.id !== id) }));
           setToast('Publication programmée supprimée');
         }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteThread)}
+        title="Supprimer la discussion ?"
+        text={
+          deleteThread
+            ? `L’historique de votre échange avec ${deleteThread.name} sera effacé de votre messagerie. ${deleteThread.name.split(' ')[0]} garde sa copie. Cette action est définitive.`
+            : undefined
+        }
+        confirmLabel="Supprimer"
+        danger
+        onConfirm={confirmDeleteThread}
+        onCancel={cancelDeleteThread}
       />
 
       <ReportDialog

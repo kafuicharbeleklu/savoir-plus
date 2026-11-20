@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronDown, ChevronUp, Lock, Maximize2, MessageCircle, Search, X } from 'lucide-react';
-import type { Message, Profile, Relation } from '../data';
+import type { Message, MessageAttachment, Profile, Relation } from '../data';
 import { canSend } from '../domain.mjs';
 import { Avatar } from './ProfileIdentityCard';
 import {
@@ -32,6 +32,8 @@ export function MessagingDrawer({
   busy,
   error,
   onSend,
+  attachments = false,
+  onDeleteThread,
   onToggleBlock,
   onOpenFullMessaging,
   onOpenRelations,
@@ -56,7 +58,11 @@ export function MessagingDrawer({
   setDraft: (v: string) => void;
   busy: boolean;
   error: string;
-  onSend: () => void;
+  onSend: (attachment?: MessageAttachment) => void | Promise<boolean | void>;
+  /** Images, fichiers et GIF dans la barre de saisie (démonstration locale). */
+  attachments?: boolean;
+  /** Menu « … » › Supprimer la discussion (la confirmation est demandée par l'appelant). */
+  onDeleteThread?: (rel: Relation, other: Profile) => void;
   onToggleBlock: (r: Relation) => void;
   onOpenFullMessaging: () => void;
   onOpenRelations: () => void;
@@ -133,6 +139,9 @@ export function MessagingDrawer({
                     ...(isAccepted && bubbleRel
                       ? [
                           { label: 'Signaler cet échange', onSelect: () => onOpenReport(`Échange privé avec ${other.name}`) },
+                          ...(onDeleteThread
+                            ? [{ label: 'Supprimer la discussion', danger: true, onSelect: () => onDeleteThread(bubbleRel, other) }]
+                            : []),
                           {
                             label: bubbleRel.blockedBy.includes(user.id) ? 'Débloquer' : 'Bloquer',
                             danger: true,
@@ -169,7 +178,10 @@ export function MessagingDrawer({
           {!bubbleMin && (
             <>
               <ThreadScroll className="bubble-scroll" watch={isAccepted ? messages : bubbleRel?.status}>
-                <ConversationIntro person={other} onOpenProfile={() => onOpenProfile(other)} />
+                {/* La carte de présentation s'efface dès le premier message, comme sur LinkedIn. */}
+                {!(isAccepted && selected === bubbleRel?.id && messages.length > 0) && (
+                  <ConversationIntro person={other} onOpenProfile={() => onOpenProfile(other)} />
+                )}
                 {isAccepted && selected === bubbleRel?.id && (
                   <MessageThread messages={messages} people={[user, other, ...people]} />
                 )}
@@ -177,7 +189,7 @@ export function MessagingDrawer({
               {error && <div className="drawer-error">{error}</div>}
               {isAccepted && bubbleRel ? (
                 canSend(bubbleRel, user.id) ? (
-                  <MessageComposer draft={draft} setDraft={setDraft} onSend={onSend} busy={busy} compact />
+                  <MessageComposer draft={draft} setDraft={setDraft} onSend={onSend} busy={busy} attachments={attachments} compact />
                 ) : (
                   <div className="chat-blocked">
                     <Lock size={13} aria-hidden="true" /> Envoi suspendu suite à un blocage.

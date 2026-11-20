@@ -46,7 +46,7 @@ function nextFullHour(): Date {
 }
 
 /** Réduit une image avant de la joindre (1280 px au plus, JPEG) pour qu'elle tienne dans le navigateur. */
-function readImageAsDataUrl(file: File): Promise<string> {
+export function readImageAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('lecture'));

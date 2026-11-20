@@ -660,6 +660,12 @@ export interface ExtendedDemoState {
   followingIds: Record<string, string[]>;
   /** Publications enregistrées par membre (menu « … » › Enregistrer), la plus récente en tête. */
   savedPosts?: Record<string, string[]>;
+  /**
+   * Discussions supprimées par membre : date de la suppression par discussion. Les messages antérieurs
+   * ne sont plus montrés à ce membre (l'autre personne garde les siens) ; la discussion revient dans la
+   * liste au message suivant.
+   */
+  clearedThreads?: Record<string, Record<string, number>>;
   /** Publications masquées du fil par membre, avec la raison (« Pas intéressé(e) », « IA slop »). */
   hiddenPosts?: Record<string, Record<string, 'not-interested' | 'ai-slop'>>;
   /** Formules payantes souscrites, paiement simulé (src/offers.ts) : la publicité y devient facultative. */
