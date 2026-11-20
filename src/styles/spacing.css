@@ -38,8 +38,7 @@
 .pl-split,
 .pl-children,
 .fm-top,
-.fm-side,
-.md-pair { gap: var(--card-gap); }
+.fm-side { gap: var(--card-gap); }
 
 /* -- Petites cartes des colonnes latérales : 16 px ---------------------------------------------- */
 .app-root:not([data-page='catalog']) .right-rail > section { padding: var(--card-pad-compact); }

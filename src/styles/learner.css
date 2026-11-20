@@ -187,23 +187,7 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
   .md-title { font-size: 2rem; }
 }
 
-/* -- Page module : objectifs et temps côte à côte, ce que le module prépare, créateur, parcours ---- */
-.md-pair { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr); gap: 16px; align-items: stretch; }
-.md-pair .md-goals { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-.md-time-total { margin: 10px 0 0; font-size: 0.875rem; color: var(--fg-muted); }
-.md-time-total b { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; color: var(--fg-primary); }
-.md-time { display: flex; gap: 2px; height: 10px; margin-top: 14px; }
-.md-time i { display: block; flex-basis: 0; border-radius: 2px; }
-.md-time i:first-child { border-radius: 5px 2px 2px 5px; }
-.md-time i:last-child { border-radius: 2px 5px 5px 2px; }
-.md-time i:only-child { border-radius: 5px; }
-.md-time .is-read,
-.md-time-legend i.is-read { background: var(--chart-main); }
-.md-time .is-lab,
-.md-time-legend i.is-lab { background: var(--chart-warm); }
-.md-time-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 0; font-size: 0.8125rem; color: var(--fg-primary); }
-.md-time-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.md-time-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+/* -- Page module : ce que le module prépare, créateur, même parcours ---------------------------------- */
 
 .md-next { display: flex; flex-direction: column; gap: 10px; margin: 14px 0 0; padding: 14px 0 0; border-top: 1px solid var(--border-hairline); list-style: none; }
 .md-next li { display: flex; gap: 10px; font-size: 0.8125rem; line-height: 1.45; color: var(--fg-muted); }
@@ -231,9 +215,6 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 .md-siblings small { font-size: 0.75rem; color: var(--fg-muted); }
 .md-side > .md-report { align-self: flex-start; margin-top: 0; }
 
-@media (max-width: 900px) {
-  .md-pair { grid-template-columns: minmax(0, 1fr); }
-}
 
 /* -- Accueil : les gestes sous la zone de partage, alignés sur le début du champ (maquette) -------- */
 .home-composer-inline .home-composer-shortcuts {

@@ -526,10 +526,6 @@ export function ModuleDetailView({
   const leftParts = [readingLeft ? `${readingLeft} min de lecture` : '', !quizPassed && questionCount ? `le quiz (${questionCount} questions)` : ''].filter(Boolean);
   const verb = pct === 100 ? 'Revoir le module' : pct === 0 ? 'Commencer le module' : current >= 0 && current === rows.length - 1 && content ? 'Reprendre au quiz final' : 'Reprendre le module';
 
-  // Le temps du module par activité : la lecture (ses sections), puis l'exercice (le reste de la durée annoncée).
-  const totalMinutes = minutesOf(item.duration);
-  const readingMinutes = content ? content.lessons.reduce((sum, lesson) => sum + minutesOf(lesson.minutes), 0) : 0;
-  const exerciseMinutes = content && content.labType !== 'generic' ? Math.max(0, totalMinutes - readingMinutes) : 0;
   // Ce que le module prépare et débloque : la séance prévue, l'évaluation qu'il couvre, son badge.
   const agenda = moduleAgenda?.(item.id) || null;
   const badge = isInteractive ? moduleBadge(item.id) : null;
@@ -651,46 +647,16 @@ export function ModuleDetailView({
 
       <div className="md-body">
         <div className="md-main">
-          <div className="md-pair">
-            <section className="md-card" aria-label="Ce que vous saurez faire">
-              <h2>Ce que vous saurez faire</h2>
-              <ul className="md-goals">
-                {item.objectives.map((o) => (
-                  <li key={o}>
-                    <CheckCircle2 size={18} aria-hidden="true" /> {o}
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {totalMinutes > 0 && (
-              <section className="md-card md-time-card" aria-label="Le temps du module">
-                <h2>Le temps du module</h2>
-                <p className="md-time-total">
-                  <b>{totalMinutes} min</b>
-                  {questionCount ? `, puis un quiz de ${questionCount} questions` : ''}
-                </p>
-                {readingMinutes > 0 && (
-                  <>
-                    <div className="md-time" role="img" aria-label={`Lecture ${readingMinutes} min${exerciseMinutes ? `, exercice ${exerciseMinutes} min` : ''}`}>
-                      <i className="is-read" style={{ flexGrow: readingMinutes }} />
-                      {exerciseMinutes > 0 && <i className="is-lab" style={{ flexGrow: exerciseMinutes }} />}
-                    </div>
-                    <p className="md-time-legend">
-                      <span>
-                        <i className="is-read" aria-hidden="true" /> Lecture · {readingMinutes} min
-                      </span>
-                      {exerciseMinutes > 0 && (
-                        <span>
-                          <i className="is-lab" aria-hidden="true" /> Exercice · {exerciseMinutes} min
-                        </span>
-                      )}
-                    </p>
-                  </>
-                )}
-              </section>
-            )}
-          </div>
+          <section className="md-card" aria-label="Ce que vous saurez faire">
+            <h2>Ce que vous saurez faire</h2>
+            <ul className="md-goals">
+              {item.objectives.map((o) => (
+                <li key={o}>
+                  <CheckCircle2 size={18} aria-hidden="true" /> {o}
+                </li>
+              ))}
+            </ul>
+          </section>
 
           <section className="md-card" aria-label="Programme du module">
             <header className="md-card-head">
