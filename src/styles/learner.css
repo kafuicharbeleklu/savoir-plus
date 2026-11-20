@@ -146,7 +146,7 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 .md-body { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
 .md-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .md-side { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.md-card { min-width: 0; padding: 18px 20px 20px; background: var(--bg-surface); border: 1px solid var(--border-hairline); border-radius: var(--angle); }
+.md-card { min-width: 0; padding: var(--space-5); background: var(--bg-surface); border: 1px solid var(--border-hairline); border-radius: var(--angle); }
 .md-card h2 { margin: 0; font-size: 1rem; font-weight: 600; letter-spacing: 0; color: var(--fg-primary); }
 .md-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .md-card-head small { font-size: 0.8125rem; color: var(--fg-muted); }
@@ -213,13 +213,13 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 
 .md-creator { overflow: hidden; padding: 0; }
 .md-creator-cover { height: 64px; background-color: var(--bg-subtle); background-size: cover; background-position: 50% 38%; }
-.md-creator-body { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 0 18px 16px; }
+.md-creator-body { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 0 var(--space-5) var(--space-5); }
 .md-creator-avatar { display: grid; place-items: center; width: 52px; height: 52px; margin-top: -26px; margin-bottom: 6px; overflow: hidden; border: 3px solid var(--bg-surface); border-radius: 50%; background: color-mix(in srgb, var(--accent-brand) 16%, var(--bg-surface)); color: var(--accent-brand); font-size: 1.125rem; font-weight: 600; }
 .md-creator-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .md-creator-name { font-size: 0.9375rem; font-weight: 600; color: var(--fg-primary); }
 .md-creator-tagline { font-size: 0.75rem; line-height: 1.4; color: var(--fg-muted); }
 .md-creator .md-text { margin-top: 8px; }
-.md-creator .li-text-link { margin-top: 8px; font-size: 0.8125rem; }
+.md-creator .li-text-link { margin-top: var(--space-3); font-size: 0.8125rem; }
 
 .md-path-name { margin-top: 4px; font-size: 0.8125rem; }
 .md-siblings { margin: 10px -20px -20px; padding: 0; list-style: none; }
