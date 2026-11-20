@@ -87,9 +87,6 @@ export function TodayCard({
             <button type="button" className="primary" onClick={onResume}>
               <Play size={15} aria-hidden="true" /> {verb}
             </button>
-            <button type="button" className="li-text-link" onClick={onOpenPlan}>
-              Voir le plan de la semaine
-            </button>
           </div>
         </div>
       </div>
