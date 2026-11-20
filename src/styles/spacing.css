@@ -44,7 +44,9 @@
 /* -- Petites cartes des colonnes latérales : 16 px ---------------------------------------------- */
 .app-root:not([data-page='catalog']) .right-rail > section { padding: var(--card-pad-compact); }
 .app-root:not([data-page='catalog']) .right-rail > section.ad-card.ad-card { padding: 0; }
-.ad-card-body { padding: var(--card-pad-compact) var(--card-pad-compact) 4px; }
+/* La publicité : 16 px tout autour ; le bas ne se resserre que si le pied (bouton pause) suit. */
+.ad-card-body { padding: var(--card-pad-compact); }
+.ad-card-body:has(+ .ad-card-foot) { padding-bottom: 4px; }
 .cal-month { padding: var(--card-pad-compact); }
 
 /* -- Fil : zone de partage, publications, recommandations ---------------------------------------- */
