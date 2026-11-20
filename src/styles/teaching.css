@@ -193,7 +193,7 @@
 .sx-review-item.is-open { background: color-mix(in srgb, var(--bg-subtle) 55%, transparent); }
 .sx-review-body { padding: 4px 0 16px; }
 
-.sx-decide { flex: none; display: inline-flex; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--border-hairline); }
+.sx-decide { flex: none; display: inline-flex; border-radius: var(--angle); box-shadow: inset 0 0 0 1px var(--border-hairline); }
 .sx-decide button {
   display: inline-flex;
   align-items: center;
@@ -201,7 +201,7 @@
   min-height: 30px;
   padding: 0 12px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--angle);
   background: none;
   box-shadow: none;
   font: inherit;

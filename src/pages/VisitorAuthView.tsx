@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { CoachMark } from '../components/CoachMark';
 import { LandingVideo } from '../components/LandingVideo';
 import { markExploreTourSeen, readExploreTourSeen, shouldShowExploreTour } from '../tour';
-import { ArrowLeft, ArrowRight, CheckCircle2, KeyRound, Lock, Mail } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Compass, KeyRound, Lock, Mail } from 'lucide-react';
 
 type AuthTab = 'login' | 'signup' | 'verify' | 'reset' | 'onboarding';
 
@@ -160,7 +160,7 @@ export function VisitorAuthView({
                   onLoginCloud(email, password);
                 }}
               >
-                <div className="landing-form-head">
+                <div className="landing-form-head sr-only">
                   <h2>Se connecter</h2>
                 </div>
                 <div className="lf-field">
@@ -391,7 +391,7 @@ export function VisitorAuthView({
 
           {isPrimaryTab && (
             <button ref={exploreRef} type="button" className="lf-explore" onClick={() => onSelectPersona('afi')}>
-              Explorer sans compte
+              <Compass size={16} aria-hidden="true" /> Explorer sans compte
             </button>
           )}
 
