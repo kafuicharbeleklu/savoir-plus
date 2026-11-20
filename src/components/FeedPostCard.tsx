@@ -14,7 +14,7 @@ import {
   MessageSquare,
   Repeat2,
   Send,
-  ThumbsDown,
+  CircleSlash,
   ThumbsUp,
   UserMinus,
   UserPlus
@@ -412,7 +412,7 @@ export function FeedPostCard({
     ...(!isOwnPost && onHide
       ? [
           { label: 'Pas intéressé(e)', icon: <EyeOff size={18} aria-hidden="true" />, onSelect: () => onHide(post.id, 'not-interested') },
-          { label: 'On dirait de l’IA slop', icon: <ThumbsDown size={18} aria-hidden="true" />, onSelect: () => onHide(post.id, 'ai-slop') }
+          { label: 'On dirait de l’IA slop', icon: <CircleSlash size={18} aria-hidden="true" />, onSelect: () => onHide(post.id, 'ai-slop') }
         ]
       : []),
     ...(!isOwnPost
