@@ -95,7 +95,7 @@ test('fil d’entraide : ordre et contexte propres à chaque profil', () => {
 });
 
 test('alertes : une phrase avec son auteur, et une publication qui s’ouvre dans le fil', async () => {
-  const { notificationSentence, notificationTarget } = await import('../src/notificationText');
+  const { notificationSentence, notificationTarget, notificationReportId } = await import('../src/notificationText');
   assert.deepEqual(
     notificationSentence({
       title: 'Nouvelle réponse dans une question d’entraide',
@@ -121,7 +121,7 @@ test('alertes : une phrase avec son auteur, et une publication qui s’ouvre dan
     text: 'vous demande des précisions sur votre signalement SIG-2026-001',
     detail: 'Échange signalé'
   });
-  assert.deepEqual(notificationTarget({ ...report, targetPage: 'report' }), { page: 'report', id: 'SIG-2026-001' });
+  assert.equal(notificationReportId({ ...report, targetId: undefined }), 'SIG-2026-001');
   assert.equal(notificationSentence({ title: 'Un titre inconnu', detail: '…', actorName: 'Kossi Agbo' }), null);
   assert.deepEqual(notificationTarget({ targetPage: 'community-thread', targetId: 'post-1' }), { page: 'community', id: 'post-1' });
   assert.deepEqual(notificationTarget({ targetPage: 'module-detail', targetId: 'phishing' }), { page: 'module-detail', id: 'phishing' });

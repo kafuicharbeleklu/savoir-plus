@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { notificationSentence, notificationTarget } from '../notificationText';
+import { notificationReportId, notificationSentence, notificationTarget } from '../notificationText';
 import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Bell,
   CheckCircle2,
+  ChevronDown,
   Eye,
   Flag,
   Lock,
@@ -16,7 +17,7 @@ import {
   User,
   UserCheck
 } from 'lucide-react';
-import { appendAuditLog, formatNotificationTimestamp, notificationsFor, type ExtendedDemoState, type NotificationItem } from '../wireframeData';
+import { appendAuditLog, formatNotificationTimestamp, notificationsFor, type ExtendedDemoState, type NotificationItem, type ReportItem } from '../wireframeData';
 import type { Profile, Relation } from '../data';
 import { resolveCommunityDirectory, resolveProfileVerified, type RoleCapabilities } from '../personas';
 import { Avatar } from '../components/ProfileIdentityCard';
@@ -74,13 +75,26 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
     setToast('Toutes les notifications affichées ont été marquées comme lues');
   };
 
+  // L'alerte d'un signalement se déroule sur place : dossier, motif, état, réponse aux précisions.
+  const [openId, setOpenId] = useState('');
   const openNotif = (n: NotificationItem) => {
     updateExt((prev) => ({
       ...prev,
       notifications: prev.notifications.map((x) => (x.id === n.id ? { ...x, read: true } : x))
     }));
+    if (notificationReportId(n)) {
+      setOpenId((v) => (v === n.id ? '' : n.id));
+      return;
+    }
     const target = notificationTarget(n);
     nav(target.page, target.id);
+  };
+  const sendPrecision = (reportId: string, text: string) => {
+    updateExt((prev) => ({
+      ...prev,
+      reports: prev.reports.map((r) => (r.id === reportId ? { ...r, status: 'En cours d’examen', extraNote: text } : r))
+    }));
+    setToast('Précisions transmises à l’équipe de modération');
   };
 
   const unreadCount = items.filter((n) => !n.read).length;
@@ -120,13 +134,17 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
             {shown.map((n) => {
               const actor = resolveActor(n);
               const sentence = notificationSentence(n, { reportOf: (id) => ext.reports.find((r) => r.id === id) });
+              const reportId = notificationReportId(n);
+              const report = reportId ? ext.reports.find((r) => r.id === reportId) : undefined;
+              const open = Boolean(reportId) && openId === n.id;
               return (
+                <div role="listitem" key={n.id} className={`wf-notif-item${open ? ' is-open' : ''}`}>
                 <button
                   type="button"
-                  role="listitem"
                   className={`wf-notif-row ${n.read ? 'read' : 'unread'}`}
-                  key={n.id}
                   onClick={() => openNotif(n)}
+                  aria-expanded={reportId ? open : undefined}
+                  aria-controls={reportId ? `notif-panel-${n.id}` : undefined}
                 >
                   <Avatar person={actor} />
                   <div className="wf-notif-body">
@@ -150,7 +168,20 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
                     </span>
                   </div>
                   {!n.read && <span className="wf-notif-dot" aria-label="Non lue" />}
+                  {reportId && <ChevronDown size={18} className="wf-notif-chevron" aria-hidden="true" />}
                 </button>
+                {open && (
+                  <div id={`notif-panel-${n.id}`}>
+                    {report ? (
+                      <ReportAlertPanel report={report} onSendPrecision={(text) => sendPrecision(report.id, text)} />
+                    ) : (
+                      <div className="wf-notif-panel">
+                        <p className="wf-notif-note">Ce dossier n’est plus disponible.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                </div>
               );
             })}
           </div>
@@ -164,144 +195,56 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
   );
 }
 
-export function ReportView({ ext, updateExt, nav, reportTarget, setToast, selectedId }: AccountAdminProps) {
-  const [reason, setReason] = useState('Contenu trompeur ou désinformation');
-  // Ouverte depuis une alerte (« report/SIG-2026-001 ») : la page défile jusqu'au dossier.
-  const focusId = selectedId && ext.reports.some((r) => r.id === selectedId) ? selectedId : '';
-  useEffect(() => {
-    if (!focusId) return;
-    const t = window.setTimeout(() => {
-      document.getElementById(`report-${focusId}`)?.scrollIntoView({ block: 'center', behavior: ext.appPrefs.reducedMotion ? 'auto' : 'smooth' });
-    }, 260);
-    return () => window.clearTimeout(t);
-  }, [focusId]);
-  const [details, setDetails] = useState('');
-  const [extraReply, setExtraReply] = useState('');
-
-  const submitReport = (e: React.FormEvent) => {
-    e.preventDefault();
-    const id = `SIG-2026-00${ext.reports.length + 1}`;
-    updateExt((prev) => ({
-      ...prev,
-      reports: [
-        {
-          id,
-          targetLabel: reportTarget || 'Contenu de démonstration sélectionné',
-          reason,
-          details: details.trim() || 'Aucune précision complémentaire.',
-          status: 'Reçu',
-          date: 'À l’instant'
-        },
-        ...prev.reports
-      ],
-      auditLogs: appendAuditLog(prev.auditLogs, {
-        actor: 'Déclarant (confidentiel)',
-        action: 'Nouveau signalement déposé',
-        target: id,
-        scope: 'Signalement privé',
-        result: 'Succès',
-        justification: `Motif sélectionné : ${reason}`
-      })
-    }));
-    setDetails('');
-    setToast(`Signalement ${id} enregistré dans votre suivi privé`);
-  };
-
-  const sendPrecision = (id: string) => {
-    if (!extraReply.trim()) return;
-    updateExt((prev) => ({
-      ...prev,
-      reports: prev.reports.map((r) =>
-        r.id === id ? { ...r, status: 'En cours d’examen', extraNote: extraReply.trim() } : r
-      )
-    }));
-    setExtraReply('');
-    setToast('Précisions transmises au dossier');
-  };
-
+/**
+ * Volet d'une alerte de signalement, déroulé sur place (il n'y a plus de page des signalements) :
+ * le motif, l'état du dossier, et la réponse quand des précisions sont demandées.
+ */
+function ReportAlertPanel({ report, onSendPrecision }: { report: ReportItem; onSendPrecision: (text: string) => void }) {
+  const [text, setText] = useState('');
   return (
-    <div className="wf-detail-wrap">
-      <button className="back-link" onClick={() => nav('notifications')}>
-        <ArrowLeft size={16} /> Retour aux alertes
-      </button>
-
-      <h1 className="sr-only">Signaler un contenu ou un échange</h1>
-
-      <div className="wf-two-col">
-        <form className="wf-card wf-form-stack" onSubmit={submitReport}>
-          <h3>Nouveau signalement</h3>
-          <p className="tiny muted">
-            Élément visé : <b>{reportTarget || 'Aucun élément présélectionné (test général)'}</b>
-          </p>
-          <p className="tiny muted">Votre identité reste confidentielle vis-à-vis de la personne signalée.</p>
-          <label>
-            Motif principal
-            <Select value={reason} onChange={(e) => setReason(e.target.value)}>
-              <option>Contenu trompeur ou désinformation</option>
-              <option>Harcèlement ou propos abusifs</option>
-              <option>Spam ou sollicitation répétée</option>
-              <option>Exposition de données personnelles</option>
-              <option>Autre</option>
-            </Select>
-          </label>
-          <label>
-            Précisions (facultatif)
-            <textarea
-              rows={4}
-              placeholder="Décrivez brièvement le problème constaté…"
-              value={details}
-              onChange={(e) => setDetails(e.target.value)}
-            />
-          </label>
-          <p className="tiny muted">
-            Éléments transmis à l’équipe habilitée : référence de l’objet, motif choisi et vos précisions.
-          </p>
-          <button type="submit" className="primary">
-            <Flag size={15} /> Envoyer le signalement
-          </button>
-        </form>
-
-        <section className="wf-card">
-          <h3>Mes signalements (Suivi privé)</h3>
-          <div className="wf-stack-sm wf-mt-sm">
-            {ext.reports.map((rep) => (
-              <div id={`report-${rep.id}`} className={`wf-report-item${rep.id === focusId ? ' is-focused' : ''}`} key={rep.id}>
-                <div className="between">
-                  <b>{rep.id}</b>
-                  <span className="status-tag">{rep.status}</span>
-                </div>
-                <p className="tiny">{rep.targetLabel}</p>
-                <small className="muted">Motif : {rep.reason}</small>
-                {rep.status === 'Précisions demandées' && (
-                  <div className="wf-form-stack wf-mt-sm">
-                    <input
-                      placeholder="Répondre à la demande de précisions…"
-                      value={extraReply}
-                      onChange={(e) => setExtraReply(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      className="secondary"
-                      disabled={!extraReply.trim()}
-                      onClick={() => sendPrecision(rep.id)}
-                    >
-                      Envoyer les précisions
-                    </button>
-                  </div>
-                )}
-                {rep.extraNote && (
-                  <small className="muted">Votre complément : « {rep.extraNote} »</small>
-                )}
-              </div>
-            ))}
+    <div className="wf-notif-panel">
+      {/* L'élément signalé est déjà sous la phrase de l'alerte : le volet ajoute le motif et l'état. */}
+      <dl className="wf-notif-facts">
+        <div>
+          <dt>Motif</dt>
+          <dd>{report.reason}</dd>
+        </div>
+        <div>
+          <dt>État du dossier</dt>
+          <dd>{report.status}</dd>
+        </div>
+      </dl>
+      {report.status === 'Précisions demandées' ? (
+        <form
+          className="wf-notif-reply"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!text.trim()) return;
+            onSendPrecision(text.trim());
+            setText('');
+          }}
+        >
+          <textarea
+            rows={3}
+            maxLength={1000}
+            aria-label="Vos précisions pour l’équipe de modération"
+            placeholder="Répondre à la demande de précisions…"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <div className="wf-notif-reply-actions">
+            <span className="tiny muted">Votre identité reste confidentielle vis-à-vis de la personne signalée.</span>
+            <button type="submit" className="primary ui-btn-sm" disabled={!text.trim()}>
+              Envoyer les précisions
+            </button>
           </div>
-        </section>
-      </div>
+        </form>
+      ) : (
+        report.extraNote && <p className="wf-notif-note">Vos précisions : « {report.extraNote} »</p>
+      )}
     </div>
   );
 }
-
-type SettingsSection = 'account' | 'security' | 'visibility' | 'data' | 'notifications';
 
 export function AuthFlowsView({ nav, setToast }: AccountAdminProps) {
   const [step, setStep] = useState<'landing' | 'signup' | 'verify' | 'login' | 'reset' | 'onboarding'>('landing');

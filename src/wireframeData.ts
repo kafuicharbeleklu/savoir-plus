@@ -38,6 +38,7 @@ export type AppPage =
   | 'messages'
   | 'profile'
   | 'notifications'
+  /** Pas une page : ouvre la fenêtre de signalement (voir nav dans App.tsx). */
   | 'report'
   | 'settings'
   | 'reader'

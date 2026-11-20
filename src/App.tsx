@@ -115,6 +115,7 @@ import {
   promoteDuePosts,
   readExtended,
   EXTENDED_STORAGE_KEY,
+  formatNotificationTimestamp,
   writeExtended,
   type AdminRoleName,
   type AppPage,
@@ -235,7 +236,6 @@ import {
   AuthFlowsView,
   ModerationView,
   NotificationsView,
-  ReportView,
   AppealView
 } from './pages/AccountAndAdminPages';
 import { SettingsView } from './pages/SettingsPage';
@@ -285,7 +285,6 @@ const VALID_PAGES = new Set<string>([
   'messages',
   'profile',
   'notifications',
-  'report',
   'settings',
   'reader',
   'quiz-intro',
@@ -603,6 +602,12 @@ export default function App() {
 
   // Navigation helper
   const nav = (target: RoutePage, id = '') => {
+    // Plus de page des signalements : « Signaler » (centre d'aide, menu mobile…) ouvre la fenêtre de signalement.
+    if (target === 'report') {
+      setMoreOpen(false);
+      setReportTarget(id || 'Signalement général');
+      return;
+    }
     const hash = id ? `#${target}/${encodeURIComponent(id)}` : `#${target}`;
     if (window.location.hash !== hash) {
       window.location.hash = hash;
@@ -1562,6 +1567,39 @@ export default function App() {
   const currentOfferId =
     paidSubscription(ext.subscriptions, uid)?.offer.id ||
     (caps.accountKind === 'learner' ? 'learner-free' : caps.accountKind === 'guardian' || caps.accountKind === 'educator' ? 'free' : undefined);
+  // Fenêtre de signalement : présente dans l'application et sur les pages d'information (centre d'aide…).
+  const reportDialog = (
+    <ReportDialog
+      targetLabel={reportTarget}
+      onClose={() => setReportTarget(null)}
+      onSubmit={(report) => {
+        // Le suivi se fait dans les alertes : un accusé de réception, qui se déroule sur le dossier.
+        updateExt((prev) => ({
+          ...prev,
+          reports: [report, ...prev.reports],
+          notifications: [
+            {
+              id: `nt-report-${report.id}`,
+              category: 'Compte',
+              kind: 'report-update',
+              params: { id: report.id, status: 'Reçu' },
+              actorName: 'L’équipe de modération',
+              actorInitials: 'SV',
+              title: 'Votre signalement a été reçu',
+              detail: report.targetLabel,
+              date: formatNotificationTimestamp(),
+              read: true,
+              targetPage: 'notifications',
+              recipientId: uid
+            },
+            ...prev.notifications
+          ]
+        }));
+        setToast(`Signalement ${report.id} envoyé : suivez-le dans vos alertes`);
+      }}
+    />
+  );
+
   if (page === 'info') {
     return (
       <>
@@ -1577,6 +1615,7 @@ export default function App() {
           viewerAudience={audienceOfKind(caps.accountKind)}
           currentOfferId={currentOfferId}
         />
+        {reportDialog}
         {toast && (
           <div className="toast" role="status" aria-live="polite">
             {toast}
@@ -3176,7 +3215,6 @@ export default function App() {
           }
         />
       );
-    if (page === 'report') return <ReportView {...accountAdminProps} />;
     if (page === 'settings')
       return (
         <SettingsView
@@ -3685,14 +3723,7 @@ export default function App() {
         onCancel={cancelDeleteThread}
       />
 
-      <ReportDialog
-        targetLabel={reportTarget}
-        onClose={() => setReportTarget(null)}
-        onSubmit={(report) => {
-          updateExt((prev) => ({ ...prev, reports: [report, ...prev.reports] }));
-          setToast(`Signalement ${report.id} enregistré`);
-        }}
-      />
+      {reportDialog}
 
       {authModal}
 

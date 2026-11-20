@@ -148,7 +148,7 @@ export function MobileNav({
                 <Settings size={18} /> Paramètres
               </button>
               <button onClick={() => go('report')}>
-                <Flag size={18} /> Aide & suivi
+                <Flag size={18} /> Signaler un problème
               </button>
 
               {caps.canCreate && (

@@ -2,8 +2,8 @@
  * Une alerte en une phrase, comme sur LinkedIn : « Kossi Agbo a répondu à la question de Maya « … » ».
  * L'auteur ouvre la phrase (en gras à l'affichage) ; une seconde ligne, facultative, donne le contexte.
  * Chaque alerte a un type (`kind`) et ses paramètres ; les alertes enregistrées avant l'ajout des types
- * sont reconnues par leur titre. Et l'endroit où elle mène, au plus précis : une publication s'ouvre
- * dans le fil à sa place, un signalement sur son dossier.
+ * sont reconnues par leur titre. Et l'endroit où elle mène : une publication s'ouvre dans le fil à sa
+ * place ; un signalement se déroule dans l'alerte même.
  */
 import type { NotificationItem, NotificationKind } from './wireframeData';
 
@@ -97,14 +97,14 @@ export function notificationSentence(
   return n.actorName ? { actor: n.actorName, text, ...extra } : null;
 }
 
-/** Où mène l'alerte, au plus précis : une publication dans le fil, un signalement sur son dossier. */
-export function notificationTarget(
-  n: Pick<NotificationItem, 'targetPage' | 'targetId'> & Partial<Pick<NotificationItem, 'kind' | 'params' | 'title' | 'detail'>>
-): { page: string; id?: string } {
+/** Où mène l'alerte, au plus précis : une publication s'ouvre dans le fil, à sa place. */
+export function notificationTarget(n: Pick<NotificationItem, 'targetPage' | 'targetId'>): { page: string; id?: string } {
   if (n.targetPage === 'community-thread' && n.targetId) return { page: 'community', id: n.targetId };
-  if (n.targetPage === 'report' && !n.targetId) {
-    const known = notificationKindOf({ title: '', detail: '', ...n });
-    if (known?.kind === 'report-update' && known.params.id) return { page: 'report', id: known.params.id };
-  }
   return { page: n.targetPage, id: n.targetId };
+}
+
+/** Le signalement dont parle l'alerte : elle se déroule sur place (pas de page des signalements). */
+export function notificationReportId(n: Pick<NotificationItem, 'kind' | 'params' | 'title' | 'detail' | 'targetId'>): string | undefined {
+  const known = notificationKindOf(n);
+  return known?.kind === 'report-update' ? known.params.id : undefined;
 }

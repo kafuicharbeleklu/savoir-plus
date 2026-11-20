@@ -281,7 +281,7 @@ export function TopBar({
             </button>
           )}
           <button
-            className={`topbar-action-btn ${page === 'notifications' || page === 'report' ? 'active' : ''}`}
+            className={`topbar-action-btn ${page === 'notifications' ? 'active' : ''}`}
             onClick={() => nav('notifications')}
             aria-label={`Alertes${unreadNotifs > 0 ? ` (${unreadNotifs} non lues)` : ''}`}
           >
