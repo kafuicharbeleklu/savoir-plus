@@ -28,7 +28,7 @@ import { PostMediaView } from './PostMedia';
 import { SharedModuleCard } from './SharedModuleCard';
 import { ConversationMenu, type ConversationMenuItem } from './MessageThread';
 
-export type HiddenPostReason = 'not-interested' | 'ai-slop';
+export type HiddenPostReason = 'not-interested' | 'ai-slop' | 'reported';
 
 export interface FeedPostCardProps {
   post: CommunityPost;
@@ -49,6 +49,8 @@ export interface FeedPostCardProps {
   onOpenThread: (postId: string) => void;
   onOpenRelations: () => void;
   onReport: (targetLabel: string) => void;
+  /** Signaler la publication elle-même : elle disparaît ensuite du fil (comme sur LinkedIn). */
+  onReportPost?: (post: CommunityPost) => void;
   setToast: (msg: string) => void;
   defaultExpandedComments?: boolean;
   /** Publication visée par une notification : encadrée un instant. */
@@ -86,6 +88,7 @@ export function FeedPostCard({
   onOpenThread,
   onOpenRelations,
   onReport,
+  onReportPost,
   setToast,
   defaultExpandedComments = false,
   focused = false,
@@ -421,7 +424,7 @@ export function FeedPostCard({
             label: 'Signaler le post',
             icon: <Flag size={18} aria-hidden="true" />,
             danger: true,
-            onSelect: () => onReport(`Communauté (${post.kind}) : ${post.title}`)
+            onSelect: () => (onReportPost ? onReportPost(post) : onReport(`Communauté (${post.kind}) : ${post.title}`))
           }
         ]
       : [])
@@ -438,14 +441,17 @@ export function FeedPostCard({
   if (hiddenReason) {
     return (
       <article id={`post-${post.id}`} className="wf-card feed-post-hidden" aria-label="Publication masquée">
-        <EyeOff size={18} aria-hidden="true" />
+        {hiddenReason === 'reported' ? <Flag size={18} aria-hidden="true" /> : <EyeOff size={18} aria-hidden="true" />}
         <p>
-          <b>Publication masquée.</b>{' '}
+          <b>{hiddenReason === 'reported' ? 'Publication signalée.' : 'Publication masquée.'}</b>{' '}
           {hiddenReason === 'ai-slop'
             ? 'Merci pour votre retour : elle n’apparaîtra plus dans votre fil.'
-            : 'Elle n’apparaîtra plus dans votre fil.'}
+            : hiddenReason === 'reported'
+              ? 'Vous ne la verrez plus dans votre fil.'
+              : 'Elle n’apparaîtra plus dans votre fil.'}
         </p>
-        {onUndoHide && (
+        {/* Un signalement ne s'annule pas (LinkedIn non plus) ; un masquage, si. */}
+        {onUndoHide && hiddenReason !== 'reported' && (
           <button type="button" className="li-text-link" onClick={() => onUndoHide(post.id)}>
             Annuler
           </button>

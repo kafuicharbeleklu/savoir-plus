@@ -146,7 +146,8 @@ test('Dynamic catalog reflects live Studio publications and resolves study conte
 
 test('Notifications include responsible actor metadata and explicit timestamps', () => {
   const ext = initialExtendedState();
-  assert.ok(ext.notifications.length >= 3);
+  // Deux alertes de départ : comme sur LinkedIn, le suivi d'un signalement ne passe plus par les alertes.
+  assert.ok(ext.notifications.length >= 2);
   for (const n of ext.notifications) {
     assert.ok(n.actorId && n.actorName, `Missing actor on ${n.id}`);
     assert.ok(!/aujourd|hier/i.test(n.date), `Relative date should be timestamped on ${n.id}: ${n.date}`);

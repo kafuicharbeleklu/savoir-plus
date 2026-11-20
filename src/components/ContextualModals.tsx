@@ -704,104 +704,196 @@ export function ContactRequestModal({
   );
 }
 
+/** Ce qu'on signale. Une publication ou une conversation disparaît ensuite du fil ou de la messagerie. */
+export interface ReportTarget {
+  label: string;
+  kind?: 'post' | 'conversation';
+  /** Identifiant de la publication ou de la discussion. */
+  id?: string;
+  personId?: string;
+  personName?: string;
+}
+
+/** Une suite proposée après l'envoi (« Ne plus suivre… », « Bloquer… »), comme sur LinkedIn. */
+export interface ReportFollowUp {
+  label: string;
+  doneLabel: string;
+  onSelect: () => void;
+}
+
+/** Les motifs de LinkedIn (« Why are you reporting this? »), avec une phrase d'explication chacun. */
+export const REPORT_REASONS: { label: string; hint: string }[] = [
+  { label: 'Harcèlement', hint: 'Insultes, intimidation, attaques répétées ou propos dégradants visant une personne.' },
+  { label: 'Fraude ou arnaque', hint: 'Tentative d’obtenir de l’argent, des données ou des identifiants par la tromperie.' },
+  { label: 'Spam', hint: 'Contenu répétitif, publicitaire ou hors sujet, envoyé en masse.' },
+  { label: 'Désinformation', hint: 'Information fausse ou trompeuse présentée comme vraie, y compris dans un cours.' },
+  { label: 'Discours haineux', hint: 'Propos qui visent une personne ou un groupe pour son origine, sa religion, son genre ou son handicap.' },
+  { label: 'Menaces ou violence', hint: 'Menace, appel à la violence ou glorification de la violence.' },
+  { label: 'Automutilation', hint: 'Contenu qui encourage ou montre l’automutilation ou le suicide.' },
+  { label: 'Contenu choquant', hint: 'Images ou descriptions violentes ou crues.' },
+  { label: 'Organisations dangereuses ou extrémistes', hint: 'Soutien ou promotion d’organisations violentes ou extrémistes.' },
+  { label: 'Contenu sexuel', hint: 'Nudité, contenu sexuel ou sollicitation.' },
+  { label: 'Faux compte', hint: 'Profil qui usurpe l’identité de quelqu’un ou ne représente pas une vraie personne.' },
+  { label: 'Exploitation d’enfants', hint: 'Tout contenu qui expose, sollicite ou met en danger un enfant.' },
+  { label: 'Biens et services illégaux', hint: 'Vente ou promotion de produits ou de services interdits.' },
+  { label: 'Atteinte aux droits', hint: 'Contenu copié sans autorisation : cours, images, vidéos, marques.' }
+];
+
+/**
+ * Signaler, comme sur LinkedIn : « Pourquoi signalez-vous ceci ? » et ses motifs ; un motif ouvre son
+ * explication avec « Retour » et « Envoyer » ; puis un remerciement, avec les suites proposées
+ * (ne plus suivre, bloquer). La personne signalée ne sait pas qui l'a signalée.
+ */
 export function ReportDialog({
-  targetLabel,
+  target,
+  followUps = [],
   onClose,
   onSubmit
 }: {
-  targetLabel: string | null;
+  target: ReportTarget | null;
+  followUps?: ReportFollowUp[];
   onClose: () => void;
   onSubmit: (report: ReportItem) => void;
 }) {
-  const [reason, setReason] = useState('Harcèlement ou propos abusifs');
-  const [details, setDetails] = useState('');
+  const [reason, setReason] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+  const [done, setDone] = useState<string[]>([]);
+  // Les suites sont figées à l'envoi : « Ne plus suivre » reste affiché, coché, une fois fait.
+  const [shownFollowUps, setShownFollowUps] = useState<ReportFollowUp[]>([]);
+
+  const close = () => {
+    setReason(null);
+    setSent(false);
+    setDone([]);
+    setShownFollowUps([]);
+    onClose();
+  };
 
   useEffect(() => {
-    if (!targetLabel) return;
+    if (!target) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') close();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [targetLabel, onClose]);
+  });
 
-  if (!targetLabel) return null;
+  if (!target) return null;
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const chosen = REPORT_REASONS.find((r) => r.label === reason);
+  const submit = () => {
+    if (!chosen) return;
     onSubmit({
       id: `SIG-${Math.floor(1000 + Math.random() * 9000)}`,
-      targetLabel,
-      reason,
-      details: details.trim() || 'Signalement transmis pour examen.',
+      targetLabel: target.label,
+      reason: chosen.label,
+      details: 'Signalement par motif.',
       status: 'Reçu',
       date: 'À l’instant'
     });
-    setDetails('');
-    onClose();
+    setShownFollowUps(followUps);
+    setSent(true);
   };
+  const gone =
+    target.kind === 'post'
+      ? 'Vous ne verrez plus cette publication dans votre fil.'
+      : target.kind === 'conversation'
+        ? 'Vous ne verrez plus cette conversation dans votre messagerie.'
+        : '';
 
   return (
     <div
       className="modal-backdrop"
       role="dialog"
       aria-modal="true"
-      aria-label="Signaler un contenu ou un échange"
+      aria-label="Signaler"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) close();
       }}
     >
-      <form className="modal" onSubmit={submit}>
-        <button type="button" className="icon-btn modal-close" aria-label="Fermer" onClick={onClose}>
-          <X size={18} />
-        </button>
-        <span className="eyebrow">Signalement privé & confidentiel</span>
-        <h2>Signaler un élément</h2>
-        <p className="report-target-box">
-          <Flag size={14} /> Élément ciblé : <b>{targetLabel}</b>
-        </p>
-
-        <label className="modal-field">
-          <span>Motif du signalement</span>
-          <Select value={reason} onChange={(e) => setReason(e.target.value)}>
-            <option>Harcèlement ou propos abusifs</option>
-            <option>Désinformation pédagogique ou technique</option>
-            <option>Spam ou sollicitation répétée</option>
-            <option>Usurpation d’identité</option>
-            <option>Exposition de données personnelles</option>
-            <option>Autre</option>
-          </Select>
-        </label>
-
-        <label className="modal-field">
-          <span>Précisions utiles (facultatif)</span>
-          <textarea
-            rows={3}
-            placeholder="Décrivez brièvement le contexte pour l’équipe de modération…"
-            value={details}
-            onChange={(e) => setDetails(e.target.value)}
-          />
-        </label>
-
-        <p className="tiny muted">
-          Votre identité n’est pas communiquée à la personne visée. Signaler ne bloque pas automatiquement la personne ;
-          vous pouvez aussi la bloquer séparément.
-        </p>
-
-        <div className="modal-actions">
-          <button type="button" className="secondary" onClick={onClose}>
-            Annuler
-          </button>
-          <button type="submit" className="primary">
-            Envoyer le signalement
+      <div className="modal report-modal">
+        <div className="report-head">
+          {chosen && !sent && (
+            <button type="button" className="icon-btn" aria-label="Retour aux motifs" onClick={() => setReason(null)}>
+              <ArrowLeft size={18} />
+            </button>
+          )}
+          <h2>Signaler</h2>
+          <button type="button" className="icon-btn report-close" aria-label="Fermer" onClick={close}>
+            <X size={18} />
           </button>
         </div>
-      </form>
+
+        {sent ? (
+          <div className="report-body">
+            <h3>Merci de votre signalement</h3>
+            <p>
+              {gone ? `${gone} ` : ''}Notre équipe va examiner ce contenu et prendra les mesures nécessaires s’il enfreint nos
+              règles de la communauté. {target.personName ? `${target.personName.split(' ')[0]} ne saura pas que c’est vous.` : 'La personne concernée ne saura pas que c’est vous.'}
+            </p>
+            {shownFollowUps.length > 0 && (
+              <div className="report-followups">
+                {shownFollowUps.map((f) =>
+                  done.includes(f.label) ? (
+                    <p key={f.label} className="report-followup-done">
+                      <CheckCircle2 size={16} aria-hidden="true" /> {f.doneLabel}
+                    </p>
+                  ) : (
+                    <button
+                      key={f.label}
+                      type="button"
+                      className="secondary"
+                      onClick={() => {
+                        f.onSelect();
+                        setDone((d) => [...d, f.label]);
+                      }}
+                    >
+                      {f.label}
+                    </button>
+                  )
+                )}
+              </div>
+            )}
+            <div className="modal-actions">
+              <button type="button" className="primary" onClick={close}>
+                Terminé
+              </button>
+            </div>
+          </div>
+        ) : chosen ? (
+          <div className="report-body">
+            <h3>{chosen.label}</h3>
+            <p>{chosen.hint}</p>
+            <p className="tiny muted">
+              Le signalement est anonyme : {target.personName ? target.personName.split(' ')[0] : 'la personne concernée'} ne saura pas qui l’a
+              signalé.
+            </p>
+            <div className="modal-actions">
+              <button type="button" className="secondary" onClick={() => setReason(null)}>
+                Retour
+              </button>
+              <button type="button" className="primary" onClick={submit}>
+                Envoyer
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="report-body">
+            <h3>Pourquoi signalez-vous ceci ?</h3>
+            <div className="report-reasons" role="list">
+              {REPORT_REASONS.map((r) => (
+                <button key={r.label} type="button" role="listitem" className="report-reason" onClick={() => setReason(r.label)}>
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-/** Fenêtre « Changer de compte » : le choix d'un personnage de démonstration, rien d'autre. */
 export function DemoAuthModal({
   open,
   onClose,

@@ -95,7 +95,7 @@ test('fil d’entraide : ordre et contexte propres à chaque profil', () => {
 });
 
 test('alertes : une phrase avec son auteur, et une publication qui s’ouvre dans le fil', async () => {
-  const { notificationSentence, notificationTarget, notificationReportId } = await import('../src/notificationText');
+  const { notificationSentence, notificationTarget } = await import('../src/notificationText');
   assert.deepEqual(
     notificationSentence({
       title: 'Nouvelle réponse dans une question d’entraide',
@@ -109,19 +109,9 @@ test('alertes : une phrase avec son auteur, et une publication qui s’ouvre dan
     text: 'vous souhaite la bienvenue sur SAVOIR+',
     detail: 'Commencez…'
   });
-  const report = {
-    kind: 'report-update' as const,
-    params: { id: 'SIG-2026-001', status: 'Précisions demandées' },
-    title: 'Votre signalement a été mis à jour',
-    detail: 'Dossier SIG-2026-001',
-    actorName: 'Nadège Koffi'
-  };
-  assert.deepEqual(notificationSentence(report, { reportOf: () => ({ status: 'En cours d’examen', targetLabel: 'Échange signalé' }) }), {
-    actor: 'Nadège Koffi',
-    text: 'vous demande des précisions sur votre signalement SIG-2026-001',
-    detail: 'Échange signalé'
-  });
-  assert.equal(notificationReportId({ ...report, targetId: undefined }), 'SIG-2026-001');
+  const { notificationsFor } = await import('../src/wireframeData');
+  const legacy = { id: 'x', category: 'Compte' as const, title: 'Votre signalement a été mis à jour', detail: '', date: '', read: false, targetPage: 'report' };
+  assert.equal(notificationsFor([legacy], 'afi').length, 0, 'comme LinkedIn, pas de suivi des signalements dans les alertes');
   assert.equal(notificationSentence({ title: 'Un titre inconnu', detail: '…', actorName: 'Kossi Agbo' }), null);
   assert.deepEqual(notificationTarget({ targetPage: 'community-thread', targetId: 'post-1' }), { page: 'community', id: 'post-1' });
   assert.deepEqual(notificationTarget({ targetPage: 'module-detail', targetId: 'phishing' }), { page: 'module-detail', id: 'phishing' });

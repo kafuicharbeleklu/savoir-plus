@@ -194,7 +194,9 @@ import {
 import {
   DemoAuthModal,
   PostComposerModal,
-  ReportDialog
+  ReportDialog,
+  type ReportFollowUp,
+  type ReportTarget
 } from './components/ContextualModals';
 
 const DEMO_PERSONA_KEY = 'savoir-demo-persona';
@@ -401,7 +403,9 @@ export default function App() {
   const [composerView, setComposerView] = useState<'compose' | 'scheduled'>('compose');
   const [composerIntent, setComposerIntent] = useState<'question' | 'method' | 'photo' | undefined>(undefined);
   const [scheduleTick, setScheduleTick] = useState(0);
-  const [reportTarget, setReportTarget] = useState<string | null>(null);
+  const [reportTarget, setReportTargetState] = useState<ReportTarget | null>(null);
+  // Un libellé seul (module, ressource, profil…) ou une cible précise (publication, conversation).
+  const setReportTarget = (t: string | ReportTarget | null) => setReportTargetState(typeof t === 'string' ? { label: t } : t);
   // Publications masquées pendant cette visite : un bandeau « Annuler » reste à leur place jusqu'au rechargement.
   const [hiddenThisVisit, setHiddenThisVisit] = useState<string[]>([]);
   // Discussion dont la suppression attend confirmation (menu « … » de la discussion).
@@ -1072,7 +1076,7 @@ export default function App() {
     });
     setToast(on ? 'Publication retirée de vos éléments enregistrés' : 'Publication enregistrée : retrouvez-la dans Vous › Éléments enregistrés');
   };
-  const hidePost = (postId: string, reason: 'not-interested' | 'ai-slop') => {
+  const hidePost = (postId: string, reason: 'not-interested' | 'ai-slop' | 'reported') => {
     updateExt((prev) => ({
       ...prev,
       hiddenPosts: { ...prev.hiddenPosts, [uid]: { ...(prev.hiddenPosts?.[uid] || {}), [postId]: reason } }
@@ -1567,35 +1571,52 @@ export default function App() {
   const currentOfferId =
     paidSubscription(ext.subscriptions, uid)?.offer.id ||
     (caps.accountKind === 'learner' ? 'learner-free' : caps.accountKind === 'guardian' || caps.accountKind === 'educator' ? 'free' : undefined);
-  // Fenêtre de signalement : présente dans l'application et sur les pages d'information (centre d'aide…).
+  // Fenêtre de signalement (comme LinkedIn) : présente dans l'application et sur les pages d'information.
+  // Une publication signalée quitte le fil, une conversation signalée quitte la messagerie ; le
+  // remerciement propose de ne plus suivre l'auteur ou de bloquer la personne.
+  const reportedRel = reportTarget?.kind === 'conversation' ? relations.find((r) => r.id === reportTarget.id) : undefined;
+  const reportFollowUps: ReportFollowUp[] = [];
+  if (reportTarget?.kind === 'post' && reportTarget.personId && myFollowing.includes(reportTarget.personId)) {
+    const personId = reportTarget.personId;
+    reportFollowUps.push({
+      label: `Ne plus suivre ${reportTarget.personName}`,
+      doneLabel: `Vous ne suivez plus ${reportTarget.personName}`,
+      onSelect: () => toggleFollowPerson(personId)
+    });
+  }
+  if (reportedRel && !reportedRel.blockedBy.includes(uid)) {
+    reportFollowUps.push({
+      label: `Bloquer ${reportTarget?.personName}`,
+      doneLabel: `${reportTarget?.personName} est bloqué(e)`,
+      onSelect: () => void handleToggleBlock(reportedRel)
+    });
+  }
   const reportDialog = (
     <ReportDialog
-      targetLabel={reportTarget}
+      target={reportTarget}
+      followUps={reportFollowUps}
       onClose={() => setReportTarget(null)}
       onSubmit={(report) => {
-        // Le suivi se fait dans les alertes : un accusé de réception, qui se déroule sur le dossier.
+        const t = reportTarget;
         updateExt((prev) => ({
           ...prev,
           reports: [report, ...prev.reports],
-          notifications: [
-            {
-              id: `nt-report-${report.id}`,
-              category: 'Compte',
-              kind: 'report-update',
-              params: { id: report.id, status: 'Reçu' },
-              actorName: 'L’équipe de modération',
-              actorInitials: 'SV',
-              title: 'Votre signalement a été reçu',
-              detail: report.targetLabel,
-              date: formatNotificationTimestamp(),
-              read: true,
-              targetPage: 'notifications',
-              recipientId: uid
-            },
-            ...prev.notifications
-          ]
+          ...(t?.kind === 'post' && t.id
+            ? { hiddenPosts: { ...prev.hiddenPosts, [uid]: { ...(prev.hiddenPosts?.[uid] || {}), [t.id]: 'reported' as const } } }
+            : {}),
+          ...(t?.kind === 'conversation' && t.id
+            ? { clearedThreads: { ...prev.clearedThreads, [uid]: { ...(prev.clearedThreads?.[uid] || {}), [t.id]: Date.now() } } }
+            : {})
         }));
-        setToast(`Signalement ${report.id} envoyé : suivez-le dans vos alertes`);
+        if (t?.kind === 'post' && t.id) {
+          const postId = t.id;
+          setHiddenThisVisit((v) => (v.includes(postId) ? v : [...v, postId]));
+        }
+        if (t?.kind === 'conversation' && t.id) {
+          if (selectedRelId === t.id) setSelectedRelId('');
+          if (t.personId && drawerPeerId === t.personId) setDrawerPeerId('');
+          if (t.personId && messagesPeerId === t.personId) setMessagesPeerId('');
+        }
       }}
     />
   );
@@ -1870,7 +1891,7 @@ export default function App() {
     people,
     onUnblock: handleToggleBlock,
     onEnterVisitor: signOut,
-    reportTarget: reportTarget || 'Élément général',
+    reportTarget: reportTarget?.label || 'Élément général',
     settingsTab,
     setSettingsTab,
     setToast,
@@ -1966,6 +1987,14 @@ export default function App() {
         onOpenThread: (postId: string) => nav('community-thread', postId),
         onOpenRelations: () => nav('relations'),
         onReport: (label: string) => setReportTarget(label),
+        onReportPost: (post: CommunityPost) =>
+          setReportTarget({
+            label: `Publication de ${post.authorName} : « ${post.title} »`,
+            kind: 'post',
+            id: post.id,
+            personId: post.authorId,
+            personName: post.authorName
+          }),
         setToast,
         readOnly: !caps.canPublish,
         onToggleSave: toggleSavePost,
@@ -2993,7 +3022,17 @@ export default function App() {
                           { label: 'Voir le profil', onSelect: () => nav('member', other.id) },
                           ...(isAccepted && activeRel
                             ? [
-                                { label: 'Signaler cet échange', onSelect: () => setReportTarget(`Conversation avec ${other.name}`) },
+                                {
+                                  label: 'Signaler cette conversation',
+                                  onSelect: () =>
+                                    setReportTarget({
+                                      label: `Conversation avec ${other.name}`,
+                                      kind: 'conversation',
+                                      id: activeRel.id,
+                                      personId: other.id,
+                                      personName: other.name
+                                    })
+                                },
                                 {
                                   label: 'Supprimer la discussion',
                                   danger: true,
@@ -3631,6 +3670,9 @@ export default function App() {
           attachments={mode === 'local'}
           onToggleBlock={handleToggleBlock}
           onDeleteThread={(rel, peer) => setDeleteThread({ relId: rel.id, name: peer.name })}
+          onReportConversation={(rel, peer) =>
+            setReportTarget({ label: `Conversation avec ${peer.name}`, kind: 'conversation', id: rel.id, personId: peer.id, personName: peer.name })
+          }
           onOpenFullMessaging={() => {
             if (drawerPeerId) setMessagesPeerId(drawerPeerId);
             setDrawerPeerId('');

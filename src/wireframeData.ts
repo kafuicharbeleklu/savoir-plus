@@ -413,7 +413,6 @@ export type NotificationKind =
   | 'new-follower'
   | 'contact-request'
   | 'contact-accepted'
-  | 'report-update'
   | 'appeal-decision'
   | 'time-request'
   | 'module-given'
@@ -668,7 +667,7 @@ export interface ExtendedDemoState {
    */
   clearedThreads?: Record<string, Record<string, number>>;
   /** Publications masquées du fil par membre, avec la raison (« Pas intéressé(e) », « IA slop »). */
-  hiddenPosts?: Record<string, Record<string, 'not-interested' | 'ai-slop'>>;
+  hiddenPosts?: Record<string, Record<string, 'not-interested' | 'ai-slop' | 'reported'>>;
   /** Formules payantes souscrites, paiement simulé (src/offers.ts) : la publicité y devient facultative. */
   subscriptions?: Record<string, Subscription>;
   /** Calendrier et plan de révision de chaque membre. Absent : calendrier de démonstration du personnage. */
@@ -976,22 +975,6 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       read: false,
       targetPage: 'community-thread',
       targetId: 'post-1',
-      recipientId: 'afi'
-    },
-    {
-      id: 'n3',
-      category: 'Compte',
-      actorId: 'nadege',
-      actorName: 'Nadège Koffi',
-      actorInitials: 'NK',
-      actorColor: 'mint',
-      kind: 'report-update',
-      params: { id: 'SIG-2026-001', status: 'Précisions demandées' },
-      title: 'Votre signalement a été mis à jour',
-      detail: 'Dossier SIG-2026-001 · Consultez les informations qui vous sont destinées.',
-      date: '13 nov. 2026 · 17 h 30',
-      read: true,
-      targetPage: 'report',
       recipientId: 'afi'
     }
   ],
@@ -1766,6 +1749,8 @@ const NOTIF_PREF_KEY: Partial<Record<NotificationItem['category'], 'learning' | 
   Communauté: 'community'
 };
 
+const REPORT_ALERT_TITLES = ['Votre signalement a été mis à jour', 'Votre signalement a été reçu'];
+
 export function notificationsFor(
   list: NotificationItem[],
   uid: string,
@@ -1773,6 +1758,8 @@ export function notificationsFor(
 ): NotificationItem[] {
   return list.filter((n) => {
     if (n.recipientId && n.recipientId !== uid) return false;
+    // Comme LinkedIn : le suivi d'un signalement ne passe pas par les alertes (anciennes alertes écartées).
+    if ((n.kind as string | undefined) === 'report-update' || REPORT_ALERT_TITLES.includes(n.title)) return false;
     const key = NOTIF_PREF_KEY[n.category];
     return !prefs || !key || prefs[key] !== false;
   });

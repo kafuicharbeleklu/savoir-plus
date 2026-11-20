@@ -86,10 +86,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
     id: 'signaler',
     topic: 'community',
     title: 'Signaler un contenu ou un échange',
-    excerpt: 'Votre identité reste confidentielle vis-à-vis de la personne signalée ; vous suivez le dossier depuis vos alertes.',
+    excerpt: 'Depuis le menu « … » d’une publication ou d’une conversation : la personne signalée ne sait pas que c’est vous.',
     body: [
-      'Choisissez le motif et ajoutez des précisions si besoin. L’équipe de modération examine le dossier et peut vous demander des précisions.',
-      'Une décision peut être contestée par un recours, examiné par une autre personne que celle qui a décidé.'
+      'Ouvrez le menu « … » de la publication ou de la conversation, choisissez « Signaler », puis le motif qui s’applique, et envoyez. Le contenu signalé disparaît de votre fil ou de votre messagerie ; vous pouvez aussi ne plus suivre l’auteur ou bloquer la personne.',
+      'L’équipe de modération examine le signalement et prend les mesures nécessaires si le contenu enfreint les règles de la communauté. La personne dont le contenu est retiré peut contester la décision par un recours, examiné par une autre personne que celle qui a décidé.'
     ],
     links: [{ label: 'Faire un signalement', page: 'report' }]
   },

@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { notificationReportId, notificationSentence, notificationTarget } from '../notificationText';
+import { notificationSentence, notificationTarget } from '../notificationText';
 import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Bell,
   CheckCircle2,
-  ChevronDown,
   Eye,
   Flag,
   Lock,
@@ -17,7 +16,7 @@ import {
   User,
   UserCheck
 } from 'lucide-react';
-import { appendAuditLog, formatNotificationTimestamp, notificationsFor, type ExtendedDemoState, type NotificationItem, type ReportItem } from '../wireframeData';
+import { appendAuditLog, formatNotificationTimestamp, notificationsFor, type ExtendedDemoState, type NotificationItem } from '../wireframeData';
 import type { Profile, Relation } from '../data';
 import { resolveCommunityDirectory, resolveProfileVerified, type RoleCapabilities } from '../personas';
 import { Avatar } from '../components/ProfileIdentityCard';
@@ -75,26 +74,13 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
     setToast('Toutes les notifications affichées ont été marquées comme lues');
   };
 
-  // L'alerte d'un signalement se déroule sur place : dossier, motif, état, réponse aux précisions.
-  const [openId, setOpenId] = useState('');
   const openNotif = (n: NotificationItem) => {
     updateExt((prev) => ({
       ...prev,
       notifications: prev.notifications.map((x) => (x.id === n.id ? { ...x, read: true } : x))
     }));
-    if (notificationReportId(n)) {
-      setOpenId((v) => (v === n.id ? '' : n.id));
-      return;
-    }
     const target = notificationTarget(n);
     nav(target.page, target.id);
-  };
-  const sendPrecision = (reportId: string, text: string) => {
-    updateExt((prev) => ({
-      ...prev,
-      reports: prev.reports.map((r) => (r.id === reportId ? { ...r, status: 'En cours d’examen', extraNote: text } : r))
-    }));
-    setToast('Précisions transmises à l’équipe de modération');
   };
 
   const unreadCount = items.filter((n) => !n.read).length;
@@ -133,19 +119,10 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
           <div className="wf-notif-list" role="list">
             {shown.map((n) => {
               const actor = resolveActor(n);
-              const sentence = notificationSentence(n, { reportOf: (id) => ext.reports.find((r) => r.id === id) });
-              const reportId = notificationReportId(n);
-              const report = reportId ? ext.reports.find((r) => r.id === reportId) : undefined;
-              const open = Boolean(reportId) && openId === n.id;
+              const sentence = notificationSentence(n);
               return (
-                <div role="listitem" key={n.id} className={`wf-notif-item${open ? ' is-open' : ''}`}>
-                <button
-                  type="button"
-                  className={`wf-notif-row ${n.read ? 'read' : 'unread'}`}
-                  onClick={() => openNotif(n)}
-                  aria-expanded={reportId ? open : undefined}
-                  aria-controls={reportId ? `notif-panel-${n.id}` : undefined}
-                >
+                <div role="listitem" key={n.id} className="wf-notif-item">
+                <button type="button" className={`wf-notif-row ${n.read ? 'read' : 'unread'}`} onClick={() => openNotif(n)}>
                   <Avatar person={actor} />
                   <div className="wf-notif-body">
                     {sentence ? (
@@ -168,19 +145,7 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
                     </span>
                   </div>
                   {!n.read && <span className="wf-notif-dot" aria-label="Non lue" />}
-                  {reportId && <ChevronDown size={18} className="wf-notif-chevron" aria-hidden="true" />}
                 </button>
-                {open && (
-                  <div id={`notif-panel-${n.id}`}>
-                    {report ? (
-                      <ReportAlertPanel report={report} onSendPrecision={(text) => sendPrecision(report.id, text)} />
-                    ) : (
-                      <div className="wf-notif-panel">
-                        <p className="wf-notif-note">Ce dossier n’est plus disponible.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
                 </div>
               );
             })}
@@ -191,57 +156,6 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
       <aside className="right-rail" aria-label="À venir">
         {rail}
       </aside>
-    </div>
-  );
-}
-
-/**
- * Volet d'une alerte de signalement, déroulé sur place (il n'y a plus de page des signalements) :
- * le motif, l'état du dossier, et la réponse quand des précisions sont demandées.
- */
-function ReportAlertPanel({ report, onSendPrecision }: { report: ReportItem; onSendPrecision: (text: string) => void }) {
-  const [text, setText] = useState('');
-  return (
-    <div className="wf-notif-panel">
-      {/* L'élément signalé est déjà sous la phrase de l'alerte : le volet ajoute le motif et l'état. */}
-      <dl className="wf-notif-facts">
-        <div>
-          <dt>Motif</dt>
-          <dd>{report.reason}</dd>
-        </div>
-        <div>
-          <dt>État du dossier</dt>
-          <dd>{report.status}</dd>
-        </div>
-      </dl>
-      {report.status === 'Précisions demandées' ? (
-        <form
-          className="wf-notif-reply"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!text.trim()) return;
-            onSendPrecision(text.trim());
-            setText('');
-          }}
-        >
-          <textarea
-            rows={3}
-            maxLength={1000}
-            aria-label="Vos précisions pour l’équipe de modération"
-            placeholder="Répondre à la demande de précisions…"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <div className="wf-notif-reply-actions">
-            <span className="tiny muted">Votre identité reste confidentielle vis-à-vis de la personne signalée.</span>
-            <button type="submit" className="primary ui-btn-sm" disabled={!text.trim()}>
-              Envoyer les précisions
-            </button>
-          </div>
-        </form>
-      ) : (
-        report.extraNote && <p className="wf-notif-note">Vos précisions : « {report.extraNote} »</p>
-      )}
     </div>
   );
 }

@@ -34,6 +34,7 @@ export function MessagingDrawer({
   onSend,
   attachments = false,
   onDeleteThread,
+  onReportConversation,
   onToggleBlock,
   onOpenFullMessaging,
   onOpenRelations,
@@ -61,6 +62,8 @@ export function MessagingDrawer({
   onSend: (attachment?: MessageAttachment) => void | Promise<boolean | void>;
   /** Images, fichiers et GIF dans la barre de saisie (démonstration locale). */
   attachments?: boolean;
+  /** Menu « … » › Signaler cette conversation : elle quitte ensuite la messagerie (comme sur LinkedIn). */
+  onReportConversation?: (rel: Relation, other: Profile) => void;
   /** Menu « … » › Supprimer la discussion (la confirmation est demandée par l'appelant). */
   onDeleteThread?: (rel: Relation, other: Profile) => void;
   onToggleBlock: (r: Relation) => void;
@@ -138,7 +141,11 @@ export function MessagingDrawer({
                     { label: 'Voir le profil', onSelect: () => onOpenProfile(other) },
                     ...(isAccepted && bubbleRel
                       ? [
-                          { label: 'Signaler cet échange', onSelect: () => onOpenReport(`Échange privé avec ${other.name}`) },
+                          {
+                            label: 'Signaler cette conversation',
+                            onSelect: () =>
+                              onReportConversation ? onReportConversation(bubbleRel, other) : onOpenReport(`Échange privé avec ${other.name}`)
+                          },
                           ...(onDeleteThread
                             ? [{ label: 'Supprimer la discussion', danger: true, onSelect: () => onDeleteThread(bubbleRel, other) }]
                             : []),
