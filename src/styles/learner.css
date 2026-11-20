@@ -257,3 +257,43 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
   color: var(--fg-muted);
 }
 .home-composer-inline .home-composer-shortcut-btn:hover { color: var(--fg-primary); }
+
+/* -- Fil : un module partagé dans une publication, en carte d'aperçu (esprit Bibliothèque) ---------- */
+.shared-module {
+  position: relative;
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr) auto;
+  align-items: stretch;
+  width: 100%;
+  min-height: 0;
+  margin-top: 12px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--angle);
+  background: var(--bg-surface);
+  box-shadow: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease;
+}
+.shared-module:hover { border-color: var(--border-strong); }
+.shared-module:focus-visible { outline: 2px solid var(--accent-brand); outline-offset: 2px; }
+.shared-module-cover { position: relative; display: block; min-height: 112px; border-right: 1px solid var(--border-hairline); }
+.shared-module-cover .sober-card-banner,
+.shared-module-cover .sober-card-banner.compact { position: absolute; inset: 0; height: 100%; border: 0; border-radius: 0; }
+.shared-module-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 14px 16px; }
+.shared-module-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.9375rem; font-weight: 600; line-height: 1.3; color: var(--fg-primary); }
+.shared-module:hover .shared-module-title { text-decoration: underline; text-underline-offset: 3px; }
+.shared-module-summary { overflow: hidden; font-size: 0.8125rem; line-height: 1.4; color: var(--fg-muted); white-space: nowrap; text-overflow: ellipsis; }
+.shared-module-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 4px; font-size: 0.8125rem; color: var(--fg-muted); }
+.shared-module-time { display: inline-flex; align-items: center; gap: 5px; }
+.shared-module-arrow { align-self: center; margin-right: 16px; color: var(--fg-muted); transition: transform 160ms ease, color 160ms ease; }
+.shared-module:hover .shared-module-arrow { transform: translateX(3px); color: var(--accent-brand); }
+@media (max-width: 560px) {
+  .shared-module { grid-template-columns: minmax(0, 1fr); }
+  .shared-module-cover { min-height: 120px; border-right: 0; border-bottom: 1px solid var(--border-hairline); }
+  .shared-module-arrow { display: none; }
+}

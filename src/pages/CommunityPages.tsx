@@ -24,6 +24,7 @@ import { PostMediaView } from '../components/PostMedia';
 import { appendCommunityReply, applyPostRepost, togglePostHelpful } from '../personas';
 
 import { Select } from '../components/ui';
+import { SharedModuleCard } from '../components/SharedModuleCard';
 interface CommunityProps {
   ext: ExtendedDemoState;
   updateExt: (fn: (prev: ExtendedDemoState) => ExtendedDemoState) => void;
@@ -685,18 +686,7 @@ export function CommunityThreadView({
           const shared = post.linkedItemId ? CATALOG_ITEMS.find((item) => item.id === post.linkedItemId) : undefined;
           if (!shared || shared.type !== 'module') return null;
           return (
-            <button type="button" className="li-post-shared" onClick={() => nav('module-detail', shared.id)}>
-              <span className="li-post-shared-icon" aria-hidden="true">
-                <BookOpen size={20} />
-              </span>
-              <span className="li-post-shared-text">
-                <b>{shared.title}</b>
-                <small>
-                  Module · {shared.domain} · {shared.duration} · {shared.level}
-                </small>
-              </span>
-              <ArrowRight size={16} aria-hidden="true" />
-            </button>
+            <SharedModuleCard item={shared} onOpen={() => nav('module-detail', shared.id)} />
           );
         })()}
       </article>

@@ -17,6 +17,7 @@ import { resolveCommunityAuthor, resolveDefaultCommentPreview } from '../persona
 import { Avatar, VerifiedBadge } from './ProfileIdentityCard';
 import { RichText } from './RichText';
 import { PostMediaView } from './PostMedia';
+import { SharedModuleCard } from './SharedModuleCard';
 
 export interface FeedPostCardProps {
   post: CommunityPost;
@@ -442,18 +443,7 @@ export function FeedPostCard({
               const shared = post.linkedItemId ? CATALOG_ITEMS.find((item) => item.id === post.linkedItemId) : undefined;
               if (!shared || shared.type !== 'module') return null;
               return (
-                <button type="button" className="li-post-shared" onClick={() => onOpenModule(shared.id)}>
-                  <span className="li-post-shared-icon" aria-hidden="true">
-                    <BookOpen size={20} />
-                  </span>
-                  <span className="li-post-shared-text">
-                    <b>{shared.title}</b>
-                    <small>
-                      Module · {shared.domain} · {shared.duration} · {shared.level}
-                    </small>
-                  </span>
-                  <ArrowRight size={16} aria-hidden="true" />
-                </button>
+                <SharedModuleCard item={shared} onOpen={() => onOpenModule(shared.id)} />
               );
             })()}
           </>
