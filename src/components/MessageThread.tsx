@@ -184,7 +184,14 @@ export function ConversationIntro({ person, onOpenProfile }: { person: Profile; 
   );
 }
 
-export type ConversationMenuItem = { label: string; onSelect: () => void; danger?: boolean; disabled?: boolean };
+export type ConversationMenuItem = {
+  label: string;
+  onSelect: () => void;
+  danger?: boolean;
+  disabled?: boolean;
+  /** Icône devant le libellé (menu d'une publication). */
+  icon?: React.ReactNode;
+};
 
 /** Menu « … » de la discussion : profil, signalement, blocage. */
 export function ConversationMenu({ items, label = 'Plus d’options' }: { items: ConversationMenuItem[]; label?: string }) {
@@ -235,6 +242,7 @@ export function ConversationMenu({ items, label = 'Plus d’options' }: { items:
                 it.onSelect();
               }}
             >
+              {it.icon}
               {it.label}
             </button>
           ))}
@@ -257,6 +265,7 @@ export function ConversationGate({
   rel,
   userId,
   other,
+  friend = false,
   busy,
   onRequestContact,
   onDecideContact
@@ -264,6 +273,8 @@ export function ConversationGate({
   rel?: Relation;
   userId: string;
   other: Profile;
+  /** Amis (ils se suivent l'un l'autre) : la discussion s'ouvre sans demande. */
+  friend?: boolean;
   busy: boolean;
   onRequestContact: (p: Profile) => void;
   onDecideContact: (r: Relation, decision: 'accepted' | 'declined') => void;
@@ -292,10 +303,14 @@ export function ConversationGate({
   }
   return (
     <div className="bubble-gate">
-      <p>Sur SAVOIR+, l’échange privé s’ouvre une fois votre demande acceptée.</p>
+      <p>
+        {friend
+          ? `Vous vous suivez l’un l’autre : écrivez directement à ${other.name.split(' ')[0]}.`
+          : 'Sur SAVOIR+, l’échange privé s’ouvre une fois votre demande acceptée.'}
+      </p>
       <div className="bubble-gate-actions">
         <button type="button" className="primary" disabled={busy} onClick={() => onRequestContact(other)}>
-          Demander à discuter
+          {friend ? 'Discuter' : 'Demander à discuter'}
         </button>
       </div>
     </div>

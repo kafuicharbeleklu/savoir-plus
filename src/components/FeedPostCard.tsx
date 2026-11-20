@@ -2,14 +2,22 @@ import React, { useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   BookOpen,
+  Bookmark,
+  BookmarkCheck,
   Check,
   CheckCircle2,
+  Code,
   Copy,
+  EyeOff,
   Flag,
+  Link2,
   MessageSquare,
   Repeat2,
   Send,
-  ThumbsUp
+  ThumbsDown,
+  ThumbsUp,
+  UserMinus,
+  UserPlus
 } from 'lucide-react';
 import type { Profile, Relation } from '../data';
 import { CATALOG_ITEMS, type CommunityPost, type CommunityReply, type ExtendedDemoState } from '../wireframeData';
@@ -18,6 +26,9 @@ import { Avatar, VerifiedBadge } from './ProfileIdentityCard';
 import { RichText } from './RichText';
 import { PostMediaView } from './PostMedia';
 import { SharedModuleCard } from './SharedModuleCard';
+import { ConversationMenu, type ConversationMenuItem } from './MessageThread';
+
+export type HiddenPostReason = 'not-interested' | 'ai-slop';
 
 export interface FeedPostCardProps {
   post: CommunityPost;
@@ -47,6 +58,13 @@ export interface FeedPostCardProps {
   readOnly?: boolean;
   /** Pourquoi cette publication arrive en tête de ce fil (lien personnel), en une ligne. */
   context?: string;
+  /** Menu « … » : enregistrer la publication, la masquer du fil (et l'annuler). */
+  saved?: boolean;
+  onToggleSave?: (postId: string) => void;
+  onHide?: (postId: string, reason: HiddenPostReason) => void;
+  /** Masquée à l'instant : un bandeau « Publication masquée · Annuler » prend sa place. */
+  hiddenReason?: HiddenPostReason;
+  onUndoHide?: (postId: string) => void;
 }
 
 export function FeedPostCard({
@@ -73,7 +91,12 @@ export function FeedPostCard({
   focused = false,
   communityMemberIds,
   readOnly = false,
-  context
+  context,
+  saved = false,
+  onToggleSave,
+  onHide,
+  hiddenReason,
+  onUndoHide
 }: FeedPostCardProps) {
   const authorMeta = useMemo(
     () => resolveCommunityAuthor(post.authorId, post.authorName, people, ext),
@@ -334,6 +357,103 @@ export function FeedPostCard({
     );
   };
 
+  /* -------------------------------------------- menu « … » de la publication, comme sur LinkedIn */
+  const isOwnPost = post.authorId === currentUser.id;
+  const followsAuthor = followingIds.includes(post.authorId);
+  // Adresse de la publication dans le fil, sans le personnage de démonstration (?as=…).
+  const postUrl = () => `${window.location.href.split('#')[0].split('?')[0]}#community/${post.id}`;
+  const copyText = (text: string, done: string) => {
+    const copying = navigator.clipboard?.writeText(text);
+    if (!copying) {
+      setToast('Copie impossible dans ce navigateur');
+      return;
+    }
+    copying.then(
+      () => setToast(done),
+      () => setToast('Copie impossible dans ce navigateur')
+    );
+  };
+  const escapeHtml = (t: string) =>
+    t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
+  // Code d'intégration : une citation liée, lisible telle quelle sur n'importe quelle page.
+  const embedCode = () => {
+    const url = escapeHtml(postUrl());
+    return `<blockquote class="savoir-post" cite="${url}"><p>${escapeHtml(post.title)}</p>— ${escapeHtml(post.authorName)} sur <a href="${url}">SAVOIR+</a></blockquote>`;
+  };
+  const menuItems: ConversationMenuItem[] = [
+    ...(onToggleSave
+      ? [
+          {
+            label: saved ? 'Retirer des éléments enregistrés' : 'Enregistrer',
+            icon: saved ? <BookmarkCheck size={18} aria-hidden="true" /> : <Bookmark size={18} aria-hidden="true" />,
+            onSelect: () => onToggleSave(post.id)
+          }
+        ]
+      : []),
+    {
+      label: 'Copier le lien vers le post',
+      icon: <Link2 size={18} aria-hidden="true" />,
+      onSelect: () => copyText(postUrl(), 'Lien de la publication copié')
+    },
+    {
+      label: 'Intégrer ce post',
+      icon: <Code size={18} aria-hidden="true" />,
+      onSelect: () => copyText(embedCode(), 'Code d’intégration copié : collez-le dans votre page')
+    },
+    ...(!isOwnPost && authorMeta.isKnownMember
+      ? [
+          {
+            label: followsAuthor ? `Ne plus suivre ${post.authorName}` : `Suivre ${post.authorName}`,
+            icon: followsAuthor ? <UserMinus size={18} aria-hidden="true" /> : <UserPlus size={18} aria-hidden="true" />,
+            onSelect: () => onToggleFollowPerson(post.authorId)
+          }
+        ]
+      : []),
+    ...(!isOwnPost && onHide
+      ? [
+          { label: 'Pas intéressé(e)', icon: <EyeOff size={18} aria-hidden="true" />, onSelect: () => onHide(post.id, 'not-interested') },
+          { label: 'On dirait de l’IA slop', icon: <ThumbsDown size={18} aria-hidden="true" />, onSelect: () => onHide(post.id, 'ai-slop') }
+        ]
+      : []),
+    ...(!isOwnPost
+      ? [
+          {
+            label: 'Signaler le post',
+            icon: <Flag size={18} aria-hidden="true" />,
+            danger: true,
+            onSelect: () => onReport(`Communauté (${post.kind}) : ${post.title}`)
+          }
+        ]
+      : [])
+  ];
+
+  // Le menu « … » se place sur la ligne du haut (« Maya est dans votre classe », repartage) quand elle existe.
+  const hasTopLine = Boolean(post.repostedFrom || context);
+  const postMenu = (
+    <span className="li-post-menu">
+      <ConversationMenu label={`Plus d’options pour la publication de ${post.authorName}`} items={menuItems} />
+    </span>
+  );
+
+  if (hiddenReason) {
+    return (
+      <article id={`post-${post.id}`} className="wf-card feed-post-hidden" aria-label="Publication masquée">
+        <EyeOff size={18} aria-hidden="true" />
+        <p>
+          <b>Publication masquée.</b>{' '}
+          {hiddenReason === 'ai-slop'
+            ? 'Merci pour votre retour : elle n’apparaîtra plus dans votre fil.'
+            : 'Elle n’apparaîtra plus dans votre fil.'}
+        </p>
+        {onUndoHide && (
+          <button type="button" className="li-text-link" onClick={() => onUndoHide(post.id)}>
+            Annuler
+          </button>
+        )}
+      </article>
+    );
+  }
+
   return (
     <article
       id={`post-${post.id}`}
@@ -343,6 +463,7 @@ export function FeedPostCard({
       {context && !post.repostedFrom && (
         <div className="li-repost-banner li-context-line">
           <span>{context}</span>
+          {postMenu}
         </div>
       )}
       {post.repostedFrom && (
@@ -351,6 +472,7 @@ export function FeedPostCard({
           <span>
             <b>{post.authorName}</b> a repartagé cette contribution · {post.createdAt}
           </span>
+          {postMenu}
         </div>
       )}
 
@@ -396,17 +518,8 @@ export function FeedPostCard({
           </div>
         </div>
 
-        <div className="li-post-header-right">
-          <button
-            type="button"
-            className="icon-btn icon-btn-xs"
-            aria-label={`Signaler « ${post.title} »`}
-            title="Signaler cette publication"
-            onClick={() => onReport(`Communauté (${post.kind}) : ${post.title}`)}
-          >
-            <Flag size={14} />
-          </button>
-        </div>
+        {/* Sans ligne de contexte au-dessus, le menu « … » reste à droite de l'auteur. */}
+        {!hasTopLine && <div className="li-post-header-right">{postMenu}</div>}
       </div>
 
       {/* Post Content */}

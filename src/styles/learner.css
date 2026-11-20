@@ -339,3 +339,31 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
   .relations-grid > .right-rail { grid-column: 1; grid-row: 1; }
   .relations-grid > .dashboard-main { grid-column: 2; grid-row: 1; }
 }
+
+/* -- Publication : menu « … » (icône devant chaque entrée), comme sur LinkedIn ----------------------- */
+.li-post-menu { margin-left: auto; display: inline-flex; flex-shrink: 0; }
+.li-post-menu .li-menu-list { min-width: 264px; padding: 4px; }
+.li-post-menu .li-menu-list button { gap: 12px; min-height: 40px; font-weight: 500; color: var(--fg-primary); }
+.li-post-menu .li-menu-list button svg { flex-shrink: 0; color: var(--fg-muted); }
+.li-post-menu .li-menu-list button.is-danger,
+.li-post-menu .li-menu-list button.is-danger svg { color: var(--accent-danger); }
+/* Le bouton ne grandit pas la ligne : il déborde un peu en haut et à droite. */
+.li-post-menu .li-icon-btn { width: 32px; height: 32px; margin: -8px -8px -8px 0; }
+.li-repost-banner:has(.li-post-menu) { align-items: center; }
+
+/* Publication masquée à l'instant : un bandeau à sa place, avec « Annuler ». */
+.feed-post-hidden {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: var(--card-pad-compact, 16px) var(--card-pad, 20px);
+  scroll-margin-top: 16px;
+}
+.feed-post-hidden > svg { flex-shrink: 0; color: var(--fg-muted); }
+.feed-post-hidden p { flex: 1; margin: 0; font-size: 0.875rem; line-height: 1.45; color: var(--fg-muted); }
+.feed-post-hidden p b { font-weight: 600; color: var(--fg-primary); }
+
+/* Vous › Éléments enregistrés */
+.saved-posts-head { padding: var(--card-pad, 20px); }
+.saved-posts-head h1 { margin: 0 0 4px; font-size: 1.25rem; font-weight: 600; }
+.saved-posts-head p { margin: 0; font-size: 0.875rem; }

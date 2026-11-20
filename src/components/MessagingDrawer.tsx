@@ -41,6 +41,7 @@ export function MessagingDrawer({
   setBubblePeerId,
   contacts,
   onRequestContact,
+  isFriend,
   onDecideContact
 }: {
   open: boolean;
@@ -67,6 +68,8 @@ export function MessagingDrawer({
   /** Personnes à qui on a déjà écrit ou qui nous ont écrit. */
   contacts: DrawerContact[];
   onRequestContact: (p: Profile) => void;
+  /** Amis (ils se suivent l'un l'autre) : « Discuter » au lieu de « Demander à discuter ». */
+  isFriend?: (id: string) => boolean;
   onDecideContact: (r: Relation, decision: 'accepted' | 'declined') => void;
 }) {
   const [query, setQuery] = useState('');
@@ -185,6 +188,7 @@ export function MessagingDrawer({
                   rel={bubbleRel}
                   userId={user.id}
                   other={other}
+                  friend={Boolean(isFriend?.(other.id))}
                   busy={busy}
                   onRequestContact={onRequestContact}
                   onDecideContact={onDecideContact}

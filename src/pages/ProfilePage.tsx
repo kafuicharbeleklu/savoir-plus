@@ -365,7 +365,12 @@ export function ProfilePage({
     else if (currentRel?.status === 'pending' && currentRel.requester === target.id)
       talk = { label: 'Répondre à la demande', onClick: () => nav('relations') };
     else if (currentRel?.status === 'pending') talk = { label: 'Demande envoyée', disabled: true };
-    else if (onRequestContact && acceptsMyRequest) talk = { label: 'Demander à discuter', onClick: () => onRequestContact(target) };
+    else if (onRequestContact && acceptsMyRequest)
+      talk = {
+        // Amis (ils se suivent l'un l'autre) : la discussion s'ouvre directement.
+        label: isFollowed && targetFollowsMe ? 'Discuter' : 'Demander à discuter',
+        onClick: () => onRequestContact(target)
+      };
     else if (onRequestContact)
       talkNote =
         contactPolicy === 'Personne'

@@ -58,6 +58,7 @@ import {
   decideContact,
   cancelContact,
   openFamilyThread,
+  openFriendThread,
   requestContact,
   resetDemo,
   saveName,
@@ -399,6 +400,8 @@ export default function App() {
   const [composerIntent, setComposerIntent] = useState<'question' | 'method' | 'photo' | undefined>(undefined);
   const [scheduleTick, setScheduleTick] = useState(0);
   const [reportTarget, setReportTarget] = useState<string | null>(null);
+  // Publications masquées pendant cette visite : un bandeau « Annuler » reste à leur place jusqu'au rechargement.
+  const [hiddenThisVisit, setHiddenThisVisit] = useState<string[]>([]);
 
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -892,9 +895,9 @@ export default function App() {
   }, [uid, mode, page]);
 
   // Messages: desktop opens the quick-chat drawer; at ≤768px the drawer is hidden, so open the full page.
-  const openConversation = (relId: string) => {
+  const openConversation = (relId: string, knownPeerId?: string) => {
     setSelectedRelId(relId);
-    const peerId = relations.find((r) => r.id === relId)?.members.find((id) => id !== uid) || '';
+    const peerId = knownPeerId || relations.find((r) => r.id === relId)?.members.find((id) => id !== uid) || '';
     if (window.matchMedia?.('(max-width: 768px)').matches || page === 'messages') {
       setDrawerOpen(false);
       setMessagesPeerId(peerId);
@@ -1011,6 +1014,8 @@ export default function App() {
   const suggestable =
     mode === 'local' ? networkDirectory.filter((p) => visibleInSuggestions(school, uid, p.id, today)) : networkDirectory;
   const myFollowing = ext.followingIds?.[uid] || [];
+  // Amis : deux membres qui se suivent l'un l'autre ; ils discutent sans demande préalable.
+  const isFriend = (id: string) => myFollowing.includes(id) && (ext.followingIds?.[id] || []).includes(uid);
   // Messagerie : personnes à qui on a déjà écrit ou qui nous ont écrit (discussion acceptée,
   // ou demande envoyée / reçue avec son premier message) — pas les simples abonnements.
   const conversationContacts = relations
@@ -1038,6 +1043,33 @@ export default function App() {
     setToast(already ? `Vous ne suivez plus ${targetName}` : `Vous suivez désormais ${targetName}`);
   };
 
+  // Publications : enregistrer, masquer du fil (menu « … »).
+  const savedPostIds = ext.savedPosts?.[uid] || [];
+  const hiddenPostMap = ext.hiddenPosts?.[uid] || {};
+  const toggleSavePost = (postId: string) => {
+    const on = savedPostIds.includes(postId);
+    updateExt((prev) => {
+      const mine = prev.savedPosts?.[uid] || [];
+      return { ...prev, savedPosts: { ...prev.savedPosts, [uid]: on ? mine.filter((id) => id !== postId) : [postId, ...mine] } };
+    });
+    setToast(on ? 'Publication retirée de vos éléments enregistrés' : 'Publication enregistrée : retrouvez-la dans Vous › Éléments enregistrés');
+  };
+  const hidePost = (postId: string, reason: 'not-interested' | 'ai-slop') => {
+    updateExt((prev) => ({
+      ...prev,
+      hiddenPosts: { ...prev.hiddenPosts, [uid]: { ...(prev.hiddenPosts?.[uid] || {}), [postId]: reason } }
+    }));
+    setHiddenThisVisit((v) => (v.includes(postId) ? v : [...v, postId]));
+  };
+  const undoHidePost = (postId: string) => {
+    updateExt((prev) => {
+      const mine = { ...(prev.hiddenPosts?.[uid] || {}) };
+      delete mine[postId];
+      return { ...prev, hiddenPosts: { ...prev.hiddenPosts, [uid]: mine } };
+    });
+    setHiddenThisVisit((v) => v.filter((id) => id !== postId));
+  };
+
   const handleRequestContact = async (targetProfile: Profile) => {
     if (targetProfile.id === uid) return;
     // Mineurs, comptes en attente de code, parents : la demande n'est possible qu'entre personnes liées.
@@ -1050,6 +1082,11 @@ export default function App() {
     const followsMe = (ext.followingIds?.[targetProfile.id] || []).includes(uid);
     if (policy === 'Personne' || (policy === 'Personnes que je suis' && !followsMe)) {
       setToast(`${targetProfile.name} n’accepte pas de demande de discussion de votre part.`);
+      return;
+    }
+    // Amis : la discussion s'ouvre directement, sans demande à accepter.
+    if (mode === 'local' && isFriend(targetProfile.id)) {
+      openConversation(openFriendThread(uid, targetProfile.id), targetProfile.id);
       return;
     }
     setBusy(true);
@@ -1819,7 +1856,9 @@ export default function App() {
       const lvl = computeGlobalLevel(totalXP);
       // Publication visée par une notification (« community/<id> ») : toujours dans le fil, en tête si le filtre la cache.
       const focusPostId = page === 'community' ? selectedId : '';
-      const filteredFeedPosts = filterHomeFeed(ext.posts, homeFeedTab, myFollowing);
+      const filteredFeedPosts = filterHomeFeed(ext.posts, homeFeedTab, myFollowing).filter(
+        (p) => !hiddenPostMap[p.id] || hiddenThisVisit.includes(p.id) || p.id === focusPostId
+      );
       const focusPost = focusPostId ? ext.posts.find((p) => p.id === focusPostId) : undefined;
       const visibleFeedPosts =
         focusPost && !filteredFeedPosts.some((p) => p.id === focusPost.id) ? [focusPost, ...filteredFeedPosts] : filteredFeedPosts;
@@ -1839,6 +1878,56 @@ export default function App() {
         limit: 8
       });
       const feedEntries = rankFeed(visibleFeedPosts, homeViewer);
+      const postCardProps = {
+        currentUser: user,
+        people,
+        ext,
+        acceptedRelations,
+        followingIds: myFollowing,
+        communityMemberIds,
+        onToggleFollowPerson: toggleFollowPerson,
+        onTogglePostHelpful: handleTogglePostHelpful,
+        onAddReply: handleAddPostReply,
+        onToggleReplyHelpful: handleToggleReplyHelpful,
+        onSelectSolution: handleSelectQuestionSolution,
+        onRepost: handleRepostPost,
+        onForwardToRelation: handleForwardPostToRelation,
+        onOpenMember: (memberId: string) => nav('member', memberId),
+        onOpenModule: (moduleId: string) => nav('module-detail', moduleId),
+        onOpenThread: (postId: string) => nav('community-thread', postId),
+        onOpenRelations: () => nav('relations'),
+        onReport: (label: string) => setReportTarget(label),
+        setToast,
+        readOnly: !caps.canPublish,
+        onToggleSave: toggleSavePost,
+        onHide: hidePost,
+        onUndoHide: undoHidePost
+      };
+
+      // Vous › Éléments enregistrés : les publications enregistrées, la plus récente en tête.
+      if (page === 'community' && selectedId === 'saved') {
+        const savedPosts = savedPostIds.flatMap((id) => ext.posts.filter((p) => p.id === id));
+        return (
+          <div className="dashboard-grid">
+            <div className="dashboard-main">
+              <section className="wf-card saved-posts-head">
+                <h1>Éléments enregistrés</h1>
+                <p className="muted">
+                  {savedPosts.length === 0
+                    ? 'Aucune publication enregistrée. Choisissez « Enregistrer » dans le menu « … » d’une publication pour la retrouver ici.'
+                    : `${savedPosts.length} publication${savedPosts.length > 1 ? 's' : ''} enregistrée${savedPosts.length > 1 ? 's' : ''}, visible${savedPosts.length > 1 ? 's' : ''} par vous seul(e).`}
+                </p>
+              </section>
+              {savedPosts.map((post) => (
+                <FeedPostCard key={post.id} post={post} {...postCardProps} saved onHide={undefined} />
+              ))}
+            </div>
+            <aside className="right-rail" aria-label="Repères">
+              {adSlot}
+            </aside>
+          </div>
+        );
+      }
       const openHelpPosts = ext.posts.filter((p) => p.kind === 'question' && !p.solutionReplyId);
       const discoverMembers = resolveAlgorithmicDiscoverProfiles(suggestable, uid, myFollowing, ext, 3).map(
         (entry) => entry.profile
@@ -2032,26 +2121,9 @@ export default function App() {
                       context={context}
                       focused={post.id === focusPostId}
                       defaultExpandedComments={post.id === focusPostId}
-                      currentUser={user}
-                      people={people}
-                      ext={ext}
-                      acceptedRelations={acceptedRelations}
-                      followingIds={myFollowing}
-                      communityMemberIds={communityMemberIds}
-                      onToggleFollowPerson={toggleFollowPerson}
-                      onTogglePostHelpful={handleTogglePostHelpful}
-                      onAddReply={handleAddPostReply}
-                      onToggleReplyHelpful={handleToggleReplyHelpful}
-                      onSelectSolution={handleSelectQuestionSolution}
-                      onRepost={handleRepostPost}
-                      onForwardToRelation={handleForwardPostToRelation}
-                      onOpenMember={(memberId) => nav('member', memberId)}
-                      onOpenModule={(moduleId) => nav('module-detail', moduleId)}
-                      onOpenThread={(postId) => nav('community-thread', postId)}
-                      onOpenRelations={() => nav('relations')}
-                      onReport={(label) => setReportTarget(label)}
-                      setToast={setToast}
-                      readOnly={!caps.canPublish}
+                      {...postCardProps}
+                      saved={savedPostIds.includes(post.id)}
+                      hiddenReason={hiddenThisVisit.includes(post.id) ? hiddenPostMap[post.id] : undefined}
                     />
                   ))
                 )}
@@ -2883,6 +2955,7 @@ export default function App() {
                         rel={activeRel}
                         userId={uid}
                         other={other}
+                        friend={mode === 'local' && isFriend(other.id)}
                         busy={busy}
                         onRequestContact={handleRequestContact}
                         onDecideContact={handleDecideContact}
@@ -3498,6 +3571,7 @@ export default function App() {
           }}
           onOpenReport={(t) => setReportTarget(t)}
           contacts={conversationContacts}
+          isFriend={(id) => mode === 'local' && isFriend(id)}
           onRequestContact={handleRequestContact}
           onDecideContact={handleDecideContact}
         />

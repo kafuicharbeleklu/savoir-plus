@@ -658,6 +658,10 @@ export interface ExtendedDemoState {
     coverDataUrl?: string;
   }>;
   followingIds: Record<string, string[]>;
+  /** Publications enregistrées par membre (menu « … » › Enregistrer), la plus récente en tête. */
+  savedPosts?: Record<string, string[]>;
+  /** Publications masquées du fil par membre, avec la raison (« Pas intéressé(e) », « IA slop »). */
+  hiddenPosts?: Record<string, Record<string, 'not-interested' | 'ai-slop'>>;
   /** Formules payantes souscrites, paiement simulé (src/offers.ts) : la publicité y devient facultative. */
   subscriptions?: Record<string, Subscription>;
   /** Calendrier et plan de révision de chaque membre. Absent : calendrier de démonstration du personnage. */

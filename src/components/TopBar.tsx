@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Bell,
   BookOpen,
+  Bookmark,
   ChevronDown,
   ClipboardList,
   Home,
@@ -345,6 +346,16 @@ export function TopBar({
                   }}
                 >
                   <User size={15} /> Mon profil
+                </button>
+
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setVousOpen(false);
+                    nav('community', 'saved');
+                  }}
+                >
+                  <Bookmark size={15} /> Éléments enregistrés
                 </button>
 
                 {caps.canManageFamily && (

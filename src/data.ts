@@ -302,6 +302,12 @@ export function openFamilyThread(uid: string, other: string): string {
   return id;
 }
 
+/**
+ * Deux amis (ils se suivent l'un l'autre) : la discussion s'ouvre sans demande, comme entre parent et
+ * enfant ; un blocage posé par l'un des deux est respecté. Démonstration locale seulement.
+ */
+export const openFriendThread = openFamilyThread;
+
 export async function decideContact(mode: string, uid: string, r: Relation, status: 'accepted' | 'declined') {
   if (r.recipient !== uid || r.status !== 'pending' || r.blockedBy.length) throw Error('Cette demande ne peut pas être traitée.');
   if (mode === 'local') {
