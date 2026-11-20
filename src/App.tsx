@@ -25,7 +25,6 @@ import {
   FileUp,
   Flag,
   GraduationCap,
-  HelpCircle,
   Image as ImageIcon,
   Inbox,
   Layers,
@@ -33,6 +32,7 @@ import {
   Lock,
   MessageCircle,
   MessageSquare,
+  PenLine,
   Plus,
   Search,
   Send,
@@ -395,6 +395,7 @@ export default function App() {
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [composerOpen, setComposerOpen] = useState<boolean>(false);
   const [composerView, setComposerView] = useState<'compose' | 'scheduled'>('compose');
+  const [composerIntent, setComposerIntent] = useState<'question' | 'method' | 'photo' | undefined>(undefined);
   const [scheduleTick, setScheduleTick] = useState(0);
   const [reportTarget, setReportTarget] = useState<string | null>(null);
 
@@ -1836,31 +1837,30 @@ export default function App() {
                   className="home-composer-prompt"
                   onClick={() => setComposerOpen(true)}
                 >
-                  Bonjour {user.name.split(' ')[0]}, partagez une astuce ou posez une question…
+                  Partagez une astuce ou posez une question…
                 </button>
               </div>
+              {/* Les trois gestes de la maquette : chacun ouvre la fenêtre de publication dans le bon mode. */}
               <div className="home-composer-shortcuts">
-                <button
-                  type="button"
-                  className="home-composer-shortcut-btn"
-                  onClick={() => nav('community-compose')}
-                >
-                  <HelpCircle size={15} /> Poser une question
-                </button>
-                <button
-                  type="button"
-                  className="home-composer-shortcut-btn"
-                  onClick={() => setComposerOpen(true)}
-                >
-                  <MessageSquare size={15} /> Partager une méthode
-                </button>
-                <button
-                  type="button"
-                  className="home-composer-shortcut-btn"
-                  onClick={() => nav('catalog')}
-                >
-                  <BookOpen size={15} /> Explorer les modules
-                </button>
+                {(
+                  [
+                    ['question', 'Question', <MessageSquare size={16} aria-hidden="true" />],
+                    ['method', 'Méthode', <PenLine size={16} aria-hidden="true" />],
+                    ['photo', 'Photo', <ImageIcon size={16} aria-hidden="true" />]
+                  ] as const
+                ).map(([intent, label, icon]) => (
+                  <button
+                    key={intent}
+                    type="button"
+                    className="home-composer-shortcut-btn"
+                    onClick={() => {
+                      setComposerIntent(intent);
+                      setComposerOpen(true);
+                    }}
+                  >
+                    {icon} {label}
+                  </button>
+                ))}
               </div>
               {(ext.scheduledPosts || []).some((p) => p.authorId === user.id) && (
                 <button
@@ -3507,9 +3507,11 @@ export default function App() {
       <PostComposerModal
         open={composerOpen && caps.canPublish}
         initialView={composerView}
+        intent={composerIntent}
         onClose={() => {
           setComposerOpen(false);
           setComposerView('compose');
+          setComposerIntent(undefined);
         }}
         user={user}
         scheduled={(ext.scheduledPosts || []).filter((p) => p.authorId === user.id)}

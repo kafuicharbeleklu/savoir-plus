@@ -88,7 +88,8 @@ export function PostComposerModal({
   onSchedule,
   onPublishScheduled,
   onDeleteScheduled,
-  initialView = 'compose'
+  initialView = 'compose',
+  intent
 }: {
   open: boolean;
   onClose: () => void;
@@ -100,6 +101,8 @@ export function PostComposerModal({
   onPublishScheduled?: (id: string) => void;
   onDeleteScheduled?: (id: string) => void;
   initialView?: ComposerView;
+  /** Geste choisi sur l'accueil : une question, une méthode, ou une photo (le choix d'image s'ouvre aussitôt). */
+  intent?: 'question' | 'method' | 'photo';
 }) {
   const [kind, setKind] = useState<'publication' | 'question'>('publication');
   const [domain, setDomain] = useState<'Numérique' | 'Communication' | 'Gestion'>('Numérique');
@@ -132,12 +135,18 @@ export function PostComposerModal({
   useEffect(() => {
     if (open) {
       setView(initialView);
-      if (initialView === 'compose') requestAnimationFrame(() => titleRef.current?.focus());
+      if (intent) setKind(intent === 'question' ? 'question' : 'publication');
+      if (initialView === 'compose') {
+        requestAnimationFrame(() => {
+          if (intent === 'photo') fileRef.current?.click();
+          else titleRef.current?.focus();
+        });
+      }
     } else {
       setEmojiOpen(false);
       setConfirmDeleteId(null);
     }
-  }, [open, initialView]);
+  }, [open, initialView, intent]);
 
   if (!open) return null;
 

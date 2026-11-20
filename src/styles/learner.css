@@ -233,3 +233,26 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 @media (max-width: 900px) {
   .md-pair { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* -- Accueil : les gestes sous la zone de partage, alignés sur le début du champ (maquette) -------- */
+.home-composer-inline .home-composer-shortcuts {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 4px 22px;
+  min-height: 0;
+  margin-top: 10px;
+  padding-left: var(--composer-indent, 56px);
+}
+.home-composer-inline .home-composer-shortcut-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 2px;
+  border-radius: var(--angle);
+  font-size: 0.84375rem;
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+.home-composer-inline .home-composer-shortcut-btn:hover { color: var(--fg-primary); }
