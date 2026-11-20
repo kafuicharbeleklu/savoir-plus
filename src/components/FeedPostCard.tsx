@@ -40,6 +40,8 @@ export interface FeedPostCardProps {
   onReport: (targetLabel: string) => void;
   setToast: (msg: string) => void;
   defaultExpandedComments?: boolean;
+  /** Publication visée par une notification : encadrée un instant. */
+  focused?: boolean;
   communityMemberIds?: string[];
   /** Lecture seule : ni réaction, ni commentaire, ni repartage (parent ou tuteur, classe « stricte »). */
   readOnly?: boolean;
@@ -68,6 +70,7 @@ export function FeedPostCard({
   onReport,
   setToast,
   defaultExpandedComments = false,
+  focused = false,
   communityMemberIds,
   readOnly = false,
   context
@@ -332,7 +335,11 @@ export function FeedPostCard({
   };
 
   return (
-    <article className={`wf-card feed-post-card${readOnly ? ' is-read-only' : ''}`} aria-label={`Contribution : ${post.title}`}>
+    <article
+      id={`post-${post.id}`}
+      className={`wf-card feed-post-card${readOnly ? ' is-read-only' : ''}${focused ? ' is-focused' : ''}`}
+      aria-label={`Contribution : ${post.title}`}
+    >
       {context && !post.repostedFrom && (
         <div className="li-repost-banner li-context-line">
           <span>{context}</span>

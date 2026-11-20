@@ -93,3 +93,18 @@ test('fil d’entraide : ordre et contexte propres à chaque profil', () => {
   // Le contexte n'apparaît que pour un lien personnel.
   assert.ok(afi.some((e) => e.context === undefined));
 });
+
+test('alertes : une phrase avec son auteur, et une publication qui s’ouvre dans le fil', async () => {
+  const { notificationSentence, notificationTarget } = await import('../src/notificationText');
+  assert.deepEqual(
+    notificationSentence({
+      title: 'Nouvelle réponse dans une question d’entraide',
+      detail: 'Question de Maya : À quoi sert la passerelle par défaut ?',
+      actorName: 'Kossi Agbo'
+    }),
+    { actor: 'Kossi Agbo', text: 'a répondu à la question de Maya « À quoi sert la passerelle par défaut ? »' }
+  );
+  assert.equal(notificationSentence({ title: 'Bienvenue sur SAVOIR+', detail: 'Commencez…', actorName: 'Nadège Koffi' }), null);
+  assert.deepEqual(notificationTarget({ targetPage: 'community-thread', targetId: 'post-1' }), { page: 'community', id: 'post-1' });
+  assert.deepEqual(notificationTarget({ targetPage: 'module-detail', targetId: 'phishing' }), { page: 'module-detail', id: 'phishing' });
+});

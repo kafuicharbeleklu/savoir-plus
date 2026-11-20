@@ -785,6 +785,15 @@ export default function App() {
 
   // Visite guidée de la démonstration (src/demoTour.ts) : chaque étape choisit son personnage et sa page.
   const [tourIndex, setTourIndex] = useState<number | null>(() => readTourStep(window.location.search));
+  // Une notification ouvre le fil sur une publication : la page défile jusqu'à elle.
+  useEffect(() => {
+    if (page !== 'community' || !selectedId) return;
+    const t = window.setTimeout(() => {
+      document.getElementById(`post-${selectedId}`)?.scrollIntoView({ block: 'start', behavior: ext.appPrefs.reducedMotion ? 'auto' : 'smooth' });
+    }, 260);
+    return () => window.clearTimeout(t);
+  }, [page, selectedId]);
+
   // Fenêtre de commande : Ctrl K (⌘ K sur Mac) depuis n'importe quel écran.
   const [paletteOpen, setPaletteOpen] = useState(false);
   useEffect(() => {
@@ -1804,7 +1813,12 @@ export default function App() {
     if (!routeAllowed) return null; // redirect to home is in flight (route guard effect)
     if (page === 'home' || page === 'community') {
       const lvl = computeGlobalLevel(totalXP);
-      const visibleFeedPosts = filterHomeFeed(ext.posts, homeFeedTab, myFollowing);
+      // Publication visée par une notification (« community/<id> ») : toujours dans le fil, en tête si le filtre la cache.
+      const focusPostId = page === 'community' ? selectedId : '';
+      const filteredFeedPosts = filterHomeFeed(ext.posts, homeFeedTab, myFollowing);
+      const focusPost = focusPostId ? ext.posts.find((p) => p.id === focusPostId) : undefined;
+      const visibleFeedPosts =
+        focusPost && !filteredFeedPosts.some((p) => p.id === focusPost.id) ? [focusPost, ...filteredFeedPosts] : filteredFeedPosts;
       // Accueil propre à ce profil : ce que l'école a donné, les personnes liées, les abonnements, les intérêts.
       const homeViewer = viewerOf({
         uid,
@@ -2009,9 +2023,11 @@ export default function App() {
                 ) : (
                   feedEntries.map(({ post, context }) => (
                     <FeedPostCard
-                      key={post.id}
+                      key={post.id === focusPostId ? `${post.id}:focus` : post.id}
                       post={post}
                       context={context}
+                      focused={post.id === focusPostId}
+                      defaultExpandedComments={post.id === focusPostId}
                       currentUser={user}
                       people={people}
                       ext={ext}

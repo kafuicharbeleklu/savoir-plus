@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { notificationSentence, notificationTarget } from '../notificationText';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -71,12 +72,13 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
     setToast('Toutes les notifications affichées ont été marquées comme lues');
   };
 
-  const openNotif = (id: string, targetPage: string, targetId?: string) => {
+  const openNotif = (n: NotificationItem) => {
     updateExt((prev) => ({
       ...prev,
-      notifications: prev.notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
+      notifications: prev.notifications.map((x) => (x.id === n.id ? { ...x, read: true } : x))
     }));
-    nav(targetPage, targetId);
+    const target = notificationTarget(n);
+    nav(target.page, target.id);
   };
 
   const unreadCount = items.filter((n) => !n.read).length;
@@ -115,23 +117,34 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
           <div className="wf-notif-list" role="list">
             {shown.map((n) => {
               const actor = resolveActor(n);
+              const sentence = notificationSentence(n);
               return (
                 <button
                   type="button"
                   role="listitem"
                   className={`wf-notif-row ${n.read ? 'read' : 'unread'}`}
                   key={n.id}
-                  onClick={() => openNotif(n.id, n.targetPage, n.targetId)}
+                  onClick={() => openNotif(n)}
                 >
                   <Avatar person={actor} />
                   <div className="wf-notif-body">
-                    <div className="wf-notif-head">
-                      <h3>{n.title}</h3>
-                      <span className="tiny muted wf-notif-time">{n.date}</span>
-                    </div>
-                    <p className="tiny muted">{n.detail}</p>
-                    <span className="tiny muted wf-notif-actor">{actor.name}</span>
+                    {sentence ? (
+                      <p className="wf-notif-text">
+                        <b>{sentence.actor}</b> {sentence.text}
+                      </p>
+                    ) : (
+                      <>
+                        <p className="wf-notif-text">
+                          <b>{n.title}</b>
+                        </p>
+                        <p className="wf-notif-detail">{n.detail}</p>
+                      </>
+                    )}
+                    <span className="wf-notif-meta">
+                      {n.category} · {n.date}
+                    </span>
                   </div>
+                  {!n.read && <span className="wf-notif-dot" aria-label="Non lue" />}
                 </button>
               );
             })}
