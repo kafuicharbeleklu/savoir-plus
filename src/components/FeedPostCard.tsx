@@ -684,22 +684,17 @@ export function FeedPostCard({
                                 placeholder={`Répondre à ${replyingTo.targetAuthorName}…`}
                                 value={subReplyText}
                                 onChange={(e) => setSubReplyText(e.target.value)}
+                                // Comme le commentaire principal : Entrée publie, Échap referme la zone.
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Escape') setReplyingTo(null);
+                                }}
                               />
-                              <button
-                                type="submit"
-                                className="li-composer-submit"
-                                disabled={!subReplyText.trim()}
-                              >
-                                Envoyer
-                              </button>
+                              {subReplyText.trim() && (
+                                <button type="submit" className="li-composer-submit">
+                                  Publier
+                                </button>
+                              )}
                             </div>
-                            <button
-                              type="button"
-                              className="li-subreply-cancel"
-                              onClick={() => setReplyingTo(null)}
-                            >
-                              Annuler
-                            </button>
                           </form>
                         )}
                       </div>
