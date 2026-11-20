@@ -40,7 +40,7 @@ import {
   Settings,
   ShieldCheck,
   Sliders,
-  Sparkles,
+  FilePen,
   User,
   UserCheck,
   UserPlus,
@@ -3358,7 +3358,7 @@ export default function App() {
         {
           items: [
             { id: 'studio', label: 'Contenus', icon: <Layers size={18} aria-hidden="true" />, active: inContents, onSelect: () => nav('studio') },
-            { id: 'studio-ocr', label: 'Créer avec l’IA', icon: <Sparkles size={18} aria-hidden="true" />, active: page === 'studio-ocr', onSelect: () => nav('studio-ocr') },
+            { id: 'studio-ocr', label: 'Créer avec l’IA', icon: <FilePen size={18} aria-hidden="true" />, active: page === 'studio-ocr', onSelect: () => nav('studio-ocr') },
             { id: 'studio-media', label: 'Médias', icon: <ImageIcon size={18} aria-hidden="true" />, active: page === 'studio-media', onSelect: () => nav('studio-media') },
             { id: 'studio-stats', label: 'Statistiques', icon: <BarChart2 size={18} aria-hidden="true" />, active: page === 'studio-stats', onSelect: () => nav('studio-stats') },
             { id: 'studio-profile', label: 'Profil créateur', icon: <User size={18} aria-hidden="true" />, active: page === 'studio-profile', onSelect: () => nav('studio-profile') }

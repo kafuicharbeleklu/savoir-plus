@@ -5,7 +5,7 @@
  * ses apprenants suivis. Pour chaque classe : où elle bute, question par question, en agrégé.
  */
 import React, { useEffect, useState } from 'react';
-import { CircleHelp, Sparkles, Users } from 'lucide-react';
+import { CircleHelp, FileText, Users } from 'lucide-react';
 import type { Progress } from '../../data';
 import {
   accountOf,
@@ -295,7 +295,7 @@ export function TeachingPage({ school, saveSchool, ext, user, people, today, cat
 
             <section className="pl-panel cm-fiche" aria-label="Fiche de rattrapage">
               <p className="cm-fiche-kicker">
-                <Sparkles size={15} aria-hidden="true" /> Fiche de rattrapage
+                <FileText size={15} aria-hidden="true" /> Fiche de rattrapage
               </p>
               {focus ? (
                 <>

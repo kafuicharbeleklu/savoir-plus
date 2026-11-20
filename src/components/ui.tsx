@@ -6,7 +6,7 @@
  */
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowDown, ArrowLeft, ArrowUp, ArrowUpDown, Award, Ban, BarChart3, BookOpen, Check, CheckCircle2, ChevronDown, Copy, Download, Eye, EyeOff, FileText, Flag, Layers, Link2, Minus, MoreHorizontal, Pencil, Search, Send, Settings, Sparkles, Trash2, Undo2, User, X } from 'lucide-react';
+import { ArrowDown, FilePen, ArrowLeft, ArrowUp, ArrowUpDown, Award, Ban, BarChart3, BookOpen, Check, CheckCircle2, ChevronDown, Copy, Download, Eye, EyeOff, FileText, Flag, Layers, Link2, Minus, MoreHorizontal, Pencil, Search, Send, Settings, Trash2, Undo2, User, X } from 'lucide-react';
 
 /* ------------------------------------------------------------------ En-tête */
 
@@ -198,7 +198,7 @@ function menuIcon(label: string): React.ReactNode {
     [/résolu|clôturer|approuver|valider/i, <CheckCircle2 size={20} aria-hidden="true" />],
     [/monter/i, <ArrowUp size={20} aria-hidden="true" />],
     [/descendre/i, <ArrowDown size={20} aria-hidden="true" />],
-    [/\bia\b/i, <Sparkles size={20} aria-hidden="true" />],
+    [/\bia\b/i, <FilePen size={20} aria-hidden="true" />],
     [/^ressource/i, <FileText size={20} aria-hidden="true" />],
     [/^parcours/i, <Layers size={20} aria-hidden="true" />],
     [/^module/i, <BookOpen size={20} aria-hidden="true" />],

@@ -5,7 +5,7 @@
  * le bouton ne s'active qu'une fois chaque bloc relu (jamais de publication automatique).
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Check, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { ArrowLeft, Check, ChevronDown, ChevronUp, CornerDownRight } from 'lucide-react';
 import {
   AI_SOURCE_MAX,
   AI_SOURCE_MIN,
@@ -270,7 +270,7 @@ export function StudioAiView({ updateExt, nav, setToast, user }: StudioProps) {
         <AiStepper step={1} />
         {prefill && (
           <p className="sx-origin">
-            <Sparkles size={16} aria-hidden="true" />
+            <CornerDownRight size={16} aria-hidden="true" />
             <span>{prefill.origin}</span>
           </p>
         )}
