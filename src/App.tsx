@@ -1637,7 +1637,9 @@ export default function App() {
     if (account.kind !== 'institution' || !account.institutionId) return undefined;
     return libraryOf(school, account.institutionId, dynamicCatalog, (item) => networkDirectory.find((p) => p.name === item.author)?.id);
   };
+  // Pages sans colonne de gauche : elles occupent toute la largeur (la page d'un module se lit comme une page de cours).
   const isFullWidth =
+    page === 'module-detail' ||
     page === 'messages' ||
     page === 'auth-flows' ||
     page === 'profile' ||
