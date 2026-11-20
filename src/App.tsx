@@ -2655,12 +2655,6 @@ export default function App() {
                   <b>{pendingIncoming.length}</b>
                 </div>
               </div>
-              <button className="secondary" onClick={() => nav('messages')}>
-                Ouvrir la messagerie
-              </button>
-              <button className="secondary" onClick={() => openSettingsTab('privacy')}>
-                Réglages de contact
-              </button>
             </section>
             {adSlot}
           </aside>
