@@ -55,6 +55,8 @@ interface ProfilePageProps {
   onToggleFollow: (id: string) => void;
   onOpenChatDrawer: (relId: string) => void;
   onRequestContact?: (target: Profile) => void;
+  /** « En attente » : retirer la demande envoyée (la confirmation est demandée par l'appelant). */
+  onCancelRequest?: (rel: Relation) => void;
   onReportTarget: (label: string) => void;
   onOpenComposer?: () => void;
   onOpenInfoModal: (topic: FooterInfoTopic) => void;
@@ -181,6 +183,7 @@ export function ProfilePage({
   library,
   onOpenChatDrawer,
   onRequestContact,
+  onCancelRequest,
   onReportTarget,
   onOpenComposer,
   nav,
@@ -364,7 +367,10 @@ export function ProfilePage({
     else if (currentRel?.status === 'accepted') talk = { label: 'Message', onClick: () => onOpenChatDrawer(currentRel.id) };
     else if (currentRel?.status === 'pending' && currentRel.requester === target.id)
       talk = { label: 'Répondre à la demande', onClick: () => nav('relations') };
-    else if (currentRel?.status === 'pending') talk = { label: 'Demande envoyée', disabled: true };
+    else if (currentRel?.status === 'pending') {
+      const rel = currentRel;
+      talk = onCancelRequest ? { label: 'En attente', onClick: () => onCancelRequest(rel) } : { label: 'En attente', disabled: true };
+    }
     else if (onRequestContact && acceptsMyRequest)
       talk = {
         // Amis (ils se suivent l'un l'autre) : la discussion s'ouvre directement.

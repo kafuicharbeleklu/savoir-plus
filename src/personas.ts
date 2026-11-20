@@ -841,10 +841,12 @@ export function resolveFollowedAndConnectedProfiles(
   directory: Profile[],
   currentUserId: string,
   followingIds: string[],
-  relations: { id: string; members: string[]; status: 'pending' | 'accepted' | 'declined'; blockedBy: string[] }[],
+  relations: { id: string; members: string[]; status: 'pending' | 'accepted' | 'declined'; blockedBy: string[]; requester?: string }[],
   ext: ExtendedDemoState
 ): (NetworkDirectoryEntry & { relation?: { id: string; members: string[]; status: 'pending' | 'accepted' | 'declined'; blockedBy: string[] } })[] {
   const acceptedPeers = new Map<string, typeof relations[number]>();
+  // Demandes envoyées (comme « Pending » sur LinkedIn) : la personne figure dans la liste, marquée « En attente ».
+  const requestedPeers = new Set<string>();
   const allRelByPeer = new Map<string, typeof relations[number]>();
 
   for (const r of relations) {
@@ -854,9 +856,10 @@ export function resolveFollowedAndConnectedProfiles(
     if (r.status === 'accepted') {
       acceptedPeers.set(peerId, r);
     }
+    if (r.status === 'pending' && r.requester === currentUserId) requestedPeers.add(peerId);
   }
 
-  const orderedIds = Array.from(new Set([...followingIds, ...acceptedPeers.keys()])).filter(
+  const orderedIds = Array.from(new Set([...followingIds, ...acceptedPeers.keys(), ...requestedPeers])).filter(
     (id) => id !== currentUserId
   );
 
@@ -877,7 +880,11 @@ export function resolveFollowedAndConnectedProfiles(
       isFollowed: followingIds.includes(profile.id),
       relationStatus: rel?.status || 'none',
       blocked: Boolean(rel?.blockedBy.length),
-      suggestionReason: followingIds.includes(profile.id) ? 'Compte suivi' : 'Discussion acceptée',
+      suggestionReason: followingIds.includes(profile.id)
+        ? 'Compte suivi'
+        : requestedPeers.has(profile.id)
+          ? 'Demande envoyée'
+          : 'Discussion acceptée',
       relation: rel
     };
   });

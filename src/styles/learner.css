@@ -595,3 +595,7 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
   .report-step, .report-done *, .report-success { animation: none !important; }
   .report-success-ring, .report-success-check { stroke-dashoffset: 0; fill-opacity: 1; }
 }
+
+/* -- Relations : « En attente » pour une demande envoyée (comme « Pending » sur LinkedIn) ---------- */
+.follow-btn.is-pending { border: 1px solid var(--border-hairline); background: var(--bg-subtle); color: var(--fg-muted); }
+.follow-btn.is-pending:hover:not(:disabled) { border-color: var(--accent-brand); color: var(--accent-brand); }

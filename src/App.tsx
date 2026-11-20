@@ -411,6 +411,15 @@ export default function App() {
   // Discussion dont la suppression attend confirmation (menu « … » de la discussion).
   const [deleteThread, setDeleteThread] = useState<{ relId: string; name: string } | null>(null);
   const cancelDeleteThread = useCallback(() => setDeleteThread(null), []);
+  // Retraits à confirmer (ne plus suivre, bloquer, retirer une demande), comme sur LinkedIn.
+  const [confirmState, setConfirmState] = useState<{
+    title: string;
+    text: string;
+    confirmLabel: string;
+    danger?: boolean;
+    run: () => void;
+  } | null>(null);
+  const cancelConfirm = useCallback(() => setConfirmState(null), []);
 
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -1206,6 +1215,49 @@ export default function App() {
     }
   };
 
+  const nameOfMember = (id: string) =>
+    networkDirectory.find((p) => p.id === id)?.name || people.find((p) => p.id === id)?.name || 'ce membre';
+  const firstNameOf = (name: string) => name.split(' ')[0];
+  /** « Suivre » part tout de suite ; « Ne plus suivre » demande confirmation. */
+  const followOrConfirm = (targetId: string) => {
+    if (!myFollowing.includes(targetId)) {
+      toggleFollowPerson(targetId);
+      return;
+    }
+    const name = nameOfMember(targetId);
+    setConfirmState({
+      title: `Ne plus suivre ${name} ?`,
+      text: `Vous ne verrez plus ses publications dans votre fil. ${firstNameOf(name)} n’en sera pas informé(e).`,
+      confirmLabel: 'Ne plus suivre',
+      run: () => toggleFollowPerson(targetId)
+    });
+  };
+  /** « Débloquer » part tout de suite ; « Bloquer » demande confirmation. */
+  const blockOrConfirm = (r: Relation) => {
+    if (r.blockedBy.includes(uid)) {
+      void handleToggleBlock(r);
+      return;
+    }
+    const name = nameOfMember(r.members.find((id) => id !== uid) || '');
+    setConfirmState({
+      title: `Bloquer ${name} ?`,
+      text: `Vous ne pourrez plus échanger de messages avec ${firstNameOf(name)}, qui n’en sera pas informé(e). Vous pourrez le débloquer à tout moment.`,
+      confirmLabel: 'Bloquer',
+      danger: true,
+      run: () => void handleToggleBlock(r)
+    });
+  };
+  /** « En attente » : retirer la demande envoyée, après confirmation (comme « Withdraw » sur LinkedIn). */
+  const withdrawOrConfirm = (r: Relation) => {
+    const name = nameOfMember(r.recipient);
+    setConfirmState({
+      title: 'Retirer la demande ?',
+      text: `Votre demande de discussion à ${name} sera retirée. Vous pourrez en envoyer une nouvelle plus tard.`,
+      confirmLabel: 'Retirer',
+      run: () => void handleCancelContact(r)
+    });
+  };
+
   const handleSendMessage = async (attachment?: MessageAttachment): Promise<boolean> => {
     const activeRel = relations.find((r) => r.id === selectedRelId);
     if (!activeRel || (!draft.trim() && !attachment)) return false;
@@ -1446,7 +1498,6 @@ export default function App() {
   };
 
   const pendingIncoming = relations.filter((r) => r.recipient === uid && r.status === 'pending' && r.blockedBy.length === 0);
-  const pendingOutgoing = relations.filter((r) => r.requester === uid && r.status === 'pending');
   const acceptedRelations = relations.filter((r) => r.status === 'accepted');
   const unreadNotifs = notificationsFor(ext.notifications, uid, ext.notifPrefs).filter((n) => !n.read).length;
 
@@ -1850,7 +1901,7 @@ export default function App() {
     acceptedRelations,
     selectedId,
     openReport: (t: string) => setReportTarget(t),
-    onToggleFollow: toggleFollowPerson,
+    onToggleFollow: followOrConfirm,
     onTogglePostHelpful: handleTogglePostHelpful,
     onAddReply: handleAddPostReply,
     onToggleReplyHelpful: handleToggleReplyHelpful,
@@ -2566,7 +2617,7 @@ export default function App() {
                 className={relationsTab === 'requests' ? 'selected' : ''}
                 onClick={() => setRelationsTab('requests')}
               >
-                Invitations ({pendingIncoming.length + pendingOutgoing.length})
+                Invitations ({pendingIncoming.length})
               </button>
               <button
                 type="button"
@@ -2662,7 +2713,7 @@ export default function App() {
                               <MessageCircle size={14} /> Message
                             </button>
                           ) : rel?.status === 'pending' ? (
-                            <span className="status-tag warn">Demande en attente</span>
+                            <span className="status-tag warn">En attente</span>
                           ) : null}
                         </div>
                       </article>
@@ -2711,31 +2762,6 @@ export default function App() {
                   )}
                 </section>
 
-                <section className="wf-card">
-                  <h2 className="wf-mb-sm">Demandes envoyées ({pendingOutgoing.length})</h2>
-                  {pendingOutgoing.length === 0 ? (
-                    <p className="tiny muted">Aucune demande envoyée en attente.</p>
-                  ) : (
-                    <div className="wf-stack-sm">
-                      {pendingOutgoing.map((r) => {
-                        const target = networkDirectory.find((p) => p.id === r.recipient);
-                        if (!target) return null;
-                        return (
-                          <div key={r.id} className="relation-row">
-                            <div>
-                              <b>{target.name}</b>
-                              <small className="tiny muted">En attente d’acceptation — aucun second message autorisé.</small>
-                              {ext.requestMessages?.[r.id] && <p className="tiny">« {ext.requestMessages[r.id]} »</p>}
-                            </div>
-                            <button className="secondary" disabled={busy} onClick={() => handleCancelContact(r)}>
-                              Annuler la demande
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </section>
               </div>
             )}
 
@@ -2776,9 +2802,17 @@ export default function App() {
                                 {blocked
                                   ? 'Échange bloqué'
                                   : entry.relationStatus === 'accepted'
-                                    ? 'Suivi · discussion active'
+                                    ? entry.isFollowed
+                                      ? 'Suivi · discussion active'
+                                      : 'Discussion active'
                                     : rel?.status === 'pending'
-                                      ? 'Suivi · demande de discussion en attente'
+                                      ? rel.requester === uid
+                                        ? entry.isFollowed
+                                          ? 'Suivi · demande de discussion envoyée'
+                                          : 'Demande de discussion envoyée'
+                                        : entry.isFollowed
+                                          ? 'Suivi · vous a envoyé une demande'
+                                          : 'Vous a envoyé une demande'
                                       : 'Compte suivi'}
                               </span>
                             </div>
@@ -2788,33 +2822,36 @@ export default function App() {
                               <button
                                 type="button"
                                 className="follow-btn follow-btn-sm is-following"
-                                onClick={() => toggleFollowPerson(other.id)}
+                                onClick={() => followOrConfirm(other.id)}
                                 aria-pressed={true}
                               >
                                 <Check size={13} /> Suivi
                               </button>
                             )}
+                            {/* Demande envoyée : « En attente » (comme « Pending » sur LinkedIn) ; un clic propose de la retirer. */}
+                            {rel?.status === 'pending' && rel.requester === uid && (
+                              <button
+                                type="button"
+                                className="follow-btn follow-btn-sm is-pending"
+                                disabled={busy}
+                                onClick={() => withdrawOrConfirm(rel)}
+                                title="Retirer la demande"
+                              >
+                                <Clock size={13} /> En attente
+                              </button>
+                            )}
                             {rel?.status === 'accepted' && (
-                              <>
-                                <button
-                                  type="button"
-                                  className="secondary"
-                                  onClick={() => openConversation(rel.id)}
-                                >
-                                  Message
-                                </button>
-                                <ConversationMenu
-                                  label={`Plus d’options pour ${other.name}`}
-                                  items={[
-                                    {
-                                      label: rel.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer',
-                                      danger: true,
-                                      disabled: busy,
-                                      onSelect: () => handleToggleBlock(rel)
-                                    }
-                                  ]}
-                                />
-                              </>
+                              <ConversationMenu
+                                label={`Plus d’options pour ${other.name}`}
+                                items={[
+                                  {
+                                    label: rel.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer',
+                                    danger: true,
+                                    disabled: busy,
+                                    onSelect: () => blockOrConfirm(rel)
+                                  }
+                                ]}
+                              />
                             )}
                           </div>
                         </div>
@@ -2874,9 +2911,10 @@ export default function App() {
           learns={accountLearns(target.id)}
           canFollow={caps.accountKind !== 'institution' && accountLearns(target.id)}
           library={institutionLibrary(target.id)}
-          onToggleFollow={toggleFollowPerson}
+          onToggleFollow={followOrConfirm}
           onOpenChatDrawer={openConversation}
           onRequestContact={handleRequestContact}
+          onCancelRequest={withdrawOrConfirm}
           onReportTarget={(label) => setReportTarget(label)}
           onOpenInfoModal={openInfoPage}
           nav={nav}
@@ -2924,7 +2962,7 @@ export default function App() {
             }));
             setToast('Profil mis à jour');
           }}
-          onToggleFollow={toggleFollowPerson}
+          onToggleFollow={followOrConfirm}
           onOpenChatDrawer={openConversation}
           onReportTarget={(label) => setReportTarget(label)}
           onOpenComposer={caps.canPublish ? () => setComposerOpen(true) : undefined}
@@ -3044,7 +3082,7 @@ export default function App() {
                                   label: activeRel.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer',
                                   danger: true,
                                   disabled: busy,
-                                  onSelect: () => handleToggleBlock(activeRel)
+                                  onSelect: () => blockOrConfirm(activeRel)
                                 }
                               ]
                             : [])
@@ -3670,7 +3708,7 @@ export default function App() {
           error={error}
           onSend={handleSendMessage}
           attachments={mode === 'local'}
-          onToggleBlock={handleToggleBlock}
+          onToggleBlock={blockOrConfirm}
           onDeleteThread={(rel, peer) => setDeleteThread({ relId: rel.id, name: peer.name })}
           onReportConversation={(rel, peer) =>
             setReportTarget({ label: `Conversation avec ${peer.name}`, kind: 'conversation', id: rel.id, personId: peer.id, personName: peer.name })
@@ -3751,6 +3789,19 @@ export default function App() {
           updateExt((prev) => ({ ...prev, scheduledPosts: (prev.scheduledPosts || []).filter((p) => p.id !== id) }));
           setToast('Publication programmée supprimée');
         }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(confirmState)}
+        title={confirmState?.title || ''}
+        text={confirmState?.text}
+        confirmLabel={confirmState?.confirmLabel || 'Confirmer'}
+        danger={confirmState?.danger}
+        onConfirm={() => {
+          confirmState?.run();
+          setConfirmState(null);
+        }}
+        onCancel={cancelConfirm}
       />
 
       <ConfirmDialog

@@ -35,7 +35,7 @@ import { PHOTOS } from '../media';
 import { DifficultyMeter, ProgressBar } from '../components/ProfileIdentityCard';
 import { CatalogCardBanner, CatalogContentCard, ContentTypeMark, XpBadgeInline } from '../components/CatalogVisuals';
 
-import { Select } from '../components/ui';
+import { ConfirmDialog, Select } from '../components/ui';
 const LESSON_COUNTS: Record<string, number> = Object.fromEntries(
   Object.entries(MODULES_CONTENT).map(([id, mod]) => [id, mod.lessons.length])
 );
@@ -547,6 +547,7 @@ export function ModuleDetailView({
       return { id: pm.id, title: sibling?.title || pm.title.replace(/^\d+\s+/, ''), duration: sibling?.duration, pct: siblingPct };
     });
 
+  const [confirmUnplan, setConfirmUnplan] = useState(false);
   const togglePlanned = () => {
     updateExt((prev) => ({
       ...prev,
@@ -628,9 +629,20 @@ export function ModuleDetailView({
                 {verb} <ArrowRight size={16} aria-hidden="true" />
               </button>
             )}
-            <button type="button" className="li-text-link" onClick={togglePlanned}>
+            <button type="button" className="li-text-link" onClick={() => (isPlanned ? setConfirmUnplan(true) : togglePlanned())}>
               {isPlanned ? 'Retirer de mes apprentissages' : 'Ajouter à mes apprentissages'}
             </button>
+            <ConfirmDialog
+              open={confirmUnplan}
+              title="Retirer ce module de vos apprentissages ?"
+              text="Votre avancement est conservé : vous le retrouverez en ajoutant de nouveau le module."
+              confirmLabel="Retirer"
+              onConfirm={() => {
+                setConfirmUnplan(false);
+                togglePlanned();
+              }}
+              onCancel={() => setConfirmUnplan(false)}
+            />
           </div>
           {wall && (
             <p className="md-wall-note">

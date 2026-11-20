@@ -66,6 +66,8 @@ function StudioWorkspace({
   const [activeQ, setActiveQ] = useState(0);
   const [kpDraft, setKpDraft] = useState<{ id: string; text: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Section ou question à supprimer, en attente de confirmation.
+  const [pendingRemoval, setPendingRemoval] = useState<{ kind: 'section' | 'question'; index: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (!content) {
@@ -341,7 +343,7 @@ function StudioWorkspace({
                       items={[
                         { label: 'Monter', onSelect: () => moveSection(i, i - 1), disabled: i === 0 },
                         { label: 'Descendre', onSelect: () => moveSection(i, i + 1), disabled: i === sections.length - 1 },
-                        { label: 'Supprimer', danger: true, onSelect: () => removeSection(i), disabled: sections.length <= 1 }
+                        { label: 'Supprimer', danger: true, onSelect: () => setPendingRemoval({ kind: 'section', index: i }), disabled: sections.length <= 1 }
                       ]}
                     />
                   </li>
@@ -480,10 +482,7 @@ function StudioWorkspace({
                         {
                           label: 'Supprimer',
                           danger: true,
-                          onSelect: () => {
-                            patchQuiz((x) => x.filter((_, j) => j !== i));
-                            setActiveQ(Math.max(0, Math.min(qIndex, quiz.length - 2)));
-                          }
+                          onSelect: () => setPendingRemoval({ kind: 'question', index: i })
                         }
                       ]}
                     />
@@ -899,6 +898,29 @@ function StudioWorkspace({
         danger
         onConfirm={deleteContent}
         onCancel={() => setConfirmDelete(false)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingRemoval)}
+        title={pendingRemoval?.kind === 'question' ? 'Supprimer cette question ?' : 'Supprimer cette section ?'}
+        text={
+          pendingRemoval?.kind === 'question'
+            ? 'La question et ses réponses seront retirées du quiz.'
+            : 'La section et tout son contenu seront retirés du module.'
+        }
+        confirmLabel="Supprimer"
+        danger
+        onConfirm={() => {
+          const target = pendingRemoval;
+          setPendingRemoval(null);
+          if (!target) return;
+          if (target.kind === 'section') removeSection(target.index);
+          else {
+            patchQuiz((x) => x.filter((_, j) => j !== target.index));
+            setActiveQ(Math.max(0, Math.min(qIndex, quiz.length - 2)));
+          }
+        }}
+        onCancel={() => setPendingRemoval(null)}
       />
     </StudioShell>
   );
