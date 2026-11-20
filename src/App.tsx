@@ -3291,7 +3291,7 @@ export default function App() {
   })();
 
   return (
-    <div className={`app-root${workShell ? ' is-work' : ''}`}>
+    <div className={`app-root${workShell ? ' is-work' : ''}`} data-page={page}>
       <TopBar
         page={caps.accountKind === 'institution' && page === 'institution' ? 'home' : page}
         nav={nav}

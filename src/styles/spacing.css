@@ -1,0 +1,93 @@
+/* ==========================================================================
+   Marges harmonisées (20 novembre 2026) — une seule règle pour tout le site :
+   – cartes principales : 20 px de marge intérieure (--card-pad) ;
+   – petites cartes des colonnes latérales : 16 px (--card-pad-compact) ;
+   – entre deux cartes : 12 px (--card-gap ; 20 px jugés trop grands le 20 nov.).
+   Valeurs tirées de l'échelle de 4 px (--space-*). Exceptions voulues : la Bibliothèque, validée
+   telle quelle (data-page="catalog"), et les cartes de tête plus aérées (« Aujourd'hui »,
+   en-tête d'un module, formules de la page Formules).
+   Pour changer un espacement partout, modifier une des trois valeurs ci-dessous.
+   ========================================================================== */
+
+:root {
+  --card-pad: var(--space-5);
+  --card-pad-compact: var(--space-4);
+  --card-gap: var(--space-3);
+}
+
+/* -- Entre deux cartes empilées --------------------------------------------------------------- */
+.app-root:not([data-page='catalog']) :is(.left-rail, .right-rail, .dashboard-main) { gap: var(--card-gap); }
+.app-root:not([data-page='catalog']) .dashboard-main .wf-stack { gap: var(--card-gap); }
+.sc-page,
+.wf-detail-wrap,
+.md-page,
+.md-main,
+.md-side,
+.md-body,
+.cm-layout,
+.cm-side { gap: var(--card-gap); }
+.wf-two-col { gap: var(--card-gap); }
+/* Profil, paramètres, espaces de travail : piles et grilles de cartes */
+.pf-page,
+.pf-main,
+.pf-rail,
+.pf-subview,
+.st-page,
+.st-main,
+.pl-kpis,
+.pl-split,
+.pl-children,
+.fm-top,
+.fm-side,
+.md-pair { gap: var(--card-gap); }
+
+/* -- Petites cartes des colonnes latérales : 16 px ---------------------------------------------- */
+.app-root:not([data-page='catalog']) .right-rail > section { padding: var(--card-pad-compact); }
+.app-root:not([data-page='catalog']) .right-rail > section.ad-card.ad-card { padding: 0; }
+.ad-card-body { padding: var(--card-pad-compact) var(--card-pad-compact) 4px; }
+.cal-month { padding: var(--card-pad-compact); }
+
+/* -- Fil : zone de partage, publications, recommandations ---------------------------------------- */
+.app-root .home-composer-inline { padding: var(--card-pad) var(--card-pad) 12px; }
+.app-root .feed-post-card { padding: var(--card-pad) var(--card-pad) 8px; }
+.feed-post-card .li-post-media { margin-left: calc(-1 * var(--card-pad)); margin-right: calc(-1 * var(--card-pad)); }
+.feed-post-card .li-post-media figcaption { padding: 0 var(--card-pad); }
+.wf-card.home-recommended { padding: var(--card-pad); }
+
+/* -- Pages d'une fiche et d'un parcours ------------------------------------------------------- */
+.wf-detail-wrap > .wf-card,
+.wf-detail-wrap .wf-card:first-child,
+.wf-two-col > .wf-card { padding: var(--card-pad); }
+.wf-detail-wrap .wf-card .li-post-media { margin-left: calc(-1 * var(--card-pad)); margin-right: calc(-1 * var(--card-pad)); }
+.wf-side-card { padding: var(--card-pad); }
+
+/* -- Espaces de travail : chiffres clés, panneaux, tableaux, listes ------------------------------- */
+.pl-kpi { padding: var(--card-pad); }
+.pl-panel-head { padding: var(--card-pad) var(--card-pad) 8px; }
+.pl-panel-text { padding: 0 var(--card-pad) 16px; }
+.pl-table th:first-child,
+.pl-table td:first-child { padding-left: var(--card-pad); }
+.pl-table th:last-child,
+.pl-table td:last-child { padding-right: var(--card-pad); }
+.pl-follow li { padding: 0 var(--card-pad); }
+.cm-map-card,
+.cm-questions,
+.cm-fiche,
+.fm-card { padding: var(--card-pad); }
+.app-root:not([data-page='catalog']) .ui-row { padding-right: var(--card-pad); }
+.app-root:not([data-page='catalog']) .ui-row-main { padding-left: var(--card-pad); }
+
+/* -- Profil et paramètres : 24 px → 20 px ------------------------------------------------------ */
+.pf-section-head { padding: var(--card-pad) var(--card-pad) 0; }
+.pf-section > :not(.pf-section-head):not(.pf-section-foot) { margin: 12px var(--card-pad) var(--card-pad); }
+.pf-section > .ui-empty { padding: var(--card-pad); }
+.pf-rail-card > h2 { padding: var(--card-pad-compact) var(--card-pad-compact) 4px; }
+.st-card > h2 { padding: var(--card-pad) var(--card-pad) 8px; }
+.st-row { padding: 0 var(--card-pad); }
+
+/* -- Progression ----------------------------------------------------------------------------- */
+.pg-level { padding: var(--card-pad) var(--card-pad) 0; }
+.pg-level .pg-kpis > div:first-child { padding-left: var(--card-pad); }
+
+/* -- Formules : marges égales sur les quatre côtés --------------------------------------------- */
+.pr-plan { padding: 24px; }

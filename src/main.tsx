@@ -27,6 +27,7 @@ import './styles/learner.css';
 import './styles/teaching.css';
 import './styles/pricing.css';
 import './styles/command.css';
+import './styles/spacing.css';
 import './styles/angles.css';
 
 installTooltips();
