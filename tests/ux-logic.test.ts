@@ -504,7 +504,8 @@ test('Savoir rank, member handle, annual activity heatmap, and badges compute de
     acceptedRelationsCount: 1,
     streakWeeks: 2
   });
-  assert.equal(badges.length, 30);
+  // 51 badges depuis l'ajout des séries (domaines, quiz, sections, entraide, régularité).
+  assert.equal(badges.length, 51);
   assert.equal(badges.find((b) => b.id === 'mod-phishing')?.earned, true);
   assert.equal(badges.find((b) => b.id === 'mod-perfect')?.earned, true);
   assert.equal(badges.find((b) => b.id === 'mod-reseaux')?.earned, false);

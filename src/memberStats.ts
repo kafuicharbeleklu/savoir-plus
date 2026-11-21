@@ -115,6 +115,14 @@ export function computeMemberStats({
     repliesCount
   });
 
+  // Séries par domaine : modules validés sur modules du domaine.
+  const domainProgress: Record<string, { passed: number; total: number }> = {};
+  for (const m of moduleMetrics) {
+    const d = (domainProgress[m.mod.domain] ||= { passed: 0, total: 0 });
+    d.total += 1;
+    if (m.passed) d.passed += 1;
+  }
+
   const badges = computeSavoirBadges({
     totalXp,
     level: lvl.level,
@@ -132,7 +140,9 @@ export function computeMemberStats({
     passedDomains,
     mediaPostsCount,
     helpfulReceivedCount,
-    followersCount
+    followersCount,
+    domainProgress,
+    modulesTotal: playableModules.length
   });
 
   /** Compétences travaillées : celles des modules commencés ou validés, avec leur module d'origine. */

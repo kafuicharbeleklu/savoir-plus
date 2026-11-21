@@ -2,30 +2,38 @@
 import React from 'react';
 import {
   Award,
+  BarChart3,
   BookOpen,
   CalendarCheck,
   CheckCircle2,
   Compass,
   Crown,
   Flame,
+  Cpu,
   Globe,
+  HandHelping,
   HardDrive,
   Heart,
   Image as ImageIcon,
   Lock,
   Mail,
+  Medal,
   MessageCircle,
+  Mic,
   Network,
+  PenLine,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  Star,
   Target,
+  Trophy,
   Users,
   Wallet
 } from 'lucide-react';
 import type { SavoirBadgeItem } from '../personas';
 
-function BadgeGlyph({ iconKey, size = 20 }: { iconKey: SavoirBadgeItem['iconKey']; size?: number }) {
+export function BadgeGlyph({ iconKey, size = 20 }: { iconKey: SavoirBadgeItem['iconKey']; size?: number }) {
   switch (iconKey) {
     case 'compass':
       return <Compass size={size} aria-hidden="true" />;
@@ -69,6 +77,22 @@ function BadgeGlyph({ iconKey, size = 20 }: { iconKey: SavoirBadgeItem['iconKey'
       return <ImageIcon size={size} aria-hidden="true" />;
     case 'globe':
       return <Globe size={size} aria-hidden="true" />;
+    case 'star':
+      return <Star size={size} aria-hidden="true" />;
+    case 'trophy':
+      return <Trophy size={size} aria-hidden="true" />;
+    case 'medal':
+      return <Medal size={size} aria-hidden="true" />;
+    case 'pen':
+      return <PenLine size={size} aria-hidden="true" />;
+    case 'hand':
+      return <HandHelping size={size} aria-hidden="true" />;
+    case 'chart':
+      return <BarChart3 size={size} aria-hidden="true" />;
+    case 'mic':
+      return <Mic size={size} aria-hidden="true" />;
+    case 'cpu':
+      return <Cpu size={size} aria-hidden="true" />;
     case 'award':
     default:
       return <Award size={size} aria-hidden="true" />;

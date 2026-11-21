@@ -1009,7 +1009,15 @@ export interface SavoirBadgeItem {
     | 'drive'
     | 'calendar'
     | 'image'
-    | 'globe';
+    | 'globe'
+    | 'star'
+    | 'trophy'
+    | 'medal'
+    | 'pen'
+    | 'hand'
+    | 'chart'
+    | 'mic'
+    | 'cpu';
   earned: boolean;
   /** Où en est le membre (« 4 / 6 sections ») ; absent pour un badge tout ou rien. */
   progress?: { current: number; target: number; unit: string };
@@ -1037,6 +1045,10 @@ export interface BadgeInputMetrics {
   helpfulReceivedCount?: number;
   /** Membres abonnés à ce profil. */
   followersCount?: number;
+  /** Modules validés et modules au total, par domaine (Numérique, Communication, Gestion). */
+  domainProgress?: Record<string, { passed: number; total: number }>;
+  /** Nombre de modules de la bibliothèque. */
+  modulesTotal?: number;
 }
 
 export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
@@ -1218,6 +1230,91 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
       earned: ['email-pro', 'reunion'].every((id) => m.passedQuizzes.includes(id))
     },
 
+    // Séries d'apprentissage : la moitié puis la totalité d'un domaine, comme les séries de HackTheBox.
+    ...(
+      [
+        ['num', 'Numérique', 'Initié du Numérique', 'Maître du Numérique', 'cpu'],
+        ['com', 'Communication', 'Communicant', 'Orateur Accompli', 'mic'],
+        ['ges', 'Gestion', 'Gestionnaire Avisé', 'Maître de la Gestion', 'chart']
+      ] as const
+    ).flatMap(([key, domain, halfTitle, fullTitle, icon]) => {
+      const d = m.domainProgress?.[domain] || { passed: 0, total: 0 };
+      return [
+        {
+          id: `dom-${key}-half`,
+          title: halfTitle,
+          description: `Valider la moitié des modules du domaine ${domain}.`,
+          track: 'learning' as const,
+          category: 'modules' as const,
+          iconKey: icon,
+          earned: d.total > 0 && d.passed >= Math.ceil(d.total / 2)
+        },
+        {
+          id: `dom-${key}-full`,
+          title: fullTitle,
+          description: `Valider tous les modules du domaine ${domain}.`,
+          track: 'learning' as const,
+          category: 'modules' as const,
+          iconKey: icon,
+          earned: d.total > 0 && d.passed >= d.total
+        }
+      ];
+    }),
+    {
+      id: 'mod-first-quiz',
+      title: 'Premier Quiz',
+      description: 'Réussir une première évaluation de fin de module.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'check',
+      earned: m.passedQuizzes.length >= 1
+    },
+    {
+      id: 'mod-five-quiz',
+      title: 'Cinq sur Cinq',
+      description: 'Réussir cinq évaluations de fin de module.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'award',
+      earned: m.passedQuizzes.length >= 5
+    },
+    {
+      id: 'mod-flawless',
+      title: 'Sans Faute',
+      description: 'Obtenir 100 % de bonnes réponses à trois quiz finaux.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'star',
+      earned: m.perfectQuizzes.length >= 3
+    },
+    {
+      id: 'mod-reader-12',
+      title: 'Lecteur Passionné',
+      description: 'Terminer douze sections de cours.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'book',
+      earned: m.completedLessonsCount >= 12
+    },
+    {
+      id: 'mod-reader-20',
+      title: 'Bibliophile',
+      description: 'Terminer vingt sections de cours.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'book',
+      earned: m.completedLessonsCount >= 20
+    },
+    {
+      id: 'mod-all',
+      title: 'Complétionniste',
+      description: 'Valider tous les modules de la bibliothèque.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'trophy',
+      earned: (m.modulesTotal || 0) > 0 && m.passedQuizzes.length >= (m.modulesTotal || 0)
+    },
+
     // Category: Communauté & Entraide (track: community)
     {
       id: 'com-voice',
@@ -1283,6 +1380,69 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
       iconKey: 'users',
       earned: (m.followersCount || 0) >= 3
     },
+    {
+      id: 'com-replies-5',
+      title: 'Main Tendue',
+      description: 'Publier cinq réponses dans le fil d’entraide.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'hand',
+      earned: m.repliesCount >= 5
+    },
+    {
+      id: 'com-replies-15',
+      title: 'Pilier de l’Entraide',
+      description: 'Publier quinze réponses dans le fil d’entraide.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'hand',
+      earned: m.repliesCount >= 15
+    },
+    {
+      id: 'com-solutions-3',
+      title: 'Expert Reconnu',
+      description: 'Voir trois de vos réponses choisies comme solution.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'medal',
+      earned: m.solutionsCount >= 3
+    },
+    {
+      id: 'com-posts-5',
+      title: 'Plume Active',
+      description: 'Publier cinq contributions dans le fil d’entraide.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'pen',
+      earned: m.postsCount >= 5
+    },
+    {
+      id: 'com-appreciated-10',
+      title: 'Voix Influente',
+      description: 'Recevoir dix mentions « utile » sur vos contributions ou vos réponses.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'heart',
+      earned: (m.helpfulReceivedCount || 0) >= 10
+    },
+    {
+      id: 'com-followers-10',
+      title: 'Rayonnement',
+      description: 'Être suivi par dix membres de la communauté.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'star',
+      earned: (m.followersCount || 0) >= 10
+    },
+    {
+      id: 'com-following-10',
+      title: 'Grand Cercle',
+      description: 'Suivre dix membres de la communauté.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'users',
+      earned: m.followingCount >= 10
+    },
 
     // Category: Régularité & Défis (track: community)
     {
@@ -1302,6 +1462,24 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
       category: 'streak',
       iconKey: 'flame',
       earned: m.streakWeeks >= 2
+    },
+    {
+      id: 'str-month',
+      title: 'Mois Régulier',
+      description: 'Garder une série active pendant quatre semaines.',
+      track: 'community',
+      category: 'streak',
+      iconKey: 'flame',
+      earned: m.streakWeeks >= 4
+    },
+    {
+      id: 'str-eight',
+      title: 'Constance',
+      description: 'Garder une série active pendant huit semaines.',
+      track: 'community',
+      category: 'streak',
+      iconKey: 'flame',
+      earned: m.streakWeeks >= 8
     },
     {
       id: 'str-dialogue',
@@ -1369,8 +1547,28 @@ function withBadgeProgress(m: BadgeInputMetrics, list: SavoirBadgeItem[]): Savoi
     'str-week': () => ({ current: m.streakWeeks, target: 1, unit: 'semaine active' }),
     'str-two-weeks': () => ({ current: m.streakWeeks, target: 2, unit: 'semaines actives' }),
     'str-dialogue': () => ({ current: m.acceptedRelationsCount, target: 1, unit: 'discussion acceptée' }),
-    'str-mentor-share': () => ({ current: m.postsCount, target: 2, unit: 'publications' })
+    'str-mentor-share': () => ({ current: m.postsCount, target: 2, unit: 'publications' }),
+    'mod-first-quiz': () => ({ current: m.passedQuizzes.length, target: 1, unit: 'quiz réussi' }),
+    'mod-five-quiz': () => ({ current: m.passedQuizzes.length, target: 5, unit: 'quiz réussis' }),
+    'mod-flawless': () => ({ current: m.perfectQuizzes.length, target: 3, unit: 'quiz sans faute' }),
+    'mod-reader-12': () => ({ current: m.completedLessonsCount, target: 12, unit: 'sections lues' }),
+    'mod-reader-20': () => ({ current: m.completedLessonsCount, target: 20, unit: 'sections lues' }),
+    'mod-all': () => ({ current: m.passedQuizzes.length, target: m.modulesTotal || 1, unit: 'modules validés' }),
+    'com-replies-5': () => ({ current: m.repliesCount, target: 5, unit: 'réponses' }),
+    'com-replies-15': () => ({ current: m.repliesCount, target: 15, unit: 'réponses' }),
+    'com-solutions-3': () => ({ current: m.solutionsCount, target: 3, unit: 'solutions retenues' }),
+    'com-posts-5': () => ({ current: m.postsCount, target: 5, unit: 'publications' }),
+    'com-appreciated-10': () => ({ current: m.helpfulReceivedCount || 0, target: 10, unit: 'mentions « utile » reçues' }),
+    'com-followers-10': () => ({ current: m.followersCount || 0, target: 10, unit: 'abonnés' }),
+    'com-following-10': () => ({ current: m.followingCount, target: 10, unit: 'membres suivis' }),
+    'str-month': () => ({ current: m.streakWeeks, target: 4, unit: 'semaines actives' }),
+    'str-eight': () => ({ current: m.streakWeeks, target: 8, unit: 'semaines actives' })
   };
+  for (const [key, domain] of [['num', 'Numérique'], ['com', 'Communication'], ['ges', 'Gestion']] as const) {
+    const d = m.domainProgress?.[domain] || { passed: 0, total: 0 };
+    PROGRESS[`dom-${key}-half`] = () => ({ current: d.passed, target: Math.max(1, Math.ceil(d.total / 2)), unit: 'modules validés' });
+    PROGRESS[`dom-${key}-full`] = () => ({ current: d.passed, target: Math.max(1, d.total), unit: 'modules validés' });
+  }
   return list.map((b) => (PROGRESS[b.id] ? { ...b, progress: PROGRESS[b.id]() } : b));
 }
 
@@ -1395,6 +1593,10 @@ export function moduleBadge(moduleId: string): { id: string; title: string } | n
     streakWeeks: 0
   };
   const before = new Set(computeSavoirBadges(none).filter((b) => b.earned).map((b) => b.id));
-  const unlocked = computeSavoirBadges({ ...none, passedQuizzes: [moduleId] }).find((b) => b.earned && !before.has(b.id) && b.category === 'modules');
+  // Un badge que n'importe quel quiz débloque (« Premier Quiz ») n'est pas celui du module.
+  const anyQuiz = new Set(computeSavoirBadges({ ...none, passedQuizzes: ['__autre-module__'] }).filter((b) => b.earned).map((b) => b.id));
+  const unlocked = computeSavoirBadges({ ...none, passedQuizzes: [moduleId] }).find(
+    (b) => b.earned && !before.has(b.id) && !anyQuiz.has(b.id) && b.category === 'modules'
+  );
   return unlocked ? { id: unlocked.id, title: unlocked.title } : null;
 }

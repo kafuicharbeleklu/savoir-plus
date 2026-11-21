@@ -3348,7 +3348,16 @@ export default function App() {
 
     if (page === 'badges') {
       const member = selectedId && selectedId !== uid ? networkDirectory.find((p) => p.id === selectedId) : undefined;
-      return <BadgesPage {...extraProps} currentUser={user} member={member} relations={relations} myFollowing={myFollowing} />;
+      return (
+        <BadgesPage
+          {...extraProps}
+          currentUser={user}
+          member={member}
+          members={networkDirectory}
+          relations={relations}
+          myFollowing={myFollowing}
+        />
+      );
     }
 
     if (page === 'community-compose') return <CommunityComposeView {...communityProps} />;

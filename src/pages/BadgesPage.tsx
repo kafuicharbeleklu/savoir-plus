@@ -1,20 +1,17 @@
 /**
- * Page dédiée aux badges (#badges, ou #badges/<membre> pour un autre membre).
- *
- * Tous les badges par catégorie, obtenus ou non, avec le critère de chacun ; un filtre (tous, obtenus,
- * à obtenir). Ni bilan, ni « À portée », ni barre de progression (retirés à la demande) : un badge non
- * obtenu dit seulement où en est le membre, en toutes lettres (« 4 / 6 sections lues »).
+ * Page dédiée aux badges (#badges, ou #badges/<membre> pour un autre membre), dans l'esprit de la page
+ * Badges de HackTheBox : des catégories repliables avec leur compte (« 1/5 ») ; des tuiles simples —
+ * un pictogramme au trait dans un cercle, le nom, le critère — dont le fond s'éclaire quand le badge est
+ * obtenu ; au survol, la rareté du badge (part des membres qui l'ont).
  */
-import React, { useState } from 'react';
-import { ArrowLeft, Check } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ArrowLeft, ChevronUp } from 'lucide-react';
 import type { Profile, Progress, Relation } from '../data';
 import { initialExtendedState, type AppPage, type ExtendedDemoState } from '../wireframeData';
 import { computeMemberStats } from '../memberStats';
-import { moduleBadge, type BadgeCategoryId, type SavoirBadgeItem } from '../personas';
-import { HexBadgeEmblem } from '../components/BadgeEmblem';
+import type { BadgeCategoryId, SavoirBadgeItem } from '../personas';
+import { BadgeGlyph } from '../components/BadgeEmblem';
 import { EmptyState, PageHeader } from '../components/ui';
-
-type BadgeFilter = 'all' | 'earned' | 'todo';
 
 const EMPTY_PROGRESS: Progress = { lessons: [], answers: [], submitted: false };
 
@@ -25,6 +22,8 @@ const BADGE_CATEGORIES: { id: BadgeCategoryId; label: string }[] = [
   { id: 'streak', label: 'Régularité et défis' }
 ];
 
+const percentFormat = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
+
 export function BadgesView({
   target,
   isOwnProfile,
@@ -34,7 +33,7 @@ export function BadgesView({
   relations = [],
   myFollowing = [],
   getModuleProgress,
-  openReader
+  members = []
 }: {
   target: Profile;
   isOwnProfile: boolean;
@@ -44,10 +43,11 @@ export function BadgesView({
   relations?: Relation[];
   myFollowing?: string[];
   getModuleProgress?: (modId: string) => Progress;
-  openReader?: (moduleId?: string, sectionIdx?: number) => void;
+  /** Membres de la communauté : sert à calculer la rareté de chaque badge. */
+  members?: Profile[];
 }) {
   const firstName = target.name.split(' ')[0];
-  const [filter, setFilter] = useState<BadgeFilter>('all');
+  const [closed, setClosed] = useState<BadgeCategoryId[]>([]);
 
   const stats = computeMemberStats({
     target,
@@ -59,32 +59,47 @@ export function BadgesView({
     getModuleProgress: isOwnProfile ? getModuleProgress : undefined
   });
   const badges = stats.badges;
-  const earned = badges.filter((b) => b.earned);
 
-  // Un badge de module avance avec le module lui-même (sections lues, quiz).
-  const moduleOf = (badgeId: string) => stats.moduleMetrics.find((m) => moduleBadge(m.mod.id)?.id === badgeId);
-  const progressLabel = (b: SavoirBadgeItem) => {
-    if (b.progress) return `${Math.min(b.progress.current, b.progress.target)} / ${b.progress.target} ${b.progress.unit}`;
-    const mod = moduleOf(b.id);
-    return mod && mod.pctVal > 0 ? `${mod.pctVal} % du module` : '';
+  // Rareté : combien des autres membres ont chaque badge (le membre affiché est compté à part).
+  const others = useMemo(() => {
+    const seen = new Set<string>();
+    const pool = members.filter((p) => p.id !== target.id && !seen.has(p.id) && seen.add(p.id));
+    const counts = new Map<string, number>();
+    for (const p of pool) {
+      const theirs = computeMemberStats({ target: p, isOwnProfile: false, ext, relations, myFollowing: [], progress: EMPTY_PROGRESS }).badges;
+      for (const b of theirs) if (b.earned) counts.set(b.id, (counts.get(b.id) || 0) + 1);
+    }
+    return { size: pool.length, counts };
+  }, [members, target.id, ext, relations]);
+  const rarity = (b: SavoirBadgeItem) => {
+    const total = others.size + 1;
+    const holders = (others.counts.get(b.id) || 0) + (b.earned ? 1 : 0);
+    return `${percentFormat.format((holders / total) * 100)} % des membres`;
   };
 
-  const shown = badges.filter((b) => (filter === 'earned' ? b.earned : filter === 'todo' ? !b.earned : true));
+  const toggle = (id: BadgeCategoryId) => setClosed((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
 
   const tile = (b: SavoirBadgeItem) => {
-    const label = b.earned ? '' : progressLabel(b);
+    const share = rarity(b);
     return (
-      <li key={b.id} className={`bd-tile${b.earned ? ' is-earned' : ''}`}>
-        <HexBadgeEmblem iconKey={b.iconKey} earned={b.earned} size="md" />
-        <b className="bd-tile-title">{b.title}</b>
-        <p className="bd-tile-text">{b.description}</p>
-        {b.earned ? (
-          <span className="bd-tile-state">
-            <Check size={14} aria-hidden="true" /> Obtenu
+      <li
+        key={b.id}
+        className={`bd-tile${b.earned ? ' is-earned' : ''}`}
+        tabIndex={0}
+        aria-label={`${b.title}${b.earned ? ', obtenu' : ''}. ${b.description} Rareté : ${share}.`}
+      >
+        <div className="bd-tile-face" aria-hidden="true">
+          <span className="bd-ring">
+            <BadgeGlyph iconKey={b.iconKey} size={18} />
           </span>
-        ) : (
-          <span className="bd-tile-state is-todo tabular-nums">{label || 'À obtenir'}</span>
-        )}
+          <b className="bd-tile-title">{b.title}</b>
+          <p className="bd-tile-text">{b.description}</p>
+        </div>
+        {/* Au survol (ou au clavier), la rareté prend la place du badge, comme sur HackTheBox. */}
+        <div className="bd-tile-rarity" aria-hidden="true">
+          <span>Rareté</span>
+          <b className="tabular-nums">{share}</b>
+        </div>
       </li>
     );
   };
@@ -99,41 +114,26 @@ export function BadgesView({
         )}
         <PageHeader title={isOwnProfile ? 'Badges' : `Badges de ${firstName}`} keepTitle={!isOwnProfile} />
 
-        {/* Tous les badges */}
-        <div className="pg-filter" role="group" aria-label="Filtrer les badges">
-          {(
-            [
-              { id: 'all', label: `Tous (${badges.length})` },
-              { id: 'earned', label: `Obtenus (${earned.length})` },
-              { id: 'todo', label: `À obtenir (${badges.length - earned.length})` }
-            ] as { id: BadgeFilter; label: string }[]
-          ).map((f) => (
-            <button key={f.id} type="button" aria-pressed={filter === f.id} className={filter === f.id ? 'is-on' : ''} onClick={() => setFilter(f.id)}>
-              {f.label}
-            </button>
-          ))}
-        </div>
-        {shown.length === 0 && (
-          <div className="pg-card">
-            <EmptyState
-              title={filter === 'earned' ? 'Aucun badge obtenu pour le moment' : 'Tous les badges sont obtenus'}
-              text={filter === 'earned' && isOwnProfile ? 'Lisez une première section de module pour obtenir « Premier Pas ».' : undefined}
-            />
-          </div>
-        )}
         {BADGE_CATEGORIES.map((c) => {
-          const rows = shown.filter((b) => b.category === c.id);
+          const rows = badges.filter((b) => b.category === c.id);
           if (rows.length === 0) return null;
-          const all = badges.filter((b) => b.category === c.id);
+          const open = !closed.includes(c.id);
           return (
-            <section key={c.id} aria-labelledby={`bd-cat-${c.id}`}>
-              <div className="pg-section-head">
-                <h2 id={`bd-cat-${c.id}`}>{c.label}</h2>
-                <span className="pg-section-count tabular-nums">
-                  {all.filter((b) => b.earned).length} / {all.length}
-                </span>
-              </div>
-              <ul className="bd-grid">{rows.map(tile)}</ul>
+            <section key={c.id} className={`bd-cat${open ? '' : ' is-closed'}`}>
+              <h2 className="bd-cat-head">
+                <button type="button" aria-expanded={open} aria-controls={`bd-cat-${c.id}`} onClick={() => toggle(c.id)}>
+                  <span className="bd-cat-title">{c.label}</span>
+                  <span className="bd-cat-count tabular-nums">
+                    {rows.filter((b) => b.earned).length}/{rows.length}
+                  </span>
+                  <ChevronUp size={16} aria-hidden="true" className="bd-cat-chevron" />
+                </button>
+              </h2>
+              {open && (
+                <ul id={`bd-cat-${c.id}`} className="bd-grid">
+                  {rows.map(tile)}
+                </ul>
+              )}
             </section>
           );
         })}
@@ -149,10 +149,10 @@ export function BadgesPage({
   progress,
   currentUser,
   member,
+  members = [],
   relations = [],
   myFollowing = [],
-  getModuleProgress,
-  openReader
+  getModuleProgress
 }: {
   ext?: ExtendedDemoState;
   nav: (page: AppPage | 'visitor', id?: string) => void;
@@ -160,10 +160,11 @@ export function BadgesPage({
   currentUser: Profile;
   /** Autre membre (#badges/<id>) ; absent : ses propres badges. */
   member?: Profile;
+  /** Membres de la communauté, pour la rareté. */
+  members?: Profile[];
   relations?: Relation[];
   myFollowing?: string[];
   getModuleProgress?: (modId: string) => Progress;
-  openReader?: (moduleId?: string, sectionIdx?: number) => void;
   [key: string]: unknown;
 }) {
   const state = ext || initialExtendedState();
@@ -195,7 +196,7 @@ export function BadgesPage({
       relations={relations}
       myFollowing={myFollowing}
       getModuleProgress={isOwn ? getModuleProgress : undefined}
-      openReader={isOwn ? openReader : undefined}
+      members={[currentUser, ...members]}
     />
   );
 }
