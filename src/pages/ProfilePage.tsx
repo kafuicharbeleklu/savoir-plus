@@ -30,6 +30,8 @@ import { type AppPage, type CatalogItem, type ExtendedDemoState } from '../wiref
 import { Avatar, ProgressBar, VerifiedBadge } from '../components/ProfileIdentityCard';
 import type { FooterInfoTopic } from '../components/SidebarFooters';
 import { BadgeRing } from '../components/BadgeEmblem';
+import { StudyCharts } from '../components/StudyCharts';
+import type { SessionLog } from '../calendar';
 import { ProgressionView } from './ProgressionPage';
 import { ActionMenu, EmptyState, IconTile, Modal, StateTile } from '../components/ui';
 import { ProfileMediaDialog, type MediaKind } from '../components/ProfileMedia';
@@ -55,6 +57,8 @@ interface ProfilePageProps {
   onToggleFollow: (id: string) => void;
   onOpenChatDrawer: (relId: string) => void;
   onRequestContact?: (target: Profile) => void;
+  /** Journal daté des séances de révision du membre (calendrier), pour la courbe de progression. */
+  revisionLog?: SessionLog[];
   /** « En attente » : retirer la demande envoyée (la confirmation est demandée par l'appelant). */
   onCancelRequest?: (rel: Relation) => void;
   onReportTarget: (label: string) => void;
@@ -184,6 +188,7 @@ export function ProfilePage({
   onOpenChatDrawer,
   onRequestContact,
   onCancelRequest,
+  revisionLog = [],
   onReportTarget,
   onOpenComposer,
   nav,
@@ -684,6 +689,7 @@ export function ProfilePage({
                 <ProgressBar value={stats.lvl.percent} label={`Progression vers le niveau ${stats.lvl.level + 1}`} tone="htb" />
               </div>
             </div>
+            <StudyCharts stats={stats} log={revisionLog} onOpenCalendar={isOwnProfile ? () => nav('calendar') : undefined} />
           </Section>
         )}
 

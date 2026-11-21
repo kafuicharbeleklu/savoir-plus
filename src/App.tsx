@@ -768,6 +768,8 @@ export default function App() {
     return { state, events, plan, log: state.log, slots };
   };
   const { state: calendarState, events: calendarEvents, plan: revisionPlan, slots: timetableSlots } = calendarOf(uid);
+  /** Journal des séances de révision d'un membre (sans recalculer son plan). */
+  const revisionLogOf = (id: string) => (ext.calendar?.[id] ? normalizeCalendarState(ext.calendar[id]) : demoCalendarState(id, today)).log;
   const saveCalendar = (next: CalendarUserState) =>
     updateExt((prev) => ({ ...prev, calendar: { ...(prev.calendar || {}), [uid]: next } }));
 
@@ -2968,6 +2970,7 @@ export default function App() {
         <ProfilePage
           isOwnProfile={target.id === uid}
           target={target}
+          revisionLog={revisionLogOf(target.id)}
           currentUser={user}
           ext={ext}
           people={people}
@@ -3000,6 +3003,7 @@ export default function App() {
         <ProfilePage
           isOwnProfile={true}
           target={user}
+          revisionLog={revisionLogOf(uid)}
           currentUser={user}
           ext={ext}
           people={people}

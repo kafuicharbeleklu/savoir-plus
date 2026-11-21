@@ -309,6 +309,7 @@ export function ProgressionView({
 
         {view === 'skills' &&
           (stats.skills.length > 0 ? (
+            <div className="pg-skills">
             <ListCard label="Compétences">
               {stats.skills.map((skill) => (
                 <ListRow
@@ -333,6 +334,7 @@ export function ProgressionView({
                 />
               ))}
             </ListCard>
+            </div>
           ) : (
             <div className="pg-card">
               <EmptyState
