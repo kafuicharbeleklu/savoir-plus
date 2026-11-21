@@ -388,7 +388,6 @@ export function MessageComposer({
             }}
           />
         </div>
-        <span className="li-compose-hint">Entrée pour envoyer · Maj + Entrée pour aller à la ligne</span>
         <button type="submit" className="primary li-send-btn" disabled={!canSubmit}>
           Envoyer
         </button>

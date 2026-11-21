@@ -378,7 +378,6 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
   letter-spacing: 0.02em;
   line-height: 1;
 }
-.li-compose-tools + .li-compose-hint { margin-left: 8px; }
 
 /* Pièce jointe en attente, au-dessus de la barre */
 .li-compose-attachment {

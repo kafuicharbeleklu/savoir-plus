@@ -7842,8 +7842,6 @@ input, select, textarea { font-size: 0.875rem; }
   padding: 8px 12px;
   border-top: 1px solid var(--border-hairline);
 }
-.li-compose-hint { font-size: 0.75rem; color: var(--fg-muted); }
-.li-compose.is-compact .li-compose-hint { display: none; }
 .li-send-btn { margin-left: auto; min-height: 28px; height: 28px; padding: 0 16px; border-radius: var(--angle); font-size: 0.875rem; font-weight: 500; }
 .li-send-btn:disabled { background: var(--bg-subtle); border-color: transparent; color: var(--fg-muted); opacity: 1; cursor: not-allowed; }
 .chat-blocked { border-top: 1px solid var(--border-hairline); }
