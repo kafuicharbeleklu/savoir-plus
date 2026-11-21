@@ -3608,20 +3608,10 @@ export default function App() {
                 onOpenProfile={() => nav('profile')}
               />
 
+              {/* Pas de raccourci « Publier / Question » : le fil a sa zone de publication, et la colonne reste la
+                  même que l'on arrive par l'Accueil ou par une alerte (#community). */}
               {(activeSpace === 'learner' || activeSpace === 'community') && (
                 <nav className="rail-nav-card" aria-label="Espaces d’apprentissage">
-                  {activeSpace === 'community' && caps.canPublish && (
-                    <>
-                      <span className="left-rail-section-label">Communauté</span>
-                      <button
-                        className={`rail-nav-btn ${page === 'community-compose' ? 'active' : ''}`}
-                        onClick={() => nav('community-compose')}
-                      >
-                        <span><Plus size={16} /> Publier / Question</span>
-                      </button>
-                      <div className="vous-divider" />
-                    </>
-                  )}
                   {/* Espace propre au type de compte : famille, encadrant, établissement */}
                   {(caps.canManageFamily || caps.canTeach || caps.canManageInstitution) && (
                     <>
