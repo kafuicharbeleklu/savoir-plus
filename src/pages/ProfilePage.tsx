@@ -575,30 +575,55 @@ export function ProfilePage({
             }
             footer={{ label: 'Voir ma progression', onClick: () => nav('progression') }}
           >
-            <div className="pf-stats tabular-nums">
-              <button type="button" className="pf-stat" onClick={() => nav('learning')}>
-                <BookOpen size={24} aria-hidden="true" />
-                <span>
-                  <b>{plural(stats.passedQuizzes.length, 'module validé', 'modules validés')}</b>
-                  <small>Sur {plural(stats.playableModules.length, 'module interactif', 'modules interactifs')}.</small>
-                </span>
-              </button>
-              <button type="button" className="pf-stat" onClick={() => nav('home')}>
-                <MessageSquare size={24} aria-hidden="true" />
-                <span>
-                  <b>{plural(interactionsReceived, 'interaction d’entraide', 'interactions d’entraide')}</b>
-                  <small>Réactions et réponses reçues sur vos publications.</small>
-                </span>
-              </button>
-              <button type="button" className="pf-stat" onClick={() => nav('progression')}>
-                <Award size={24} aria-hidden="true" />
-                <span>
-                  <b>
-                    Niveau {stats.lvl.level} · {stats.totalXp} XP
+            <div className="pf-stats-grid">
+              {/* Niveau, d'après la carte de niveau de HackTheBox : l'emblème et « Niv. », la barre d'XP,
+                  puis le rang et le total. */}
+              <div className="pf-lvlcard">
+                <div className="pf-lvlcard-hero">
+                  <span className="pf-lvlcard-emblem" aria-hidden="true">
+                    <Award size={44} strokeWidth={1.5} />
+                  </span>
+                  <b className="pf-lvlcard-level tabular-nums">
+                    <span>Niv.</span> {stats.lvl.level}
                   </b>
-                  <small>Rang {stats.rankInfo.title}.</small>
-                </span>
-              </button>
+                </div>
+                <div className="pf-lvlcard-xp tabular-nums">
+                  <span>
+                    Niveau <span className="xp-mark-box" aria-hidden="true">XP</span>
+                  </span>
+                  <span>
+                    {stats.lvl.currentXp} / {stats.lvl.targetXp}
+                  </span>
+                </div>
+                <ProgressBar value={stats.lvl.percent} label={`Progression vers le niveau ${stats.lvl.level + 1}`} tone="htb" />
+                <div className="pf-lvlcard-tiles tabular-nums">
+                  <div>
+                    <b>{stats.rankInfo.title}</b>
+                    <small>Rang SAVOIR+</small>
+                  </div>
+                  <div>
+                    <b>{stats.totalXp} XP</b>
+                    <small>Au total</small>
+                  </div>
+                </div>
+              </div>
+              {/* Des chiffres, pas des liens : ni survol ni clic. */}
+              <div className="pf-stats tabular-nums">
+                <div className="pf-stat">
+                  <BookOpen size={24} aria-hidden="true" />
+                  <span>
+                    <b>{plural(stats.passedQuizzes.length, 'module validé', 'modules validés')}</b>
+                    <small>Sur {plural(stats.playableModules.length, 'module interactif', 'modules interactifs')}.</small>
+                  </span>
+                </div>
+                <div className="pf-stat">
+                  <MessageSquare size={24} aria-hidden="true" />
+                  <span>
+                    <b>{plural(interactionsReceived, 'interaction d’entraide', 'interactions d’entraide')}</b>
+                    <small>Réactions et réponses reçues sur vos publications.</small>
+                  </span>
+                </div>
+              </div>
             </div>
           </Section>
         )}
@@ -671,24 +696,6 @@ export function ProfilePage({
         {/* Progression */}
         {showProgression && (
           <Section title="Progression" footer={{ label: 'Voir le détail de la progression', onClick: () => openProgression('progression') }}>
-            <div className="pf-level">
-              <div className="pf-level-badge tabular-nums" aria-hidden="true">
-                {stats.lvl.level}
-              </div>
-              <div className="pf-level-text">
-                <b>Niveau {stats.lvl.level}</b>
-                <small>Rang {stats.rankInfo.title}</small>
-              </div>
-              <div className="pf-level-bar">
-                <div className="pf-level-bar-head tabular-nums">
-                  <span>{stats.totalXp} XP</span>
-                  <span>
-                    {stats.lvl.currentXp} / {stats.lvl.targetXp} XP avant le niveau {stats.lvl.level + 1}
-                  </span>
-                </div>
-                <ProgressBar value={stats.lvl.percent} label={`Progression vers le niveau ${stats.lvl.level + 1}`} tone="htb" />
-              </div>
-            </div>
             <StudyCharts stats={stats} log={revisionLog} onOpenCalendar={isOwnProfile ? () => nav('calendar') : undefined} />
           </Section>
         )}
