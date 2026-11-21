@@ -142,7 +142,11 @@ export function computeMemberStats({
     helpfulReceivedCount,
     followersCount,
     domainProgress,
-    modulesTotal: playableModules.length
+    modulesTotal: playableModules.length,
+    questionsCount: ext.posts.filter((p) => p.authorId === target.id && !p.repostedFrom && p.kind === 'question').length,
+    repostsCount: ext.posts.filter((p) => p.authorId === target.id && Boolean(p.repostedFrom)).length,
+    linkedPostsCount: ext.posts.filter((p) => p.authorId === target.id && Boolean(p.linkedItemId)).length,
+    activeWeeks: activity.activeWeeks
   });
 
   /** Compétences travaillées : celles des modules commencés ou validés, avec leur module d'origine. */

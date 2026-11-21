@@ -93,7 +93,8 @@ export function BadgesView({
             <BadgeGlyph iconKey={b.iconKey} size={18} />
           </span>
           <b className="bd-tile-title">{b.title}</b>
-          <p className="bd-tile-text">{b.description}</p>
+          {/* Espaces insécables dans les guillemets : « utile » ne se coupe pas en fin de ligne. */}
+          <p className="bd-tile-text">{b.description.replace(/« /g, '« ').replace(/ »/g, ' »')}</p>
         </div>
         {/* Au survol (ou au clavier), la rareté prend la place du badge, comme sur HackTheBox. */}
         <div className="bd-tile-rarity" aria-hidden="true">

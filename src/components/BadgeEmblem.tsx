@@ -3,6 +3,14 @@ import React from 'react';
 import {
   Award,
   BarChart3,
+  Camera,
+  Eye,
+  HelpCircle,
+  Mountain,
+  Repeat2,
+  Share2,
+  TrendingUp,
+  Zap,
   BookOpen,
   CalendarCheck,
   CheckCircle2,
@@ -93,6 +101,22 @@ export function BadgeGlyph({ iconKey, size = 20 }: { iconKey: SavoirBadgeItem['i
       return <Mic size={size} aria-hidden="true" />;
     case 'cpu':
       return <Cpu size={size} aria-hidden="true" />;
+    case 'trending':
+      return <TrendingUp size={size} aria-hidden="true" />;
+    case 'zap':
+      return <Zap size={size} aria-hidden="true" />;
+    case 'eye':
+      return <Eye size={size} aria-hidden="true" />;
+    case 'question':
+      return <HelpCircle size={size} aria-hidden="true" />;
+    case 'repeat':
+      return <Repeat2 size={size} aria-hidden="true" />;
+    case 'share':
+      return <Share2 size={size} aria-hidden="true" />;
+    case 'camera':
+      return <Camera size={size} aria-hidden="true" />;
+    case 'mountain':
+      return <Mountain size={size} aria-hidden="true" />;
     case 'award':
     default:
       return <Award size={size} aria-hidden="true" />;

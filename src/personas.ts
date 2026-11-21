@@ -1017,7 +1017,15 @@ export interface SavoirBadgeItem {
     | 'hand'
     | 'chart'
     | 'mic'
-    | 'cpu';
+    | 'cpu'
+    | 'trending'
+    | 'zap'
+    | 'eye'
+    | 'question'
+    | 'repeat'
+    | 'share'
+    | 'camera'
+    | 'mountain';
   earned: boolean;
   /** Où en est le membre (« 4 / 6 sections ») ; absent pour un badge tout ou rien. */
   progress?: { current: number; target: number; unit: string };
@@ -1049,6 +1057,14 @@ export interface BadgeInputMetrics {
   domainProgress?: Record<string, { passed: number; total: number }>;
   /** Nombre de modules de la bibliothèque. */
   modulesTotal?: number;
+  /** Questions d'entraide posées. */
+  questionsCount?: number;
+  /** Contributions repartagées. */
+  repostsCount?: number;
+  /** Publications qui partagent un module de la bibliothèque. */
+  linkedPostsCount?: number;
+  /** Semaines actives dans l'année. */
+  activeWeeks?: number;
 }
 
 export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
@@ -1099,6 +1115,34 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
       category: 'rank',
       iconKey: 'crown',
       earned: m.totalXp >= 750 || m.completedModules.length >= 5
+    },
+
+    // Niveaux (un tous les 200 XP) et grand cumul d'XP.
+    ...(
+      [
+        [2, 'Premiers Galons', 'trending'],
+        [3, 'Pied à l’Étrier', 'trending'],
+        [4, 'Vitesse de Croisière', 'trending'],
+        [5, 'Haut Palier', 'trending'],
+        [6, 'Sommet', 'mountain']
+      ] as const
+    ).map(([lvl, title, icon]) => ({
+      id: `lvl-${lvl}`,
+      title,
+      description: `Atteindre le niveau ${lvl}.`,
+      track: 'learning' as const,
+      category: 'rank' as const,
+      iconKey: icon,
+      earned: m.level >= lvl
+    })),
+    {
+      id: 'xp-1000',
+      title: 'Mille XP',
+      description: 'Cumuler 1 000 XP.',
+      track: 'learning',
+      category: 'rank',
+      iconKey: 'zap',
+      earned: m.totalXp >= 1000
     },
 
     // Category: Modules & Parcours (track: learning)
@@ -1315,6 +1359,35 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
       earned: (m.modulesTotal || 0) > 0 && m.passedQuizzes.length >= (m.modulesTotal || 0)
     },
 
+    ...(
+      [
+        ['phishing', 'Œil de Lynx', 'Ne tombez plus dans le piège', 'eye'],
+        ['reseaux', 'Routeur Infaillible', 'Comprendre les réseaux', 'network'],
+        ['comptes', 'Coffre-Fort', 'Sécuriser ses comptes au quotidien', 'lock'],
+        ['email-pro', 'Plume d’Or', 'Écrire un e-mail professionnel clair', 'mail'],
+        ['budget', 'Comptes Justes', 'Tenir un budget simple', 'wallet'],
+        ['sauvegarde', 'Triple Copie', 'Sauvegarder ses fichiers : la règle 3-2-1', 'drive'],
+        ['reunion', 'Ordre du Jour Parfait', 'Préparer une réunion utile', 'calendar']
+      ] as const
+    ).map(([moduleId, title, moduleTitle, icon]) => ({
+      id: `perfect-${moduleId}`,
+      title,
+      description: `Obtenir 100 % au quiz du module « ${moduleTitle} ».`,
+      track: 'learning' as const,
+      category: 'modules' as const,
+      iconKey: icon,
+      earned: m.perfectQuizzes.includes(moduleId)
+    })),
+    {
+      id: 'mod-complete-4',
+      title: 'Quatre Modules',
+      description: 'Terminer entièrement quatre modules.',
+      track: 'learning',
+      category: 'modules',
+      iconKey: 'book',
+      earned: m.completedModules.length >= 4
+    },
+
     // Category: Communauté & Entraide (track: community)
     {
       id: 'com-voice',
@@ -1443,6 +1516,105 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
       iconKey: 'users',
       earned: m.followingCount >= 10
     },
+    {
+      id: 'com-question-1',
+      title: 'Curieux',
+      description: 'Poser une première question d’entraide.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'question',
+      earned: (m.questionsCount || 0) >= 1
+    },
+    {
+      id: 'com-question-5',
+      title: 'Grand Curieux',
+      description: 'Poser cinq questions d’entraide.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'question',
+      earned: (m.questionsCount || 0) >= 5
+    },
+    {
+      id: 'com-repost-1',
+      title: 'Relais',
+      description: 'Repartager une contribution avec la communauté.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'repeat',
+      earned: (m.repostsCount || 0) >= 1
+    },
+    {
+      id: 'com-repost-5',
+      title: 'Grand Relais',
+      description: 'Repartager cinq contributions.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'repeat',
+      earned: (m.repostsCount || 0) >= 5
+    },
+    {
+      id: 'com-share-module',
+      title: 'Ambassadeur',
+      description: 'Partager un module de la bibliothèque dans une publication.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'share',
+      earned: (m.linkedPostsCount || 0) >= 1
+    },
+    {
+      id: 'com-media-5',
+      title: 'Reporter',
+      description: 'Publier cinq contributions illustrées d’une image ou d’une vidéo.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'camera',
+      earned: (m.mediaPostsCount || 0) >= 5
+    },
+    {
+      id: 'com-helpful-10',
+      title: 'Encourageant',
+      description: 'Marquer dix contributions comme utiles.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'heart',
+      earned: m.helpfulGivenCount >= 10
+    },
+    {
+      id: 'com-solutions-10',
+      title: 'Sauveur',
+      description: 'Voir dix de vos réponses choisies comme solution.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'medal',
+      earned: m.solutionsCount >= 10
+    },
+    {
+      id: 'com-followers-25',
+      title: 'Figure de la Communauté',
+      description: 'Être suivi par vingt-cinq membres.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'star',
+      earned: (m.followersCount || 0) >= 25
+    },
+    {
+      id: 'com-relations-3',
+      title: 'Réseau Naissant',
+      description: 'Avoir trois discussions acceptées.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'users',
+      earned: m.acceptedRelationsCount >= 3
+    },
+    {
+      id: 'com-relations-10',
+      title: 'Carnet d’Adresses',
+      description: 'Avoir dix discussions acceptées.',
+      track: 'community',
+      category: 'community',
+      iconKey: 'users',
+      earned: m.acceptedRelationsCount >= 10
+    },
 
     // Category: Régularité & Défis (track: community)
     {
@@ -1480,6 +1652,42 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
       category: 'streak',
       iconKey: 'flame',
       earned: m.streakWeeks >= 8
+    },
+    {
+      id: 'str-three',
+      title: 'Trois à la Suite',
+      description: 'Garder une série active pendant trois semaines.',
+      track: 'community',
+      category: 'streak',
+      iconKey: 'flame',
+      earned: m.streakWeeks >= 3
+    },
+    {
+      id: 'str-twelve',
+      title: 'Trimestre Assidu',
+      description: 'Garder une série active pendant douze semaines.',
+      track: 'community',
+      category: 'streak',
+      iconKey: 'flame',
+      earned: m.streakWeeks >= 12
+    },
+    {
+      id: 'act-6',
+      title: 'Rythme Installé',
+      description: 'Être actif six semaines dans l’année.',
+      track: 'community',
+      category: 'streak',
+      iconKey: 'calendar',
+      earned: (m.activeWeeks || 0) >= 6
+    },
+    {
+      id: 'act-12',
+      title: 'Pleine Saison',
+      description: 'Être actif douze semaines dans l’année.',
+      track: 'community',
+      category: 'streak',
+      iconKey: 'calendar',
+      earned: (m.activeWeeks || 0) >= 12
     },
     {
       id: 'str-dialogue',
@@ -1562,8 +1770,26 @@ function withBadgeProgress(m: BadgeInputMetrics, list: SavoirBadgeItem[]): Savoi
     'com-followers-10': () => ({ current: m.followersCount || 0, target: 10, unit: 'abonnés' }),
     'com-following-10': () => ({ current: m.followingCount, target: 10, unit: 'membres suivis' }),
     'str-month': () => ({ current: m.streakWeeks, target: 4, unit: 'semaines actives' }),
-    'str-eight': () => ({ current: m.streakWeeks, target: 8, unit: 'semaines actives' })
+    'str-eight': () => ({ current: m.streakWeeks, target: 8, unit: 'semaines actives' }),
+    'xp-1000': () => xp(1000),
+    'mod-complete-4': () => mods(4),
+    'com-question-1': () => ({ current: m.questionsCount || 0, target: 1, unit: 'question posée' }),
+    'com-question-5': () => ({ current: m.questionsCount || 0, target: 5, unit: 'questions posées' }),
+    'com-repost-1': () => ({ current: m.repostsCount || 0, target: 1, unit: 'repartage' }),
+    'com-repost-5': () => ({ current: m.repostsCount || 0, target: 5, unit: 'repartages' }),
+    'com-share-module': () => ({ current: m.linkedPostsCount || 0, target: 1, unit: 'module partagé' }),
+    'com-media-5': () => ({ current: m.mediaPostsCount || 0, target: 5, unit: 'publications illustrées' }),
+    'com-helpful-10': () => ({ current: m.helpfulGivenCount, target: 10, unit: 'mentions « utile » données' }),
+    'com-solutions-10': () => ({ current: m.solutionsCount, target: 10, unit: 'solutions retenues' }),
+    'com-followers-25': () => ({ current: m.followersCount || 0, target: 25, unit: 'abonnés' }),
+    'com-relations-3': () => ({ current: m.acceptedRelationsCount, target: 3, unit: 'discussions acceptées' }),
+    'com-relations-10': () => ({ current: m.acceptedRelationsCount, target: 10, unit: 'discussions acceptées' }),
+    'str-three': () => ({ current: m.streakWeeks, target: 3, unit: 'semaines actives' }),
+    'str-twelve': () => ({ current: m.streakWeeks, target: 12, unit: 'semaines actives' }),
+    'act-6': () => ({ current: m.activeWeeks || 0, target: 6, unit: 'semaines actives' }),
+    'act-12': () => ({ current: m.activeWeeks || 0, target: 12, unit: 'semaines actives' })
   };
+  for (const lvl of [2, 3, 4, 5, 6]) PROGRESS[`lvl-${lvl}`] = () => ({ current: m.level, target: lvl, unit: 'niveau' });
   for (const [key, domain] of [['num', 'Numérique'], ['com', 'Communication'], ['ges', 'Gestion']] as const) {
     const d = m.domainProgress?.[domain] || { passed: 0, total: 0 };
     PROGRESS[`dom-${key}-half`] = () => ({ current: d.passed, target: Math.max(1, Math.ceil(d.total / 2)), unit: 'modules validés' });
