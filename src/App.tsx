@@ -10,7 +10,6 @@ import {
   Clock,
   ArrowRight,
   Award,
-  Medal,
   BarChart2,
   BookOpen,
   CalendarDays,
@@ -3735,14 +3734,10 @@ export default function App() {
                     </button>
                   )}
                   {learnsHere && (
-                    <>
-                      <button className={`rail-nav-btn ${page === 'progression' ? 'active' : ''}`} onClick={() => nav('progression')}>
-                        <span><Award size={16} /> Progression</span>
-                      </button>
-                      <button className={`rail-nav-btn ${page === 'badges' ? 'active' : ''}`} onClick={() => nav('badges')}>
-                        <span><Medal size={16} /> Badges</span>
-                      </button>
-                    </>
+                    // La page Badges s'ouvre depuis Progression (« Voir tous les badges ») et depuis le profil.
+                    <button className={`rail-nav-btn ${page === 'progression' || page === 'badges' ? 'active' : ''}`} onClick={() => nav('progression')}>
+                      <span><Award size={16} /> Progression</span>
+                    </button>
                   )}
                   {(caps.canCreate || caps.canModerate || caps.canAdmin) && (
                     <>
