@@ -165,8 +165,9 @@ function RevisionChart({ log, onOpenCalendar }: { log: SessionLog[]; onOpenCalen
 
 /**
  * « Complétion par niveau », fidèle à « Difficulty Completion » de HackTheBox : des bandes concentriques,
- * le niveau le plus facile au centre et le plus difficile à l'extérieur ; sur chaque bande, un arc fin qui
- * part de midi (vert, ambre, rouge), avec un point de départ même à 0 % ; un point au centre. Pas de
+ * le niveau le plus facile au centre et le plus difficile à l'extérieur ; sur chaque bande, un arc qui
+ * part de midi (vert, ambre, rouge) comme une barre de progression, à l'épaisseur de la bande ; un point
+ * au centre. Pas de
  * légende ni de chiffre : la bulle nomme le niveau au survol ou au clavier (flèches), et la liste
  * masquée donne toutes les valeurs aux lecteurs d'écran.
  */
@@ -207,15 +208,18 @@ function LevelRings({ levels }: { levels: { lvl: string; done: number; total: nu
                 onPointerLeave={() => setActive(null)}
               >
                 <circle className="sc-ring-track" cx={c} cy={c} r={r} strokeWidth={band} />
-                <circle
-                  className="sc-ring-fill"
-                  cx={c}
-                  cy={c}
-                  r={r}
-                  strokeWidth={5}
-                  strokeDasharray={`${Math.max(0.01, pct * circ).toFixed(2)} ${circ.toFixed(2)}`}
-                  transform={`rotate(-90 ${c} ${c})`}
-                />
+                {/* Une barre de progression dans l'anneau : elle part de midi, à l'épaisseur de la bande. */}
+                {pct > 0 && (
+                  <circle
+                    className="sc-ring-fill"
+                    cx={c}
+                    cy={c}
+                    r={r}
+                    strokeWidth={band}
+                    strokeDasharray={`${(pct * circ).toFixed(2)} ${circ.toFixed(2)}`}
+                    transform={`rotate(-90 ${c} ${c})`}
+                  />
+                )}
                 {/* Zone de survol : toute la bande. */}
                 <circle className="sc-ring-hit" cx={c} cy={c} r={r} strokeWidth={band + gap} />
               </g>

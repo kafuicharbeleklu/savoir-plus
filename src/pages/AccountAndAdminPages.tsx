@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { appendAuditLog, formatNotificationTimestamp, notificationsFor, type ExtendedDemoState, type NotificationItem } from '../wireframeData';
 import type { Profile, Relation } from '../data';
-import { resolveCommunityDirectory, resolveProfileVerified, type RoleCapabilities } from '../personas';
+import { resolveCommunityAuthor, resolveCommunityDirectory, resolveProfileVerified, type RoleCapabilities } from '../personas';
 import { Avatar } from '../components/ProfileIdentityCard';
 
 import { EmptyState, Select, Tabs } from '../components/ui';
@@ -62,6 +62,21 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
     myPosts.length === 0 && myComments.length > 0 ? 'comments' : 'posts'
   );
   const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+  // Une ligne d'activité a la forme d'une alerte : l'avatar de la personne, une phrase, un détail, la date.
+  // Même résolution que le fil (initiales et couleur de l'auteur, même hors de l'annuaire).
+  const personOf = (id: string, name: string): Profile => resolveCommunityAuthor(id, name, people, ext).profile;
+  const activityRow = (key: string, person: Profile, text: React.ReactNode, detail: React.ReactNode, meta: string, onOpen: () => void) => (
+    <div role="listitem" key={key} className="wf-notif-item">
+      <button type="button" className="wf-notif-row read" onClick={onOpen}>
+        <Avatar person={person} />
+        <div className="wf-notif-body">
+          <p className="wf-notif-text">{text}</p>
+          {detail && <p className="wf-notif-detail">{detail}</p>}
+          <span className="wf-notif-meta">{meta}</span>
+        </div>
+      </button>
+    </div>
+  );
 
   const resolveActor = (n: NotificationItem): Profile => {
     const matched = n.actorId ? people.find((p) => p.id === n.actorId) : undefined;
@@ -150,24 +165,18 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
                   <p>Les posts et les questions que vous publiez apparaîtront ici.</p>
                 </div>
               ) : (
-                <section className="wf-card nt-activity" aria-label="Mes posts">
-                  <div className="pf-posts">
-                    {myPosts.map((p) => (
-                      <button key={p.id} type="button" className="pf-post" onClick={() => nav('community', p.id)}>
-                        <small>
-                          {p.kind === 'question' ? 'Question d’entraide' : 'Publication'} · {p.createdAt}
-                        </small>
-                        <b>{p.title}</b>
-                        <p>
-                          <RichText text={p.body} />
-                        </p>
-                        <small className="tabular-nums">
-                          {p.domain} · {plural(p.helpfulBy?.length || 0, 'utile', 'utiles')} · {plural(p.replies.length, 'réponse', 'réponses')}
-                        </small>
-                      </button>
-                    ))}
-                  </div>
-                </section>
+                <div className="wf-notif-list" role="list" aria-label="Mes posts">
+                  {myPosts.map((p) =>
+                    activityRow(
+                      p.id,
+                      user,
+                      <b>{p.title}</b>,
+                      <RichText text={p.body} />,
+                      `${p.kind === 'question' ? 'Question d’entraide' : 'Publication'} · ${p.createdAt} · ${plural(p.helpfulBy?.length || 0, 'utile', 'utiles')} · ${plural(p.replies.length, 'réponse', 'réponses')}`,
+                      () => nav('community', p.id)
+                    )
+                  )}
+                </div>
               ))}
 
             {activityKind === 'comments' &&
@@ -178,18 +187,20 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
                   <p>Vos commentaires et vos réponses dans le fil d’entraide apparaîtront ici.</p>
                 </div>
               ) : (
-                <section className="wf-card nt-activity" aria-label="Mes commentaires">
-                  <div className="pf-posts">
-                    {myComments.map(({ post, reply }) => (
-                      <button key={reply.id} type="button" className="pf-post" onClick={() => nav('community', post.id)}>
-                        <small>
-                          En réponse à « {post.title} » · {reply.createdAt}
-                        </small>
-                        <p>{reply.text}</p>
-                      </button>
-                    ))}
-                  </div>
-                </section>
+                <div className="wf-notif-list" role="list" aria-label="Mes commentaires">
+                  {myComments.map(({ post, reply }) =>
+                    activityRow(
+                      reply.id,
+                      user,
+                      <>
+                        <b>Vous</b> avez répondu à « {post.title} »
+                      </>,
+                      reply.text,
+                      `Commentaire · ${reply.createdAt}`,
+                      () => nav('community', post.id)
+                    )
+                  )}
+                </div>
               ))}
 
             {activityKind === 'mentions' &&
@@ -200,21 +211,20 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
                   <p>Lorsque quelqu’un vous identifie dans un post ou un commentaire, cette notification apparaîtra ici.</p>
                 </div>
               ) : (
-                <section className="wf-card nt-activity" aria-label="Mentions">
-                  <div className="pf-posts">
-                    {myMentions.map(({ post, reply }) => (
-                      <button key={reply.id} type="button" className="pf-post" onClick={() => nav('community', post.id)}>
-                        <small>
-                          Mention · {reply.createdAt}
-                        </small>
-                        <b>
-                          {reply.authorName} vous a mentionné(e) dans un commentaire sur « {post.title} »
-                        </b>
-                        <p>{reply.text}</p>
-                      </button>
-                    ))}
-                  </div>
-                </section>
+                <div className="wf-notif-list" role="list" aria-label="Mentions">
+                  {myMentions.map(({ post, reply }) =>
+                    activityRow(
+                      reply.id,
+                      personOf(reply.authorId, reply.authorName),
+                      <>
+                        <b>{reply.authorName}</b> vous a mentionné(e) dans un commentaire sur « {post.title} »
+                      </>,
+                      reply.text,
+                      `Mention · ${reply.createdAt}`,
+                      () => nav('community', post.id)
+                    )
+                  )}
+                </div>
               ))}
           </>
         )}
