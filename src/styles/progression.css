@@ -95,32 +95,21 @@
 .pg-next-row p { margin: 2px 0 0; font-size: 0.75rem; line-height: 1.45; color: var(--fg-muted); }
 .pg-badge-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-  margin: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px 2px;
+  /* La grille mord sur la marge de la carte : quatre noms par ligne tiennent entiers (« Ambassadeur »). */
+  margin: 0 -12px;
   padding: 0;
   list-style: none;
 }
-.pg-badge-grid li {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 10px 4px 8px;
-  border: 1px solid color-mix(in srgb, var(--accent-brand) 22%, var(--border-hairline));
-  border-radius: var(--angle);
-  background: var(--accent-brand-soft);
-}
+.pg-badge-grid li { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
 .pg-badge-grid li > span:not(.bd-ring) {
   max-width: 100%;
-  hyphens: auto;
-  overflow-wrap: anywhere;
+  letter-spacing: -0.01em;
   font-size: 0.6875rem;
-  font-weight: 600;
   line-height: 1.3;
   text-align: center;
-  color: var(--fg-primary);
+  color: var(--fg-muted);
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -282,9 +271,25 @@
 [data-theme='dark'] .sc-tip { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14), 0 6px 16px rgba(0, 0, 0, 0.45); }
 .sc-tip b { font-size: 0.9375rem; font-weight: 600; color: var(--fg-primary); }
 .sc-tip span { font-size: 0.75rem; color: var(--fg-muted); }
-.sc-meters { display: flex; flex-direction: column; gap: 16px; margin: 6px 0 0; padding: 0; list-style: none; }
-.sc-meter-head { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.875rem; color: var(--fg-secondary, var(--fg-primary)); }
-.sc-meter-head b { font-weight: 600; color: var(--fg-primary); }
+/* Complétion par niveau, fidèle à HackTheBox : bandes concentriques, arcs fins (vert, ambre, rouge),
+   palette validée (clair : tout passe ; sombre : rouge/vert au seuil, la position de l'anneau et la
+   bulle portent l'identité). */
+.sc { --sc-easy: #146C43; --sc-medium: #B7791F; --sc-hard: #B42318; }
+[data-theme='dark'] .sc { --sc-easy: #2F9E6A; --sc-medium: #BB8A1C; --sc-hard: #D2453C; }
+.sc-rings { display: flex; justify-content: center; padding: 8px 0 4px; }
+.sc-rings-plot { position: relative; border-radius: 50%; outline: none; }
+.sc-rings-plot:focus-visible { box-shadow: 0 0 0 2px var(--accent-brand); }
+.sc-rings-svg { display: block; width: 200px; height: 200px; overflow: visible; }
+.sc-ring { transition: opacity 0.15s ease; }
+.sc-ring.is-dim { opacity: 0.3; }
+.sc-ring-track { fill: none; stroke: color-mix(in srgb, var(--fg-muted) 13%, transparent); }
+.sc-ring-fill { fill: none; stroke-linecap: round; }
+.sc-ring.is-easy .sc-ring-fill { stroke: var(--sc-easy); }
+.sc-ring.is-medium .sc-ring-fill { stroke: var(--sc-medium); }
+.sc-ring.is-hard .sc-ring-fill { stroke: var(--sc-hard); }
+.sc-ring-hit { fill: none; stroke: transparent; pointer-events: stroke; }
+.sc-ring-core { fill: color-mix(in srgb, var(--fg-muted) 22%, transparent); }
+.sc-rings-tip { top: -10px; left: 50%; }
 .sc-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 28px 0; font-size: 0.875rem; text-align: center; color: var(--fg-muted); }
 .sc-empty p { margin: 0; }
 @media (max-width: 760px) {
@@ -299,6 +304,3 @@
 .pg-skills .sk-meta { gap: 4px; margin-top: 2px; font-size: 0.875rem; }
 .pg-skills .sk-line svg { width: 16px; height: 16px; }
 /* Les listes du profil sont en ligne avec un filet : les jauges gardent leur propre mise en page. */
-.sc .sc-meters li { display: block; padding: 0; border: 0; }
-.sc .sc-meter-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.sc .sc-meter-head > * { display: inline; }

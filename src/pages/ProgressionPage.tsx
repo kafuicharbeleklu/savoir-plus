@@ -380,7 +380,7 @@ export function ProgressionView({
           </h3>
           {earnedBadges.length > 0 ? (
             <ul className="pg-badge-grid">
-              {earnedBadges.slice(-6).map((badge) => (
+              {earnedBadges.slice(-8).map((badge) => (
                 <li key={badge.id} title={`${badge.title} — ${badge.description}`}>
                   <BadgeRing iconKey={badge.iconKey} earned size="sm" />
                   <span>{badge.title}</span>

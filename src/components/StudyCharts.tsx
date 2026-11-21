@@ -5,15 +5,14 @@
  * - « Séances de révision » : courbe en aire des minutes révisées par semaine sur huit semaines, tirée du
  *   journal daté du calendrier (une seule série : pas de légende ; ligne verticale qui suit le pointeur,
  *   bulle d'information, clavier ; tableau pour les lecteurs d'écran) ;
- * - « Complétion par niveau » : une jauge par niveau (Débutant, Intermédiaire, Avancé) plutôt que des
- *   anneaux concentriques, plus difficiles à comparer.
+ * - « Complétion par niveau » : des anneaux concentriques comme sur HackTheBox, un par niveau, de
+ *   l'extérieur (Débutant) vers l'intérieur ; la légende donne chaque valeur en toutes lettres.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { BookOpen, CheckCircle2, Layers } from 'lucide-react';
 import type { SessionLog } from '../calendar';
 import { addDays, todayDay } from '../calendar';
 import type { MemberStats } from '../memberStats';
-import { ProgressBar } from './ProfileIdentityCard';
 
 const WEEKS = 8;
 const LEVELS = ['Débutant', 'Intermédiaire', 'Avancé'] as const;
@@ -164,6 +163,86 @@ function RevisionChart({ log, onOpenCalendar }: { log: SessionLog[]; onOpenCalen
   );
 }
 
+/**
+ * « Complétion par niveau », fidèle à « Difficulty Completion » de HackTheBox : des bandes concentriques,
+ * le niveau le plus facile au centre et le plus difficile à l'extérieur ; sur chaque bande, un arc fin qui
+ * part de midi (vert, ambre, rouge), avec un point de départ même à 0 % ; un point au centre. Pas de
+ * légende ni de chiffre : la bulle nomme le niveau au survol ou au clavier (flèches), et la liste
+ * masquée donne toutes les valeurs aux lecteurs d'écran.
+ */
+function LevelRings({ levels }: { levels: { lvl: string; done: number; total: number }[] }) {
+  const [active, setActive] = useState<number | null>(null);
+  // De l'extérieur vers l'intérieur : le plus difficile d'abord.
+  const rings = [...levels].reverse();
+  const size = 200;
+  const c = size / 2;
+  const band = 20;
+  const gap = 4;
+  const tone = (lvl: string) => (lvl === 'Débutant' ? 'easy' : lvl === 'Intermédiaire' ? 'medium' : 'hard');
+  const shown = active === null ? null : rings[active];
+  return (
+    <div className="sc-rings">
+      <div
+        className="sc-rings-plot"
+        tabIndex={0}
+        role="group"
+        aria-label="Complétion par niveau. Flèches haut et bas pour parcourir les anneaux."
+        onFocus={() => setActive((v) => (v === null ? rings.length - 1 : v))}
+        onBlur={() => setActive(null)}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') setActive((v) => Math.max(0, (v ?? rings.length) - 1));
+          if (e.key === 'ArrowDown' || e.key === 'ArrowRight') setActive((v) => Math.min(rings.length - 1, (v ?? -1) + 1));
+        }}
+      >
+        <svg viewBox={`0 0 ${size} ${size}`} className="sc-rings-svg" aria-hidden="true">
+          {rings.map((l, i) => {
+            const r = c - band / 2 - 2 - i * (band + gap);
+            const circ = 2 * Math.PI * r;
+            const pct = l.total ? l.done / l.total : 0;
+            return (
+              <g
+                key={l.lvl}
+                className={`sc-ring is-${tone(l.lvl)}${active !== null && active !== i ? ' is-dim' : ''}`}
+                onPointerEnter={() => setActive(i)}
+                onPointerLeave={() => setActive(null)}
+              >
+                <circle className="sc-ring-track" cx={c} cy={c} r={r} strokeWidth={band} />
+                <circle
+                  className="sc-ring-fill"
+                  cx={c}
+                  cy={c}
+                  r={r}
+                  strokeWidth={5}
+                  strokeDasharray={`${Math.max(0.01, pct * circ).toFixed(2)} ${circ.toFixed(2)}`}
+                  transform={`rotate(-90 ${c} ${c})`}
+                />
+                {/* Zone de survol : toute la bande. */}
+                <circle className="sc-ring-hit" cx={c} cy={c} r={r} strokeWidth={band + gap} />
+              </g>
+            );
+          })}
+          <circle className="sc-ring-core" cx={c} cy={c} r={9} />
+        </svg>
+        {shown && (
+          <div className="sc-tip sc-rings-tip" role="status">
+            <b className="tabular-nums">
+              {shown.done} / {shown.total}
+            </b>
+            <span>{shown.lvl} · modules validés</span>
+          </div>
+        )}
+      </div>
+      <ul className="sr-only">
+        {levels.map((l) => (
+          <li key={l.lvl}>
+            {l.lvl} : {l.done} module{l.done > 1 ? 's' : ''} validé{l.done > 1 ? 's' : ''} sur {l.total}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function StudyCharts({ stats, log, onOpenCalendar }: { stats: MemberStats; log: SessionLog[]; onOpenCalendar?: () => void }) {
   const modulesTotal = stats.moduleMetrics.length;
   const lessonsTotal = stats.moduleMetrics.reduce((acc, m) => acc + m.lessonCount, 0);
@@ -177,7 +256,7 @@ export function StudyCharts({ stats, log, onOpenCalendar }: { stats: MemberStats
   const levels = LEVELS.map((lvl) => {
     const mods = stats.moduleMetrics.filter((m) => m.mod.level === lvl);
     return { lvl, total: mods.length, done: mods.filter((m) => m.passed).length };
-  }).filter((l) => l.total > 0);
+  });
 
   return (
     <div className="sc">
@@ -203,20 +282,8 @@ export function StudyCharts({ stats, log, onOpenCalendar }: { stats: MemberStats
         </section>
         <section className="sc-panel" aria-labelledby="sc-lvl-title">
           <h3 id="sc-lvl-title">Complétion par niveau</h3>
-          <p className="sc-sub">Modules validés</p>
-          <ul className="sc-meters">
-            {levels.map((l) => (
-              <li key={l.lvl}>
-                <span className="sc-meter-head">
-                  <span>{l.lvl}</span>
-                  <b className="tabular-nums">
-                    {l.done} / {l.total}
-                  </b>
-                </span>
-                <ProgressBar value={Math.round((l.done / l.total) * 100)} label={`Modules ${l.lvl.toLowerCase()} validés`} tone="htb" />
-              </li>
-            ))}
-          </ul>
+          <p className="sc-sub">Débutant au centre · Avancé à l’extérieur</p>
+          <LevelRings levels={levels} />
         </section>
       </div>
     </div>
