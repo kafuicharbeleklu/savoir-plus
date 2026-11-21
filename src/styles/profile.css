@@ -131,7 +131,7 @@
 .pf-card > .pf-section-foot:last-child { border-radius: 0 0 var(--angle) var(--angle); }
 
 /* Statistiques : la carte de niveau (façon HackTheBox) à gauche, deux chiffres à droite. */
-.pf-stats-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; align-items: stretch; }
+.pf-stats-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 12px; align-items: stretch; }
 .pf-stats { display: flex; flex-direction: column; gap: 8px; }
 /* Des chiffres, pas des liens : ni survol ni pointeur. */
 .pf-stat {
@@ -153,7 +153,6 @@
   flex-direction: column;
   gap: 10px;
   padding: 18px;
-  border: 1px solid var(--border-hairline);
   border-radius: var(--angle);
   background: linear-gradient(180deg, var(--accent-brand-soft), var(--bg-surface) 62%);
 }
