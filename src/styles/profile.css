@@ -140,9 +140,9 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  border: 1px solid var(--border-hairline);
   border-radius: var(--angle);
-  background: var(--bg-surface);
+  /* Sans bordure : le fond seul, comme les tuiles de la carte de niveau. */
+  background: var(--bg-subtle);
   text-align: left;
   color: var(--fg-primary);
 }
