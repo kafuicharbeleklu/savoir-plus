@@ -1,12 +1,12 @@
 /**
  * Effets sonores de l'interface, sur le modèle de LinkedIn : de courts sons confirment certaines actions
  * (message envoyé ou reçu, publication réussie, abonnement ou demande envoyée, demande acceptée,
- * suppression, erreur). Réglage « Effets sonores » dans Préférences › Préférences générales, activé par
+ * suppression, nouvelle alerte, erreur avec bandeau rouge). Réglage « Effets sonores » dans Préférences › Préférences générales, activé par
  * défaut comme chez LinkedIn. Aucun son pour un signalement (LinkedIn n'en a pas).
  *
  * Les sons sont synthétisés dans le navigateur (Web Audio) : aucun fichier, aucun son emprunté.
  */
-export type SoundName = 'msgSent' | 'msgReceived' | 'connect' | 'accepted' | 'postSuccess' | 'deleted' | 'fail';
+export type SoundName = 'msgSent' | 'msgReceived' | 'connect' | 'accepted' | 'postSuccess' | 'deleted' | 'fail' | 'notification';
 
 type Note = { f: number; t: number; d: number; type?: OscillatorType; g?: number };
 
@@ -43,6 +43,12 @@ const SOUNDS: Record<SoundName, Note[]> = {
   deleted: [
     { f: 523.3, t: 0, d: 0.1, type: 'triangle' },
     { f: 392, t: 0.07, d: 0.2, type: 'triangle' }
+  ],
+  // Nouvelle alerte : une clochette légère.
+  notification: [
+    { f: 1568, t: 0, d: 0.2, g: 0.05 },
+    { f: 2093, t: 0.02, d: 0.16, g: 0.025 },
+    { f: 1046.5, t: 0.13, d: 0.34, g: 0.05 }
   ],
   // Erreur : plus grave encore.
   fail: [

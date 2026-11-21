@@ -6,6 +6,7 @@
 import React, { useRef, useState } from 'react';
 import { FileText, Film, Image as ImageIcon, Upload } from 'lucide-react';
 import type { StudioMedia } from '../../wireframeData';
+import { playSound } from '../../sounds';
 import { ConfirmDialog, EmptyState, ListCard, ListRow, PageHeader, RowTitle, SavedIndicator, SidePanel, StateTile, StatusDot, Tabs } from '../../components/ui';
 import { importMediaFile, MEDIA_ACCEPT, mediaPreviews, mediaRowState, mediaTone, mediaUsageCount, StudioShell, type StudioProps } from './shared';
 
@@ -49,6 +50,7 @@ export function StudioMediaView({ ext, updateExt, nav, setToast, user }: StudioP
   };
 
   const remove = (m: StudioMedia) => {
+    playSound('deleted');
     const url = mediaPreviews.get(m.id);
     if (url) {
       URL.revokeObjectURL(url);

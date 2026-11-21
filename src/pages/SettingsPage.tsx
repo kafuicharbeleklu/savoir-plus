@@ -297,7 +297,7 @@ export function SettingsView({
         return (
           <Detail
             title="Effets sonores"
-            description="De courts sons confirment certaines actions : message envoyé ou reçu, publication, abonnement ou demande envoyée, demande acceptée, suppression, erreur."
+            description="De courts sons confirment certaines actions : message envoyé ou reçu, publication ou repartage, abonnement ou demande envoyée, demande acceptée, suppression, nouvelle alerte, erreur."
             onBack={back}
             savedAt={savedAt}
           >

@@ -599,3 +599,6 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 /* -- Relations : « En attente » pour une demande envoyée (comme « Pending » sur LinkedIn) ---------- */
 .follow-btn.is-pending { border: 1px solid var(--border-hairline); background: var(--bg-subtle); color: var(--fg-muted); }
 .follow-btn.is-pending:hover:not(:disabled) { border-color: var(--accent-brand); color: var(--accent-brand); }
+
+/* -- Bandeau d'erreur : rouge, avec le son d'erreur (le « Toast red » de LinkedIn) ------------------ */
+.toast.is-error { border-color: transparent; background: var(--accent-danger); color: #fff; }

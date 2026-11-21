@@ -424,7 +424,18 @@ export default function App() {
 
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-  const [toast, setToast] = useState<string>('');
+  const [toast, setToastState] = useState<string>('');
+  // Bandeau d'erreur : rouge, avec le son d'erreur (le « Toast red » de LinkedIn).
+  const [toastError, setToastError] = useState(false);
+  const setToast = (msg: string) => {
+    setToastState(msg);
+    setToastError(false);
+  };
+  const failToast = (msg: string) => {
+    setToastState(msg);
+    setToastError(true);
+    playSound('fail');
+  };
   const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(() =>
     typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches
   );
@@ -1006,7 +1017,7 @@ export default function App() {
         await saveModuleProgress(activeStudyModuleId, { ...activeStudyProgress, lessons });
         setToast(`Section « ${activeStudyContent.lessons[index]?.title} » terminée · +25 XP`);
       } catch (e: any) {
-        setToast(e?.message || 'Erreur lors de la sauvegarde');
+        failToast(e?.message || 'Erreur lors de la sauvegarde');
         return; // on reste sur la section, pour pouvoir réessayer
       } finally {
         setBusy(false);
@@ -1033,7 +1044,7 @@ export default function App() {
       nav('result', activeStudyModuleId);
       setToast('Quiz enregistré — consultez votre correction ci-dessous');
     } catch (e: any) {
-      setToast(e?.message || 'Erreur lors de l’envoi du quiz');
+      failToast(e?.message || 'Erreur lors de l’envoi du quiz');
     } finally {
       setBusy(false);
     }
@@ -1173,8 +1184,7 @@ export default function App() {
       setToast(`Demande de discussion envoyée à ${targetProfile.name}`);
       playSound('connect');
     } catch (e: any) {
-      playSound('fail');
-      setToast(e?.message || 'Impossible d’envoyer la demande');
+      failToast(e?.message || 'Impossible d’envoyer la demande');
     } finally {
       setBusy(false);
     }
@@ -1196,7 +1206,7 @@ export default function App() {
         setToast('Demande refusée');
       }
     } catch (e: any) {
-      setToast(e?.message || 'Action impossible');
+      failToast(e?.message || 'Action impossible');
     } finally {
       setBusy(false);
     }
@@ -1212,7 +1222,7 @@ export default function App() {
       }));
       setToast('Demande de discussion annulée');
     } catch (e: any) {
-      setToast(e?.message || 'Annulation impossible');
+      failToast(e?.message || 'Annulation impossible');
     } finally {
       setBusy(false);
     }
@@ -1229,7 +1239,7 @@ export default function App() {
           : 'Membre bloqué : les nouveaux messages sont désormais impossibles.'
       );
     } catch (e: any) {
-      setToast(e?.message || 'Action impossible');
+      failToast(e?.message || 'Action impossible');
     } finally {
       setBusy(false);
     }
@@ -1292,8 +1302,7 @@ export default function App() {
       playSound('msgSent');
       return true;
     } catch (e: any) {
-      playSound('fail');
-      setToast(e?.message || 'Échec de l’envoi du message');
+      failToast(e?.message || 'Échec de l’envoi du message');
       return false;
     } finally {
       setBusy(false);
@@ -1395,6 +1404,7 @@ export default function App() {
           : 'Contribution repartagée dans votre fil'
         : 'Vous avez déjà repartagé cette contribution'
     );
+    if (created) playSound('postSuccess');
   };
 
   const handleForwardPostToRelation = async (relation: Relation, post: CommunityPost): Promise<boolean> => {
@@ -1416,7 +1426,7 @@ export default function App() {
       setToast(`Contribution transférée à ${otherName}`);
       return true;
     } catch (e: any) {
-      setToast(e?.message || 'Impossible de transférer cette contribution');
+      failToast(e?.message || 'Impossible de transférer cette contribution');
       return false;
     }
   };
@@ -1522,6 +1532,13 @@ export default function App() {
   const pendingIncoming = relations.filter((r) => r.recipient === uid && r.status === 'pending' && r.blockedBy.length === 0);
   const acceptedRelations = relations.filter((r) => r.status === 'accepted');
   const unreadNotifs = notificationsFor(ext.notifications, uid, ext.notifPrefs).filter((n) => !n.read).length;
+  // Une nouvelle alerte arrive (pas au chargement, ni en changeant de personnage) : son de notification.
+  const seenAlerts = useRef<{ uid: string; count: number } | null>(null);
+  useEffect(() => {
+    const prev = seenAlerts.current;
+    if (prev && prev.uid === uid && unreadNotifs > prev.count) playSound('notification');
+    seenAlerts.current = { uid, count: unreadNotifs };
+  }, [unreadNotifs, uid]);
 
   // Fenêtre « Changer de compte » : commune à l'application et à l'écran d'attente du code parental.
   const authModal = (
@@ -1557,7 +1574,7 @@ export default function App() {
           setToast={setToast}
         />
         {toast && (
-          <div className="toast" role="status" aria-live="polite">
+          <div className={`toast${toastError ? ' is-error' : ''}`} role="status" aria-live="polite">
             {toast}
           </div>
         )}
@@ -1578,7 +1595,7 @@ export default function App() {
           setToast={setToast}
         />
         {toast && (
-          <div className="toast" role="status" aria-live="polite">
+          <div className={`toast${toastError ? ' is-error' : ''}`} role="status" aria-live="polite">
             {toast}
           </div>
         )}
@@ -1606,7 +1623,7 @@ export default function App() {
         />
         {authModal}
         {toast && (
-          <div className="toast" role="status" aria-live="polite">
+          <div className={`toast${toastError ? ' is-error' : ''}`} role="status" aria-live="polite">
             {toast}
           </div>
         )}
@@ -1630,7 +1647,7 @@ export default function App() {
         />
         {authModal}
         {toast && (
-          <div className="toast" role="status" aria-live="polite">
+          <div className={`toast${toastError ? ' is-error' : ''}`} role="status" aria-live="polite">
             {toast}
           </div>
         )}
@@ -1711,7 +1728,7 @@ export default function App() {
         />
         {reportDialog}
         {toast && (
-          <div className="toast" role="status" aria-live="polite">
+          <div className={`toast${toastError ? ' is-error' : ''}`} role="status" aria-live="polite">
             {toast}
           </div>
         )}
@@ -1739,7 +1756,7 @@ export default function App() {
         />
         {tourOverlay}
         {toast && (
-          <div className="toast" role="status" aria-live="polite">
+          <div className={`toast${toastError ? ' is-error' : ''}`} role="status" aria-live="polite">
             {toast}
           </div>
         )}
@@ -1767,7 +1784,7 @@ export default function App() {
         />
         {tourOverlay}
         {toast && (
-          <div className="toast" role="status" aria-live="polite">
+          <div className={`toast${toastError ? ' is-error' : ''}`} role="status" aria-live="polite">
             {toast}
           </div>
         )}
@@ -1791,7 +1808,7 @@ export default function App() {
           onOpenNextModule={(id) => nav('module-detail', id)}
         />
         {toast && (
-          <div className="toast" role="status" aria-live="polite">
+          <div className={`toast${toastError ? ' is-error' : ''}`} role="status" aria-live="polite">
             {toast}
           </div>
         )}
@@ -1823,7 +1840,7 @@ export default function App() {
           </div>
         </div>
         {toast && (
-          <div className="toast" role="status" aria-live="polite">
+          <div className={`toast${toastError ? ' is-error' : ''}`} role="status" aria-live="polite">
             {toast}
           </div>
         )}
@@ -3849,7 +3866,7 @@ export default function App() {
 
 
       {toast && (
-        <div className="toast" role="status" aria-live="polite">
+        <div className={`toast${toastError ? ' is-error' : ''}`} role="status" aria-live="polite">
           {toast}
         </div>
       )}
