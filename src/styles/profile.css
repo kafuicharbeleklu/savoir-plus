@@ -172,7 +172,7 @@
 .pf-lvlcard-xp { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.875rem; color: var(--fg-muted); }
 .pf-lvlcard-xp > span:first-child { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--fg-primary); }
 .pf-lvlcard-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
-.pf-lvlcard-tiles > div { display: flex; flex-direction: column; gap: 4px; padding: 16px 14px; border-radius: var(--angle); background: var(--bg-subtle); }
+.pf-lvlcard-tiles > div { display: flex; flex-direction: column; gap: 4px; padding: 16px 14px; border-radius: var(--angle); background: var(--accent-brand-soft); }
 .pf-lvlcard-tiles b { font-size: 1.125rem; font-weight: 600; color: var(--fg-primary); }
 .pf-lvlcard-tiles small { font-size: 0.8125rem; color: var(--fg-muted); }
 .pf-stat svg { flex: 0 0 auto; color: var(--fg-muted); }
