@@ -607,3 +607,14 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 .relation-list > .relation-list-row:first-child { border-radius: var(--angle) var(--angle) 0 0; }
 .relation-list > .relation-list-row:last-child { border-radius: 0 0 var(--angle) var(--angle); }
 .relation-list > .relation-list-row:only-child { border-radius: var(--angle); }
+
+/* -- Relations › Découvrir : accroche sur deux lignes, présentation sur trois ; une carte au texte plus
+   long n'allonge plus toute sa rangée. ------------------------------------------------------------- */
+.connect-card .connect-card-head small,
+.connect-card > p.tiny {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.connect-card .connect-card-head small { -webkit-line-clamp: 2; }
+.connect-card > p.tiny { -webkit-line-clamp: 3; margin: 0; }

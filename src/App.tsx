@@ -2770,20 +2770,7 @@ export default function App() {
                               <UserPlus size={13} /> Suivre
                             </button>
                           )}
-                          {rel?.status === 'accepted' ? (
-                            <button
-                              type="button"
-                              className="secondary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openConversation(rel.id);
-                              }}
-                            >
-                              <MessageCircle size={14} /> Message
-                            </button>
-                          ) : rel?.status === 'pending' ? (
-                            <span className="status-tag warn">En attente</span>
-                          ) : null}
+                          {rel?.status === 'pending' && <span className="status-tag warn">En attente</span>}
                         </div>
                       </article>
                     );
@@ -2940,10 +2927,6 @@ export default function App() {
                 <div className="rail-stat-row">
                   <span>Comptes suivis</span>
                   <b>{myFollowing.length}</b>
-                </div>
-                <div className="rail-stat-row">
-                  <span>Suggestions algorithme</span>
-                  <b>{discoverEntries.length}</b>
                 </div>
                 <div className="rail-stat-row">
                   <span>Contacts acceptés</span>
@@ -3252,26 +3235,9 @@ export default function App() {
                   <b>{pendingIncoming.length}</b>
                 </div>
               </div>
-              <button className="secondary" onClick={() => nav('relations')}>
-                Gérer mes relations
-              </button>
               <button className="text-link" onClick={() => openSettingsTab('privacy')}>
                 Paramètres de contact
               </button>
-            </section>
-
-            <section className="rail-card">
-              <span className="eyebrow">Votre progression</span>
-              <h3 className="tabular-nums">Niveau {lvl.level} · {totalXP} XP</h3>
-              <ProgressBar value={lvl.percent} label="Expérience globale" tone="htb" />
-              <div className="profile-quick-links">
-                <button type="button" className="text-link" onClick={() => nav('profile')}>
-                  Mon profil
-                </button>
-                <button type="button" className="text-link" onClick={() => nav('progression')}>
-                  Ma progression
-                </button>
-              </div>
             </section>
             {adSlot}
           </aside>
