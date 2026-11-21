@@ -3195,50 +3195,10 @@ export default function App() {
             </section>
           </div>
 
-          <aside className="right-rail" aria-label="Repères de conversation et profil">
-            {activeRel && other && (
-              <section className="rail-card">
-                <span className="eyebrow">Interlocuteur actif</span>
-                <div className="connect-card-head">
-                  <Avatar person={other} small />
-                  <div>
-                    <div className="mini-profile-name-row">
-                      <b>{other.name}</b>
-                      {resolveProfileVerified(other.id, ext.adminUsers, ext.profileDetails[other.id]?.verified) && (
-                        <VerifiedBadge />
-                      )}
-                    </div>
-                    <small className="tiny muted">
-                      {ext.profileDetails[other.id]?.tagline || other.role}
-                    </small>
-                  </div>
-                </div>
-                <span className={`status-tag ${activeRel.blockedBy.length > 0 ? 'danger' : isAccepted ? 'ok' : 'warn'}`}>
-                  {activeRel.blockedBy.length > 0 ? 'Échange bloqué' : isAccepted ? 'Discussion acceptée' : 'Demande en attente'}
-                </span>
-                <button className="secondary" onClick={() => nav('member', other.id)}>
-                  Voir le profil complet
-                </button>
-              </section>
-            )}
-
-            <section className="rail-card">
-              <span className="eyebrow">Messagerie & réseau</span>
-              <div className="rail-stat-list tabular-nums">
-                <div className="rail-stat-row">
-                  <span>Contacts acceptés</span>
-                  <b>{acceptedRelations.length}</b>
-                </div>
-                <div className="rail-stat-row">
-                  <span>Invitations en attente</span>
-                  <b>{pendingIncoming.length}</b>
-                </div>
-              </div>
-              <button className="text-link" onClick={() => openSettingsTab('privacy')}>
-                Paramètres de contact
-              </button>
-            </section>
+          {/* Colonne de la Messagerie : la publicité et les liens de pied de page (plus de cartes de contact). */}
+          <aside className="right-rail" aria-label="Publicité et liens utiles">
             {adSlot}
+            <SidebarCompactFooter nav={nav} canCreate={caps.canCreate} onOpenInfoModal={openInfoPage} />
           </aside>
         </div>
       );
