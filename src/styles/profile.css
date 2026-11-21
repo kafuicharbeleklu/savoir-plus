@@ -141,8 +141,8 @@
   gap: 12px;
   padding: 14px 16px;
   border-radius: var(--angle);
-  /* Sans bordure : le fond seul, comme les tuiles de la carte de niveau. */
-  background: var(--bg-subtle);
+  /* Sans bordure : la teinte de la carte de niveau. */
+  background: var(--accent-brand-soft);
   text-align: left;
   color: var(--fg-primary);
 }

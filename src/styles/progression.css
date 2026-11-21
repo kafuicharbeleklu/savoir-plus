@@ -232,8 +232,9 @@
 /* -- Profil › Progression, d'après HackTheBox : tuiles, séances de révision, complétion par niveau ---- */
 .sc { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
 .sc-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
-.sc-tile { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--border-hairline); border-radius: var(--angle); background: var(--bg-surface); }
-.sc-tile-icon { display: grid; flex-shrink: 0; place-items: center; width: 40px; height: 40px; border-radius: var(--angle); background: var(--accent-brand-soft); color: var(--accent-brand); }
+/* Sans bordure, teinte de la carte de niveau ; l'icône sur fond clair pour ressortir. */
+.sc-tile { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: var(--angle); background: var(--accent-brand-soft); }
+.sc-tile-icon { display: grid; flex-shrink: 0; place-items: center; width: 40px; height: 40px; border-radius: var(--angle); background: var(--bg-surface); color: var(--accent-brand); }
 .sc-tile-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .sc-tile-text b { font-size: 1.375rem; font-weight: 600; line-height: 1.1; color: var(--fg-primary); }
 .sc-tile-text b span { font-size: 1rem; font-weight: 500; color: var(--fg-muted); }
