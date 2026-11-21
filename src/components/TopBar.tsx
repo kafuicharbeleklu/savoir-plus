@@ -265,13 +265,21 @@ export function TopBar({
               <span>Apprendre</span>
             </button>
           )}
-          <button className={isNetworkActive ? 'active' : ''} onClick={() => nav('relations')}>
-            <span className="top-icon">
+          {/* Un parent ou tuteur : « Espace famille » à la place de « Relations ». */}
+          {caps.accountKind === 'guardian' ? (
+            <button className={page === 'family' ? 'active' : ''} onClick={() => nav('family')}>
               <Users size={18} />
-              {pendingCount > 0 && <i className="tabular-nums">{pendingCount}</i>}
-            </span>
-            <span>Relations</span>
-          </button>
+              <span>Espace famille</span>
+            </button>
+          ) : (
+            <button className={isNetworkActive ? 'active' : ''} onClick={() => nav('relations')}>
+              <span className="top-icon">
+                <Users size={18} />
+                {pendingCount > 0 && <i className="tabular-nums">{pendingCount}</i>}
+              </span>
+              <span>Relations</span>
+            </button>
+          )}
           {!hideMessaging && (
             <button
               className={`topbar-action-btn ${page === 'messages' ? 'active' : ''}`}
