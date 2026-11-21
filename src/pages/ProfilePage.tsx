@@ -29,7 +29,7 @@ import { resolveAlgorithmicDiscoverProfiles, resolveCommunityDirectory, resolveP
 import { type AppPage, type CatalogItem, type ExtendedDemoState } from '../wireframeData';
 import { Avatar, ProgressBar, VerifiedBadge } from '../components/ProfileIdentityCard';
 import type { FooterInfoTopic } from '../components/SidebarFooters';
-import { HexBadgeEmblem } from '../components/BadgeEmblem';
+import { BadgeRing } from '../components/BadgeEmblem';
 import { ProgressionView } from './ProgressionPage';
 import { ActionMenu, EmptyState, IconTile, Modal, StateTile } from '../components/ui';
 import { ProfileMediaDialog, type MediaKind } from '../components/ProfileMedia';
@@ -703,7 +703,7 @@ export function ProfilePage({
                 {earnedBadges.slice(0, 3).map((b) => (
                   <Entry
                     key={b.id}
-                    leading={<HexBadgeEmblem iconKey={b.iconKey} earned size="sm" />}
+                    leading={<BadgeRing iconKey={b.iconKey} earned />}
                     title={b.title}
                     meta={b.description}
                   />

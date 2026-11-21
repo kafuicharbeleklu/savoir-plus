@@ -123,6 +123,26 @@ export function BadgeGlyph({ iconKey, size = 20 }: { iconKey: SavoirBadgeItem['i
   }
 }
 
+/**
+ * Badge dessiné comme sur la page Badges (d'après HackTheBox) : le pictogramme au trait dans un cercle
+ * fin, aux couleurs de la marque quand le badge est obtenu.
+ */
+export function BadgeRing({
+  iconKey,
+  earned,
+  size = 'md'
+}: {
+  iconKey: SavoirBadgeItem['iconKey'];
+  earned: boolean;
+  size?: 'sm' | 'md';
+}) {
+  return (
+    <span className={`bd-ring is-${size}${earned ? ' is-earned' : ''}`} aria-hidden="true">
+      <BadgeGlyph iconKey={iconKey} size={size === 'sm' ? 15 : 18} />
+    </span>
+  );
+}
+
 export function HexBadgeEmblem({
   iconKey,
   earned,

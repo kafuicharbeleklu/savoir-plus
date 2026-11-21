@@ -10,7 +10,7 @@ import type { Profile, Progress, Relation } from '../data';
 import { initialExtendedState, type AppPage, type ExtendedDemoState } from '../wireframeData';
 import { computeMemberStats } from '../memberStats';
 import type { BadgeCategoryId, SavoirBadgeItem } from '../personas';
-import { BadgeGlyph } from '../components/BadgeEmblem';
+import { BadgeRing } from '../components/BadgeEmblem';
 import { EmptyState, PageHeader } from '../components/ui';
 
 const EMPTY_PROGRESS: Progress = { lessons: [], answers: [], submitted: false };
@@ -89,9 +89,7 @@ export function BadgesView({
         aria-label={`${b.title}${b.earned ? ', obtenu' : ''}. ${b.description} Rareté : ${share}.`}
       >
         <div className="bd-tile-face" aria-hidden="true">
-          <span className="bd-ring">
-            <BadgeGlyph iconKey={b.iconKey} size={18} />
-          </span>
+          <BadgeRing iconKey={b.iconKey} earned={b.earned} />
           <b className="bd-tile-title">{b.title}</b>
           {/* Espaces insécables dans les guillemets : « utile » ne se coupe pas en fin de ligne. */}
           <p className="bd-tile-text">{b.description.replace(/« /g, '«\u00a0').replace(/ »/g, '\u00a0»')}</p>

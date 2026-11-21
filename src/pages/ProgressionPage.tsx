@@ -11,7 +11,7 @@ import { initialExtendedState, type AppPage, type ExtendedDemoState } from '../w
 import { computeMemberStats } from '../memberStats';
 import type { BadgeCategoryId, SavoirBadgeItem } from '../personas';
 import { BannerEmblem } from '../components/CatalogVisuals';
-import { HexBadgeEmblem } from '../components/BadgeEmblem';
+import { BadgeRing } from '../components/BadgeEmblem';
 import { ProgressBar } from '../components/ProfileIdentityCard';
 import { EmptyState, IconTile, ListCard, ListRow, PageHeader, StateTile, Tabs } from '../components/ui';
 
@@ -339,7 +339,7 @@ export function ProgressionView({
           <section className="rail-card pg-next">
             <span className="eyebrow">Prochain badge</span>
             <div className="pg-next-row">
-              <HexBadgeEmblem iconKey={nextBadge.iconKey} earned={false} size="md" />
+              <BadgeRing iconKey={nextBadge.iconKey} earned={false} />
               <div>
                 <b>{nextBadge.title}</b>
                 <p>{nextBadge.description}</p>
@@ -368,9 +368,9 @@ export function ProgressionView({
           </h3>
           {earnedBadges.length > 0 ? (
             <ul className="pg-badge-grid">
-              {earnedBadges.slice(-8).map((badge) => (
+              {earnedBadges.slice(-6).map((badge) => (
                 <li key={badge.id} title={`${badge.title} — ${badge.description}`}>
-                  <HexBadgeEmblem iconKey={badge.iconKey} earned size="sm" />
+                  <BadgeRing iconKey={badge.iconKey} earned size="sm" />
                   <span>{badge.title}</span>
                 </li>
               ))}
