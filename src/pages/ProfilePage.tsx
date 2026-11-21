@@ -581,7 +581,7 @@ export function ProfilePage({
               <div className="pf-lvlcard">
                 <div className="pf-lvlcard-hero">
                   <span className="pf-lvlcard-emblem" aria-hidden="true">
-                    <Award size={44} strokeWidth={1.5} />
+                    <Award size={60} strokeWidth={1.25} />
                   </span>
                   <b className="pf-lvlcard-level tabular-nums">
                     <span>Niv.</span> {stats.lvl.level}
