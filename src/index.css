@@ -7165,7 +7165,9 @@ button:focus-visible, a:focus-visible, [role="tab"]:focus-visible, [tabindex]:fo
   to { opacity: 1; transform: none; }
 }
 
-.page-transition { animation: savoir-page-in var(--dur-slow) var(--ease-enter) both; }
+/* « backwards » et non « both » : une fois l'entrée finie, la page ne garde aucune transformation, sinon elle
+   formerait un plan à part et ses menus « … » passeraient sous la fenêtre de discussion. */
+.page-transition { animation: savoir-page-in var(--dur-slow) var(--ease-enter) backwards; }
 .study-main-pane.section-transition { animation: savoir-page-in var(--dur-slow) var(--ease-enter) both; }
 .modal-backdrop, .mobile-sheet-backdrop { animation: savoir-fade-in var(--dur-base) var(--ease-standard) both; }
 .modal { animation: savoir-pop-in var(--dur-slow) var(--ease-enter) both; border-radius: var(--radius-xl); }

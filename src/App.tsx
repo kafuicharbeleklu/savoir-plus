@@ -59,6 +59,7 @@ import {
   profiles,
   decideContact,
   cancelContact,
+  removeRelation,
   openFamilyThread,
   openFriendThread,
   latestMessageAt,
@@ -418,7 +419,7 @@ export default function App() {
     text: string;
     confirmLabel: string;
     danger?: boolean;
-    run: () => void;
+    run: () => void | Promise<void>;
   } | null>(null);
   const cancelConfirm = useCallback(() => setConfirmState(null), []);
 
@@ -1275,6 +1276,31 @@ export default function App() {
       confirmLabel: 'Bloquer',
       danger: true,
       run: () => void handleToggleBlock(r)
+    });
+  };
+  /** « Retirer la relation » (comme « Remove connection » sur LinkedIn), après confirmation. */
+  const removeRelationOrConfirm = (r: Relation) => {
+    const peerId = r.members.find((id) => id !== uid) || '';
+    const name = nameOfMember(peerId);
+    setConfirmState({
+      title: `Retirer ${name} de vos relations ?`,
+      text: `La discussion se ferme : il faudra une nouvelle demande pour échanger de nouveau. ${firstNameOf(name)} n’en sera pas informé(e).`,
+      confirmLabel: 'Retirer',
+      run: async () => {
+        setBusy(true);
+        try {
+          await removeRelation(mode, uid, r);
+          if (selectedRelId === r.id) setSelectedRelId('');
+          if (drawerPeerId === peerId) setDrawerPeerId('');
+          if (messagesPeerId === peerId) setMessagesPeerId('');
+          setToast(`${name} ne fait plus partie de vos relations`);
+          playSound('deleted');
+        } catch (e: any) {
+          failToast(e?.message || 'Impossible de retirer cette relation');
+        } finally {
+          setBusy(false);
+        }
+      }
     });
   };
   /** « En attente » : retirer la demande envoyée, après confirmation (comme « Withdraw » sur LinkedIn). */
@@ -2883,6 +2909,7 @@ export default function App() {
                               <ConversationMenu
                                 label={`Plus d’options pour ${other.name}`}
                                 items={[
+                                  { label: 'Retirer la relation', disabled: busy, onSelect: () => removeRelationOrConfirm(rel) },
                                   {
                                     label: rel.blockedBy.includes(uid) ? 'Débloquer' : 'Bloquer',
                                     danger: true,
@@ -3840,7 +3867,7 @@ export default function App() {
         confirmLabel={confirmState?.confirmLabel || 'Confirmer'}
         danger={confirmState?.danger}
         onConfirm={() => {
-          confirmState?.run();
+          void confirmState?.run();
           setConfirmState(null);
         }}
         onCancel={cancelConfirm}

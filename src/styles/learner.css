@@ -602,3 +602,9 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 
 /* -- Bandeau d'erreur : rouge, avec le son d'erreur (le « Toast red » de LinkedIn) ------------------ */
 .toast.is-error { border-color: transparent; background: var(--accent-danger); color: #fff; }
+
+/* -- Mes relations : le menu « … » de la dernière ligne déborde de la liste au lieu d'être coupé ---- */
+.wf-notif-list.relation-list { overflow: visible; }
+.relation-list > .relation-list-row:first-child { border-radius: var(--angle) var(--angle) 0 0; }
+.relation-list > .relation-list-row:last-child { border-radius: 0 0 var(--angle) var(--angle); }
+.relation-list > .relation-list-row:only-child { border-radius: var(--angle); }

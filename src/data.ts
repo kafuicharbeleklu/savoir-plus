@@ -329,6 +329,22 @@ export async function decideContact(mode: string, uid: string, r: Relation, stat
   }
 }
 
+/**
+ * Retirer une relation acceptée : la discussion se ferme ; il faudra une nouvelle demande pour
+ * échanger de nouveau. L'autre personne n'en est pas informée.
+ */
+export async function removeRelation(mode: string, uid: string, r: Relation) {
+  if (r.status !== 'accepted' || !r.members.includes(uid)) throw Error('Cette relation ne peut pas être retirée.');
+  if (mode === 'local') {
+    const s = read();
+    s.relations = s.relations.filter((x) => x.id !== r.id);
+    write(s);
+  } else {
+    checked(await db.from('relations').update({ status: 'declined' }).eq('id', r.id));
+    changed();
+  }
+}
+
 export async function cancelContact(mode: string, uid: string, r: Relation) {
   if (r.requester !== uid || r.status !== 'pending') throw Error('Seul l’expéditeur peut annuler une demande en attente.');
   if (mode === 'local') {
