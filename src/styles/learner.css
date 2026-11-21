@@ -620,3 +620,8 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 .connect-card > p.tiny { -webkit-line-clamp: 3; margin: 0; }
 /* Sans la ligne « Suggéré · … », les cartes gardent leur hauteur (237 px). */
 .connect-grid .connect-card { min-height: 237px; }
+
+/* -- Réseau en bref : une icône devant chaque libellé ---------------------------------------------- */
+.rail-stat-row.has-icon { align-items: center; }
+.rail-stat-row.has-icon > span { display: inline-flex; align-items: center; gap: 8px; }
+.rail-stat-row.has-icon > span svg { flex-shrink: 0; color: var(--accent-brand); }

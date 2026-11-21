@@ -2923,21 +2923,28 @@ export default function App() {
             <section className="rail-card">
               <span className="eyebrow">Réseau en bref</span>
               <div className="rail-stat-list tabular-nums">
-                <div className="rail-stat-row">
-                  <span>Comptes suivis</span>
+                <div className="rail-stat-row has-icon">
+                  <span>
+                    <UserCheck size={16} aria-hidden="true" /> Comptes suivis
+                  </span>
                   <b>{myFollowing.length}</b>
                 </div>
-                <div className="rail-stat-row">
-                  <span>Contacts acceptés</span>
+                <div className="rail-stat-row has-icon">
+                  <span>
+                    <MessageCircle size={16} aria-hidden="true" /> Contacts acceptés
+                  </span>
                   <b>{acceptedRelations.length}</b>
                 </div>
-                <div className="rail-stat-row">
-                  <span>Invitations reçues</span>
+                <div className="rail-stat-row has-icon">
+                  <span>
+                    <Inbox size={16} aria-hidden="true" /> Invitations reçues
+                  </span>
                   <b>{pendingIncoming.length}</b>
                 </div>
               </div>
             </section>
             {adSlot}
+            <SidebarCompactFooter nav={nav} canCreate={caps.canCreate} onOpenInfoModal={openInfoPage} />
           </aside>
         </div>
       );
