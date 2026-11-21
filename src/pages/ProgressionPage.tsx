@@ -1,7 +1,7 @@
 /**
  * Progression & badges — tout ce qui s'affiche ici est calculé à partir de l'activité réelle
  * du membre (sections lues, quiz, contributions), avec les mêmes chiffres que sa page profil.
- * Quatre vues : vue d'ensemble, modules, badges, compétences.
+ * Trois vues : vue d'ensemble, modules, compétences. Les badges ont leur page (BadgesPage).
  * `ProgressionView` sert à la fois à sa propre page et à la progression d'un autre membre.
  */
 import React, { useState } from 'react';
@@ -15,8 +15,7 @@ import { HexBadgeEmblem } from '../components/BadgeEmblem';
 import { ProgressBar } from '../components/ProfileIdentityCard';
 import { EmptyState, IconTile, ListCard, ListRow, PageHeader, StateTile, Tabs } from '../components/ui';
 
-type ViewId = 'overview' | 'modules' | 'badges' | 'skills';
-type BadgeFilter = 'all' | 'earned' | 'todo';
+type ViewId = 'overview' | 'modules' | 'skills';
 
 const EMPTY_PROGRESS: Progress = { lessons: [], answers: [], submitted: false };
 
@@ -74,7 +73,6 @@ export function ProgressionView({
 }) {
   const firstName = target.name.split(' ')[0];
   const [view, setView] = useState<ViewId>(initialView);
-  const [badgeFilter, setBadgeFilter] = useState<BadgeFilter>('all');
 
   const stats = computeMemberStats({
     target,
@@ -119,7 +117,6 @@ export function ProgressionView({
   const nextBadge: SavoirBadgeItem | undefined =
     (leadModule && badges.find((b) => b.id === MODULE_BADGE[leadModule.mod.id] && !b.earned)) || badges.find((b) => !b.earned);
   const nextBadgeModule = nextBadge ? modules.find((m) => MODULE_BADGE[m.mod.id] === nextBadge.id) : undefined;
-  const shownBadges = badges.filter((b) => (badgeFilter === 'earned' ? b.earned : badgeFilter === 'todo' ? !b.earned : true));
 
   /* ------------------------------------------------------------------ niveau */
   const { lvl, totalXp, rankInfo } = stats;
@@ -158,7 +155,7 @@ export function ProgressionView({
         <PageHeader
           title={isOwnProfile ? 'Progression' : `Progression de ${firstName}`}
           keepTitle={!isOwnProfile}
-          subtitle={isOwnProfile ? 'Votre niveau, vos modules, vos badges et vos compétences.' : 'Niveau, modules, badges et compétences.'}
+          subtitle={isOwnProfile ? 'Votre niveau, vos modules et vos compétences.' : 'Niveau, modules et compétences.'}
         />
 
         <Tabs<ViewId>
@@ -168,7 +165,6 @@ export function ProgressionView({
           items={[
             { id: 'overview', label: 'Vue d’ensemble' },
             { id: 'modules', label: 'Modules', count: modules.length },
-            { id: 'badges', label: 'Badges', count: earnedBadges.length },
             { id: 'skills', label: 'Compétences', count: stats.skills.length }
           ]}
         />
@@ -311,57 +307,6 @@ export function ProgressionView({
           <ListCard label="Tous les modules">{sortedModules.map((m) => moduleRow(m, () => nav('module-detail', m.mod.id)))}</ListCard>
         )}
 
-        {view === 'badges' && (
-          <>
-            <div className="pg-filter" role="group" aria-label="Filtrer les badges">
-              {(
-                [
-                  { id: 'all', label: `Tous (${badges.length})` },
-                  { id: 'earned', label: `Obtenus (${earnedBadges.length})` },
-                  { id: 'todo', label: `À obtenir (${badges.length - earnedBadges.length})` }
-                ] as { id: BadgeFilter; label: string }[]
-              ).map((f) => (
-                <button key={f.id} type="button" aria-pressed={badgeFilter === f.id} className={badgeFilter === f.id ? 'is-on' : ''} onClick={() => setBadgeFilter(f.id)}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
-            {shownBadges.length === 0 && (
-              <div className="pg-card">
-                <EmptyState
-                  title={badgeFilter === 'earned' ? 'Aucun badge obtenu pour le moment' : 'Tous les badges sont obtenus'}
-                  text={badgeFilter === 'earned' && isOwnProfile ? 'Lisez une première section de module pour obtenir « Premier Pas ».' : undefined}
-                />
-              </div>
-            )}
-            {BADGE_CATEGORIES.map((category) => {
-              const all = badges.filter((b) => b.category === category.id);
-              const rows = shownBadges.filter((b) => b.category === category.id);
-              if (rows.length === 0) return null;
-              return (
-                <section key={category.id} aria-labelledby={`pg-badges-${category.id}`}>
-                  <div className="pg-section-head">
-                    <h2 id={`pg-badges-${category.id}`}>{category.label}</h2>
-                    <span className="pg-section-count tabular-nums">
-                      {all.filter((b) => b.earned).length} / {all.length}
-                    </span>
-                  </div>
-                  <ListCard label={category.label}>
-                    {rows.map((badge) => (
-                      <ListRow
-                        key={badge.id}
-                        leading={<HexBadgeEmblem iconKey={badge.iconKey} earned={badge.earned} size="sm" />}
-                        title={badge.earned ? badge.title : <span className="ui-muted-title">{badge.title}</span>}
-                        meta={badge.description}
-                      />
-                    ))}
-                  </ListCard>
-                </section>
-              );
-            })}
-          </>
-        )}
-
         {view === 'skills' &&
           (stats.skills.length > 0 ? (
             <ListCard label="Compétences">
@@ -433,7 +378,7 @@ export function ProgressionView({
           ) : (
             <p className="tiny muted">{isOwnProfile ? 'Votre premier badge arrive dès la première section lue.' : 'Aucun badge obtenu pour le moment.'}</p>
           )}
-          <button type="button" className="text-link" onClick={() => setView('badges')}>
+          <button type="button" className="text-link" onClick={() => nav('badges', isOwnProfile ? undefined : target.id)}>
             Voir tous les badges <ArrowRight size={14} />
           </button>
         </section>

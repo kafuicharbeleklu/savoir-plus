@@ -111,7 +111,7 @@ export function TopBar({
   const learns = caps.accountKind === 'learner' || caps.accountKind === 'educator';
   // « Apprendre » = mes apprentissages, ma progression, mon calendrier. La Bibliothèque est une autre entrée
   // (menu de gauche) : y être n'allume pas « Apprendre ».
-  const isLearningActive = ['learning', 'progression', 'calendar'].includes(page);
+  const isLearningActive = ['learning', 'progression', 'badges', 'calendar'].includes(page);
   const isNetworkActive = page === 'relations' || page === 'member';
   const isStudioActive = page.startsWith('studio');
   const isAdminActive = page.startsWith('admin') || page === 'moderation';

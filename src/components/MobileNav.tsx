@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import {
   Award,
+  Medal,
   Bell,
   BookOpen,
   Compass,
@@ -56,7 +57,7 @@ export function MobileNav({
   }, [moreOpen, setMoreOpen]);
 
   // Comme la barre du haut : la Bibliothèque (ouverte depuis « Plus ») n'allume pas « Apprendre ».
-  const isLearning = ['learning', 'progression'].includes(page);
+  const isLearning = ['learning', 'progression', 'badges'].includes(page);
   const isNetwork = page === 'relations' || page === 'member';
   const isMessages = page === 'messages';
   const isHomeOrCommunity = page === 'home' || page.startsWith('community');
@@ -138,6 +139,9 @@ export function MobileNav({
               </button>
               <button onClick={() => go('progression')}>
                 <Award size={18} /> Progression
+              </button>
+              <button onClick={() => go('badges')}>
+                <Medal size={18} /> Badges
               </button>
               <button onClick={() => go('catalog')}>
                 <Compass size={18} /> Bibliothèque

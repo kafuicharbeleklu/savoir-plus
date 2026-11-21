@@ -207,7 +207,7 @@ export function ProfilePage({
   const institution =
     ext.adminUsers.find((u) => u.id === target.id || u.id === `usr-${target.id}`)?.institution || '';
 
-  const [view, setView] = useState<'profile' | 'progression' | 'badges'>('profile');
+  const [view, setView] = useState<'profile' | 'progression'>('profile');
   const [editOpen, setEditOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [mediaOpen, setMediaOpen] = useState<MediaKind | null>(null);
@@ -280,7 +280,9 @@ export function ProfilePage({
   };
 
   const openProgression = (tab: 'progression' | 'badges') => {
-    if (isOwnProfile) nav('progression');
+    // Les badges ont leur page ; la progression d'un autre membre s'ouvre ici.
+    if (tab === 'badges') nav('badges', isOwnProfile ? undefined : target.id);
+    else if (isOwnProfile) nav('progression');
     else setView(tab);
   };
 
@@ -353,7 +355,6 @@ export function ProfilePage({
           nav={nav}
           relations={relations}
           myFollowing={myFollowing}
-          initialView={view === 'badges' ? 'badges' : 'overview'}
         />
       </div>
     );

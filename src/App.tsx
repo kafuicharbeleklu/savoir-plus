@@ -10,6 +10,7 @@ import {
   Clock,
   ArrowRight,
   Award,
+  Medal,
   BarChart2,
   BookOpen,
   CalendarDays,
@@ -225,6 +226,7 @@ import {
   ResourceReadView
 } from './pages/LearningExtraPages';
 import { CommunityComposeView, CommunityThreadView } from './pages/CommunityPages';
+import { BadgesPage } from './pages/BadgesPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { GuardianGate } from './pages/school/GuardianGate';
 import { InfoPage } from './pages/InfoPage';
@@ -281,6 +283,7 @@ const VALID_PAGES = new Set<string>([
   'teaching',
   'institution',
   'progression',
+  'badges',
   'community',
   'community-compose',
   'community-thread',
@@ -3343,6 +3346,11 @@ export default function App() {
       );
     }
 
+    if (page === 'badges') {
+      const member = selectedId && selectedId !== uid ? networkDirectory.find((p) => p.id === selectedId) : undefined;
+      return <BadgesPage {...extraProps} currentUser={user} member={member} relations={relations} myFollowing={myFollowing} />;
+    }
+
     if (page === 'community-compose') return <CommunityComposeView {...communityProps} />;
     if (page === 'community-thread') return <CommunityThreadView {...communityProps} />;
 
@@ -3718,9 +3726,14 @@ export default function App() {
                     </button>
                   )}
                   {learnsHere && (
-                    <button className={`rail-nav-btn ${page === 'progression' ? 'active' : ''}`} onClick={() => nav('progression')}>
-                      <span><Award size={16} /> Progression</span>
-                    </button>
+                    <>
+                      <button className={`rail-nav-btn ${page === 'progression' ? 'active' : ''}`} onClick={() => nav('progression')}>
+                        <span><Award size={16} /> Progression</span>
+                      </button>
+                      <button className={`rail-nav-btn ${page === 'badges' ? 'active' : ''}`} onClick={() => nav('badges')}>
+                        <span><Medal size={16} /> Badges</span>
+                      </button>
+                    </>
                   )}
                   {(caps.canCreate || caps.canModerate || caps.canAdmin) && (
                     <>

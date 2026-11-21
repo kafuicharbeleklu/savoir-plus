@@ -116,3 +116,27 @@ test('alertes : une phrase avec son auteur, et une publication qui s’ouvre dan
   assert.deepEqual(notificationTarget({ targetPage: 'community-thread', targetId: 'post-1' }), { page: 'community', id: 'post-1' });
   assert.deepEqual(notificationTarget({ targetPage: 'module-detail', targetId: 'phishing' }), { page: 'module-detail', id: 'phishing' });
 });
+
+test('badges : chaque badge comptable dit où en est le membre', async () => {
+  const { computeSavoirBadges } = await import('../src/personas');
+  const badges = computeSavoirBadges({
+    totalXp: 100,
+    level: 1,
+    completedModules: [],
+    passedQuizzes: ['phishing'],
+    perfectQuizzes: [],
+    completedLessonsCount: 4,
+    postsCount: 1,
+    repliesCount: 0,
+    solutionsCount: 0,
+    helpfulGivenCount: 0,
+    followingCount: 1,
+    acceptedRelationsCount: 0,
+    streakWeeks: 0
+  });
+  const byId = (id: string) => badges.find((b) => b.id === id)!;
+  assert.deepEqual(byId('mod-reader').progress, { current: 4, target: 6, unit: 'sections lues' });
+  assert.deepEqual(byId('rank-explorer').progress, { current: 100, target: 150, unit: 'XP' });
+  assert.deepEqual(byId('mod-triple-quiz').progress, { current: 1, target: 3, unit: 'quiz réussis' });
+  assert.equal(byId('mod-phishing').progress, undefined, 'un badge de module avance avec son module');
+});

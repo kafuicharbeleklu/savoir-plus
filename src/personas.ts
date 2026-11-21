@@ -1011,6 +1011,8 @@ export interface SavoirBadgeItem {
     | 'image'
     | 'globe';
   earned: boolean;
+  /** Où en est le membre (« 4 / 6 sections ») ; absent pour un badge tout ou rien. */
+  progress?: { current: number; target: number; unit: string };
 }
 
 export interface BadgeInputMetrics {
@@ -1038,7 +1040,7 @@ export interface BadgeInputMetrics {
 }
 
 export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
-  return [
+  return withBadgeProgress(m, [
     // Category: Rangs & Niveaux (track: learning)
     {
       id: 'rank-starter',
@@ -1319,7 +1321,57 @@ export function computeSavoirBadges(m: BadgeInputMetrics): SavoirBadgeItem[] {
       iconKey: 'users',
       earned: m.postsCount >= 2
     }
-  ];
+  ]);
+}
+
+/** Le plus avancé de deux chemins (« 450 XP ou trois modules »). */
+function bestOf(...options: { current: number; target: number; unit: string }[]) {
+  return options.reduce((best, o) => (o.current / o.target > best.current / best.target ? o : best));
+}
+
+/** Ajoute à chaque badge comptable où en est le membre. */
+function withBadgeProgress(m: BadgeInputMetrics, list: SavoirBadgeItem[]): SavoirBadgeItem[] {
+  const n = (count: number, one: string, many: string) => (count > 1 ? many : one);
+  const xp = (target: number) => ({ current: m.totalXp, target, unit: 'XP' });
+  const mods = (target: number) => ({ current: m.completedModules.length, target, unit: n(target, 'module validé', 'modules validés') });
+  const PROGRESS: Record<string, () => { current: number; target: number; unit: string }> = {
+    'rank-starter': () => ({ current: Math.min(1, m.completedLessonsCount), target: 1, unit: 'section lue' }),
+    'rank-explorer': () => bestOf(xp(150), mods(1)),
+    'rank-confirmed': () => bestOf(xp(300), mods(2)),
+    'rank-mentor': () => bestOf(xp(450), mods(3)),
+    'rank-expert': () => bestOf(xp(750), mods(5)),
+    'mod-path': () => ({
+      current: ['phishing', 'reseaux', 'comptes'].filter((id) => m.completedModules.includes(id)).length,
+      target: 3,
+      unit: 'modules du parcours'
+    }),
+    'mod-reader': () => ({ current: m.completedLessonsCount, target: 6, unit: 'sections lues' }),
+    'mod-dual': () => mods(2),
+    'mod-triple-quiz': () => ({ current: m.passedQuizzes.length, target: 3, unit: 'quiz réussis' }),
+    'mod-domains': () => ({
+      current: ['Numérique', 'Communication', 'Gestion'].filter((d) => (m.passedDomains || []).includes(d)).length,
+      target: 3,
+      unit: 'domaines'
+    }),
+    'mod-path-com': () => ({
+      current: ['email-pro', 'reunion'].filter((id) => m.passedQuizzes.includes(id)).length,
+      target: 2,
+      unit: 'modules du parcours'
+    }),
+    'com-voice': () => ({ current: m.postsCount + m.repliesCount, target: 1, unit: 'contribution' }),
+    'com-solution': () => ({ current: m.solutionsCount, target: 1, unit: 'solution retenue' }),
+    'com-network': () =>
+      bestOf({ current: m.followingCount, target: 2, unit: 'membres suivis' }, { current: m.acceptedRelationsCount, target: 1, unit: 'discussion acceptée' }),
+    'com-helpful': () => ({ current: m.helpfulGivenCount, target: 2, unit: 'mentions « utile » données' }),
+    'com-visual': () => ({ current: m.mediaPostsCount || 0, target: 1, unit: 'publication illustrée' }),
+    'com-appreciated': () => ({ current: m.helpfulReceivedCount || 0, target: 3, unit: 'mentions « utile » reçues' }),
+    'com-followed': () => ({ current: m.followersCount || 0, target: 3, unit: 'abonnés' }),
+    'str-week': () => ({ current: m.streakWeeks, target: 1, unit: 'semaine active' }),
+    'str-two-weeks': () => ({ current: m.streakWeeks, target: 2, unit: 'semaines actives' }),
+    'str-dialogue': () => ({ current: m.acceptedRelationsCount, target: 1, unit: 'discussion acceptée' }),
+    'str-mentor-share': () => ({ current: m.postsCount, target: 2, unit: 'publications' })
+  };
+  return list.map((b) => (PROGRESS[b.id] ? { ...b, progress: PROGRESS[b.id]() } : b));
 }
 
 /**

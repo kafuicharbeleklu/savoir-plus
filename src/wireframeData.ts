@@ -30,6 +30,8 @@ export type AppPage =
   | 'teaching'
   | 'institution'
   | 'progression'
+  /** Page dédiée aux badges (#badges, #badges/<membre>). */
+  | 'badges'
   | 'community'
   | 'community-compose'
   | 'community-thread'
