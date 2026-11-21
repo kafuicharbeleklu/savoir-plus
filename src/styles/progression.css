@@ -125,28 +125,6 @@
 /* -- Page Badges : bilan, badges à portée, tous les badges par catégorie ---------------------------- */
 .bd .dashboard-main { gap: 12px; }
 
-.bd-summary { display: flex; flex-direction: column; gap: 12px; padding: var(--card-pad, 20px) 24px; }
-.bd-summary-head { display: flex; align-items: baseline; gap: 10px; }
-.bd-summary-count { font-size: 2rem; font-weight: 600; line-height: 1; letter-spacing: -0.02em; color: var(--fg-primary); }
-.bd-summary-count span { font-size: 1.125rem; font-weight: 500; color: var(--fg-muted); }
-.bd-summary-label { font-size: 0.9375rem; color: var(--fg-muted); }
-.bd-summary-cats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 4px 0 0; padding: 12px 0 0; border-top: 1px solid var(--border-hairline); list-style: none; }
-.bd-summary-cats li { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.bd-summary-cats span { font-size: 0.75rem; color: var(--fg-muted); }
-.bd-summary-cats b { font-size: 1rem; font-weight: 600; color: var(--fg-primary); }
-
-/* À portée */
-.bd-next { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.bd-next-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 16px 20px; }
-.bd-next-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.bd-next-body b { font-size: 0.9375rem; font-weight: 600; color: var(--fg-primary); }
-.bd-next-body p { margin: 0; font-size: 0.8125rem; line-height: 1.45; color: var(--fg-muted); }
-.bd-next-card .secondary { white-space: nowrap; }
-
-/* Progression vers un badge : barre + « 4 / 6 sections lues » */
-.bd-tile-progress { display: flex; flex-direction: column; gap: 4px; width: 100%; margin-top: 4px; }
-.bd-tile-progress > span { font-size: 0.75rem; color: var(--fg-muted); }
-
 /* Tous les badges */
 .bd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
 .bd-tile {
@@ -175,11 +153,7 @@
 }
 .bd-tile-state { display: inline-flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 4px; font-size: 0.75rem; font-weight: 600; color: var(--accent-ok); }
 .bd-tile-state.is-todo { font-weight: 500; color: var(--fg-muted); }
-.bd-tile .bd-tile-progress { margin-top: auto; padding-top: 4px; }
 
 @media (max-width: 720px) {
-  .bd-summary-cats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .bd-next-card { grid-template-columns: auto minmax(0, 1fr); }
-  .bd-next-card .secondary { grid-column: 1 / -1; justify-self: start; }
   .bd-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 }
