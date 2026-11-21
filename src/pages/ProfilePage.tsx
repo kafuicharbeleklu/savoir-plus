@@ -208,6 +208,8 @@ export function ProfilePage({
     ext.adminUsers.find((u) => u.id === target.id || u.id === `usr-${target.id}`)?.institution || '';
 
   const [view, setView] = useState<'profile' | 'progression'>('profile');
+  // Onglet ouvert dans la progression d'un autre membre (vue d'ensemble ou compétences).
+  const [progressionTab, setProgressionTab] = useState<'overview' | 'skills'>('overview');
   const [editOpen, setEditOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [mediaOpen, setMediaOpen] = useState<MediaKind | null>(null);
@@ -273,11 +275,15 @@ export function ProfilePage({
     }
   };
 
-  const openProgression = (tab: 'progression' | 'badges') => {
-    // Les badges ont leur page ; la progression d'un autre membre s'ouvre ici.
+  const openProgression = (tab: 'progression' | 'badges' | 'skills') => {
+    // Les badges ont leur page ; les compétences sont un onglet de Progression ; la progression d'un
+    // autre membre s'ouvre ici.
     if (tab === 'badges') nav('badges', isOwnProfile ? undefined : target.id);
-    else if (isOwnProfile) nav('progression');
-    else setView(tab);
+    else if (isOwnProfile) nav('progression', tab === 'skills' ? 'competences' : undefined);
+    else {
+      setProgressionTab(tab === 'skills' ? 'skills' : 'overview');
+      setView('progression');
+    }
   };
 
   /** Enregistre (ou retire) la photo de profil ou la photo de couverture du membre. */
@@ -342,7 +348,8 @@ export function ProfilePage({
           <ArrowLeft size={16} aria-hidden="true" /> Profil de {firstName}
         </button>
         <ProgressionView
-          key={`${target.id}-${view}`}
+          key={`${target.id}-${view}-${progressionTab}`}
+          initialView={progressionTab}
           target={target}
           isOwnProfile={false}
           ext={ext}
@@ -605,6 +612,11 @@ export function ProfilePage({
                     … voir plus
                   </button>
                 )}
+                {bioLong && bioExpanded && (
+                  <button type="button" className="pf-more" onClick={() => setBioExpanded(false)}>
+                    {' '}voir moins
+                  </button>
+                )}
               </p>
             ) : (
               <EmptyState
@@ -782,7 +794,7 @@ export function ProfilePage({
             title="Compétences"
             footer={
               stats.skills.length > 4
-                ? { label: `Afficher les ${stats.skills.length} compétences`, onClick: () => nav('skills', isOwnProfile ? undefined : target.id) }
+                ? { label: `Afficher les ${stats.skills.length} compétences`, onClick: () => openProgression('skills') }
                 : undefined
             }
           >

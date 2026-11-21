@@ -843,6 +843,20 @@ export function FeedPostCard({
                   </span>
                 </button>
               )}
+              {/* Ce qui se déplie se replie : la discussion revient à son aperçu. */}
+              <button
+                type="button"
+                className="li-more-comments-btn"
+                onClick={() => {
+                  setThreadExpanded(false);
+                  setShowAllComments(false);
+                  setComposerOpen(false);
+                  setReplyingTo(null);
+                }}
+              >
+                <span className="li-more-icon" aria-hidden="true">⤡</span>
+                <span className="li-more-label">Masquer la discussion</span>
+              </button>
             </div>
           )}
 

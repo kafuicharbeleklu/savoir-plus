@@ -57,7 +57,7 @@ export function MobileNav({
   }, [moreOpen, setMoreOpen]);
 
   // Comme la barre du haut : la Bibliothèque (ouverte depuis « Plus ») n'allume pas « Apprendre ».
-  const isLearning = ['learning', 'progression', 'badges', 'skills'].includes(page);
+  const isLearning = ['learning', 'progression', 'badges'].includes(page);
   const isNetwork = page === 'relations' || page === 'member';
   const isMessages = page === 'messages';
   const isHomeOrCommunity = page === 'home' || page.startsWith('community');

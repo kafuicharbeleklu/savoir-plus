@@ -3,6 +3,9 @@ import { notificationSentence, notificationTarget } from '../notificationText';
 import {
   AlertTriangle,
   ArrowLeft,
+  AtSign,
+  FileText,
+  MessageSquare,
   ArrowRight,
   Bell,
   CheckCircle2,
@@ -44,14 +47,18 @@ interface AccountAdminProps {
 }
 
 export function NotificationsView({ ext, updateExt, nav, people, user, setToast, rail, selectedId }: AccountAdminProps) {
-  // Deux onglets : les alertes, et l'activité du membre (ses publications et ses commentaires).
+  // Deux onglets : les alertes, et l'activité du membre (ses posts, ses commentaires, ses mentions).
   const [section, setSection] = useState<'alerts' | 'activity'>(selectedId === 'activite' ? 'activity' : 'alerts');
   useEffect(() => {
     if (selectedId === 'activite') setSection('activity');
   }, [selectedId]);
   const myPosts = ext.posts.filter((p) => p.authorId === user.id);
   const myComments = ext.posts.flatMap((p) => p.replies.filter((r) => r.authorId === user.id).map((reply) => ({ post: p, reply })));
-  const [activityKind, setActivityKind] = useState<'posts' | 'comments'>(() =>
+  // Mentions : les réponses d'autres membres qui vous citent (« Afi Mensah Merci… »).
+  const myMentions = ext.posts.flatMap((p) =>
+    p.replies.filter((r) => r.authorId !== user.id && r.replyToName === user.name).map((reply) => ({ post: p, reply }))
+  );
+  const [activityKind, setActivityKind] = useState<'posts' | 'comments' | 'mentions'>(() =>
     myPosts.length === 0 && myComments.length > 0 ? 'comments' : 'posts'
   );
   const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
@@ -112,64 +119,104 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
           ]}
         />
 
+        {/* Activité : mêmes filtres que les alertes (même ligne, même forme), puis la liste ou un état vide. */}
         {section === 'activity' && (
-          <section className="wf-card nt-activity" aria-label="Mon activité">
-            <div className="pf-chips" role="tablist" aria-label="Type d’activité">
+          <>
+            <div className="ui-filter" role="group" aria-label="Filtrer l’activité">
               {(
                 [
-                  { id: 'posts', label: 'Publications', count: myPosts.length },
-                  { id: 'comments', label: 'Commentaires', count: myComments.length }
-                ] as const
-              ).map((t) => (
+                  { id: 'posts', label: `Mes posts${myPosts.length ? ` (${myPosts.length})` : ''}` },
+                  { id: 'comments', label: `Mes commentaires${myComments.length ? ` (${myComments.length})` : ''}` },
+                  { id: 'mentions', label: `Mentions${myMentions.length ? ` (${myMentions.length})` : ''}` }
+                ] as { id: typeof activityKind; label: string }[]
+              ).map((f) => (
                 <button
-                  key={t.id}
+                  key={f.id}
                   type="button"
-                  role="tab"
-                  aria-selected={activityKind === t.id}
-                  className={`pf-chip ${activityKind === t.id ? 'is-selected' : ''}`}
-                  onClick={() => setActivityKind(t.id)}
+                  aria-pressed={activityKind === f.id}
+                  className={activityKind === f.id ? 'is-on' : ''}
+                  onClick={() => setActivityKind(f.id)}
                 >
-                  {t.label} <span className="tabular-nums">{t.count}</span>
+                  {f.label}
                 </button>
               ))}
             </div>
+
             {activityKind === 'posts' &&
               (myPosts.length === 0 ? (
-                <EmptyState title="Vous n’avez encore rien publié" text="Posez une question ou partagez une méthode avec la communauté." />
-              ) : (
-                <div className="pf-posts">
-                  {myPosts.map((p) => (
-                    <button key={p.id} type="button" className="pf-post" onClick={() => nav('community', p.id)}>
-                      <small>
-                        {p.kind === 'question' ? 'Question d’entraide' : 'Publication'} · {p.createdAt}
-                      </small>
-                      <b>{p.title}</b>
-                      <p>
-                        <RichText text={p.body} />
-                      </p>
-                      <small className="tabular-nums">
-                        {p.domain} · {plural(p.helpfulBy?.length || 0, 'utile', 'utiles')} · {plural(p.replies.length, 'réponse', 'réponses')}
-                      </small>
-                    </button>
-                  ))}
+                <div className="empty">
+                  <FileText size={34} />
+                  <h3>Aucun post pour le moment</h3>
+                  <p>Les posts et les questions que vous publiez apparaîtront ici.</p>
                 </div>
+              ) : (
+                <section className="wf-card nt-activity" aria-label="Mes posts">
+                  <div className="pf-posts">
+                    {myPosts.map((p) => (
+                      <button key={p.id} type="button" className="pf-post" onClick={() => nav('community', p.id)}>
+                        <small>
+                          {p.kind === 'question' ? 'Question d’entraide' : 'Publication'} · {p.createdAt}
+                        </small>
+                        <b>{p.title}</b>
+                        <p>
+                          <RichText text={p.body} />
+                        </p>
+                        <small className="tabular-nums">
+                          {p.domain} · {plural(p.helpfulBy?.length || 0, 'utile', 'utiles')} · {plural(p.replies.length, 'réponse', 'réponses')}
+                        </small>
+                      </button>
+                    ))}
+                  </div>
+                </section>
               ))}
+
             {activityKind === 'comments' &&
               (myComments.length === 0 ? (
-                <EmptyState title="Vous n’avez encore rien commenté" />
-              ) : (
-                <div className="pf-posts">
-                  {myComments.map(({ post, reply }) => (
-                    <button key={reply.id} type="button" className="pf-post" onClick={() => nav('community', post.id)}>
-                      <small>
-                        En réponse à « {post.title} » · {reply.createdAt}
-                      </small>
-                      <p>{reply.text}</p>
-                    </button>
-                  ))}
+                <div className="empty">
+                  <MessageSquare size={34} />
+                  <h3>Aucun commentaire pour le moment</h3>
+                  <p>Vos commentaires et vos réponses dans le fil d’entraide apparaîtront ici.</p>
                 </div>
+              ) : (
+                <section className="wf-card nt-activity" aria-label="Mes commentaires">
+                  <div className="pf-posts">
+                    {myComments.map(({ post, reply }) => (
+                      <button key={reply.id} type="button" className="pf-post" onClick={() => nav('community', post.id)}>
+                        <small>
+                          En réponse à « {post.title} » · {reply.createdAt}
+                        </small>
+                        <p>{reply.text}</p>
+                      </button>
+                    ))}
+                  </div>
+                </section>
               ))}
-          </section>
+
+            {activityKind === 'mentions' &&
+              (myMentions.length === 0 ? (
+                <div className="empty">
+                  <AtSign size={34} />
+                  <h3>Aucune nouvelle mention</h3>
+                  <p>Lorsque quelqu’un vous identifie dans un post ou un commentaire, cette notification apparaîtra ici.</p>
+                </div>
+              ) : (
+                <section className="wf-card nt-activity" aria-label="Mentions">
+                  <div className="pf-posts">
+                    {myMentions.map(({ post, reply }) => (
+                      <button key={reply.id} type="button" className="pf-post" onClick={() => nav('community', post.id)}>
+                        <small>
+                          Mention · {reply.createdAt}
+                        </small>
+                        <b>
+                          {reply.authorName} vous a mentionné(e) dans un commentaire sur « {post.title} »
+                        </b>
+                        <p>{reply.text}</p>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ))}
+          </>
         )}
 
         {section === 'alerts' && (

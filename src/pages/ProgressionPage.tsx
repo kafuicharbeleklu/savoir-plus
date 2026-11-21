@@ -5,7 +5,7 @@
  * `ProgressionView` sert à la fois à sa propre page et à la progression d'un autre membre.
  */
 import React, { useState } from 'react';
-import { ArrowRight, Check, CircleDashed } from 'lucide-react';
+import { ArrowRight, BadgeCheck, BookOpen } from 'lucide-react';
 import type { Profile, Progress, Relation } from '../data';
 import { initialExtendedState, type AppPage, type ExtendedDemoState } from '../wireframeData';
 import { computeMemberStats } from '../memberStats';
@@ -13,7 +13,7 @@ import type { BadgeCategoryId, SavoirBadgeItem } from '../personas';
 import { BannerEmblem } from '../components/CatalogVisuals';
 import { BadgeRing } from '../components/BadgeEmblem';
 import { ProgressBar } from '../components/ProfileIdentityCard';
-import { EmptyState, IconTile, ListCard, ListRow, PageHeader, StateTile, Tabs } from '../components/ui';
+import { EmptyState, ListCard, ListRow, PageHeader, StateTile, Tabs } from '../components/ui';
 
 type ViewId = 'overview' | 'modules' | 'skills';
 
@@ -313,13 +313,23 @@ export function ProgressionView({
               {stats.skills.map((skill) => (
                 <ListRow
                   key={skill.name}
-                  leading={
-                    <IconTile tone={skill.validated ? 'brand' : 'neutral'}>
-                      {skill.validated ? <Check size={20} aria-label="Compétence validée" /> : <CircleDashed size={20} aria-label="Compétence en cours" />}
-                    </IconTile>
+                  title={skill.name}
+                  meta={
+                    <span className="sk-meta">
+                      <span className="sk-line">
+                        <BookOpen size={14} aria-hidden="true" /> Module « {skill.moduleTitle} »
+                      </span>
+                      {skill.validated ? (
+                        <span className="sk-line is-ok">
+                          <BadgeCheck size={14} aria-hidden="true" /> Validée par le quiz du module
+                        </span>
+                      ) : (
+                        <span className="sk-line">En cours d’apprentissage</span>
+                      )}
+                    </span>
                   }
-                  title={skill.validated ? skill.name : <span className="ui-muted-title">{skill.name}</span>}
-                  meta={`Module : ${skill.moduleTitle}`}
+                  onClick={() => nav('module-detail', skill.moduleId)}
+                  ariaLabel={`${skill.name} : ${skill.validated ? 'validée' : 'en cours'}, module « ${skill.moduleTitle} »`}
                 />
               ))}
             </ListCard>
@@ -397,11 +407,14 @@ export function ProgressionPage({
   relations = [],
   myFollowing = [],
   getModuleProgress,
-  openReader
+  openReader,
+  selectedItemId
 }: {
   ext?: ExtendedDemoState;
   nav: (page: AppPage | 'visitor', id?: string) => void;
   progress?: Progress;
+  /** Fin de l'adresse : « competences » ouvre l'onglet Compétences. */
+  selectedItemId?: string;
   userId?: string;
   currentUser?: Profile;
   relations?: Relation[];
@@ -422,6 +435,8 @@ export function ProgressionPage({
   };
   return (
     <ProgressionView
+      key={selectedItemId || 'overview'}
+      initialView={selectedItemId === 'competences' ? 'skills' : 'overview'}
       target={target}
       isOwnProfile
       ext={state}

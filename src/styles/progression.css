@@ -232,8 +232,7 @@
   .bd-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* -- Page Compétences (sur le modèle de LinkedIn) ----------------------------------------------------- */
-.sk .ui-tabs { margin-bottom: 0; }
+/* -- Compétences (onglet de Progression) : module et état, avec leurs icônes ---------------------------- */
 .sk-meta { display: flex; flex-direction: column; gap: 2px; }
 .sk-line { display: inline-flex; align-items: center; gap: 6px; }
 .sk-line.is-ok { color: var(--accent-ok); }

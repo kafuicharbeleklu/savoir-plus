@@ -32,8 +32,6 @@ export type AppPage =
   | 'progression'
   /** Page dédiée aux badges (#badges, #badges/<membre>). */
   | 'badges'
-  /** Page dédiée aux compétences (#skills, #skills/<membre>). */
-  | 'skills'
   | 'community'
   | 'community-compose'
   | 'community-thread'
