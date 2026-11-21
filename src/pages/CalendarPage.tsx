@@ -763,7 +763,7 @@ export function CalendarPage({
       <aside className="right-rail" aria-label="Réglages du calendrier">
         <section className="rail-card">
           <h2 className="discover-feed-title">Mes réglages</h2>
-          <div className="rail-stat-list">
+          <div className="rail-stat-list is-settings">
             <div className="rail-stat-row">
               <span>En semaine</span>
               <b>{formatMinutes(state.settings.weekdayMinutes)}</b>

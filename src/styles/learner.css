@@ -625,3 +625,18 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 .rail-stat-row.has-icon { align-items: center; }
 .rail-stat-row.has-icon > span { display: inline-flex; align-items: center; gap: 8px; }
 .rail-stat-row.has-icon > span svg { flex-shrink: 0; color: var(--accent-brand); }
+
+/* -- Toasts : en bas à gauche, comme LinkedIn, et non plus en haut à droite par-dessus le contenu ; le coin
+   bas-droit reste à la Messagerie repliée. Ils montent depuis le bas. ---------------------------------- */
+@keyframes savoir-toast-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.toast { top: auto; right: auto; bottom: 24px; left: 24px; animation-name: savoir-toast-up; }
+@media (max-width: 768px) {
+  .toast { bottom: 72px; right: 12px; left: 12px; }
+}
+
+/* Calendrier › Mes réglages : des valeurs en mots (« Même rythme », « Affiché »), un peu plus petites que
+   les chiffres des autres cartes. */
+.rail-stat-list.is-settings .rail-stat-row b { font-size: 0.9375rem; letter-spacing: 0; }
