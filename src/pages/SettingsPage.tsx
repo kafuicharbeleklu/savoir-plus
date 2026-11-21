@@ -8,6 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, Bell, Eye, Lock, Monitor, ShieldCheck, User } from 'lucide-react';
 import type { ExtendedDemoState } from '../wireframeData';
+import { playSound } from '../sounds';
 import type { Profile, Relation } from '../data';
 import { currentCloudEmail, sendPasswordReset } from '../data';
 import { resolveProfileVerified, type RoleCapabilities } from '../personas';
@@ -289,6 +290,25 @@ export function SettingsView({
                 { value: 'Clair', label: 'Clair' },
                 { value: 'Sombre', label: 'Sombre' }
               ]}
+            />
+          </Detail>
+        );
+      case 'account/sound':
+        return (
+          <Detail
+            title="Effets sonores"
+            description="De courts sons confirment certaines actions : message envoyé ou reçu, publication, abonnement ou demande envoyée, demande acceptée, suppression, erreur."
+            onBack={back}
+            savedAt={savedAt}
+          >
+            <Toggle
+              label="Effets sonores"
+              checked={ext.appPrefs.soundEffects !== false}
+              onChange={(v) => {
+                patchPrefs({ soundEffects: v });
+                // À l'activation, un son d'exemple (le réglage est appliqué juste après).
+                if (v) window.setTimeout(() => playSound('msgSent'), 60);
+              }}
             />
           </Detail>
         );
@@ -637,6 +657,7 @@ export function SettingsView({
             </Group>
             <Group title="Préférences générales">
               <Row label="Langue" value="Français" onClick={() => go(s, 'language')} />
+              <Row label="Effets sonores" value={onOff(ext.appPrefs.soundEffects !== false)} onClick={() => go(s, 'sound')} />
             </Group>
             {/* Formule (adultes seulement) ; la carte publicitaire ne se règle qu'avec une formule payante. */}
             {adult && plans.length > 0 && (

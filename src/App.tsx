@@ -5,6 +5,7 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ConfirmDialog } from './components/ui';
+import { playSound, setSoundEffects } from './sounds';
 import {
   Clock,
   ArrowRight,
@@ -525,6 +526,11 @@ export default function App() {
     document.documentElement.dataset.reducedMotion = String(!!ext.appPrefs.reducedMotion);
   }, [isDark, ext.appPrefs.reducedMotion]);
 
+  // Effets sonores (Préférences générales), activés par défaut comme chez LinkedIn.
+  useEffect(() => {
+    setSoundEffects(ext.appPrefs.soundEffects !== false);
+  }, [ext.appPrefs.soundEffects]);
+
   // Toast auto dismiss
   useEffect(() => {
     if (!toast) return;
@@ -602,6 +608,15 @@ export default function App() {
       (msg) => setError(msg)
     );
   }, [mode, selectedRelId, page]);
+
+  // Un message de l'autre personne arrive dans la discussion ouverte : son de réception.
+  const seenMessages = useRef<{ relId: string; count: number }>({ relId: '', count: 0 });
+  useEffect(() => {
+    const prev = seenMessages.current;
+    const last = messages[messages.length - 1];
+    if (prev.relId === selectedRelId && messages.length > prev.count && last && last.author !== uid) playSound('msgReceived');
+    seenMessages.current = { relId: selectedRelId, count: messages.length };
+  }, [messages, selectedRelId, uid]);
 
   // Profils et vie scolaire : données de démonstration datées du jour, tant que le visiteur n'a rien modifié.
   const today = todayDay();
@@ -1072,6 +1087,7 @@ export default function App() {
       }
     }));
     setToast(already ? `Vous ne suivez plus ${targetName}` : `Vous suivez désormais ${targetName}`);
+    if (!already) playSound('connect');
   };
 
   // Publications : enregistrer, masquer du fil (menu « … »).
@@ -1114,6 +1130,7 @@ export default function App() {
     if (peerId && messagesPeerId === peerId) setMessagesPeerId('');
     setDeleteThread(null);
     setToast('Discussion supprimée');
+    playSound('deleted');
   };
 
   const handleRequestContact = async (targetProfile: Profile) => {
@@ -1154,7 +1171,9 @@ export default function App() {
         ]
       }));
       setToast(`Demande de discussion envoyée à ${targetProfile.name}`);
+      playSound('connect');
     } catch (e: any) {
+      playSound('fail');
       setToast(e?.message || 'Impossible d’envoyer la demande');
     } finally {
       setBusy(false);
@@ -1172,6 +1191,7 @@ export default function App() {
         }
         setSelectedRelId(r.id);
         setToast('Demande acceptée — la discussion est désormais ouverte');
+        playSound('accepted');
       } else {
         setToast('Demande refusée');
       }
@@ -1269,8 +1289,10 @@ export default function App() {
     try {
       await sendMessage(mode, uid, activeRel, draft.trim(), `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, attachment);
       setDraft('');
+      playSound('msgSent');
       return true;
     } catch (e: any) {
+      playSound('fail');
       setToast(e?.message || 'Échec de l’envoi du message');
       return false;
     } finally {
@@ -3766,6 +3788,7 @@ export default function App() {
         onPublish={(post) => {
           updateExt((prev) => ({ ...prev, posts: [post, ...prev.posts] }));
           setToast('Contribution publiée dans la communauté');
+          playSound('postSuccess');
           nav('community-thread', post.id);
         }}
         onSchedule={(post) => {
@@ -3784,10 +3807,12 @@ export default function App() {
             )
           );
           setToast('Contribution publiée dans la communauté');
+          playSound('postSuccess');
         }}
         onDeleteScheduled={(id) => {
           updateExt((prev) => ({ ...prev, scheduledPosts: (prev.scheduledPosts || []).filter((p) => p.id !== id) }));
           setToast('Publication programmée supprimée');
+          playSound('deleted');
         }}
       />
 

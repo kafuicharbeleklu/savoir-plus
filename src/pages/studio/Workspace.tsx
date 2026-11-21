@@ -7,6 +7,7 @@
 import React, { useRef, useState } from 'react';
 import { ArrowDown, ArrowLeft, ArrowUp, Check, Plus, Trash2, Upload, X } from 'lucide-react';
 import { evaluateStudioReadiness, isStudioQuestionComplete } from '../../personas';
+import { playSound } from '../../sounds';
 import {
   appendAuditLog,
   buildDynamicCatalog,
@@ -253,6 +254,7 @@ function StudioWorkspace({
   const deleteContent = () => {
     updateExt((prev) => ({ ...prev, studioContents: prev.studioContents.filter((c) => c.id !== content.id) }));
     setToast(`« ${content.title || 'Contenu'} » supprimé`);
+    playSound('deleted');
     nav('studio');
   };
 
@@ -914,6 +916,7 @@ function StudioWorkspace({
           const target = pendingRemoval;
           setPendingRemoval(null);
           if (!target) return;
+          playSound('deleted');
           if (target.kind === 'section') removeSection(target.index);
           else {
             patchQuiz((x) => x.filter((_, j) => j !== target.index));

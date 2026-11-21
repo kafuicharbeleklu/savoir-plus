@@ -803,10 +803,10 @@ export function ReportDialog({
   };
   const gone =
     target.kind === 'post'
-      ? 'Vous ne verrez plus cette publication dans votre fil.'
+      ? 'Vous ne verrez plus cette publication.'
       : target.kind === 'conversation'
-        ? 'Vous ne verrez plus cette conversation dans votre messagerie.'
-        : '';
+        ? 'Vous ne verrez plus cette conversation.'
+        : 'Notre équipe va l’examiner.';
 
   return (
     <div
@@ -841,10 +841,7 @@ export function ReportDialog({
               </svg>
             </span>
             <h3>Merci de votre signalement</h3>
-            <p>
-              {gone ? `${gone} ` : ''}Notre équipe va examiner ce contenu et prendra les mesures nécessaires s’il enfreint nos
-              règles de la communauté. {target.personName ? `${target.personName.split(' ')[0]} ne saura pas que c’est vous.` : 'La personne concernée ne saura pas que c’est vous.'}
-            </p>
+            <p>{gone}</p>
             {shownFollowUps.length > 0 && (
               <div className="report-followups">
                 {shownFollowUps.map((f) =>
