@@ -109,26 +109,28 @@
 .pf-section > .pf-entries,
 .pf-section > .pf-posts { margin-bottom: 8px; }
 .pf-section > .ui-empty { margin: 0; padding: 24px; }
+/* Lien de pied de section (« Afficher les 80 badges »…) : aligné à gauche avec le contenu, sans cadre ni
+   filet ; au survol, un fond indigo doux. */
 .pf-section-foot {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 6px;
-  width: 100%;
-  min-height: 48px;
-  padding: 0 16px;
+  width: fit-content;
+  max-width: calc(100% - 2 * var(--card-pad, 20px) + 20px);
+  min-height: 36px;
+  margin: -8px calc(var(--card-pad, 20px) - 10px) calc(var(--card-pad, 20px) - 6px);
+  padding: 0 10px;
   border: 0;
-  border-top: 1px solid var(--border-hairline);
-  border-radius: 0;
+  border-radius: var(--angle);
   background: none;
   font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--fg-muted);
+  font-weight: 600;
+  color: var(--accent-brand);
   cursor: pointer;
-  transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+  transition: background-color var(--dur-fast) var(--ease-standard);
 }
-.pf-section-foot:hover { background: var(--bg-subtle); color: var(--fg-primary); }
-.pf-card > .pf-section-foot:last-child { border-radius: 0 0 var(--angle) var(--angle); }
+.pf-section-foot:hover { background: var(--accent-brand-soft); }
 
 /* Statistiques : la carte de niveau (façon HackTheBox), haute, à gauche ; deux chiffres à droite, à sa hauteur. */
 .pf-stats-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; align-items: stretch; }
