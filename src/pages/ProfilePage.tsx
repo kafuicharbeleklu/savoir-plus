@@ -1,6 +1,6 @@
 /**
  * Page profil — structure LinkedIn : une carte d'identité, puis des sections
- * (Statistiques privées, Infos, Progression, Badges, Activité, Apprentissage,
+ * (Statistiques privées, Infos, Progression, Badges, Apprentissage,
  * Contenus publiés, Compétences, Centres d'intérêt) et une colonne de droite.
  * Toutes les données affichées sont réelles (src/memberStats.ts) ; la progression
  * d'un autre membre n'apparaît que s'il l'a rendue visible (Préférences › Visibilité).
@@ -211,9 +211,7 @@ export function ProfilePage({
   const [editOpen, setEditOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [mediaOpen, setMediaOpen] = useState<MediaKind | null>(null);
-  const [activityTab, setActivityTab] = useState<'posts' | 'comments'>('posts');
   const [bioExpanded, setBioExpanded] = useState(false);
-  const [allSkills, setAllSkills] = useState(false);
   const [form, setForm] = useState({ name: target.name, tagline, location: locationText, bio: bioText, interests: interestsRaw });
 
   useEffect(() => {
@@ -222,10 +220,6 @@ export function ProfilePage({
     setContactOpen(false);
     setMediaOpen(null);
     setBioExpanded(false);
-    setAllSkills(false);
-    const hasPosts = ext.posts.some((p) => p.authorId === target.id);
-    const hasComments = ext.posts.some((p) => p.replies.some((r) => r.authorId === target.id));
-    setActivityTab(!hasPosts && hasComments ? 'comments' : 'posts');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target.id]);
   useEffect(() => {
@@ -551,7 +545,7 @@ export function ProfilePage({
   }
 
   const bioLong = bioText.length > 280;
-  const visibleSkills = allSkills ? stats.skills : stats.skills.slice(0, 4);
+  const visibleSkills = stats.skills.slice(0, 4);
 
   return (
     <div className="pf-page">
@@ -713,83 +707,6 @@ export function ProfilePage({
           </Section>
         )}
 
-        {/* Activité — un parent ou un établissement ne publie pas : pas de fil, pas d'abonnés */}
-        {learns && (
-          <Section
-            title="Activité"
-            sub={<span className="tabular-nums">{plural(stats.followersCount, 'abonné', 'abonnés')}</span>}
-            action={
-              isOwnProfile && onOpenComposer ? (
-                <button type="button" className="secondary ui-btn-sm" onClick={onOpenComposer}>
-                  Créer un post
-                </button>
-              ) : undefined
-            }
-            footer={
-              (activityTab === 'posts' ? memberPosts.length : memberComments.length) > 0
-                ? { label: 'Voir le fil d’entraide', onClick: () => nav('home') }
-                : undefined
-            }
-          >
-            <div className="pf-chips" role="tablist" aria-label="Type d’activité">
-              {(
-                [
-                  { id: 'posts', label: 'Publications', count: memberPosts.length },
-                  { id: 'comments', label: 'Commentaires', count: memberComments.length }
-                ] as const
-              ).map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={activityTab === t.id}
-                  className={`pf-chip ${activityTab === t.id ? 'is-selected' : ''}`}
-                  onClick={() => setActivityTab(t.id)}
-                >
-                  {t.label} <span className="tabular-nums">{t.count}</span>
-                </button>
-              ))}
-            </div>
-            {activityTab === 'posts' &&
-              (memberPosts.length === 0 ? (
-                <EmptyState
-                  title={isOwnProfile ? 'Vous n’avez encore rien publié' : `${firstName} n’a encore rien publié`}
-                  text={isOwnProfile ? 'Posez une question ou partagez une méthode avec la communauté.' : undefined}
-                />
-              ) : (
-                <div className="pf-posts">
-                  {memberPosts.slice(0, 3).map((p) => (
-                    <button key={p.id} type="button" className="pf-post" onClick={() => nav('community-thread', p.id)}>
-                      <small>
-                        {p.kind === 'question' ? 'Question d’entraide' : 'Publication'} · {p.createdAt}
-                      </small>
-                      <b>{p.title}</b>
-                      <p>
-                        <RichText text={p.body} />
-                      </p>
-                      <small className="tabular-nums">
-                        {p.domain} · {plural(p.helpfulBy?.length || 0, 'utile', 'utiles')} · {plural(p.replies.length, 'réponse', 'réponses')}
-                      </small>
-                    </button>
-                  ))}
-                </div>
-              ))}
-            {activityTab === 'comments' &&
-              (memberComments.length === 0 ? (
-                <EmptyState title={isOwnProfile ? 'Vous n’avez encore rien commenté' : `${firstName} n’a encore rien commenté`} />
-              ) : (
-                <div className="pf-posts">
-                  {memberComments.slice(0, 3).map(({ post, reply }) => (
-                    <button key={reply.id} type="button" className="pf-post" onClick={() => nav('community-thread', post.id)}>
-                      <small>En réponse à « {post.title} » · {reply.createdAt}</small>
-                      <p>{reply.text}</p>
-                    </button>
-                  ))}
-                </div>
-              ))}
-          </Section>
-        )}
-
         {/* Apprentissage — modules réellement commencés */}
         {showProgression && (startedModules.length > 0 || isOwnProfile) && (
           <Section
@@ -864,8 +781,8 @@ export function ProfilePage({
           <Section
             title="Compétences"
             footer={
-              !allSkills && stats.skills.length > 4
-                ? { label: `Afficher les ${stats.skills.length} compétences`, onClick: () => setAllSkills(true) }
+              stats.skills.length > 4
+                ? { label: `Afficher les ${stats.skills.length} compétences`, onClick: () => nav('skills', isOwnProfile ? undefined : target.id) }
                 : undefined
             }
           >

@@ -150,11 +150,12 @@ export function computeMemberStats({
   });
 
   /** Compétences travaillées : celles des modules commencés ou validés, avec leur module d'origine. */
-  const skills: { name: string; moduleTitle: string; validated: boolean }[] = [];
+  const skills: { name: string; moduleTitle: string; moduleId: string; domain: string; validated: boolean }[] = [];
   for (const m of moduleMetrics) {
     if (!m.passed && m.pctVal === 0) continue;
     for (const sk of m.mod.skills || []) {
-      if (!skills.some((s) => s.name === sk)) skills.push({ name: sk, moduleTitle: m.mod.title, validated: m.passed });
+      if (!skills.some((s) => s.name === sk))
+        skills.push({ name: sk, moduleTitle: m.mod.title, moduleId: m.mod.id, domain: m.mod.domain, validated: m.passed });
     }
   }
 

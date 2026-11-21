@@ -21,7 +21,8 @@ import type { Profile, Relation } from '../data';
 import { resolveCommunityDirectory, resolveProfileVerified, type RoleCapabilities } from '../personas';
 import { Avatar } from '../components/ProfileIdentityCard';
 
-import { Select } from '../components/ui';
+import { EmptyState, Select, Tabs } from '../components/ui';
+import { RichText } from '../components/RichText';
 interface AccountAdminProps {
   ext: ExtendedDemoState;
   updateExt: (fn: (prev: ExtendedDemoState) => ExtendedDemoState) => void;
@@ -42,7 +43,18 @@ interface AccountAdminProps {
   selectedId?: string;
 }
 
-export function NotificationsView({ ext, updateExt, nav, people, user, setToast, rail }: AccountAdminProps) {
+export function NotificationsView({ ext, updateExt, nav, people, user, setToast, rail, selectedId }: AccountAdminProps) {
+  // Deux onglets : les alertes, et l'activité du membre (ses publications et ses commentaires).
+  const [section, setSection] = useState<'alerts' | 'activity'>(selectedId === 'activite' ? 'activity' : 'alerts');
+  useEffect(() => {
+    if (selectedId === 'activite') setSection('activity');
+  }, [selectedId]);
+  const myPosts = ext.posts.filter((p) => p.authorId === user.id);
+  const myComments = ext.posts.flatMap((p) => p.replies.filter((r) => r.authorId === user.id).map((reply) => ({ post: p, reply })));
+  const [activityKind, setActivityKind] = useState<'posts' | 'comments'>(() =>
+    myPosts.length === 0 && myComments.length > 0 ? 'comments' : 'posts'
+  );
+  const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
   const resolveActor = (n: NotificationItem): Profile => {
     const matched = n.actorId ? people.find((p) => p.id === n.actorId) : undefined;
@@ -90,6 +102,78 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
       <div className="dashboard-main">
         <h1 className="sr-only">Alertes</h1>
 
+        <Tabs<'alerts' | 'activity'>
+          label="Alertes et activité"
+          value={section}
+          onChange={setSection}
+          items={[
+            { id: 'alerts', label: 'Alertes' },
+            { id: 'activity', label: 'Activité' }
+          ]}
+        />
+
+        {section === 'activity' && (
+          <section className="wf-card nt-activity" aria-label="Mon activité">
+            <div className="pf-chips" role="tablist" aria-label="Type d’activité">
+              {(
+                [
+                  { id: 'posts', label: 'Publications', count: myPosts.length },
+                  { id: 'comments', label: 'Commentaires', count: myComments.length }
+                ] as const
+              ).map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activityKind === t.id}
+                  className={`pf-chip ${activityKind === t.id ? 'is-selected' : ''}`}
+                  onClick={() => setActivityKind(t.id)}
+                >
+                  {t.label} <span className="tabular-nums">{t.count}</span>
+                </button>
+              ))}
+            </div>
+            {activityKind === 'posts' &&
+              (myPosts.length === 0 ? (
+                <EmptyState title="Vous n’avez encore rien publié" text="Posez une question ou partagez une méthode avec la communauté." />
+              ) : (
+                <div className="pf-posts">
+                  {myPosts.map((p) => (
+                    <button key={p.id} type="button" className="pf-post" onClick={() => nav('community', p.id)}>
+                      <small>
+                        {p.kind === 'question' ? 'Question d’entraide' : 'Publication'} · {p.createdAt}
+                      </small>
+                      <b>{p.title}</b>
+                      <p>
+                        <RichText text={p.body} />
+                      </p>
+                      <small className="tabular-nums">
+                        {p.domain} · {plural(p.helpfulBy?.length || 0, 'utile', 'utiles')} · {plural(p.replies.length, 'réponse', 'réponses')}
+                      </small>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            {activityKind === 'comments' &&
+              (myComments.length === 0 ? (
+                <EmptyState title="Vous n’avez encore rien commenté" />
+              ) : (
+                <div className="pf-posts">
+                  {myComments.map(({ post, reply }) => (
+                    <button key={reply.id} type="button" className="pf-post" onClick={() => nav('community', post.id)}>
+                      <small>
+                        En réponse à « {post.title} » · {reply.createdAt}
+                      </small>
+                      <p>{reply.text}</p>
+                    </button>
+                  ))}
+                </div>
+              ))}
+          </section>
+        )}
+
+        {section === 'alerts' && (
+        <>
         <div className="ui-filter" role="group" aria-label="Filtrer les alertes">
           {(
             [
@@ -150,6 +234,8 @@ export function NotificationsView({ ext, updateExt, nav, people, user, setToast,
               );
             })}
           </div>
+        )}
+        </>
         )}
       </div>
 

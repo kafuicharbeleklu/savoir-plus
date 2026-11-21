@@ -276,7 +276,7 @@ export function ProgressionView({
               <div className="pg-section-head">
                 <h2 id="pg-help-title">Entraide</h2>
                 {isOwnProfile && (
-                  <button type="button" className="li-text-link" onClick={() => nav('profile')}>
+                  <button type="button" className="li-text-link" onClick={() => nav('notifications', 'activite')}>
                     Voir mon activité
                   </button>
                 )}

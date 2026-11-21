@@ -226,6 +226,7 @@ import {
 } from './pages/LearningExtraPages';
 import { CommunityComposeView, CommunityThreadView } from './pages/CommunityPages';
 import { BadgesPage } from './pages/BadgesPage';
+import { SkillsPage } from './pages/SkillsPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { GuardianGate } from './pages/school/GuardianGate';
 import { InfoPage } from './pages/InfoPage';
@@ -283,6 +284,7 @@ const VALID_PAGES = new Set<string>([
   'institution',
   'progression',
   'badges',
+  'skills',
   'community',
   'community-compose',
   'community-thread',
@@ -3345,6 +3347,11 @@ export default function App() {
       );
     }
 
+    if (page === 'skills') {
+      const member = selectedId && selectedId !== uid ? networkDirectory.find((p) => p.id === selectedId) : undefined;
+      return <SkillsPage {...extraProps} currentUser={user} member={member} relations={relations} myFollowing={myFollowing} />;
+    }
+
     if (page === 'badges') {
       const member = selectedId && selectedId !== uid ? networkDirectory.find((p) => p.id === selectedId) : undefined;
       return (
@@ -3735,7 +3742,7 @@ export default function App() {
                   )}
                   {learnsHere && (
                     // La page Badges s'ouvre depuis Progression (« Voir tous les badges ») et depuis le profil.
-                    <button className={`rail-nav-btn ${page === 'progression' || page === 'badges' ? 'active' : ''}`} onClick={() => nav('progression')}>
+                    <button className={`rail-nav-btn ${page === 'progression' || page === 'badges' || page === 'skills' ? 'active' : ''}`} onClick={() => nav('progression')}>
                       <span><Award size={16} /> Progression</span>
                     </button>
                   )}
