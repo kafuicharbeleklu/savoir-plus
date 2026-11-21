@@ -618,3 +618,5 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 }
 .connect-card .connect-card-head small { -webkit-line-clamp: 2; }
 .connect-card > p.tiny { -webkit-line-clamp: 3; margin: 0; }
+/* Sans la ligne « Suggéré · … », les cartes gardent leur hauteur (237 px). */
+.connect-grid .connect-card { min-height: 237px; }

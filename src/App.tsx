@@ -2742,7 +2742,6 @@ export default function App() {
                           </div>
                         </div>
                         <p className="tiny muted">{p.bio}</p>
-                        <small className="tiny muted">{entry.suggestionReason}</small>
                         <div className="connect-card-footer">
                           {caps.accountKind === 'institution' ? (
                             !rel && (
