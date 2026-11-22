@@ -3265,7 +3265,13 @@ export default function App() {
       return <InstitutionPage {...schoolProps} />;
     }
 
-    if (page === 'catalog') return <CatalogExtraView {...extraProps} />;
+    if (page === 'catalog')
+      return (
+        <CatalogExtraView
+          {...extraProps}
+          purchasedIds={Array.from(new Set(school.purchases.filter((p) => p.buyerId === uid).map((p) => p.itemId)))}
+        />
+      );
     if (page === 'resource-detail') return <ResourceDetailView {...extraProps} />;
     if (page === 'module-detail') return <ModuleDetailView {...extraProps} />;
     if (page === 'path-detail') return <PathDetailView {...extraProps} />;

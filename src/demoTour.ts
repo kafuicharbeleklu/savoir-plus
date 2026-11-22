@@ -74,6 +74,7 @@ export const DEMO_TOUR: TourStep[] = [
     role: 'Parent',
     persona: 'akouvi',
     page: 'family',
+    param: 'codes',
     target: '[aria-label="Codes créés pour vos enfants"]',
     title: 'Avant 12 ans',
     text: 'Le compte de Kokou s’ouvre avec un code créé par sa mère, qui n’ouvre qu’un compte. Ensuite, elle règle le verrouillage : pause, temps par jour, plage horaire.'

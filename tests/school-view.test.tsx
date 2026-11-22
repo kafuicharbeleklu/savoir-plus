@@ -113,19 +113,21 @@ test('espace encadrant : sans identité vérifiée ni rattachement validé, aucu
   assert.doesNotMatch(active, /Aucune classe pour le moment/);
 });
 
-test('espace famille : enfants, code en attente, achats ; fiche d’un enfant', () => {
+test('espace famille : enfants, page des codes ; fiche d’un enfant', () => {
   const school = initialSchoolState(TODAY);
   const home = text(renderToStaticMarkup(<FamilyPage {...props('akouvi', school)} calendarOf={calendarOf} />));
   assert.match(home, /Espace famille/);
-  assert.match(home, /Créer un code/);
-  // Une carte par enfant : le titre de sa lettre de la semaine, le message, puis trois repères.
-  assert.match(home, /Elom Dogbé Terminale D · Les Palmiers Voir le suivi/);
-  assert.match(home, /Elom a 1 séance de révision en retard avant « Composition · Mathématiques » \(dans 13 jours\)\. Ce que vous pouvez faire\./);
-  assert.match(home, /Elom Dogbé Terminale D · Les Palmiers Voir le suivi Une semaine régulière, une séance à rattraper/);
-  assert.match(home, /1 \/ 3 modules validés 3 jours de révision de suite Dans 13 jours Composition · Mathématiques/);
-  assert.match(home, /PAR-7K3Q-9M2X Pour Kokou · valable jusqu’au 22 nov\. Valide/);
-  assert.match(home, /Tenir un budget simple 1 500 FCFA · pour Elom Dogbé · 11 nov\. · reçu REC-DEMO-001 Simulé/);
+  // Une carte par enfant : qui il est, le titre et la phrase de sa lettre, trois repères, puis « Voir le suivi ».
+  assert.match(home, /Elom Dogbé Terminale D · Les Palmiers Une semaine régulière, une séance à rattraper Elom a 1 séance de révision en retard avant « Composition · Mathématiques » \(dans 13 jours\)\./);
+  assert.match(home, /1 \/ 3 modules validés 3 jours de révision de suite J-13 Composition · Mathématiques Voir le suivi/);
+  // Ni codes ni achats sur la vue d'ensemble : les codes ont leur page (menu « … »), les achats sont dans la Bibliothèque.
+  assert.doesNotMatch(home, /PAR-7K3Q-9M2X/);
+  assert.doesNotMatch(home, /REC-DEMO-001/);
   assert.doesNotMatch(home, /Kokou Dogbé CM2/, 'Kokou n’est pas rattaché tant que le code n’est pas saisi');
+  const codes = text(renderToStaticMarkup(<FamilyPage {...props('akouvi', school, 'codes')} calendarOf={calendarOf} />));
+  assert.match(codes, /Codes de rattachement/);
+  assert.match(codes, /Créer un code/);
+  assert.match(codes, /PAR-7K3Q-9M2X Pour Kokou · valable jusqu’au 22 nov\. Valide/);
 
   const child = text(renderToStaticMarkup(<FamilyPage {...props('akouvi', school, 'elom')} calendarOf={calendarOf} onWrite={() => {}} />));
   assert.match(child, /Elom Dogbé Terminale D · Les Palmiers · 17 ans/);

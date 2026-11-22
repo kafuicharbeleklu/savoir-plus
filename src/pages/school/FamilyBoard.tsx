@@ -6,7 +6,7 @@
  */
 import React, { useState } from 'react';
 import { ofName } from '../../french';
-import { CalendarClock, CheckCircle2, ClipboardCheck, Flame, Send, Volume2 } from 'lucide-react';
+import { ArrowRight, CalendarClock, CheckCircle2, ClipboardCheck, Flame, Send, Volume2 } from 'lucide-react';
 import {
   SCHOOL_CALENDAR,
   addDays,
@@ -34,8 +34,6 @@ export interface ChildCalendarData {
   log: SessionLog[];
 }
 
-const capital = (text: string) => text.replace(/^./, (c) => c.toLocaleUpperCase('fr'));
-const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 const DAY_SHORT = ['Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.', 'Dim.'];
 
@@ -259,7 +257,11 @@ function ChildWeek({ slots, calendar, today }: { slots: TimetableSlot[]; calenda
 
 /* ------------------------------------------------------------------ Carte d'un enfant (accueil) */
 
-/** Carte d'un enfant sur l'accueil de l'espace famille : le titre de sa lettre et ses repères. */
+/**
+ * Carte d'un enfant sur la vue d'ensemble : qui il est, le titre et la phrase de sa lettre, trois repères
+ * en tuiles, puis « Voir le suivi ». Toutes les cartes ont la même taille (titre sur deux lignes, phrase
+ * sur trois au plus), quel que soit le volume de la lettre.
+ */
 export function ChildCard({
   name,
   classLine,
@@ -272,35 +274,42 @@ export function ChildCard({
   onOpen: () => void;
 }) {
   const letter = weeklyLetter(snapshot);
+  const exam = snapshot.nextExam;
+  const firstName = name.split(' ')[0];
   return (
-    <article className={`pl-panel fm-card${letter.tone === 'warn' ? ' is-warn' : ''}`}>
-      <header className="fm-card-head">
+    <article className={`fm-kid${letter.tone === 'warn' ? ' is-warn' : ''}`} aria-label={name}>
+      <header className="fm-kid-head">
         <span className="fm-head-initial" aria-hidden="true">
           {name.charAt(0)}
         </span>
-        <span className="pl-row-title">
+        <span className="fm-kid-id">
           <b>{name}</b>
           <small>{classLine}</small>
         </span>
-        <button type="button" className="li-text-link" onClick={onOpen}>
-          Voir le suivi
-        </button>
       </header>
-      <p className="fm-card-title">{letter.headline}</p>
-      <p className="fm-card-text">
-        {letter.text} <b>Ce que vous pouvez faire.</b> {letter.action}
-      </p>
-      <ul className="fm-card-facts tabular-nums">
+      <div className="fm-kid-body">
+        <p className="fm-kid-title">{letter.headline}</p>
+        <p className="fm-kid-text">{letter.text}</p>
+      </div>
+      <ul className="fm-kid-facts tabular-nums" aria-label={`Repères ${ofName(firstName)}`}>
         <li>
-          <b>{snapshot.validated} / {snapshot.total}</b> modules validés
+          <b>
+            {snapshot.validated} / {snapshot.total}
+          </b>
+          <span>modules validés</span>
         </li>
         <li>
-          <b>{snapshot.streak > 0 ? plural(snapshot.streak, 'jour', 'jours') : 'Aucune'}</b> {snapshot.streak > 0 ? 'de révision de suite' : 'série en cours'}
+          <b>{snapshot.streak}</b>
+          <span>{snapshot.streak > 0 ? `${snapshot.streak > 1 ? 'jours' : 'jour'} de révision de suite` : 'pas de série en cours'}</span>
         </li>
         <li>
-          <b>{snapshot.nextExam ? capital(countdownLabel(snapshot.nextExam.inDays)) : 'Aucun'}</b> {snapshot.nextExam ? snapshot.nextExam.title : 'examen à venir'}
+          <b>{exam ? `J-${exam.inDays}` : '–'}</b>
+          <span>{exam ? exam.title : 'aucun examen à venir'}</span>
         </li>
       </ul>
+      <button type="button" className="fm-kid-foot" onClick={onOpen}>
+        Voir le suivi <ArrowRight size={16} aria-hidden="true" />
+      </button>
     </article>
   );
 }

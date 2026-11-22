@@ -4,7 +4,7 @@
  * achète pour eux (achat simulé).
  */
 import React, { useState } from 'react';
-import { BookOpen, KeyRound, Receipt } from 'lucide-react';
+import { BookOpen, KeyRound, Ticket } from 'lucide-react';
 import { formatDayShort, type CalendarEvent, type RevisionPlan, type SessionLog } from '../../calendar';
 import {
   PURCHASE_MESSAGE,
@@ -59,7 +59,8 @@ export function FamilyPage({
   /** Ouvre la messagerie avec un enfant, un mot déjà rédigé dans la zone de saisie (le parent le relit). */
   onWrite?: (peerId: string, draft: string) => void;
 }) {
-  const [codeOpen, setCodeOpen] = useState(false);
+  // « #family/codes/new » : la page des codes s'ouvre sur la création d'un code.
+  const [codeOpen, setCodeOpen] = useState(selectedId === 'codes/new');
   const [childName, setChildName] = useState('');
   const [buying, setBuying] = useState<string | null>(null);
   const [method, setMethod] = useState(PAYMENT_METHODS[0]);
@@ -68,7 +69,6 @@ export function FamilyPage({
   const verified = account.identity === 'verified';
   const children = childrenOf(school, user.id);
   const codes = school.guardianCodes.filter((c) => c.guardianId === user.id);
-  const purchases = school.purchases.filter((p) => p.buyerId === user.id);
   const child = children.find((id) => id === selectedId);
   // Formule Famille : plan de révision et emploi du temps des enfants, contenus payants inclus.
   const familyPlan = familyTools(ext.subscriptions, user.id);
@@ -227,7 +227,7 @@ export function FamilyPage({
     );
   }
 
-  /* ---------------------------------------------------------------- Accueil de l'espace */
+  /* ---------------------------------------------------------------- Codes de rattachement (page dédiée) */
   const createCode = (e: React.FormEvent) => {
     e.preventDefault();
     const result = issueGuardianCode(school, user.id, childName, today);
@@ -241,107 +241,114 @@ export function FamilyPage({
     setToast(`Code créé pour ${result.code.childName} : valable ${GUARDIAN_CODE_DAYS} jours`);
   };
 
+  const identityBanner = !verified && (
+    <section className="sc-status" aria-label="Votre statut">
+      <IdentityDot status={account.identity} />
+      <p>Tant que votre identité n’est pas vérifiée, vous consultez les contenus mais vous ne pouvez ni rattacher un enfant ni acheter pour lui.</p>
+      <button type="button" className="li-text-link" onClick={() => nav('settings', 'account/verification')}>
+        Faire vérifier mon identité
+      </button>
+    </section>
+  );
+
+  const codesPage = selectedId === 'codes' || selectedId === 'codes/new';
+
   return (
     <div className="sc-page">
-      <PageHeader title="Espace famille" />
-
-      {/* Le bandeau n'apparaît que s'il y a quelque chose à faire. */}
-      {!verified && (
-        <section className="sc-status" aria-label="Votre statut">
-          <IdentityDot status={account.identity} />
-          <p>Tant que votre identité n’est pas vérifiée, vous consultez les contenus mais vous ne pouvez ni rattacher un enfant ni acheter pour lui.</p>
-          <button type="button" className="li-text-link" onClick={() => nav('settings', 'account/verification')}>
-            Faire vérifier mon identité
-          </button>
-        </section>
-      )}
-
-      <div className="ui-section-title">
-        <h2>Mes enfants</h2>
-      </div>
-      {children.length === 0 ? (
-        <ListCard label="Mes enfants">
-          <EmptyState title="Aucun enfant rattaché" text="Créez un code, puis donnez-le à votre enfant : il le saisit à l’ouverture de son compte." />
-        </ListCard>
+      {codesPage ? (
+        <>
+          <PageHeader
+            title="Codes de rattachement"
+            subtitle={`Un code sert une seule fois, pour un seul enfant : il le saisit à l’ouverture de son compte. Valable ${GUARDIAN_CODE_DAYS} jours.`}
+            back={{ label: 'Vue d’ensemble', onClick: () => nav('family') }}
+            actions={
+              <button type="button" className="primary ui-btn-sm" disabled={!verified} onClick={() => setCodeOpen(true)}>
+                Créer un code
+              </button>
+            }
+          />
+          {identityBanner}
+          <ListCard label="Codes créés pour vos enfants">
+            {codes.length === 0 ? (
+              <EmptyState title="Aucun code créé" text="Un code sert une seule fois, pour un seul enfant." />
+            ) : (
+              codes.map((code) => {
+                const status = guardianCodeStatus(code, today);
+                return (
+                  <ListRow
+                    key={code.code}
+                    leading={<IconTile tone={status === 'valid' ? 'brand' : 'neutral'}>{<KeyRound size={20} aria-hidden="true" />}</IconTile>}
+                    title={<span className="sc-code">{code.code}</span>}
+                    meta={
+                      status === 'valid'
+                        ? `Pour ${code.childName} · valable jusqu’au ${formatDayShort(guardianCodeExpiry(code))}`
+                        : status === 'used'
+                          ? `Pour ${code.childName} · utilisé par ${memberName(code.usedBy || '', people)}`
+                          : `Pour ${code.childName} · expiré le ${formatDayShort(guardianCodeExpiry(code))}`
+                    }
+                    trailing={
+                      <>
+                        <StatusDot tone={status === 'valid' ? 'info' : 'neutral'}>{status === 'valid' ? 'Valide' : status === 'used' ? 'Utilisé' : 'Expiré'}</StatusDot>
+                        {status === 'valid' && (
+                          <ActionMenu
+                            label={`Plus d’actions pour le code de ${code.childName}`}
+                            items={[
+                              {
+                                label: 'Copier le code',
+                                onSelect: () => {
+                                  navigator.clipboard?.writeText(code.code).then(
+                                    () => setToast('Code copié'),
+                                    () => setToast(`Copie impossible : notez le code ${code.code}`)
+                                  );
+                                }
+                              }
+                            ]}
+                          />
+                        )}
+                      </>
+                    }
+                  />
+                );
+              })
+            )}
+          </ListCard>
+        </>
       ) : (
-        <div className="pl-children">
-          {children.map((id) => {
-            const name = memberName(id, people);
-            const rows = moduleIdsOf(id).map((m) => followUp(ext, catalog, id, m));
-            return <ChildCard key={id} name={name} classLine={`${classLine(id)}${lockNote(id)}`} snapshot={childSnapshot(name, rows, calendarOf(id), today)} onOpen={() => nav('family', id)} />;
-          })}
-        </div>
-      )}
+        <>
+          <PageHeader title="Espace famille" />
+          {/* Le bandeau n'apparaît que s'il y a quelque chose à faire. */}
+          {identityBanner}
 
-      <div className="ui-section-title">
-        <h2>Codes</h2>
-        <button type="button" className="li-text-link" disabled={!verified} onClick={() => setCodeOpen(true)}>
-          Créer un code
-        </button>
-      </div>
-      <ListCard label="Codes créés pour vos enfants">
-        {codes.length === 0 ? (
-          <EmptyState title="Aucun code créé" text="Un code sert une seule fois, pour un seul enfant." />
-        ) : (
-          codes.map((code) => {
-            const status = guardianCodeStatus(code, today);
-            return (
-              <ListRow
-                key={code.code}
-                leading={<IconTile tone={status === 'valid' ? 'brand' : 'neutral'}>{<KeyRound size={20} aria-hidden="true" />}</IconTile>}
-                title={<span className="sc-code">{code.code}</span>}
-                meta={
-                  status === 'valid'
-                    ? `Pour ${code.childName} · valable jusqu’au ${formatDayShort(guardianCodeExpiry(code))}`
-                    : status === 'used'
-                      ? `Pour ${code.childName} · utilisé par ${memberName(code.usedBy || '', people)}`
-                      : `Pour ${code.childName} · expiré le ${formatDayShort(guardianCodeExpiry(code))}`
-                }
-                trailing={
-                  <>
-                    <StatusDot tone={status === 'valid' ? 'info' : 'neutral'}>{status === 'valid' ? 'Valide' : status === 'used' ? 'Utilisé' : 'Expiré'}</StatusDot>
-                    {status === 'valid' && (
-                      <ActionMenu
-                        label={`Plus d’actions pour le code de ${code.childName}`}
-                        items={[
-                          {
-                            label: 'Copier le code',
-                            onSelect: () => {
-                              navigator.clipboard?.writeText(code.code).then(
-                                () => setToast('Code copié'),
-                                () => setToast(`Copie impossible : notez le code ${code.code}`)
-                              );
-                            }
-                          }
-                        ]}
-                      />
-                    )}
-                  </>
-                }
-              />
-            );
-          })
-        )}
-      </ListCard>
-
-      <div className="ui-section-title">
-        <h2>Achats</h2>
-      </div>
-      <ListCard label="Vos achats">
-        {purchases.length === 0 ? (
-          <EmptyState title="Aucun achat" text="Les contenus payants se trouvent sur la fiche de chaque enfant." />
-        ) : (
-          purchases.map((purchase) => (
-            <ListRow
-              key={purchase.id}
-              leading={<IconTile>{<Receipt size={20} aria-hidden="true" />}</IconTile>}
-              title={moduleTitle(catalog, purchase.itemId)}
-              meta={`${formatPrice(purchase.amount)} · pour ${memberName(purchase.forUserId, people)} · ${formatDayShort(purchase.day)} · reçu ${purchase.id}`}
-              trailing={<StatusDot tone="neutral">Simulé</StatusDot>}
+          {/* Mes enfants ; les codes de rattachement sont dans le menu « … » et ont leur page. */}
+          <div className="ui-section-title">
+            <h2>Mes enfants</h2>
+            <ActionMenu
+              label="Plus d’actions sur vos enfants"
+              items={[
+                { label: 'Rattacher un enfant', icon: <KeyRound size={16} aria-hidden="true" />, disabled: !verified, onSelect: () => nav('family', 'codes/new') },
+                { label: 'Codes de rattachement', icon: <Ticket size={16} aria-hidden="true" />, onSelect: () => nav('family', 'codes') }
+              ]}
             />
-          ))
-        )}
-      </ListCard>
+          </div>
+          {children.length === 0 ? (
+            <ListCard label="Mes enfants">
+              <EmptyState
+                title="Aucun enfant rattaché"
+                text="Créez un code, puis donnez-le à votre enfant : il le saisit à l’ouverture de son compte."
+                action={verified ? { label: 'Créer un code', onClick: () => nav('family', 'codes/new') } : undefined}
+              />
+            </ListCard>
+          ) : (
+            <div className="fm-kids">
+              {children.map((id) => {
+                const name = memberName(id, people);
+                const rows = moduleIdsOf(id).map((m) => followUp(ext, catalog, id, m));
+                return <ChildCard key={id} name={name} classLine={`${classLine(id)}${lockNote(id)}`} snapshot={childSnapshot(name, rows, calendarOf(id), today)} onOpen={() => nav('family', id)} />;
+              })}
+            </div>
+          )}
+        </>
+      )}
 
       {codeOpen && (
         <Modal

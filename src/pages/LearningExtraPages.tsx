@@ -93,11 +93,14 @@ export function CatalogExtraView({
   setDomain,
   progress,
   userId = 'afi',
-  getModuleProgress
+  getModuleProgress,
+  purchasedIds = []
 }: Pick<LearningExtraProps, 'nav' | 'query' | 'setQuery' | 'domain' | 'setDomain' | 'progress' | 'userId' | 'getModuleProgress'> & {
   ext?: ExtendedDemoState;
+  /** Contenus achetés par ce compte (pour lui ou pour ses enfants) : un onglet « Achats » les regroupe. */
+  purchasedIds?: string[];
 }) {
-  const [typeTab, setTypeTab] = useState<'all' | CatalogType>('all');
+  const [typeTab, setTypeTab] = useState<'all' | CatalogType | 'purchased'>('all');
   const [levelFilter, setLevelFilter] = useState<'Tous' | DifficultyLevel>('Tous');
   const [reviewFilter, setReviewFilter] = useState<'Toutes' | ReviewLevel>('Toutes');
   const [mobileFilters, setMobileFilters] = useState(false);
@@ -107,7 +110,9 @@ export function CatalogExtraView({
   const q = query.trim().toLowerCase();
   const filtered = catalog
     .filter((item) => {
-      if (typeTab !== 'all' && item.type !== typeTab) return false;
+      if (typeTab === 'purchased') {
+        if (!purchasedIds.includes(item.id)) return false;
+      } else if (typeTab !== 'all' && item.type !== typeTab) return false;
       if (domain !== 'Tous' && item.domain !== domain) return false;
       if (levelFilter !== 'Tous' && item.level !== levelFilter) return false;
       if (reviewFilter !== 'Toutes' && item.review !== reviewFilter) return false;
@@ -186,7 +191,8 @@ export function CatalogExtraView({
             { id: 'all', label: 'Tous' },
             { id: 'resource', label: 'Ressources' },
             { id: 'module', label: 'Modules' },
-            { id: 'path', label: 'Parcours' }
+            { id: 'path', label: 'Parcours' },
+            ...(purchasedIds.length > 0 ? [{ id: 'purchased', label: 'Achats' }] : [])
           ].map((t) => (
             <button
               key={t.id}
@@ -194,7 +200,7 @@ export function CatalogExtraView({
               role="tab"
               aria-selected={typeTab === t.id}
               className={typeTab === t.id ? 'selected' : ''}
-              onClick={() => setTypeTab(t.id as 'all' | CatalogType)}
+              onClick={() => setTypeTab(t.id as 'all' | CatalogType | 'purchased')}
             >
               {t.label}
             </button>

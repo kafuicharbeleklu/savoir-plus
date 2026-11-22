@@ -360,3 +360,38 @@ button.pl-grid-slot:hover { filter: brightness(0.97); }
 @media (max-width: 900px) {
   .fm-week { grid-template-columns: repeat(7, minmax(110px, 1fr)); }
 }
+
+/* -- Vue d'ensemble de la famille : une carte par enfant, toutes de la même taille ------------------- */
+.fm-kids { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-gap, 8px); align-items: stretch; }
+.fm-kid { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: var(--card-pad, 20px); border: 1px solid var(--border-hairline); border-radius: var(--angle); background: var(--bg-surface); }
+.fm-kid-head { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.fm-kid-head .fm-head-initial { width: 44px; height: 44px; }
+.fm-kid-id { display: flex; flex-direction: column; min-width: 0; }
+.fm-kid-id b { font-size: 1rem; font-weight: 600; color: var(--fg-primary); }
+.fm-kid-id small,
+.fm-kid-id b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fm-kid-id small { font-size: 0.8125rem; color: var(--fg-muted); }
+.fm-kid-body { display: flex; flex: 1; flex-direction: column; gap: 6px; }
+.fm-kid-title,
+.fm-kid-text { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; margin: 0; }
+.fm-kid-title { -webkit-line-clamp: 2; min-height: calc(2 * 1.25em); font-family: var(--font-editorial); font-size: 1.375rem; font-weight: 400; line-height: 1.25; letter-spacing: -0.01em; color: var(--fg-primary); }
+.fm-kid-text { -webkit-line-clamp: 3; min-height: calc(3 * 1.55em); font-size: 0.875rem; line-height: 1.55; color: var(--fg-muted); }
+.fm-kid-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.fm-kid-facts li { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 10px 12px; border-radius: var(--angle); background: var(--accent-brand-soft); }
+.fm-kid-facts b { font-size: 1.125rem; font-weight: 600; line-height: 1.2; color: var(--fg-primary); }
+.fm-kid-facts span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; min-height: calc(2 * 1.35em); font-size: 0.75rem; line-height: 1.35; color: var(--fg-muted); }
+.fm-kid.is-warn .fm-kid-facts li:last-child b { color: var(--accent-warm); }
+/* « Voir le suivi » : lien aligné à gauche, sans cadre ; fond indigo doux au survol (comme le profil). */
+.fm-kid-foot { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; margin: -4px -10px -6px; padding: 0 10px; border: 0; border-radius: var(--angle); background: none; font-size: 0.875rem; font-weight: 600; color: var(--accent-brand); cursor: pointer; transition: background-color var(--dur-fast) var(--ease-standard); }
+.fm-kid-foot:hover { background: var(--accent-brand-soft); }
+@media (max-width: 900px) {
+  .fm-kids { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* -- Lettre de la semaine : même hauteur pour chaque enfant (celle de la colonne Repères), actions en bas */
+@media (min-width: 901px) {
+  .fm-top { align-items: stretch; }
+  .fm-letter { display: flex; flex-direction: column; }
+  .fm-letter-body { display: flex; flex: 1; flex-direction: column; }
+  .fm-letter-actions { margin-top: auto; padding-top: 18px; }
+}
