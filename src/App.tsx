@@ -161,7 +161,7 @@ import { demoCampaigns } from './ads';
 import { OwnAdCard, SponsoredCard } from './components/SponsoredCard';
 import { NextCourseCard } from './components/NextCourseCard';
 import { audienceOfKind, contentIncluded, institutionSteering, paidSubscription, plansFor } from './offers';
-import { rankFeed, recommend, viewerOf } from './personalize';
+import { rankFeed, recommend, viewerOf, viewerClassesOf } from './personalize';
 import { addUsage, lockApplies, lockState, requestOfDay, requestTime, rulesOf } from './deviceLock';
 import { initialSchoolState } from './seedSchool';
 
@@ -3269,6 +3269,7 @@ export default function App() {
         <CatalogExtraView
           {...extraProps}
           purchasedIds={Array.from(new Set(school.purchases.filter((p) => p.buyerId === uid).map((p) => p.itemId)))}
+          viewerClasses={viewerClassesOf(school, uid, caps.accountKind)}
         />
       );
     if (page === 'resource-detail') return <ResourceDetailView {...extraProps} />;

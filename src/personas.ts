@@ -9,6 +9,7 @@ import type {
   StudioContent,
   StudioMedia
 } from './wireframeData';
+import { DIFFICULTY_LEVELS, levelRank } from './levels';
 import type { Profile, Progress } from './data';
 import { isQuizPassed, moduleProgressPercent } from './domain.mjs';
 import { builtInAnswerKey } from './content';
@@ -226,10 +227,10 @@ function baseCapabilities(
   };
 }
 
+/** L'affichage d'un niveau : son rang sur cinq, son libellé et sa teinte (vert, ambre, rouge). */
 export function difficultySegments(level: DifficultyLevel): { filled: number; total: number; label: string; tone: 'easy' | 'mid' | 'hard' } {
-  if (level === 'Avancé') return { filled: 3, total: 3, label: 'Avancé', tone: 'hard' };
-  if (level === 'Intermédiaire') return { filled: 2, total: 3, label: 'Intermédiaire', tone: 'mid' };
-  return { filled: 1, total: 3, label: 'Débutant', tone: 'easy' };
+  const filled = levelRank(level);
+  return { filled, total: DIFFICULTY_LEVELS.length, label: level, tone: filled <= 2 ? 'easy' : filled === 3 ? 'mid' : 'hard' };
 }
 
 export function isFocusedStudyRoute(page: string): boolean {

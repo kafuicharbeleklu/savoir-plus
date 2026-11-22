@@ -425,7 +425,7 @@ export const EXTRA_CATALOG_RESOURCES: CatalogItem[] = [
     type: 'resource',
     title: 'Mémo : 5 règles pour un mot de passe solide',
     domain: 'Numérique',
-    level: 'Débutant',
+    level: 'Initiation',
     duration: '3 min',
     author: 'Kodjo Amegan',
     authorRole: 'Technicien support',
@@ -456,7 +456,7 @@ export const EXTRA_CATALOG_RESOURCES: CatalogItem[] = [
     type: 'resource',
     title: 'Fiche : l’objet d’e-mail en 6 mots',
     domain: 'Communication',
-    level: 'Débutant',
+    level: 'Initiation',
     duration: '4 min',
     author: 'Ama Dossou',
     authorRole: 'Formatrice en communication',
@@ -601,7 +601,7 @@ export const EXTRA_CATALOG_PATHS: CatalogItem[] = [
     ],
     prerequisites: 'Utilisation courante d’un téléphone ou d’un ordinateur. L’ordre proposé guide la progression ; il ne crée pas de verrouillage.',
     pathModules: [
-      { id: 'phishing', title: '01 Ne tombez plus dans le piège', version: 'v2', note: '12 min · Débutant', status: 'En cours' },
+      { id: 'phishing', title: '01 Ne tombez plus dans le piège', version: 'v2', note: '12 min · Initiation', status: 'En cours' },
       { id: 'comptes', title: '02 Protéger ses comptes', version: 'v1', note: '25 min · Débutant', status: 'À commencer' },
       { id: 'sauvegarde', title: '03 Sauvegarder ses fichiers : la règle 3-2-1', version: 'v1', note: '15 min · Débutant', status: 'À commencer' }
     ]
@@ -611,7 +611,7 @@ export const EXTRA_CATALOG_PATHS: CatalogItem[] = [
     type: 'path',
     title: 'Communication professionnelle',
     domain: 'Communication',
-    level: 'Débutant',
+    level: 'Intermédiaire',
     duration: '33 min',
     author: 'Ama Dossou',
     authorRole: 'Formatrice en communication',

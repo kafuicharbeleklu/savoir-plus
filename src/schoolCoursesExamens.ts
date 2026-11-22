@@ -8,6 +8,7 @@
 import type { CatalogItem } from './wireframeData';
 import type { LessonRich, ModuleStudyContent, StudyQuestion } from './content';
 import type { ProgrammeRef } from './programmeTogo';
+import { levelOfClass } from './levels';
 
 interface CourseLesson {
   title: string;
@@ -26,7 +27,6 @@ interface CourseDef {
   classLabel: string;
   /** La leçon du programme officiel à laquelle le cours correspond, quand le programme a été lu. */
   programme?: ProgrammeRef;
-  level: CatalogItem['level'];
   duration: string;
   summary: string;
   prerequisites: string;
@@ -55,7 +55,7 @@ function defineCourse(def: CourseDef): { item: CatalogItem; content: ModuleStudy
       domain: 'Scolaire',
       classLabel: def.classLabel,
       programme: def.programme,
-      level: def.level,
+      level: levelOfClass(def.classLabel),
       duration: def.duration,
       author: 'Équipe pédagogique SAVOIR+',
       authorRole: 'Cours alignés sur le programme officiel du Togo',
@@ -90,7 +90,6 @@ const CM2_PASSE_COMPOSE: CourseDef = {
   id: 'cm2-passe-compose',
   title: 'Le passé composé',
   classLabel: 'CM2',
-  level: 'Débutant',
   duration: '20 min',
   summary: 'Former le passé composé, choisir entre être et avoir, accorder le participe passé : la conjugaison de CM2 pour raconter ce qui est déjà arrivé. Pour préparer le CEPD.',
   prerequisites: 'Savoir conjuguer être et avoir au présent. Français (conjugaison), CM2.',
@@ -309,7 +308,6 @@ const CM2_EAU_POTABLE: CourseDef = {
   id: 'cm2-eau-potable',
   title: 'L’eau potable',
   classLabel: 'CM2',
-  level: 'Débutant',
   duration: '20 min',
   summary: 'Une eau claire n’est pas toujours bonne à boire : reconnaître une eau potable, la rendre potable et la garder propre. Sciences et technologie, CM2.',
   prerequisites: 'Aucun prérequis. Sciences et technologie, CM2.',
@@ -530,7 +528,6 @@ const TROISIEME_CALCUL_LITTERAL: CourseDef = {
   title: 'Le calcul littéral : développer et factoriser',
   classLabel: '3e',
   programme: { docId: '3e-maths', theme: 'Programme de calcul – calcul littéral', lesson: 'Monômes, polynômes, fractions rationnelles' },
-  level: 'Intermédiaire',
   duration: '25 min',
   summary: 'Développer, utiliser les produits remarquables, factoriser pour résoudre une équation : le calcul littéral du programme de 3e. Pour préparer le BEPC.',
   prerequisites: 'Savoir réduire une expression et calculer avec les nombres relatifs. Mathématiques, programme de 3e.',
@@ -744,9 +741,8 @@ const TROISIEME_POIDS_MASSE: CourseDef = {
   title: 'Poids et masse',
   classLabel: '3e',
   programme: { docId: '3e-pct', theme: 'Physique · Mécanique', lesson: 'Les forces' },
-  level: 'Intermédiaire',
   duration: '22 min',
-  summary: 'La masse se mesure en kilogrammes, le poids en newtons : décrire le poids d’un corps comme une force, le mesurer, et le relier à la masse par P = m × g. Leçon « Les forces », PCT de 3e, pour préparer le BEPC.',
+  summary: 'La masse se mesure en kilogrammes, le poids en newtons : décrire le poids d’un corps comme une force, le mesurer, et le relier à la masse par P = m × g. Reprend « Poids d’un corps » (PCT de 4e) et le prolonge avec « Les forces » (PCT de 3e), pour préparer le BEPC.',
   prerequisites: 'Savoir convertir des grammes en kilogrammes. PCT (mécanique), programme de 3e.',
   skills: ['Masse et poids', 'Caractéristiques d’une force', 'Relation P = m × g'],
   quizTitle: 'Vérifier vos acquis sur le poids et la masse',
@@ -977,7 +973,6 @@ const TERMINALE_LOGARITHME: CourseDef = {
   id: 'tle-logarithme',
   title: 'La fonction logarithme népérien',
   classLabel: 'Terminale',
-  level: 'Avancé',
   duration: '30 min',
   summary: 'Définition, propriétés algébriques, étude de la fonction, équations et inéquations : le logarithme népérien, au cœur de l’analyse en Terminale. Pour préparer le BAC II.',
   prerequisites: 'Connaître la dérivation et les primitives. Mathématiques (analyse), Terminale.',

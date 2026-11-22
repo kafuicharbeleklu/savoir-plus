@@ -69,11 +69,38 @@ test('recommandé pour vous : une place pour élargir hors des domaines suivis',
   const only = (domain: CatalogItem['domain'], n: number) =>
     Array.from({ length: n }, (_, i) => ({ ...catalog[0], id: `${domain}-${i}`, domain, author: 'Quelqu’un', level: 'Débutant' as const }));
   const items = [...only('Numérique', 6), ...only('Gestion', 2)];
-  const v: Viewer = { id: 'x', kind: 'learner', interests: ['Numérique'], assigned: {}, related: {}, following: [], done: [], started: [] };
+  const v: Viewer = { id: 'x', kind: 'learner', interests: ['Numérique'], assigned: {}, related: {}, following: [], classes: [], done: [], started: [] };
   const list = recommend(items, v, { authorIdOf: () => undefined, limit: 4 });
   assert.equal(list.length, 4);
   assert.equal(list[3].item.domain, 'Gestion');
   assert.equal(list[3].reason, 'Pour élargir : Gestion');
+});
+
+test('recommandé pour vous : un cours scolaire seulement pour la classe du membre ou une classe voisine', () => {
+  const schoolIds = (list: { item: CatalogItem }[]) => list.filter((r) => r.item.classLabel).map((r) => `${r.item.classLabel}:${r.item.id}`);
+  const all = (uid: string, kind: ViewerKind) => recommend(catalog, viewer(uid, kind), { authorIdOf, limit: 40 });
+
+  // Kokou est en CM2 : les cours de CM2, jamais ceux de 3e, de Seconde ou de Terminale.
+  assert.deepEqual(viewer('kokou', 'learner').classes, ['CM2']);
+  const kokou = all('kokou', 'learner');
+  assert.ok(schoolIds(kokou).length >= 3);
+  assert.ok(schoolIds(kokou).every((id) => id.startsWith('CM2:')), schoolIds(kokou).join(', '));
+  assert.equal(kokou.find((r) => r.item.id === 'cm2-fractions')?.reason, 'Au programme de CM2');
+
+  // Elom est en Terminale D : le cours de Terminale, pas ceux de CM2 ni de 3e.
+  assert.deepEqual(viewer('elom', 'learner').classes, ['Terminale']);
+  const elom = all('elom', 'learner');
+  assert.deepEqual(schoolIds(elom), ['Terminale:tle-logarithme']);
+  assert.equal(elom.find((r) => r.item.id === 'tle-logarithme')?.reason, 'Au programme de Terminale');
+
+  // Afi suit un cours du soir, hors scolarité : aucun cours scolaire en première ligne.
+  assert.deepEqual(viewer('afi', 'learner').classes, []);
+  assert.deepEqual(schoolIds(all('afi', 'learner')), []);
+
+  // Un parent voit ce qui convient à la classe de son enfant ; un enseignant, à ses classes.
+  assert.deepEqual(viewer('akouvi', 'guardian').classes, ['Terminale']);
+  assert.deepEqual(viewer('kossi', 'educator').classes.sort(), ['3e', 'Terminale']);
+  assert.ok(schoolIds(all('kossi', 'educator')).every((id) => /^(3e|4e|Seconde|Première|Terminale):/.test(id)));
 });
 
 test('fil d’entraide : ordre et contexte propres à chaque profil', () => {

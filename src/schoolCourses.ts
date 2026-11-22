@@ -7,6 +7,7 @@
 import type { CatalogItem } from './wireframeData';
 import type { LessonRich, ModuleStudyContent } from './content';
 import { EXAM_CATALOG_MODULES, EXAM_MODULES_CONTENT } from './schoolCoursesExamens';
+import { levelOfClass } from './levels';
 
 const READER = 'Section consultable depuis le lecteur';
 const QUIZ_SECTION = { title: '04 Vérifier mes acquis', subtitle: 'Activité à réaliser dans le lecteur · 3 questions' };
@@ -22,7 +23,7 @@ export const SCHOOL_CATALOG_MODULES: CatalogItem[] = [
     title: 'Les fractions',
     domain: 'Scolaire',
     classLabel: 'CM2',
-    level: 'Débutant',
+    level: levelOfClass('CM2'),
     duration: '20 min',
     author: AUTHOR,
     authorRole: AUTHOR_ROLE,
@@ -51,7 +52,7 @@ export const SCHOOL_CATALOG_MODULES: CatalogItem[] = [
     title: 'Le théorème de Thalès',
     domain: 'Scolaire',
     classLabel: '3e',
-    level: 'Intermédiaire',
+    level: levelOfClass('3e'),
     duration: '25 min',
     author: AUTHOR,
     authorRole: AUTHOR_ROLE,
@@ -81,7 +82,7 @@ export const SCHOOL_CATALOG_MODULES: CatalogItem[] = [
     title: 'La quantité de matière : la mole',
     domain: 'Scolaire',
     classLabel: 'Seconde',
-    level: 'Avancé',
+    level: levelOfClass('Seconde'),
     duration: '25 min',
     author: AUTHOR,
     authorRole: AUTHOR_ROLE,

@@ -1,6 +1,7 @@
 import { EXTRA_CATALOG_MODULES, EXTRA_CATALOG_PATHS, EXTRA_CATALOG_RESOURCES } from './seedCatalog';
 import { SCHOOL_CATALOG_MODULES } from './schoolCourses';
 import type { ProgrammeRef } from './programmeTogo';
+import { levelOfClass, type DifficultyLevel } from './levels';
 import {
   SEED_MEMBER_ACCOUNTS,
   SEED_MEMBER_DETAILS,
@@ -21,7 +22,7 @@ export const SEED_VERSION = 2;
 
 export type CatalogType = 'module' | 'resource' | 'path';
 export type ReviewLevel = 'Communautaire' | 'Pédagogique' | 'Renforcée';
-export type DifficultyLevel = 'Débutant' | 'Intermédiaire' | 'Avancé';
+export type { DifficultyLevel } from './levels';
 export type AppPage =
   | 'home'
   | 'subscription'
@@ -113,7 +114,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     type: 'module',
     title: 'Ne tombez plus dans le piège',
     domain: 'Numérique',
-    level: 'Débutant',
+    level: 'Initiation',
     duration: '12 min',
     author: 'Kossi Agbo',
     authorRole: 'Apprendre. Puis transmettre.',
@@ -141,7 +142,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     type: 'module',
     title: 'Comprendre les réseaux',
     domain: 'Numérique',
-    level: 'Débutant',
+    level: 'Intermédiaire',
     duration: '45 min',
     author: 'Kossi Agbo',
     authorRole: 'Créateur & Mentor · Réseaux & Sécurité',
@@ -224,7 +225,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     type: 'resource',
     title: 'Mémo : Vérifier un lien suspect en 10 secondes',
     domain: 'Communication',
-    level: 'Débutant',
+    level: 'Initiation',
     duration: '3 min',
     author: 'Kossi Agbo',
     authorRole: 'Curieuse, chaque jour.',
@@ -266,8 +267,8 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     ],
     prerequisites: 'Utilisation courante d’un ordinateur conseillée. L’ordre proposé guide la progression ; il ne crée pas de verrouillage.',
     pathModules: [
-      { id: 'phishing', title: '01 Ne tombez plus dans le piège', version: 'v2', note: '12 min · Débutant', status: 'Terminé' },
-      { id: 'reseaux', title: '02 Comprendre les réseaux', version: 'v2', note: '45 min · Débutant', status: 'En cours' },
+      { id: 'phishing', title: '01 Ne tombez plus dans le piège', version: 'v2', note: '12 min · Initiation', status: 'Terminé' },
+      { id: 'reseaux', title: '02 Comprendre les réseaux', version: 'v2', note: '45 min · Intermédiaire', status: 'En cours' },
       { id: 'comptes', title: '03 Protéger ses comptes', version: 'v1', note: '25 min · Débutant', status: 'À commencer' }
     ]
   },
@@ -276,7 +277,7 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     type: 'path',
     title: 'Technicien support IT',
     domain: 'Gestion',
-    level: 'Intermédiaire',
+    level: 'Avancé',
     duration: 'Durée totale non précisée',
     author: 'Afi Koudjo',
     authorRole: 'Responsable support utilisateur',
@@ -291,14 +292,15 @@ export const CATALOG_ITEMS: CatalogItem[] = [
     ],
     prerequisites: 'Connaissances de base en environnement bureautique et réseau.',
     pathModules: [
-      { id: 'reseaux', title: '01 Comprendre les réseaux', version: 'v2', note: '45 min · Débutant', status: 'En cours' },
+      { id: 'reseaux', title: '01 Comprendre les réseaux', version: 'v2', note: '45 min · Intermédiaire', status: 'En cours' },
       { id: 'comptes', title: '02 Protéger ses comptes', version: 'v1', note: '25 min · Débutant', status: 'À commencer' }
     ]
   },
   ...EXTRA_CATALOG_MODULES,
   ...EXTRA_CATALOG_RESOURCES,
   ...EXTRA_CATALOG_PATHS,
-  ...SCHOOL_CATALOG_MODULES
+  // Un cours scolaire ne choisit pas son niveau : il le tient de sa classe.
+  ...SCHOOL_CATALOG_MODULES.map((item) => (item.classLabel ? { ...item, level: levelOfClass(item.classLabel) } : item))
 ];
 
 export interface CommunityReply {

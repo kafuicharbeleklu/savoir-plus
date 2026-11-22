@@ -14,6 +14,7 @@
 import {
   childrenOf,
   classesOfStudent,
+  classesOfTeacher,
   guardiansOf,
   learnersOf,
   studentsOfClass,
@@ -21,6 +22,7 @@ import {
 } from './school';
 import type { CatalogItem, CommunityPost } from './wireframeData';
 import { ofName } from './french';
+import { classGap, ladderClassOf, levelRank } from './levels';
 
 export type ViewerKind = 'learner' | 'educator' | 'guardian' | 'institution';
 type Domain = CatalogItem['domain'];
@@ -36,6 +38,8 @@ export interface Viewer {
   /** Personnes liées par l'école ou la famille : identifiant → lien, à lire après le nom (« enseigne dans votre classe »). */
   related: Record<string, string>;
   following: string[];
+  /** Classes du membre sur l'échelle scolaire : la sienne, celles de ses enfants, ou celles où il enseigne. */
+  classes: string[];
   /** Modules validés, et modules commencés mais pas validés. */
   done: string[];
   started: string[];
@@ -72,6 +76,21 @@ function interestFor(domain: Domain, interests: string[]): string | undefined {
 }
 
 const firstName = (name: string) => name.split(' ')[0];
+
+/**
+ * Les classes d'un membre, sur l'échelle scolaire (« Terminale D » → Terminale) : la sienne pour un élève,
+ * celles de ses enfants pour un parent, celles où il enseigne pour un encadrant. Un groupe hors scolarité
+ * (cours du soir) ne compte pas.
+ */
+export function viewerClassesOf(school: SchoolState, uid: string, kind: ViewerKind): string[] {
+  const classes =
+    kind === 'guardian'
+      ? childrenOf(school, uid).flatMap((child) => classesOfStudent(school, child))
+      : kind === 'educator'
+        ? [...classesOfStudent(school, uid), ...classesOfTeacher(school, uid)]
+        : classesOfStudent(school, uid);
+  return Array.from(new Set(classes.map((c) => ladderClassOf(c.name)).filter((c): c is NonNullable<typeof c> => c !== null)));
+}
 
 /**
  * Construit le lecteur de l'accueil à partir du profil, de la vie scolaire et de l'avancement.
@@ -124,7 +143,17 @@ export function viewerOf(input: {
     if (state === 'done') done.push(id);
     else if (state === 'started') started.push(id);
   }
-  return { id: uid, kind, interests: parseInterests(input.interests), assigned, related, following: input.following, done, started };
+  return {
+    id: uid,
+    kind,
+    interests: parseInterests(input.interests),
+    assigned,
+    related,
+    following: input.following,
+    classes: viewerClassesOf(school, uid, kind),
+    done,
+    started
+  };
 }
 
 /* ------------------------------------------------------------------ Recommandé pour vous */
@@ -145,8 +174,17 @@ export function recommend(
   const order = new Map(items.map((item, i) => [item.id, i]));
   const interestWords = viewer.interests.map(fold).filter((w) => w.length > 3);
 
+  // Un cours scolaire n'est proposé qu'à qui il convient : la classe du membre ou une classe voisine. Sans
+  // classe connue, il n'est proposé que si le membre a déclaré un intérêt pour le scolaire.
+  const schoolInterest = Boolean(interestFor('Scolaire', viewer.interests));
+  const withinReach = (item: CatalogItem) => {
+    if (!item.classLabel || viewer.assigned[item.id]) return true;
+    const gap = classGap(item.classLabel, viewer.classes);
+    return gap === null ? schoolInterest : gap <= 1;
+  };
+
   const scored = items
-    .filter((item) => !viewer.done.includes(item.id) && options.authorIdOf(item) !== viewer.id)
+    .filter((item) => !viewer.done.includes(item.id) && options.authorIdOf(item) !== viewer.id && withinReach(item))
     .map((item): Recommendation => {
       const author = options.authorIdOf(item);
       const reasons: [number, string][] = [];
@@ -156,13 +194,18 @@ export function recommend(
       if (author && viewer.following.includes(author)) reasons.push([20, `De ${item.author}, que vous suivez`]);
       const interest = interestFor(item.domain, viewer.interests);
       if (interest) reasons.push([25, `Centre d’intérêt : ${interest}`]);
+      // La classe : son programme d'abord, la classe voisine ensuite (révision ou avance).
+      const gap = classGap(item.classLabel, viewer.classes);
+      if (gap === 0) reasons.push([35, `Au programme de ${item.classLabel}`]);
+      else if (gap === 1) reasons.push([8, `Classe voisine : ${item.classLabel}`]);
       // Mots d'un intérêt présents dans le titre, le résumé ou les compétences.
       const text = fold(`${item.title} ${item.summary} ${(item.skills || []).join(' ')}`);
       const hits = interestWords.filter((w) => text.includes(w)).length;
       let score = reasons.reduce((sum, [points]) => sum + points, 0) + Math.min(hits, 2) * 8;
-      // Un débutant commence par des contenus débutants.
-      if (viewer.done.length < 2) score += item.level === 'Débutant' ? 6 : item.level === 'Avancé' ? -6 : 0;
-      const reason = reasons.length ? reasons.sort((a, b) => b[0] - a[0])[0][1] : item.level === 'Débutant' ? 'Pour bien commencer' : 'À découvrir';
+      // Qui débute commence par les deux premiers niveaux ; les deux derniers attendent.
+      const rank = levelRank(item.level);
+      if (viewer.done.length < 2 && gap === null) score += rank <= 2 ? 6 : rank >= 4 ? -6 : 0;
+      const reason = reasons.length ? reasons.sort((a, b) => b[0] - a[0])[0][1] : rank <= 2 ? 'Pour bien commencer' : 'À découvrir';
       return { item, reason, score };
     })
     .sort((a, b) => b.score - a.score || (order.get(a.item.id) ?? 0) - (order.get(b.item.id) ?? 0));

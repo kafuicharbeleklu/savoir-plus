@@ -288,6 +288,8 @@
 .sc-ring.is-easy .sc-ring-fill { stroke: var(--sc-easy); }
 .sc-ring.is-medium .sc-ring-fill { stroke: var(--sc-medium); }
 .sc-ring.is-hard .sc-ring-fill { stroke: var(--sc-hard); }
+/* Cinq niveaux, trois teintes : Initiation et Avancé, les plus bas de leur paire, sont plus clairs. */
+.sc-ring.is-light .sc-ring-fill { stroke-opacity: 0.6; }
 .sc-ring-hit { fill: none; stroke: transparent; pointer-events: stroke; }
 .sc-ring-core { fill: color-mix(in srgb, var(--fg-muted) 22%, transparent); }
 .sc-rings-tip { top: -10px; left: 50%; }

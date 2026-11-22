@@ -8,6 +8,7 @@ import {
   type RoleCapabilities
 } from '../personas';
 import type { DifficultyLevel, ExtendedDemoState } from '../wireframeData';
+import { LEVEL_CRITERIA } from '../levels';
 
 /* Photos de profil : un petit registre partagé, pour que chaque avatar de l'application
    affiche la photo du membre dès qu'il en a une, sans faire passer l'état partout. */
@@ -71,6 +72,27 @@ export function ProgressBar({
 }
 
 function DifficultyGlyph({ level }: { level: DifficultyLevel }) {
+  // Du plus simple au plus anguleux : cercle, pentagone, hexagone pointé, étoile, étoile pleine.
+  if (level === 'Initiation') {
+    return (
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="5.6" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+  if (level === 'Expert') {
+    return (
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path
+          d="M8 1.4L9.55 5.1L13.5 3.8L11.4 7.3L14.8 9.2L10.8 10.3L11.8 14.3L8 11.9L4.2 14.3L5.2 10.3L1.2 9.2L4.6 7.3L2.5 3.8L6.45 5.1L8 1.4Z"
+          fill="currentColor"
+          stroke="currentColor"
+          strokeWidth="1.45"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
   if (level === 'Avancé') {
     return (
       <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -111,7 +133,7 @@ function DifficultyGlyph({ level }: { level: DifficultyLevel }) {
 export function DifficultyMeter({ level }: { level: DifficultyLevel }) {
   const seg = difficultySegments(level);
   return (
-    <span className={`diff-meter diff-${seg.tone}`} title={`Niveau : ${seg.label}`}>
+    <span className={`diff-meter diff-${seg.tone}`} title={`Niveau ${seg.filled} sur ${seg.total} · ${seg.label} : ${LEVEL_CRITERIA[level].who}`}>
       <span className="diff-glyph" aria-hidden="true">
         <DifficultyGlyph level={level} />
       </span>

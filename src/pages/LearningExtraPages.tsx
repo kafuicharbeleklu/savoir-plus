@@ -29,6 +29,7 @@ import {
 import type { Profile, Progress, Relation } from '../data';
 import { MODULES_CONTENT, builtInAnswerKey } from '../content';
 import { resolveProgramme } from '../programmeTogo';
+import { DIFFICULTY_LEVELS, classFit } from '../levels';
 import { isQuizPassed, moduleProgressPercent, quizPassThreshold } from '../domain.mjs';
 import { computeCatalogCardSteps, moduleBadge } from '../personas';
 import { formatDayLong } from '../calendar';
@@ -95,9 +96,12 @@ export function CatalogExtraView({
   progress,
   userId = 'afi',
   getModuleProgress,
-  purchasedIds = []
+  purchasedIds = [],
+  viewerClasses = []
 }: Pick<LearningExtraProps, 'nav' | 'query' | 'setQuery' | 'domain' | 'setDomain' | 'progress' | 'userId' | 'getModuleProgress'> & {
   ext?: ExtendedDemoState;
+  /** Classes du membre (la sienne, celles de ses enfants ou de ses élèves) : les cours à sa portée passent devant. */
+  viewerClasses?: string[];
   /** Contenus achetés par ce compte (pour lui ou pour ses enfants) : un onglet « Achats » les regroupe. */
   purchasedIds?: string[];
 }) {
@@ -126,6 +130,9 @@ export function CatalogExtraView({
         const bMatch = b.title.toLowerCase().includes(q) ? 1 : 0;
         if (aMatch !== bMatch) return bMatch - aMatch;
       }
+      // D'abord ce qui est à la portée du membre : sa classe, les classes voisines, puis le reste.
+      const fit = classFit(a.classLabel, viewerClasses) - classFit(b.classLabel, viewerClasses);
+      if (fit !== 0) return fit;
       return a.interactive ? -1 : b.interactive ? 1 : 0;
     });
 
@@ -247,7 +254,7 @@ export function CatalogExtraView({
                 value={levelFilter}
                 onChange={(e) => setLevelFilter(e.target.value as 'Tous' | DifficultyLevel)}
               >
-                {['Tous', 'Débutant', 'Intermédiaire', 'Avancé'].map((l) => (
+                {['Tous', ...DIFFICULTY_LEVELS].map((l) => (
                   <option key={l} value={l}>
                     {l}
                   </option>

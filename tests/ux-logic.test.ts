@@ -96,8 +96,39 @@ test('Route classification and HTB difficulty segments behave deterministically'
   assert.equal(isGovernanceRoute('moderation'), true);
   assert.equal(isGovernanceRoute('admin-audit'), true);
 
-  assert.deepEqual(difficultySegments('Débutant'), { filled: 1, total: 3, label: 'Débutant', tone: 'easy' });
-  assert.deepEqual(difficultySegments('Avancé'), { filled: 3, total: 3, label: 'Avancé', tone: 'hard' });
+  assert.deepEqual(difficultySegments('Initiation'), { filled: 1, total: 5, label: 'Initiation', tone: 'easy' });
+  assert.deepEqual(difficultySegments('Débutant'), { filled: 2, total: 5, label: 'Débutant', tone: 'easy' });
+  assert.deepEqual(difficultySegments('Intermédiaire'), { filled: 3, total: 5, label: 'Intermédiaire', tone: 'mid' });
+  assert.deepEqual(difficultySegments('Expert'), { filled: 5, total: 5, label: 'Expert', tone: 'hard' });
+});
+
+test('niveaux : cinq niveaux, déduits de la classe pour un cours scolaire ; portée selon la classe du membre', async () => {
+  const { DIFFICULTY_LEVELS, LEVEL_CRITERIA, classFit, classGap, ladderClassOf, levelOfClass } = await import('../src/levels');
+  const { CATALOG_ITEMS } = await import('../src/wireframeData');
+  assert.deepEqual([...DIFFICULTY_LEVELS], ['Initiation', 'Débutant', 'Intermédiaire', 'Avancé', 'Expert']);
+  for (const level of DIFFICULTY_LEVELS) assert.ok(LEVEL_CRITERIA[level].who && LEVEL_CRITERIA[level].school);
+  // Le nom d'une classe d'établissement se ramène à l'échelle scolaire.
+  assert.equal(ladderClassOf('Terminale D'), 'Terminale');
+  assert.equal(ladderClassOf('Troisième A'), '3e');
+  assert.equal(ladderClassOf('CM2'), 'CM2');
+  assert.equal(ladderClassOf('2nde C'), 'Seconde');
+  assert.equal(ladderClassOf('Initiation aux réseaux'), null);
+  // La classe fait le niveau.
+  assert.deepEqual(['CP1', 'CM2', '6e', '5e', '4e', '3e', 'Seconde', 'Première', 'Terminale'].map(levelOfClass), [
+    'Initiation', 'Initiation', 'Débutant', 'Débutant', 'Intermédiaire', 'Intermédiaire', 'Avancé', 'Avancé', 'Expert'
+  ]);
+  for (const item of CATALOG_ITEMS.filter((c) => c.classLabel)) assert.equal(item.level, levelOfClass(item.classLabel!), item.id);
+  // Chaque niveau sert : le catalogue n'est plus presque tout « Débutant ».
+  assert.deepEqual([...new Set(CATALOG_ITEMS.map((c) => c.level))].sort(), [...DIFFICULTY_LEVELS].sort());
+  // Portée : sa classe, la classe voisine, le reste, puis les classes éloignées.
+  assert.equal(classGap('Terminale', ['CM2']), 7);
+  assert.equal(classFit('CM2', ['CM2']), 0);
+  assert.equal(classFit('6e', ['CM2']), 1);
+  assert.equal(classFit(undefined, ['CM2']), 2);
+  assert.equal(classFit('Terminale', ['CM2']), 3);
+  // Sans classe connue : les contenus généraux d'abord.
+  assert.equal(classFit(undefined, []), 0);
+  assert.equal(classFit('3e', []), 1);
 });
 
 test('Level calculation maps XP into consistent level progress', () => {
@@ -747,8 +778,12 @@ test('catalogue étendu : chaque module interactif a ses leçons, son quiz et so
   for (const c of CATALOG_ITEMS.filter((i) => i.domain === 'Scolaire')) assert.ok(c.classLabel, `classe manquante : ${c.id}`);
   // Les programmes officiels de 3e sont lus : chaque cours de 3e se rattache à une leçon qui y figure.
   const { PROGRAMMES_TOGO, resolveProgramme } = await import('../src/programmeTogo');
-  assert.equal(PROGRAMMES_TOGO.filter((d) => d.classLabel === '3e').length, 8);
-  const troisieme = CATALOG_ITEMS.filter((i) => i.classLabel === '3e');
+  // Collège : 8 programmes en 6e et en 3e, 7 en 5e (pas d'anglais) et en 4e (pas d'ECM).
+  assert.deepEqual(['6e', '5e', '4e', '3e'].map((c) => PROGRAMMES_TOGO.filter((d) => d.classLabel === c).length), [8, 7, 7, 8]);
+  assert.equal(new Set(PROGRAMMES_TOGO.map((d) => d.id)).size, 30);
+  // Les programmes restent un plan interne : ils ne sont pas des contenus de la Bibliothèque.
+  assert.ok(!CATALOG_ITEMS.some((c) => c.id.startsWith('programme-')));
+  const troisieme = CATALOG_ITEMS.filter((i) => i.classLabel === '3e' && i.type === 'module');
   assert.equal(troisieme.length, 3);
   for (const c of troisieme) assert.ok(resolveProgramme(c.programme), `leçon du programme introuvable : ${c.id}`);
   for (const c of CATALOG_ITEMS.filter((i) => i.programme)) assert.ok(resolveProgramme(c.programme), `référence invalide : ${c.id}`);

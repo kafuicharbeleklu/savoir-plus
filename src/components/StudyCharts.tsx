@@ -13,9 +13,10 @@ import { BookOpen, CheckCircle2, Layers } from 'lucide-react';
 import type { SessionLog } from '../calendar';
 import { addDays, todayDay } from '../calendar';
 import type { MemberStats } from '../memberStats';
+import { DIFFICULTY_LEVELS, levelRank, type DifficultyLevel } from '../levels';
 
 const WEEKS = 8;
-const LEVELS = ['Débutant', 'Intermédiaire', 'Avancé'] as const;
+const LEVELS = DIFFICULTY_LEVELS;
 const dayShort = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
 const label = (day: string) => dayShort.format(new Date(`${day}T12:00:00`));
 
@@ -177,9 +178,12 @@ function LevelRings({ levels }: { levels: { lvl: string; done: number; total: nu
   const rings = [...levels].reverse();
   const size = 200;
   const c = size / 2;
-  const band = 20;
+  // Cinq niveaux : des bandes plus fines, pour que la plus petite garde un rayon lisible.
+  const band = 13;
   const gap = 4;
-  const tone = (lvl: string) => (lvl === 'Débutant' ? 'easy' : lvl === 'Intermédiaire' ? 'medium' : 'hard');
+  const rankOf = (lvl: string) => levelRank(lvl as DifficultyLevel);
+  // Trois teintes pour cinq niveaux (vert, ambre, rouge) : le plus bas de chaque paire est plus clair.
+  const tone = (lvl: string) => (rankOf(lvl) <= 2 ? 'easy' : rankOf(lvl) === 3 ? 'medium' : 'hard');
   const shown = active === null ? null : rings[active];
   return (
     <div className="sc-rings">
@@ -203,7 +207,7 @@ function LevelRings({ levels }: { levels: { lvl: string; done: number; total: nu
             return (
               <g
                 key={l.lvl}
-                className={`sc-ring is-${tone(l.lvl)}${active !== null && active !== i ? ' is-dim' : ''}`}
+                className={`sc-ring is-${tone(l.lvl)}${rankOf(l.lvl) === 1 || rankOf(l.lvl) === 4 ? ' is-light' : ''}${active !== null && active !== i ? ' is-dim' : ''}`}
                 onPointerEnter={() => setActive(i)}
                 onPointerLeave={() => setActive(null)}
               >
@@ -286,7 +290,7 @@ export function StudyCharts({ stats, log, onOpenCalendar }: { stats: MemberStats
         </section>
         <section className="sc-panel" aria-labelledby="sc-lvl-title">
           <h3 id="sc-lvl-title">Complétion par niveau</h3>
-          <p className="sc-sub">Débutant au centre · Avancé à l’extérieur</p>
+          <p className="sc-sub">Initiation au centre · Expert à l’extérieur</p>
           <LevelRings levels={levels} />
         </section>
       </div>
