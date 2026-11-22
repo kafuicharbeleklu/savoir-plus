@@ -255,7 +255,8 @@ export function CatalogContentCard({
               <span aria-hidden="true">·</span>
             </>
           )}
-          <span>{item.domain}</span>
+          {/* Cours scolaire : la classe suit le domaine (« Scolaire · CM2 »). */}
+          <span>{item.classLabel ? `${item.domain} · ${item.classLabel}` : item.domain}</span>
           {showAuthor && (
             <>
               <span aria-hidden="true">·</span>

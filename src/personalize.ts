@@ -45,7 +45,8 @@ export interface Viewer {
 const DOMAIN_WORDS: Record<Domain, string[]> = {
   Numérique: ['numerique', 'cybersecurite', 'securite', 'reseau', 'informatique', 'internet', 'systeme', 'bureautique', 'sciences', 'technologie'],
   Communication: ['communication', 'entraide', 'partage', 'pedagogie', 'enseignement', 'redaction', 'ecriture', 'reunion', 'revision', 'expression'],
-  Gestion: ['gestion', 'budget', 'comptabilite', 'entrepreneuriat', 'entreprise', 'finance', 'organisation']
+  Gestion: ['gestion', 'budget', 'comptabilite', 'entrepreneuriat', 'entreprise', 'finance', 'organisation'],
+  Scolaire: ['scolaire', 'ecole', 'college', 'lycee', 'primaire', 'mathematiques', 'physique', 'chimie', 'cepd', 'bepc', 'bac']
 };
 
 /** Minuscules sans accents, pour comparer des mots écrits librement. */

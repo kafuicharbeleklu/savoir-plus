@@ -7,6 +7,7 @@
 import type { LessonRich } from './content';
 import { LESSONS_RICH_CORE } from './lessonsRichCore';
 import { LESSONS_RICH_EXTRA } from './lessonsRichExtra';
+import { SCHOOL_LESSONS_RICH, SCHOOL_MODULE_GOALS } from './schoolCourses';
 
 const PHISHING: LessonRich[] = [
   {
@@ -182,11 +183,13 @@ export const MODULE_GOALS: Record<string, string[]> = {
   'email-pro': ['écrire un objet qui dit le sujet et l’action attendue ;', 'construire un message autour d’une seule demande ;', 'relire le ton, la pièce jointe et les destinataires avant d’envoyer.'],
   budget: ['relever vos dépenses et les regrouper par postes ;', 'répartir un revenu entre besoins, envies et épargne ;', 'tenir votre budget avec un point de dix minutes par semaine.'],
   sauvegarde: ['dire ce qui menace un fichier gardé en un seul endroit ;', 'appliquer la règle 3-2-1 ;', 'vérifier qu’une sauvegarde se restaure vraiment.'],
-  reunion: ['décider si une réunion est le bon format ;', 'préparer un ordre du jour qui cadre ;', 'conclure par des décisions, des responsables et un compte rendu.']
+  reunion: ['décider si une réunion est le bon format ;', 'préparer un ordre du jour qui cadre ;', 'conclure par des décisions, des responsables et un compte rendu.'],
+  ...SCHOOL_MODULE_GOALS
 };
 
 export const LESSONS_RICH: Record<string, LessonRich[]> = {
   phishing: PHISHING,
   ...LESSONS_RICH_CORE,
-  ...LESSONS_RICH_EXTRA
+  ...LESSONS_RICH_EXTRA,
+  ...SCHOOL_LESSONS_RICH
 };

@@ -730,7 +730,8 @@ test('catalogue étendu : chaque module interactif a ses leçons, son quiz et so
   const { CATALOG_ITEMS } = await import('../src/wireframeData');
   const { MODULES_CONTENT } = await import('../src/content');
   const modules = CATALOG_ITEMS.filter((c) => c.type === 'module' && c.interactive);
-  assert.equal(modules.length, 7);
+  // Sept modules, plus trois cours scolaires (CM2, 3e, Seconde).
+  assert.equal(modules.length, 10);
   for (const mod of modules) {
     const study = MODULES_CONTENT[mod.id];
     assert.ok(study, `contenu manquant : ${mod.id}`);
@@ -741,7 +742,9 @@ test('catalogue étendu : chaque module interactif a ses leçons, son quiz et so
   for (const path of CATALOG_ITEMS.filter((c) => c.type === 'path')) {
     for (const pm of path.pathModules || []) assert.ok(CATALOG_ITEMS.some((c) => c.id === pm.id), `module de parcours inconnu : ${pm.id}`);
   }
-  assert.deepEqual([...new Set(CATALOG_ITEMS.map((c) => c.domain))].sort(), ['Communication', 'Gestion', 'Numérique']);
+  assert.deepEqual([...new Set(CATALOG_ITEMS.map((c) => c.domain))].sort(), ['Communication', 'Gestion', 'Numérique', 'Scolaire']);
+  // Un cours scolaire dit sa classe.
+  for (const c of CATALOG_ITEMS.filter((i) => i.domain === 'Scolaire')) assert.ok(c.classLabel, `classe manquante : ${c.id}`);
 });
 
 test('fil d’actualité : formats variés, auteurs variés et références valides', async () => {

@@ -136,6 +136,7 @@ export interface StudioStudySource {
 }
 
 import { EXTRA_MODULES_CONTENT } from './seedCatalog';
+import { SCHOOL_MODULES_CONTENT } from './schoolCourses';
 import { LESSONS_RICH, MODULE_GOALS } from './lessonsRich';
 
 export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
@@ -372,7 +373,8 @@ export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
       }
     ]
   },
-  ...EXTRA_MODULES_CONTENT
+  ...EXTRA_MODULES_CONTENT,
+  ...SCHOOL_MODULES_CONTENT
 };
 
 // Les leçons rédigées au format complet reçoivent leur contenu enrichi, section par section.

@@ -159,7 +159,7 @@ export function CatalogExtraView({
     return 0;
   };
 
-  const domainCounts = ['Tous', 'Numérique', 'Communication', 'Gestion'].map((d) => ({
+  const domainCounts = ['Tous', 'Numérique', 'Communication', 'Gestion', 'Scolaire'].map((d) => ({
     label: d,
     count: d === 'Tous' ? catalog.length : catalog.filter((i) => i.domain === d).length
   }));
@@ -228,7 +228,7 @@ export function CatalogExtraView({
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
               >
-                {['Tous', 'Numérique', 'Communication', 'Gestion'].map((d) => (
+                {['Tous', 'Numérique', 'Communication', 'Gestion', 'Scolaire'].map((d) => (
                   <option key={d} value={d}>
                     {d}
                   </option>
@@ -366,7 +366,7 @@ export function ResourceDetailView({
           <div className="htb-meta-line detail-meta-line">
             <DifficultyMeter level={item.level} />
             <span aria-hidden="true">·</span>
-            <span>{item.domain}</span>
+            <span>{item.classLabel ? `${item.domain} · ${item.classLabel}` : item.domain}</span>
             <span aria-hidden="true">·</span>
             <span className="sober-inline-icon">
               <Clock size={13} aria-hidden="true" /> {item.duration}
@@ -571,7 +571,7 @@ export function ModuleDetailView({
               Bibliothèque
             </button>
             <ChevronRight size={14} aria-hidden="true" />
-            <span>{item.domain}</span>
+            <span>{item.classLabel ? `${item.domain} · ${item.classLabel}` : item.domain}</span>
           </nav>
           <p className="md-type">
             Module · {item.level} · {item.version}
@@ -837,7 +837,7 @@ export function PathDetailView({
           <div className="htb-meta-line detail-meta-line">
             <DifficultyMeter level={item.level} />
             <span aria-hidden="true">·</span>
-            <span>{item.domain}</span>
+            <span>{item.classLabel ? `${item.domain} · ${item.classLabel}` : item.domain}</span>
             <span aria-hidden="true">·</span>
             <span>{item.moduleCount} modules</span>
             <span aria-hidden="true">·</span>

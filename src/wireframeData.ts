@@ -1,4 +1,5 @@
 import { EXTRA_CATALOG_MODULES, EXTRA_CATALOG_PATHS, EXTRA_CATALOG_RESOURCES } from './seedCatalog';
+import { SCHOOL_CATALOG_MODULES } from './schoolCourses';
 import {
   SEED_MEMBER_ACCOUNTS,
   SEED_MEMBER_DETAILS,
@@ -78,7 +79,10 @@ export interface CatalogItem {
   id: string;
   type: CatalogType;
   title: string;
-  domain: 'Numérique' | 'Communication' | 'Gestion';
+  /** « Scolaire » : un cours du programme officiel du Togo (voir `classLabel`). */
+  domain: 'Numérique' | 'Communication' | 'Gestion' | 'Scolaire';
+  /** Cours scolaire : la classe (CM2, 3e, Seconde…). */
+  classLabel?: string;
   level: DifficultyLevel;
   duration: string;
   author: string;
@@ -290,7 +294,8 @@ export const CATALOG_ITEMS: CatalogItem[] = [
   },
   ...EXTRA_CATALOG_MODULES,
   ...EXTRA_CATALOG_RESOURCES,
-  ...EXTRA_CATALOG_PATHS
+  ...EXTRA_CATALOG_PATHS,
+  ...SCHOOL_CATALOG_MODULES
 ];
 
 export interface CommunityReply {

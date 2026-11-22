@@ -257,7 +257,7 @@ export function SplitFigure({ figure }: { figure: LessonSplitFigure }) {
       <div className="rd-split-bar" aria-hidden="true">
         {figure.parts.map((part, i) => (
           <span key={part.label} className={tones[i % tones.length]} style={{ flexGrow: part.percent }}>
-            {part.percent} %
+            {part.percent.toLocaleString('fr-FR')} %
           </span>
         ))}
       </div>
@@ -267,7 +267,7 @@ export function SplitFigure({ figure }: { figure: LessonSplitFigure }) {
             <i className={tones[i % tones.length]} aria-hidden="true" />
             <span>
               <b>
-                {part.label} <span className="sr-only">: {part.percent} %</span>
+                {part.label} <span className="sr-only">: {part.percent.toLocaleString('fr-FR')} %</span>
               </b>
               <small>{part.note}</small>
             </span>
