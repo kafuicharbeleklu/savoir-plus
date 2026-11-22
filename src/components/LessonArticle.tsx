@@ -77,29 +77,36 @@ function FigureView({ figure }: { figure: LessonFigure }) {
     );
   }
 
+  // Une colonne faite de nombres (montants, mesures, pourcentages) s'aligne à droite, chiffres en colonnes.
+  const NUMERIC = /^[−–-]?\s?\d[\d\s.,]*\s?(%|F|F CFA|FCFA|XP|cm|mm|m|km|g|kg|N|L|mL|mol|h|min|s|°C)?$/;
+  const plain = (cell: string) => cell.replace(/\*\*/g, '').trim();
+  const numeric = figure.head.map((_, c) => figure.rows.length > 0 && figure.rows.every((row) => NUMERIC.test(plain(row[c] || ''))));
   return (
-    <table className="rd-table">
-      <thead>
-        <tr>
-          {figure.head.map((cell) => (
-            <th key={cell} scope="col">
-              {cell}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {figure.rows.map((row, r) => (
-          <tr key={r}>
-            {row.map((cell, c) => (
-              <td key={c}>
-                <RichText text={cell} />
-              </td>
+    // Sur petit écran, le tableau défile dans son cadre au lieu d'être coupé ou écrasé.
+    <div className="rd-table-scroll" role="region" aria-label="Tableau" tabIndex={0}>
+      <table className="rd-table">
+        <thead>
+          <tr>
+            {figure.head.map((cell, c) => (
+              <th key={cell} scope="col" className={numeric[c] ? 'is-num' : undefined}>
+                {cell}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {figure.rows.map((row, r) => (
+            <tr key={r}>
+              {row.map((cell, c) => (
+                <td key={c} className={numeric[c] ? 'is-num' : undefined}>
+                  <RichText text={cell} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

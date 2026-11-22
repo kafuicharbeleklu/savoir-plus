@@ -230,7 +230,8 @@ test('le cours se lit section par section ; le quiz et le résultat ont chacun l
   const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   // Le cadre du cours : la barre du haut, le sommaire à gauche, la colonne de lecture.
   const inCourseFrame = (html: string) =>
-    html.startsWith('<div class="rd-shell is-chapter"><header class="rd-top">') && html.includes('<aside class="rd-outline"') && html.includes('class="rd-article rd-chapter-main"');
+    // La page porte la tranche de lecture du cours (ici un contenu général : texte courant du site).
+    html.startsWith('<div class="rd-shell is-chapter" data-band="standard"><header class="rd-top">') && html.includes('<aside class="rd-outline"') && html.includes('class="rd-article rd-chapter-main"');
   const fresh = { lessons: [] as number[], answers: [] as number[], submitted: false };
   const section = (index: number, progress = fresh) =>
     renderToStaticMarkup(
@@ -280,4 +281,19 @@ test('le cours se lit section par section ; le quiz et le résultat ont chacun l
   assert.equal(failed.match(/rd-option is-static is-wrong/g)?.length, 1);
   assert.equal(failed.match(/Bonne réponse<\/small>/g)?.length, 2);
   assert.match(text(failed), /Question 3 sur 3 · sans réponse/);
+});
+
+test('lecture : la taille du texte suit la classe du cours ; un tableau aligne ses nombres', async () => {
+  const { readingBandOf } = await import('../src/levels');
+  assert.deepEqual(['CP1', 'CE2', 'CM1', 'CM2', '6e', '5e', '3e', 'Seconde', 'Terminale', undefined].map(readingBandOf), [
+    'early', 'early', 'junior', 'junior', 'junior', 'teen', 'teen', 'standard', 'standard', 'standard'
+  ]);
+  // Poids et masse (3e), partie 3 : les trois colonnes sont des mesures, alignées à droite.
+  const html = render(MODULES_CONTENT['3e-poids-masse'].lessons[2], 2);
+  assert.match(html, /<div class="rd-table-scroll" role="region" aria-label="Tableau" tabindex="0"><table class="rd-table">/);
+  assert.match(html, /<th scope="col" class="is-num">Masse<\/th>/);
+  assert.match(html, /<td class="is-num">0,5 kg<\/td>/);
+  // Un tableau de texte reste aligné à gauche.
+  const text = render(MODULES_CONTENT['cm2-passe-compose'].lessons[0], 0);
+  assert.ok(!text.includes('class="is-num"'));
 });

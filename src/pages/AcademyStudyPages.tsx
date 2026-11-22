@@ -7,6 +7,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Award, Check, List, MousePointerClick, RotateCcw, X } from 'lucide-react';
 import type { Progress } from '../data';
 import { MODULES_CONTENT, type ModuleStudyContent } from '../content';
+import { readingBandOf, type ReadingBand } from '../levels';
 import { isQuizPassed, lessonXp, moduleMaxXp, moduleProgressPercent, moduleXp, quizPassThreshold, quizXp as quizXpOf, scoreAnswers } from '../domain.mjs';
 import { ModuleInteractiveLab } from '../components/LessonLab';
 import { LessonPart, ModuleOpening } from '../components/LessonArticle';
@@ -251,6 +252,7 @@ function ModuleOutline({
  * à gauche, la colonne de lecture. Passer de l'une à l'autre ne change pas d'interface.
  */
 function ChapterFrame({
+  band,
   title,
   step,
   pct,
@@ -262,6 +264,8 @@ function ChapterFrame({
   footer,
   children
 }: {
+  /** Tranche de lecture de la classe du cours : elle règle la taille du texte. */
+  band?: ReadingBand;
   title: string;
   step: string;
   pct: number;
@@ -276,7 +280,7 @@ function ChapterFrame({
 }) {
   const { open, setOpen } = outline;
   return (
-    <div className="rd-shell is-chapter">
+    <div className="rd-shell is-chapter" data-band={band}>
       <ReaderTopBar title={title} step={step} pct={pct} onExit={onExit} outlineOpen={open} onToggleOutline={() => setOpen(!open)} />
 
       <div className="shell-scroll-viewport" ref={viewportRef}>
@@ -384,6 +388,7 @@ export function AcademyReaderView({
 
   return (
     <ChapterFrame
+      band={readingBandOf(moduleContent.classLabel)}
       title={moduleContent.title}
       step={lesson?.title || ''}
       pct={pct}
@@ -578,6 +583,7 @@ export function AcademyQuizView({
 
   return (
     <ChapterFrame
+      band={readingBandOf(moduleContent.classLabel)}
       title={moduleContent.title}
       step="Quiz final"
       pct={pct}
@@ -684,6 +690,7 @@ export function AcademyResultView({
 
   return (
     <ChapterFrame
+      band={readingBandOf(moduleContent.classLabel)}
       title={moduleContent.title}
       step="Résultat du quiz"
       pct={pct}

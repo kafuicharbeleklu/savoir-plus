@@ -98,3 +98,21 @@ export function classFit(itemClass: string | undefined, viewerClasses: string[])
   const gap = classGap(itemClass, viewerClasses);
   return gap === 0 ? 0 : gap === 1 ? 1 : 3;
 }
+
+/**
+ * Tranche de lecture d'une classe, pour la taille du texte d'un cours : plus l'élève est jeune, plus le
+ * texte est grand et les lignes courtes. Repères (relevés le 23 novembre 2026) : à 7 ans, un corps de
+ * 20 points se lit mieux que 16 et des lignes plus longues nuisent à la compréhension (Katzir et al., 2013) ;
+ * de 5 à 7 ans la vitesse baisse quand le corps diminue (Hughes & Wilkins, 2000) ; à 9-11 ans, 14 points
+ * sont préférés à 12 à l'écran (Bernard et al., 2002).
+ */
+export type ReadingBand = 'early' | 'junior' | 'teen' | 'standard';
+
+export function readingBandOf(classLabel: string | undefined): ReadingBand {
+  const rank = classRank(classLabel);
+  if (rank === null) return 'standard';
+  if (rank <= 3) return 'early'; // CP1 à CE2 : 6 à 8 ans
+  if (rank <= 6) return 'junior'; // CM1, CM2, 6e : 9 à 11 ans
+  if (rank <= 9) return 'teen'; // 5e à 3e : 12 à 15 ans
+  return 'standard'; // lycée, adultes
+}

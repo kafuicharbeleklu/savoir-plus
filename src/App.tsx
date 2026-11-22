@@ -817,9 +817,11 @@ export default function App() {
     };
   }, [page, dynamicCatalog.length]);
 
+  const activeStudyItem = dynamicCatalog.find((c) => c.id === activeStudyModuleId);
   const activeStudyContent = {
     ...resolveStudyContent(activeStudyModuleId, ext.studioContents, ext.studioQuiz),
-    levelRank: levelRank(dynamicCatalog.find((c) => c.id === activeStudyModuleId)?.level || 'Débutant')
+    levelRank: levelRank(activeStudyItem?.level || 'Débutant'),
+    classLabel: activeStudyItem?.classLabel
   };
   const activeStudyProgress = getModuleProgress(activeStudyModuleId);
   const activeModulePct = moduleProgressPercent(activeStudyProgress, activeStudyContent.lessons.length);

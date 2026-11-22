@@ -166,6 +166,8 @@ export interface ModuleStudyContent {
   aiAssisted?: boolean;
   /** Rang du niveau du module (1 Initiation … 5 Expert) : il règle les XP. Absent : 2 (Débutant). */
   levelRank?: number;
+  /** Classe d'un cours scolaire (CM2, 3e…) : elle règle la taille du texte dans le lecteur. */
+  classLabel?: string;
 }
 
 /** Forme minimale d'un contenu du Studio utilisée par le lecteur (voir StudioContent). */
