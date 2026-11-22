@@ -167,8 +167,29 @@ test('Dynamic catalog reflects live Studio publications and resolves study conte
 
   const study = resolveStudyContent('st-live-1', ext.studioContents, ext.studioQuiz);
   assert.equal(study.id, 'st-live-1');
-  assert.equal(study.lessons.length, 3);
+  // Un module du Studio a autant de sections que son auteur en a écrit : plus de remplissage jusqu'à trois.
+  assert.equal(study.lessons.length, 1);
   assert.equal(study.lessons[0].title, 'Mises à jour');
+  assert.equal(published?.xpReward, 100, 'une section Débutant (25 XP) et le quiz (75 XP)');
+
+  // Cinq sections et quatre questions : tout est gardé.
+  const long = initialExtendedState();
+  long.studioContents.push({
+    ...long.studioContents[0],
+    id: 'st-long',
+    type: 'module',
+    title: 'Module long',
+    pubStatus: 'Publié',
+    published: undefined,
+    sections: Array.from({ length: 5 }, (_, i) => ({ id: `s${i}`, title: `Partie ${i + 1}`, body: 'Texte de la partie. Suite du texte.' })),
+    quiz: Array.from({ length: 4 }, (_, i) => ({ prompt: `Question ${i + 1} ?`, options: ['A', 'B'], correctIndex: 0, explanation: 'Parce que.' }))
+  });
+  const longStudy = resolveStudyContent('st-long', long.studioContents, long.studioQuiz);
+  assert.equal(longStudy.lessons.length, 5);
+  assert.equal(longStudy.questions.length, 4);
+  const longItem = buildDynamicCatalog(long).find((c) => c.id === 'st-long');
+  assert.deepEqual(longItem?.sections?.map((x) => x.title.slice(0, 2)), ['01', '02', '03', '04', '05']);
+  assert.equal(longItem?.xpReward, 200, 'cinq sections (125 XP) et le quiz (75 XP)');
 
   const coreReseaux = resolveStudyContent('reseaux');
   assert.equal(coreReseaux.labType, 'reseaux');

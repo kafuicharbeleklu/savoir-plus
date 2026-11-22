@@ -80,6 +80,7 @@ import {
   isQuizPassed,
   moduleProgressPercent,
   moduleXp,
+  lessonXp,
   pairId
 } from './domain.mjs';
 import { MODULES_CONTENT, resolveStudyContent } from './content';
@@ -162,6 +163,7 @@ import { OwnAdCard, SponsoredCard } from './components/SponsoredCard';
 import { NextCourseCard } from './components/NextCourseCard';
 import { audienceOfKind, contentIncluded, institutionSteering, paidSubscription, plansFor } from './offers';
 import { rankFeed, recommend, viewerOf, viewerClassesOf } from './personalize';
+import { levelRank } from './levels';
 import { addUsage, lockApplies, lockState, requestOfDay, requestTime, rulesOf } from './deviceLock';
 import { initialSchoolState } from './seedSchool';
 
@@ -740,9 +742,11 @@ export default function App() {
     return { id: nextId, title: item?.title || resolveStudyContent(nextId, ext.studioContents, ext.studioQuiz).title };
   };
 
+  // Le rang du niveau d'un module (1 à 5) règle ses XP : une section exigeante rapporte plus.
+  const levelRankOf = (modId: string) => levelRank(dynamicCatalog.find((c) => c.id === modId)?.level || 'Débutant');
   const totalXP = playableModuleIds.reduce((sum, modId) => {
     const study = resolveStudyContent(modId, ext.studioContents, ext.studioQuiz);
-    return sum + moduleXp(getModuleProgress(modId), study.lessons.length, answerKey(modId));
+    return sum + moduleXp(getModuleProgress(modId), study.lessons.length, answerKey(modId), levelRankOf(modId));
   }, 0);
 
   // Calendrier et plan de révision : calculés sur l'appareil. Tant que rien n'a été modifié,
@@ -813,7 +817,10 @@ export default function App() {
     };
   }, [page, dynamicCatalog.length]);
 
-  const activeStudyContent = resolveStudyContent(activeStudyModuleId, ext.studioContents, ext.studioQuiz);
+  const activeStudyContent = {
+    ...resolveStudyContent(activeStudyModuleId, ext.studioContents, ext.studioQuiz),
+    levelRank: levelRank(dynamicCatalog.find((c) => c.id === activeStudyModuleId)?.level || 'Débutant')
+  };
   const activeStudyProgress = getModuleProgress(activeStudyModuleId);
   const activeModulePct = moduleProgressPercent(activeStudyProgress, activeStudyContent.lessons.length);
 
@@ -987,7 +994,8 @@ export default function App() {
     }
     const study = resolveStudyContent(moduleId, ext.studioContents, ext.studioQuiz);
     const modProg = getModuleProgress(moduleId);
-    const nextIncomplete = [0, 1, 2].find((i) => i < study.lessons.length && !modProg.lessons.includes(i));
+    const firstUnread = study.lessons.findIndex((_, i) => !modProg.lessons.includes(i));
+    const nextIncomplete = firstUnread >= 0 ? firstUnread : undefined;
     const idx = sectionIdx !== undefined ? sectionIdx : nextIncomplete !== undefined ? nextIncomplete : 0;
 
     if (!isFocusedStudyRoute(page)) {
@@ -1018,7 +1026,7 @@ export default function App() {
       try {
         const lessons = [...new Set([...activeStudyProgress.lessons, index])].sort((a, b) => a - b);
         await saveModuleProgress(activeStudyModuleId, { ...activeStudyProgress, lessons });
-        setToast(`Section « ${activeStudyContent.lessons[index]?.title} » terminée · +25 XP`);
+        setToast(`Section « ${activeStudyContent.lessons[index]?.title} » terminée · +${lessonXp(activeStudyContent.levelRank)} XP`);
       } catch (e: any) {
         failToast(e?.message || 'Erreur lors de la sauvegarde');
         return; // on reste sur la section, pour pouvoir réessayer

@@ -5,6 +5,7 @@
 import type { Profile, Progress, Relation } from './data';
 import { MODULES_CONTENT } from './content';
 import { moduleProgressPercent, moduleXp, scoreAnswers } from './domain.mjs';
+import { levelRank } from './levels';
 import { computeAnnualActivitySummary, computeGlobalLevel, computeSavoirBadges, computeSavoirRank } from './personas';
 import { buildDynamicCatalog, type ExtendedDemoState } from './wireframeData';
 
@@ -55,7 +56,7 @@ export function computeMemberStats({
     const correctIndices = study ? study.questions.map((q) => q.correctIndex) : [0, 0];
     const key = study ? correctIndices : undefined;
     const pctVal = moduleProgressPercent(modProg, lessonCount, key);
-    const xpVal = moduleXp(modProg, lessonCount, key);
+    const xpVal = moduleXp(modProg, lessonCount, key, levelRank(mod.level));
     const qLen = correctIndices.length;
     const passThreshold = Math.max(1, Math.ceil(qLen * 0.66));
     const qScore = scoreAnswers(modProg.answers || [], correctIndices);

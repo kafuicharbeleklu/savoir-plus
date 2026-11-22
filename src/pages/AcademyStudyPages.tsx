@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Award, Check, List, MousePointerClick, RotateCcw, X } from 'lucide-react';
 import type { Progress } from '../data';
 import { MODULES_CONTENT, type ModuleStudyContent } from '../content';
-import { isQuizPassed, moduleProgressPercent, moduleXp, quizPassThreshold, scoreAnswers } from '../domain.mjs';
+import { isQuizPassed, lessonXp, moduleMaxXp, moduleProgressPercent, moduleXp, quizPassThreshold, quizXp as quizXpOf, scoreAnswers } from '../domain.mjs';
 import { ModuleInteractiveLab } from '../components/LessonLab';
 import { LessonPart, ModuleOpening } from '../components/LessonArticle';
 import { ArtBadge } from '../components/LessonArt';
@@ -172,8 +172,8 @@ function ModuleOutline({
 }) {
   const lessons = moduleContent.lessons;
   const answerKey = moduleContent.questions.map((q) => q.correctIndex);
-  const points = moduleXp(progress, lessons.length, answerKey);
-  const maxXp = lessons.length * 25 + 75;
+  const points = moduleXp(progress, lessons.length, answerKey, moduleContent.levelRank);
+  const maxXp = moduleMaxXp(lessons.length, moduleContent.levelRank);
   const quizPassed = isQuizPassed(progress, answerKey);
   const { hasLab, labPart } = labPlacement(moduleContent);
   const onQuiz = current === 'quiz';
@@ -356,7 +356,7 @@ export function AcademyReaderView({
   const minutes = lessons.reduce((sum, l) => sum + (parseInt(l.minutes, 10) || 0), 0);
   const done = progress.lessons.includes(index);
   const nextLabel = index < last ? (done ? 'Section suivante' : 'Terminer et continuer') : done ? 'Passer au quiz' : 'Terminer et passer au quiz';
-  const nextHint = [index < last ? lessons[index + 1].title : 'Quiz final', done ? '' : '+25 XP'].filter(Boolean).join(' · ');
+  const nextHint = [index < last ? lessons[index + 1].title : 'Quiz final', done ? '' : `+${lessonXp(moduleContent.levelRank)} XP`].filter(Boolean).join(' · ');
 
   const scrollToTop = (behavior: ScrollBehavior = 'auto') => viewportRef.current?.scrollTo({ top: 0, behavior: calmMotion() ? 'auto' : behavior });
   const scrollToHeading = (heading: HTMLElement | null, behavior: ScrollBehavior = 'smooth') => {
@@ -664,9 +664,9 @@ export function AcademyResultView({
   const missingLessons = moduleContent.lessons.map((_, i) => i).filter((i) => !progress.lessons.includes(i));
   const moduleValidated = passed && missingLessons.length === 0;
 
-  // Récompense : les 75 XP du quiz ne sont acquis qu'au-dessus du seuil ; on signale la montée de niveau
-  // lorsque ces XP font franchir un palier.
-  const quizXp = passed ? 75 : 0;
+  // Récompense : les XP du quiz (selon le niveau du module) ne sont acquis qu'au-dessus du seuil ; on signale
+  // la montée de niveau lorsque ces XP font franchir un palier.
+  const quizXp = passed ? quizXpOf(moduleContent.levelRank) : 0;
   const lvl = computeGlobalLevel(totalXP);
   const levelUp = passed && computeGlobalLevel(Math.max(0, totalXP - quizXp)).level < lvl.level;
 
@@ -779,7 +779,7 @@ export function AcademyResultView({
               })}
             </ul>
             <p className="rd-correction-why">{q.explanation}</p>
-            <button type="button" className="rd-link" onClick={() => onReviewLessons(Math.min(lessonCount - 1, qi))}>
+            <button type="button" className="rd-link" onClick={() => onReviewLessons(Math.min(lessonCount - 1, Math.floor((qi * lessonCount) / Math.max(1, moduleContent.questions.length))))}>
               Revoir la section associée
             </button>
           </section>

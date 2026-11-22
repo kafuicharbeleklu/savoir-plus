@@ -61,3 +61,20 @@ test('Politique de demande de contact S-05 (Personne, Personnes que je suis, Mem
   assert.equal(canRequestContactByPolicy('Membres autorisés', true, true), false);
 });
 
+test('XP : selon le niveau et le nombre de sections', async () => {
+  const { lessonXp, quizXp, moduleMaxXp, moduleXp, completeLesson } = await import('../src/domain.mjs');
+  // Une section : 20, 25, 30, 35, 40 XP du niveau 1 (Initiation) au niveau 5 (Expert) ; le quiz en vaut trois.
+  assert.deepEqual([1, 2, 3, 4, 5].map((r) => lessonXp(r)), [20, 25, 30, 35, 40]);
+  assert.deepEqual([1, 2, 3, 4, 5].map((r) => quizXp(r)), [60, 75, 90, 105, 120]);
+  // Sans niveau précisé : les valeurs d'avant (Débutant).
+  assert.equal(moduleMaxXp(3), 150);
+  // Un module Expert de cinq sections rapporte plus qu'un module Initiation de trois.
+  assert.equal(moduleMaxXp(5, 5), 320);
+  assert.equal(moduleMaxXp(3, 1), 120);
+  const done = { lessons: [0, 1, 2, 3, 4], answers: [0, 0], submitted: true };
+  assert.equal(moduleXp(done, 5, [0, 0], 5), 320);
+  assert.equal(moduleXp({ lessons: [0, 4], answers: [], submitted: false }, 5, [0, 0], 3), 60);
+  // Une quatrième section se valide, une section hors du module non.
+  assert.deepEqual(completeLesson({ lessons: [0], answers: [], submitted: false }, 3, 5).lessons, [0, 3]);
+  assert.throws(() => completeLesson({ lessons: [], answers: [], submitted: false }, 3));
+});

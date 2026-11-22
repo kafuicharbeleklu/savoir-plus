@@ -1,7 +1,8 @@
 import { EXTRA_CATALOG_MODULES, EXTRA_CATALOG_PATHS, EXTRA_CATALOG_RESOURCES } from './seedCatalog';
 import { SCHOOL_CATALOG_MODULES } from './schoolCourses';
 import type { ProgrammeRef } from './programmeTogo';
-import { levelOfClass, type DifficultyLevel } from './levels';
+import { levelOfClass, levelRank, type DifficultyLevel } from './levels';
+import { moduleMaxXp } from './domain.mjs';
 import {
   SEED_MEMBER_ACCOUNTS,
   SEED_MEMBER_DETAILS,
@@ -108,7 +109,7 @@ export interface CatalogItem {
   skills?: string[];
 }
 
-export const CATALOG_ITEMS: CatalogItem[] = [
+const RAW_CATALOG_ITEMS: CatalogItem[] = [
   {
     id: 'phishing',
     type: 'module',
@@ -302,6 +303,13 @@ export const CATALOG_ITEMS: CatalogItem[] = [
   // Un cours scolaire ne choisit pas son niveau : il le tient de sa classe.
   ...SCHOOL_CATALOG_MODULES.map((item) => (item.classLabel ? { ...item, level: levelOfClass(item.classLabel) } : item))
 ];
+
+/** Les XP affichés d'un module se calculent : son niveau et son nombre de sections (le sommaire finit par le quiz). */
+export const CATALOG_ITEMS: CatalogItem[] = RAW_CATALOG_ITEMS.map((item) =>
+  item.type === 'module' && item.interactive && item.sections?.length
+    ? { ...item, xpReward: moduleMaxXp(item.sections.length - 1, levelRank(item.level)) }
+    : item
+);
 
 export interface CommunityReply {
   id: string;
@@ -1717,7 +1725,7 @@ export function buildDynamicCatalog(ext: ExtendedDemoState): CatalogItem[] {
       version: s.version || 'v1',
       review: reviewLevel,
       interactive: s.type === 'module',
-      xpReward: s.type === 'module' ? 150 : undefined,
+      xpReward: s.type === 'module' ? moduleMaxXp(Math.max(1, s.sections.length), levelRank('Débutant')) : undefined,
       summary: s.sections[0]?.body || 'Contenu publié depuis le Studio SAVOIR+.',
       objectives: s.sections.some((sec) => sec.keyPoints?.length)
         ? s.sections.map((sec) => sec.keyPoints?.[0]).filter((k): k is string => Boolean(k)).slice(0, 3)
@@ -1731,7 +1739,7 @@ export function buildDynamicCatalog(ext: ExtendedDemoState): CatalogItem[] {
       sections:
         s.type === 'module'
           ? s.sections.map((sec, idx) => ({
-              title: `0${idx + 1} ${sec.title}`,
+              title: `${String(idx + 1).padStart(2, '0')} ${sec.title}`,
               subtitle: `Section Studio · ${s.duration || '5 min'}`
             }))
           : undefined,

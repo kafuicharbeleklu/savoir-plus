@@ -5,9 +5,10 @@ export function progressPercent(p) {
 export function xp(p) {
   return new Set(p.lessons).size * 25 + (p.submitted ? 75 : 0);
 }
-export function completeLesson(p, index) {
-  if (![0, 1, 2].includes(index)) throw Error('Leçon invalide');
-  return { ...p, lessons: [...new Set([...p.lessons, index])].sort() };
+/** Marque une section lue. `lessonCount` : nombre de sections du module (3 par défaut, pour les anciens appels). */
+export function completeLesson(p, index, lessonCount = 3) {
+  if (!Number.isInteger(index) || index < 0 || index >= Math.max(1, lessonCount)) throw Error('Leçon invalide');
+  return { ...p, lessons: [...new Set([...p.lessons, index])].sort((a, b) => a - b) };
 }
 export function score(answers) {
   return answers.reduce((n, a, i) => n + (a === [1, 2, 0][i] ? 1 : 0), 0);
@@ -45,10 +46,28 @@ export function moduleProgressPercent(p, lessonCount = 3, correctIndices) {
   return Math.round(((doneLessons + (isQuizPassed(p, correctIndices) ? 1 : 0)) / (safeCount + 1)) * 100);
 }
 
-export function moduleXp(p, lessonCount = 3, correctIndices) {
+/**
+ * XP d'une section lue, selon le rang du niveau (1 Initiation … 5 Expert) : 20, 25, 30, 35, 40.
+ * Un contenu plus exigeant rapporte plus ; un module plus long aussi, puisque chaque section compte.
+ */
+export function lessonXp(levelRank = 2) {
+  return 15 + 5 * Math.min(5, Math.max(1, Math.round(levelRank) || 2));
+}
+
+/** XP du quiz réussi : trois sections du même niveau (60, 75, 90, 105, 120). */
+export function quizXp(levelRank = 2) {
+  return 3 * lessonXp(levelRank);
+}
+
+/** XP qu'un module peut rapporter : toutes ses sections, plus son quiz. */
+export function moduleMaxXp(lessonCount = 3, levelRank = 2) {
+  return Math.max(1, lessonCount) * lessonXp(levelRank) + quizXp(levelRank);
+}
+
+export function moduleXp(p, lessonCount = 3, correctIndices, levelRank = 2) {
   const safeCount = Math.max(1, lessonCount);
   const doneLessons = new Set((p?.lessons || []).filter((i) => i >= 0 && i < safeCount)).size;
-  return doneLessons * 25 + (isQuizPassed(p, correctIndices) ? 75 : 0);
+  return doneLessons * lessonXp(levelRank) + (isQuizPassed(p, correctIndices) ? quizXp(levelRank) : 0);
 }
 
 export function canRequestContactByPolicy(recipientPolicy, recipientFollowsRequester, blocked = false) {

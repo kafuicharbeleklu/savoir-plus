@@ -118,6 +118,8 @@ export interface ModuleStudyContent {
   steps?: { caption: string; imageUrl?: string }[];
   /** Contenu structuré avec l'aide de l'IA puis relu par son auteur. */
   aiAssisted?: boolean;
+  /** Rang du niveau du module (1 Initiation … 5 Expert) : il règle les XP. Absent : 2 (Débutant). */
+  levelRank?: number;
 }
 
 /** Forme minimale d'un contenu du Studio utilisée par le lecteur (voir StudioContent). */
@@ -396,7 +398,7 @@ export function resolveStudyContent(moduleId: string, studioContents?: StudioStu
   // Les apprenants lisent la version publiée, pas le brouillon en cours de modification.
   const fromStudio = rawStudio?.published ? { ...rawStudio, ...rawStudio.published } : rawStudio;
   if (fromStudio) {
-    const studioSections = (fromStudio.sections.length ? fromStudio.sections : [{ id: 's1', title: 'Introduction', body: 'Contenu publié depuis le Studio.' }]).slice(0, 3);
+    const studioSections = (fromStudio.sections.length ? fromStudio.sections : [{ id: 's1', title: 'Introduction', body: 'Contenu publié depuis le Studio.' }]);
     const totalMinutes = parseInt(fromStudio.duration || '', 10);
     const sectionMinutes = Number.isFinite(totalMinutes)
       ? `${Math.max(2, Math.round(totalMinutes / Math.max(1, studioSections.length)))} min`
@@ -423,28 +425,17 @@ export function resolveStudyContent(moduleId: string, studioContents?: StudioStu
       tip: sec.tip || 'Relisez les notions clés ou posez une question dans la Communauté en cas de blocage.'
       };
     });
-    while (mappedLessons.length < 3) {
-      mappedLessons.push({
-        title: `Approfondissement ${mappedLessons.length + 1}`,
-        label: fromStudio.domain,
-        minutes: '4 min',
-        intro: 'Complément pédagogique du module publié depuis le Studio.',
-        body: 'Consolidez les notions présentées dans les sections précédentes avant l’évaluation finale.',
-        points: ['Relier la théorie à un cas concret.', 'Tester vos acquis avec le quiz.'],
-        tip: 'Vous pouvez revenir sur chaque section à tout moment.'
-      });
-    }
     // Un contenu qui porte son propre quiz (Studio IA) l'utilise ; sinon, quiz partagé du Studio.
     const ownQuiz = fromStudio.quiz?.filter((q) => q.prompt && q.options.length >= 2) || [];
     const mappedQuestions: StudyQuestion[] = ownQuiz.length
-      ? ownQuiz.slice(0, 3).map((q) => ({
+      ? ownQuiz.map((q) => ({
           text: q.prompt,
           answers: q.options,
           correctIndex: Math.min(Math.max(q.correctIndex, 0), q.options.length - 1),
           explanation: q.explanation || 'Correction enregistrée par le créateur du module.'
         }))
       : studioQuiz && studioQuiz.questions.length >= 1
-        ? studioQuiz.questions.slice(0, 3).map((q) => ({
+        ? studioQuiz.questions.map((q) => ({
             text: q.prompt,
             answers: q.options.length >= 2 ? q.options : ['Réponse A', 'Réponse B'],
             correctIndex: q.correctIndex,
