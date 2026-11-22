@@ -1,5 +1,6 @@
 import { EXTRA_CATALOG_MODULES, EXTRA_CATALOG_PATHS, EXTRA_CATALOG_RESOURCES } from './seedCatalog';
 import { SCHOOL_CATALOG_MODULES } from './schoolCourses';
+import type { ProgrammeRef } from './programmeTogo';
 import {
   SEED_MEMBER_ACCOUNTS,
   SEED_MEMBER_DETAILS,
@@ -83,6 +84,8 @@ export interface CatalogItem {
   domain: 'Numérique' | 'Communication' | 'Gestion' | 'Scolaire';
   /** Cours scolaire : la classe (CM2, 3e, Seconde…). */
   classLabel?: string;
+  /** Cours scolaire : la leçon du programme officiel à laquelle il correspond (voir `programmeTogo.ts`). */
+  programme?: ProgrammeRef;
   level: DifficultyLevel;
   duration: string;
   author: string;

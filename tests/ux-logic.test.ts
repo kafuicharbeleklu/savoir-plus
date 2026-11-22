@@ -745,6 +745,14 @@ test('catalogue étendu : chaque module interactif a ses leçons, son quiz et so
   assert.deepEqual([...new Set(CATALOG_ITEMS.map((c) => c.domain))].sort(), ['Communication', 'Gestion', 'Numérique', 'Scolaire']);
   // Un cours scolaire dit sa classe.
   for (const c of CATALOG_ITEMS.filter((i) => i.domain === 'Scolaire')) assert.ok(c.classLabel, `classe manquante : ${c.id}`);
+  // Les programmes officiels de 3e sont lus : chaque cours de 3e se rattache à une leçon qui y figure.
+  const { PROGRAMMES_TOGO, resolveProgramme } = await import('../src/programmeTogo');
+  assert.equal(PROGRAMMES_TOGO.filter((d) => d.classLabel === '3e').length, 8);
+  const troisieme = CATALOG_ITEMS.filter((i) => i.classLabel === '3e');
+  assert.equal(troisieme.length, 3);
+  for (const c of troisieme) assert.ok(resolveProgramme(c.programme), `leçon du programme introuvable : ${c.id}`);
+  for (const c of CATALOG_ITEMS.filter((i) => i.programme)) assert.ok(resolveProgramme(c.programme), `référence invalide : ${c.id}`);
+  assert.equal(resolveProgramme({ docId: '3e-maths', theme: 'Configurations du plan', lesson: 'Leçon inventée' }), null);
 });
 
 test('fil d’actualité : formats variés, auteurs variés et références valides', async () => {

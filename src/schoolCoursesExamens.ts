@@ -7,6 +7,7 @@
  */
 import type { CatalogItem } from './wireframeData';
 import type { LessonRich, ModuleStudyContent, StudyQuestion } from './content';
+import type { ProgrammeRef } from './programmeTogo';
 
 interface CourseLesson {
   title: string;
@@ -23,6 +24,8 @@ interface CourseDef {
   id: string;
   title: string;
   classLabel: string;
+  /** La leçon du programme officiel à laquelle le cours correspond, quand le programme a été lu. */
+  programme?: ProgrammeRef;
   level: CatalogItem['level'];
   duration: string;
   summary: string;
@@ -51,6 +54,7 @@ function defineCourse(def: CourseDef): { item: CatalogItem; content: ModuleStudy
       title: def.title,
       domain: 'Scolaire',
       classLabel: def.classLabel,
+      programme: def.programme,
       level: def.level,
       duration: def.duration,
       author: 'Équipe pédagogique SAVOIR+',
@@ -525,15 +529,16 @@ const TROISIEME_CALCUL_LITTERAL: CourseDef = {
   id: '3e-calcul-litteral',
   title: 'Le calcul littéral : développer et factoriser',
   classLabel: '3e',
+  programme: { docId: '3e-maths', theme: 'Programme de calcul – calcul littéral', lesson: 'Monômes, polynômes, fractions rationnelles' },
   level: 'Intermédiaire',
   duration: '25 min',
-  summary: 'Développer, reconnaître une identité remarquable, factoriser pour résoudre une équation : le calcul littéral du programme de 3e. Pour préparer le BEPC.',
+  summary: 'Développer, utiliser les produits remarquables, factoriser pour résoudre une équation : le calcul littéral du programme de 3e. Pour préparer le BEPC.',
   prerequisites: 'Savoir réduire une expression et calculer avec les nombres relatifs. Mathématiques, programme de 3e.',
-  skills: ['Distributivité', 'Identités remarquables', 'Factorisation'],
+  skills: ['Distributivité', 'Produits remarquables', 'Factorisation'],
   quizTitle: 'Vérifier vos acquis sur le calcul littéral',
   goals: [
     'développer une expression avec la distributivité ;',
-    'utiliser les trois identités remarquables ;',
+    'utiliser les trois produits remarquables ;',
     'factoriser une expression pour résoudre une équation produit.'
   ],
   lessons: [
@@ -598,8 +603,8 @@ const TROISIEME_CALCUL_LITTERAL: CourseDef = {
       }
     },
     {
-      title: 'Les identités remarquables',
-      label: 'Trois formules à connaître',
+      title: 'Les produits remarquables',
+      label: 'Trois égalités à connaître',
       minutes: '8 min',
       intro: 'Trois produits reviennent si souvent qu’on en retient le résultat.',
       body: '(a + b)² = a² + 2ab + b² ; (a − b)² = a² − 2ab + b² ; (a + b)(a − b) = a² − b².',
@@ -608,11 +613,11 @@ const TROISIEME_CALCUL_LITTERAL: CourseDef = {
       rich: {
         art: 'key',
         scene:
-          'Koffi calcule 21² de tête : 21² = (20 + 1)² = 400 + 40 + 1 = 441. Il ne pose aucune multiplication : il applique une identité remarquable.',
+          'Koffi calcule 21² de tête : 21² = (20 + 1)² = 400 + 40 + 1 = 441. Il ne pose aucune multiplication : il applique un produit remarquable.',
         sections: [
           {
-            title: 'Les trois identités',
-            text: ['Pour tous nombres a et b :'],
+            title: 'Les trois produits remarquables',
+            text: ['Trois produits reviennent si souvent qu’on en retient le résultat : ce sont les **produits remarquables**, aussi appelés identités remarquables. Pour tous nombres a et b :'],
             items: ['**(a + b)² = a² + 2ab + b²** ;', '**(a − b)² = a² − 2ab + b²** ;', '**(a + b)(a − b) = a² − b²**.'],
             after: 'Elles se démontrent avec la double distributivité.'
           },
@@ -633,7 +638,7 @@ const TROISIEME_CALCUL_LITTERAL: CourseDef = {
           title: 'Reconnaître la forme, puis appliquer',
           figure: {
             kind: 'table',
-            head: ['Expression', 'Identité', 'Résultat'],
+            head: ['Expression', 'Forme', 'Résultat'],
             rows: [
               ['(x + 4)²', '(a + b)²', 'x² + 8x + 16'],
               ['(3x − 2)²', '(a − b)²', '9x² − 12x + 4'],
@@ -645,7 +650,7 @@ const TROISIEME_CALCUL_LITTERAL: CourseDef = {
           notes: [
             'Le double produit de (3x − 2)² vaut 2 × 3x × 2 = 12x.',
             '(3x)² = 9x² : le carré porte aussi sur le 3.',
-            'Les identités servent aussi au calcul mental.'
+            'Les produits remarquables servent aussi au calcul mental.'
           ]
         },
         question: {
@@ -659,8 +664,8 @@ const TROISIEME_CALCUL_LITTERAL: CourseDef = {
       label: 'Du développement au produit',
       minutes: '9 min',
       intro: 'Factoriser, c’est transformer une somme en produit.',
-      body: 'On cherche un facteur commun, sinon une identité remarquable. Un produit est nul si, et seulement si, l’un de ses facteurs est nul.',
-      points: ['Factoriser : transformer une somme en produit.', 'D’abord le facteur commun, sinon une identité remarquable.', 'Un produit est nul si l’un des facteurs est nul.'],
+      body: 'On cherche un facteur commun, sinon un produit remarquable. Un produit est nul si, et seulement si, l’un de ses facteurs est nul.',
+      points: ['Factoriser : transformer une somme en produit.', 'D’abord le facteur commun, sinon un produit remarquable.', 'Un produit est nul si l’un des facteurs est nul.'],
       tip: 'Vérifiez une factorisation en la développant : vous devez retrouver l’expression de départ.',
       rich: {
         art: 'restore',
@@ -671,8 +676,8 @@ const TROISIEME_CALCUL_LITTERAL: CourseDef = {
             text: ['Factoriser est l’inverse de développer. On cherche d’abord un **facteur commun** : 6x + 9 = 3(2x + 3), et x² + 5x = x(x + 5).']
           },
           {
-            title: 'Factoriser avec une identité remarquable',
-            text: ['Quand il n’y a pas de facteur commun, on cherche une identité lue de droite à gauche :'],
+            title: 'Factoriser avec un produit remarquable',
+            text: ['Quand il n’y a pas de facteur commun, on cherche un produit remarquable lu de droite à gauche :'],
             items: ['x² − 9 = x² − 3² = **(x + 3)(x − 3)** ;', 'x² + 6x + 9 = **(x + 3)²** ;', '4x² − 20x + 25 = **(2x − 5)²**.']
           },
           {
@@ -738,9 +743,10 @@ const TROISIEME_POIDS_MASSE: CourseDef = {
   id: '3e-poids-masse',
   title: 'Poids et masse',
   classLabel: '3e',
+  programme: { docId: '3e-pct', theme: 'Physique · Mécanique', lesson: 'Les forces' },
   level: 'Intermédiaire',
   duration: '22 min',
-  summary: 'La masse se mesure en kilogrammes, le poids en newtons : distinguer les deux grandeurs et les relier par P = m × g. Mécanique, PCT de 3e, pour préparer le BEPC.',
+  summary: 'La masse se mesure en kilogrammes, le poids en newtons : décrire le poids d’un corps comme une force, le mesurer, et le relier à la masse par P = m × g. Leçon « Les forces », PCT de 3e, pour préparer le BEPC.',
   prerequisites: 'Savoir convertir des grammes en kilogrammes. PCT (mécanique), programme de 3e.',
   skills: ['Masse et poids', 'Caractéristiques d’une force', 'Relation P = m × g'],
   quizTitle: 'Vérifier vos acquis sur le poids et la masse',

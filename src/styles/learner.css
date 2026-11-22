@@ -640,3 +640,7 @@ button.md-author-name:hover { text-decoration: underline; text-underline-offset:
 /* Calendrier › Mes réglages : des valeurs en mots (« Même rythme », « Affiché »), un peu plus petites que
    les chiffres des autres cartes. */
 .rail-stat-list.is-settings .rail-stat-row b { font-size: 0.9375rem; letter-spacing: 0; }
+
+/* Fiche d'un cours scolaire : sa leçon dans le programme officiel, avec le lien vers le document. */
+.md-programme { margin: 12px 0 0; font-size: 0.8125rem; line-height: 1.5; color: var(--fg-muted); }
+.md-programme a { font-weight: 600; color: var(--accent-brand); text-decoration: underline; text-underline-offset: 3px; }

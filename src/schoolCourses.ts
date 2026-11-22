@@ -57,7 +57,8 @@ export const SCHOOL_CATALOG_MODULES: CatalogItem[] = [
     authorRole: AUTHOR_ROLE,
     version: 'Version 1',
     review: 'Communautaire',
-    summary: 'Reconnaître la configuration, calculer une longueur, prouver un parallélisme : le théorème de Thalès du programme de 3e. Pour préparer le BEPC.',
+    programme: { docId: '3e-maths', theme: 'Configurations du plan', lesson: 'Propriété de Thalès' },
+    summary: 'Reconnaître la configuration, calculer une longueur, prouver un parallélisme : la propriété de Thalès (ou théorème de Thalès) du programme de 3e. Pour préparer le BEPC.',
     objectives: [
       'Reconnaître une configuration de Thalès et écrire les rapports égaux.',
       'Calculer une longueur à l’aide du théorème.',

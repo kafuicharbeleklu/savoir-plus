@@ -28,6 +28,7 @@ import {
 } from '../wireframeData';
 import type { Profile, Progress, Relation } from '../data';
 import { MODULES_CONTENT, builtInAnswerKey } from '../content';
+import { resolveProgramme } from '../programmeTogo';
 import { isQuizPassed, moduleProgressPercent, quizPassThreshold } from '../domain.mjs';
 import { computeCatalogCardSteps, moduleBadge } from '../personas';
 import { formatDayLong } from '../calendar';
@@ -593,6 +594,18 @@ export function ModuleDetailView({
               <small>{item.authorRole}</small>
             </span>
           </p>
+          {/* Cours scolaire rattaché à un programme officiel lu : la leçon correspondante, et le lien vers le document. */}
+          {(() => {
+            const ref = resolveProgramme(item.programme);
+            return ref ? (
+              <p className="md-programme">
+                Programme officiel du Togo · {ref.doc.classLabel} · {ref.doc.subject} ({ref.doc.edition}) : {ref.theme}, « {ref.lesson} ».{' '}
+                <a href={ref.doc.pageUrl} target="_blank" rel="noreferrer">
+                  Voir le programme
+                </a>
+              </p>
+            ) : null;
+          })()}
           <ul className="md-facts">
             <li>
               <Clock size={15} aria-hidden="true" /> {item.duration}
