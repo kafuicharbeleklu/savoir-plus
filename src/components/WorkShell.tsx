@@ -1,8 +1,7 @@
 /**
- * Coque « espace de travail » : une barre latérale (identité de l'espace, rubriques) et un plan de
- * travail en pleine largeur. Elle sert aux espaces établissement, encadrant, famille, Studio et
- * gouvernance, comme LinkedIn quitte son fil pour ses outils professionnels. Le réseau (accueil,
- * relations, messagerie) garde ses trois colonnes ; le lecteur de cours garde la sienne.
+ * Coque « espace de travail » des espaces établissement, encadrant, famille, Studio et gouvernance.
+ * Même grille que les autres pages (conteneur de 1 128 px, colonne de gauche de 225 px) : à gauche,
+ * l'identité de l'espace et ses rubriques en cartes, puis le pied de page ; à droite, le contenu.
  */
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
@@ -99,8 +98,8 @@ export function WorkShell({
   );
 
   return (
-    <div className="work-shell">
-      <aside className="work-side" aria-label={label}>
+    <div className="app-shell work-shell">
+      <aside className="left-rail work-side" aria-label={label}>
         <div className="work-space" ref={wrapRef}>
           {canSwitch ? (
             <button
@@ -138,6 +137,7 @@ export function WorkShell({
           )}
         </div>
 
+        <div className="rail-nav-card work-nav-card">
         {extra}
 
         <nav className="work-nav" aria-label={label}>
@@ -165,12 +165,13 @@ export function WorkShell({
             </div>
           ))}
         </nav>
+        </div>
 
         {aside && <div className="work-side-card">{aside}</div>}
 
-        {footer && <div className="work-side-foot">{footer}</div>}
+        {footer}
       </aside>
-      <main className="work-canvas" data-space={space}>
+      <main className="main-content work-canvas" data-space={space}>
         {children}
       </main>
     </div>
