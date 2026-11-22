@@ -39,7 +39,6 @@ export function TopBar({
   unreadNotifs,
   topQuery,
   setTopQuery,
-  onOpenCommands,
   onOpenAuthModal,
   onEnterVisitor,
   onOpenMessaging,
@@ -58,8 +57,6 @@ export function TopBar({
   unreadNotifs: number;
   topQuery: string;
   setTopQuery: (q: string) => void;
-  /** Ouvre la fenêtre de commande (Ctrl K). */
-  onOpenCommands?: () => void;
   onOpenAuthModal: () => void;
   onEnterVisitor: () => void;
   onOpenMessaging: () => void;
@@ -121,7 +118,11 @@ export function TopBar({
     <header className={`topbar ${page === 'settings' ? 'is-minimal' : ''}`} role="banner">
       <div className="topbar-inner">
         <div className="topbar-left">
-          <button className="brand" onClick={() => nav('home')} aria-label="SAVOIR+, retour à l’accueil">
+          <button
+            className="brand"
+            onClick={() => nav(caps.accountKind === 'guardian' ? 'family' : 'home')}
+            aria-label={caps.accountKind === 'guardian' ? 'SAVOIR+, retour à l’espace famille' : 'SAVOIR+, retour à l’accueil'}
+          >
             SAVOIR<span className="brand-plus">+</span>
           </button>
 
@@ -144,7 +145,7 @@ export function TopBar({
                   }
                 }}
               />
-              {topQuery ? (
+              {topQuery && (
                 <button
                   className="search-clear"
                   aria-label="Effacer la recherche"
@@ -152,13 +153,6 @@ export function TopBar({
                 >
                   <X size={13} />
                 </button>
-              ) : (
-                onOpenCommands && (
-                  <button type="button" className="top-search-kbd" onClick={onOpenCommands} title="Rechercher et agir au clavier">
-                    <kbd>Ctrl K</kbd>
-                    <span className="sr-only">Ouvrir la fenêtre de commande</span>
-                  </button>
-                )
               )}
             </div>
 
@@ -254,10 +248,13 @@ export function TopBar({
         </div>
 
         <nav className="top-navigation" aria-label="Navigation principale">
-          <button className={isHomeActive ? 'active' : ''} onClick={() => nav('home')}>
-            <Home size={18} />
-            <span>Accueil</span>
-          </button>
+          {/* Un parent ou tuteur n'a pas d'Accueil : son point d'entrée est l'Espace famille. */}
+          {caps.accountKind !== 'guardian' && (
+            <button className={isHomeActive ? 'active' : ''} onClick={() => nav('home')}>
+              <Home size={18} />
+              <span>Accueil</span>
+            </button>
+          )}
           {/* Comme sur mobile : l'apprentissage a sa porte dans la barre du haut (compte qui apprend seulement). */}
           {learns && (
             <button className={isLearningActive ? 'active' : ''} onClick={() => nav('learning')}>

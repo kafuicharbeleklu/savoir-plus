@@ -185,8 +185,6 @@ import {
 import { SplashScreen } from './components/SplashScreen';
 import { WeekCard } from './components/CalendarMonth';
 import { TodayCard, type TodayStep } from './components/TodayCard';
-import { CommandPalette } from './components/CommandPalette';
-import type { Command } from './commands';
 import { flushSync } from 'react-dom';
 import { FeedPostCard } from './components/FeedPostCard';
 import {
@@ -641,6 +639,14 @@ export default function App() {
   const user: Profile = people.find((p) => p.id === uid) || people[0] || profiles[0];
   // En mode connecté, la base ne porte pas encore ces profils : chaque membre y reste un apprenant adulte.
   const caps = resolveCapabilities(uid, mode, ext.adminUsers, cloudPreviewRole, mode === 'local' ? school : undefined, today);
+  // Un parent ou tuteur n'a pas d'Accueil : #home ouvre l'Espace famille, en remplaçant l'adresse.
+  const noHome = caps.accountKind === 'guardian' && caps.canManageFamily;
+  useLayoutEffect(() => {
+    if (!noHome || page !== 'home') return;
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}#family`);
+    setPage('family');
+    setSelectedId('');
+  }, [noHome, page]);
 
   // Navigation helper
   const nav = (target: RoutePage, id = '') => {
@@ -852,18 +858,6 @@ export default function App() {
     return () => window.clearTimeout(t);
   }, [page, selectedId]);
 
-  // Fenêtre de commande : Ctrl K (⌘ K sur Mac) depuis n'importe quel écran.
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setPaletteOpen((open) => !open);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
   // « ?visite=1 » ne sert qu'une fois : retiré de l'adresse, un rechargement ne relance pas la visite.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -3488,7 +3482,8 @@ export default function App() {
       const groups: WorkNavGroup[] = [
         {
           items: [
-            { id: 'home', label: 'Vue d’ensemble', icon: <LayoutGrid size={18} aria-hidden="true" />, active: !kids.includes(selectedId), onSelect: () => nav('family') }
+            { id: 'home', label: 'Vue d’ensemble', icon: <LayoutGrid size={18} aria-hidden="true" />, active: !kids.includes(selectedId), onSelect: () => nav('family') },
+            { id: 'catalog', label: 'Bibliothèque', icon: <Compass size={18} aria-hidden="true" />, onSelect: () => nav('catalog') }
           ]
         },
         ...(kids.length
@@ -3565,7 +3560,6 @@ export default function App() {
         unreadNotifs={unreadNotifs}
         topQuery={topQuery}
         setTopQuery={setTopQuery}
-        onOpenCommands={() => setPaletteOpen(true)}
         onOpenAuthModal={() => setAuthModalOpen(true)}
         onEnterVisitor={signOut}
         hideMessaging={messagesOff}
@@ -3848,97 +3842,9 @@ export default function App() {
     typeof window !== 'undefined' &&
     Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 
-  /** Les entrées de la fenêtre de commande : seulement ce que ce compte peut ouvrir ou faire. */
-  const paletteCommands = (): Command[] => {
-    const out: Command[] = [];
-    const add = (group: string, id: string, label: string, run: () => void, extra: Partial<Command> = {}) => out.push({ id: `${group}:${id}`, group, label, run, ...extra });
-    const learns = caps.accountKind === 'learner' || caps.accountKind === 'educator';
-    if (learns) {
-      const lab = resolveActiveLab(dynamicCatalog, modulePct);
-      const resumeId = lab?.item.id || 'phishing';
-      const item = dynamicCatalog.find((c) => c.id === resumeId);
-      if (item && !isModuleValidated(resumeId)) {
-        const quizNext = getModuleProgress(resumeId).lessons.length >= (MODULES_CONTENT[resumeId]?.lessons.length || 3);
-        add('Reprendre', resumeId, `Reprendre « ${item.title} »`, () => {
-          if (quizNext) {
-            setActiveStudyModuleId(resumeId);
-            nav('quiz-intro', resumeId);
-          } else openReader(resumeId);
-        }, { hint: quizNext ? 'quiz final' : `${modulePct(resumeId)} %`, keywords: 'continuer module' });
-      }
-    }
-    const go = (id: string, label: string, page: RoutePage, target = '', keywords = '', onlyOnSearch = false) =>
-      add('Aller à', id, label, () => nav(page, target), { keywords, onlyOnSearch });
-    go('home', 'Accueil', 'home', '', 'fil');
-    if (caps.accountKind === 'institution') {
-      go('inst-overview', 'Vue d’ensemble de l’établissement', 'institution', '', 'tableau de bord pilotage');
-      go('inst-planning', 'Planification du trimestre', 'institution', 'planning', 'gantt');
-      go('inst-timetable', 'Emploi du temps', 'institution', 'timetable', 'grille cours');
-      go('inst-classes', 'Classes', 'institution', 'classes');
-      go('inst-library', 'Bibliothèque de l’établissement', 'institution', 'library', 'contenus');
-      go('inst-teachers', 'Enseignants', 'institution', 'teachers');
-      go('inst-requests', 'Demandes de rattachement', 'institution', 'requests');
-      const inst = institutionOf(school, schoolAccountOf(school, uid).institutionId);
-      for (const c of inst ? school.classes.filter((k) => k.institutionId === inst.id) : []) {
-        add('Classes', c.id, c.name, () => nav('institution', c.id), { hint: c.level, onlyOnSearch: true });
-      }
-    }
-    if (learns) {
-      go('learning', 'Mes apprentissages', 'learning', '', 'modules en cours');
-      go('catalog', 'Bibliothèque', 'catalog', '', 'catalogue modules fiches parcours');
-      go('calendar', 'Calendrier', 'calendar', '', 'agenda examens');
-      go('plan', 'Plan de révision', 'calendar', 'plan', 'séances calendrier');
-      go('progression', 'Progression et badges', 'progression', '', 'niveau xp');
-    }
-    if (caps.canManageFamily) go('family', 'Espace famille', 'family', '', 'enfants parent lettre');
-    if (caps.canTeach) {
-      go('teaching', 'Enseigner · vue d’ensemble', 'teaching', '', 'encadrant classes');
-      go('teaching-planning', 'Enseigner · planification', 'teaching', 'planning', 'gantt');
-      go('teaching-timetable', 'Enseigner · emploi du temps', 'teaching', 'timetable');
-      for (const c of classesOfTeacher(school, uid)) {
-        add('Classes', c.id, c.name, () => nav('teaching', c.id), { hint: institutionOf(school, c.institutionId)?.name, onlyOnSearch: true, keywords: 'carte classe élèves' });
-      }
-    }
-    if (caps.canCreate) go('studio', 'Studio · mes contenus', 'studio', '', 'créer publier');
-    if (caps.canModerate || caps.canAdmin) go('admin', 'Gouvernance', 'admin', '', 'modération revue');
-    go('messages', 'Messagerie', 'messages', '', 'messages conversation');
-    // Les pages secondaires ne viennent qu'en réponse à une recherche : sans recherche, la liste reste courte.
-    go('relations', 'Relations', 'relations', '', 'réseau contacts', true);
-    go('notifications', 'Alertes', 'notifications', '', 'notifications', true);
-    go('profile', 'Mon profil', 'profile', '', '', true);
-    go('settings', 'Paramètres', 'settings', '', 'réglages compte confidentialité', true);
-    go('pricing', 'Formules', 'info', 'pricing', 'prix tarifs abonnement f cfa', true);
-    go('help', 'Centre d’aide', 'info', 'help', 'aide questions', true);
-
-    const act = (id: string, label: string, run: () => void, extra: Partial<Command> = {}) => add('Actions', id, label, run, extra);
-    if (learns) act('new-date', 'Ajouter une date au calendrier', () => nav('calendar', 'new'), { hint: 'examen, rendu, épreuve', keywords: 'examen évaluation' });
-    if (caps.canPublish) act('ask', 'Poser une question', () => nav('community-compose'), { hint: 'entraide', keywords: 'publier communauté' });
-    if (caps.canCreate) act('ai', 'Créer un module avec l’IA', () => nav('studio-ocr'), { hint: 'Studio', keywords: 'ia intelligence artificielle fiche' });
-    act('theme', isDark ? 'Passer en thème clair' : 'Passer en thème sombre', () =>
-      updateExt((prev) => ({ ...prev, appPrefs: { ...prev.appPrefs, theme: isDark ? 'Clair' : 'Sombre' } })), { keywords: 'apparence mode nuit' });
-    if (mode === 'local') act('tour', 'Lancer la visite guidée', () => setTourIndex(0), { keywords: 'démonstration aide' });
-
-    // En réponse à une recherche : les contenus de la bibliothèque, puis les membres.
-    if (caps.accountKind !== 'institution') {
-      const TYPE: Record<string, string> = { module: 'Module', resource: 'Fiche', path: 'Parcours' };
-      for (const c of dynamicCatalog) {
-        const target: RoutePage = c.type === 'module' ? 'module-detail' : c.type === 'resource' ? 'resource-detail' : 'path-detail';
-        add('Bibliothèque', c.id, c.title, () => nav(target, c.id), { hint: [TYPE[c.type] || '', c.duration].filter(Boolean).join(' · '), keywords: `${c.domain} ${c.author}`, onlyOnSearch: true });
-      }
-    }
-    if (!caps.isRestricted) {
-      for (const person of networkDirectory) {
-        if (person.id === uid) continue;
-        add('Membres', person.id, person.name, () => nav('member', person.id), { hint: person.role, onlyOnSearch: true });
-      }
-    }
-    return out;
-  };
-
   return (
     <>
       {renderActiveScreen()}
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={paletteOpen ? paletteCommands() : []} />
       {splashPhase !== 'done' && (
         <SplashScreen
           exiting={splashPhase === 'exiting'}

@@ -435,7 +435,7 @@ export function CalendarPage({
   );
   const [selected, setSelected] = useState<Day>(startDay);
   const [cursor, setCursor] = useState({ year: Number(startDay.slice(0, 4)), month: Number(startDay.slice(5, 7)) - 1 });
-  // « new » dans l'adresse (fenêtre de commande) : le formulaire d'une nouvelle date s'ouvre.
+  // « new » dans l'adresse : le formulaire d'une nouvelle date s'ouvre.
   const [editing, setEditing] = useState<{ event: CalendarEvent | null } | null>(initialTarget === 'new' ? { event: null } : null);
   const [rhythmOpen, setRhythmOpen] = useState(false);
   const [sessionKey, setSessionKey] = useState<string | null>(null);
