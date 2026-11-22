@@ -3516,6 +3516,8 @@ export default function App() {
         mark: accountMark,
         title: familyName ? `Famille ${familyName}` : 'Espace famille',
         subtitle: paidPlan ? `Formule ${paidPlan.offer.name}` : 'Offre gratuite',
+        // La même carte de profil que sur ses autres pages (Alertes, Ma formule…).
+        card: <ProfileIdentityCard user={user} ext={ext} caps={caps} onOpenProfile={() => nav('profile')} />,
         groups
       };
     }
@@ -3583,6 +3585,7 @@ export default function App() {
             currentSpace={workSpaceId}
             groups={workShell.groups}
             extra={'extra' in workShell ? workShell.extra : undefined}
+            card={'card' in workShell ? workShell.card : undefined}
             aside={'aside' in workShell ? workShell.aside : undefined}
             footer={<SidebarCompactFooter nav={nav} canCreate={caps.canCreate} onOpenInfoModal={openInfoPage} />}
           >

@@ -42,6 +42,7 @@ export function WorkShell({
   currentSpace,
   groups,
   extra,
+  card,
   aside,
   footer,
   children
@@ -59,6 +60,8 @@ export function WorkShell({
   groups: WorkNavGroup[];
   /** Contenu propre à l'espace, sous l'identité (sélecteur de vue de la gouvernance). */
   extra?: React.ReactNode;
+  /** Carte de profil de la personne, à la place de l'identité de l'espace (espace famille : un seul espace). */
+  card?: React.ReactNode;
   /** Sous les rubriques : une carte (annonce en cours, prochain cours…). */
   aside?: React.ReactNode;
   footer?: React.ReactNode;
@@ -100,42 +103,44 @@ export function WorkShell({
   return (
     <div className="app-shell work-shell">
       <aside className="left-rail work-side" aria-label={label}>
-        <div className="work-space" ref={wrapRef}>
-          {canSwitch ? (
-            <button
-              type="button"
-              className="work-space-btn"
-              aria-haspopup="menu"
-              aria-expanded={open}
-              aria-controls={menuId}
-              onClick={() => setOpen((v) => !v)}
-            >
-              {identity}
-              <ChevronsUpDown size={16} aria-hidden="true" className="work-space-chevron" />
-            </button>
-          ) : (
-            <div className="work-space-btn is-static">{identity}</div>
-          )}
-          {canSwitch && open && (
-            <div className="work-space-menu" id={menuId} role="menu" aria-label="Changer d’espace">
-              {spaces.map((s) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  role="menuitem"
-                  className={s.id === currentSpace ? 'is-current' : ''}
-                  onClick={() => {
-                    setOpen(false);
-                    s.onSelect();
-                  }}
-                >
-                  <span>{s.label}</span>
-                  {s.id === currentSpace && <Check size={15} aria-hidden="true" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {card || (
+          <div className="work-space" ref={wrapRef}>
+            {canSwitch ? (
+              <button
+                type="button"
+                className="work-space-btn"
+                aria-haspopup="menu"
+                aria-expanded={open}
+                aria-controls={menuId}
+                onClick={() => setOpen((v) => !v)}
+              >
+                {identity}
+                <ChevronsUpDown size={16} aria-hidden="true" className="work-space-chevron" />
+              </button>
+            ) : (
+              <div className="work-space-btn is-static">{identity}</div>
+            )}
+            {canSwitch && open && (
+              <div className="work-space-menu" id={menuId} role="menu" aria-label="Changer d’espace">
+                {spaces.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    role="menuitem"
+                    className={s.id === currentSpace ? 'is-current' : ''}
+                    onClick={() => {
+                      setOpen(false);
+                      s.onSelect();
+                    }}
+                  >
+                    <span>{s.label}</span>
+                    {s.id === currentSpace && <Check size={15} aria-hidden="true" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="rail-nav-card work-nav-card">
         {extra}
