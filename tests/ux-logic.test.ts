@@ -730,8 +730,8 @@ test('catalogue étendu : chaque module interactif a ses leçons, son quiz et so
   const { CATALOG_ITEMS } = await import('../src/wireframeData');
   const { MODULES_CONTENT } = await import('../src/content');
   const modules = CATALOG_ITEMS.filter((c) => c.type === 'module' && c.interactive);
-  // Sept modules, plus trois cours scolaires (CM2, 3e, Seconde).
-  assert.equal(modules.length, 10);
+  // Sept modules, plus huit cours scolaires (CM2, 3e, Seconde, Terminale).
+  assert.equal(modules.length, 15);
   for (const mod of modules) {
     const study = MODULES_CONTENT[mod.id];
     assert.ok(study, `contenu manquant : ${mod.id}`);

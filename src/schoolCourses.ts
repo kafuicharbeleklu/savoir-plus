@@ -2,10 +2,11 @@
  * Cours scolaires de SAVOIR+, alignés sur le programme officiel du Togo (primaire, collège, lycée).
  * Les classes, matières et thèmes suivent ceux du programme (repris des portails École Togo du
  * ministère) ; les leçons, exemples et quiz sont rédigés par SAVOIR+ : aucun texte n'est copié.
- * Premier lot : un cours par cycle (CM2, 3e, Seconde).
+ * Premier lot, ici : un cours par cycle (CM2, 3e, Seconde). Deuxième lot, classes d'examen : `schoolCoursesExamens.ts`.
  */
 import type { CatalogItem } from './wireframeData';
 import type { LessonRich, ModuleStudyContent } from './content';
+import { EXAM_CATALOG_MODULES, EXAM_MODULES_CONTENT } from './schoolCoursesExamens';
 
 const READER = 'Section consultable depuis le lecteur';
 const QUIZ_SECTION = { title: '04 Vérifier mes acquis', subtitle: 'Activité à réaliser dans le lecteur · 3 questions' };
@@ -101,7 +102,8 @@ export const SCHOOL_CATALOG_MODULES: CatalogItem[] = [
       { title: '03 Le cas des gaz', subtitle: `${READER} · 9 min` },
       QUIZ_SECTION
     ]
-  }
+  },
+  ...EXAM_CATALOG_MODULES
 ];
 
 /* ============================================================================ leçons et quiz */
@@ -736,7 +738,8 @@ export const SCHOOL_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
         explanation: 'V = n × Vm = 3 × 24 = 72 L.'
       }
     ]
-  }
+  },
+  ...EXAM_MODULES_CONTENT
 };
 
 /* ============================================================================ registres communs */
