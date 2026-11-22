@@ -4,7 +4,7 @@
  * achète pour eux (achat simulé).
  */
 import React, { useState } from 'react';
-import { BookOpen, KeyRound, Ticket } from 'lucide-react';
+import { BookOpen, KeyRound } from 'lucide-react';
 import { formatDayShort, type CalendarEvent, type RevisionPlan, type SessionLog } from '../../calendar';
 import {
   PURCHASE_MESSAGE,
@@ -257,16 +257,20 @@ export function FamilyPage({
     <div className="sc-page">
       {codesPage ? (
         <>
+          {/* Pas de lien de retour : « Vue d'ensemble » est dans le menu latéral. */}
           <PageHeader
             title="Codes de rattachement"
-            subtitle={`Un code sert une seule fois, pour un seul enfant : il le saisit à l’ouverture de son compte. Valable ${GUARDIAN_CODE_DAYS} jours.`}
-            back={{ label: 'Vue d’ensemble', onClick: () => nav('family') }}
+            keepTitle
             actions={
               <button type="button" className="primary ui-btn-sm" disabled={!verified} onClick={() => setCodeOpen(true)}>
                 Créer un code
               </button>
             }
           />
+          <p className="fm-codes-intro">
+            Un code ouvre le compte d’un seul enfant : valable {GUARDIAN_CODE_DAYS} jours, il est ensuite lié à ce compte. Aucun autre compte ne peut s’en
+            servir ; l’enfant peut le saisir de nouveau, sur un autre appareil par exemple.
+          </p>
           {identityBanner}
           <ListCard label="Codes créés pour vos enfants">
             {codes.length === 0 ? (
@@ -283,12 +287,12 @@ export function FamilyPage({
                       status === 'valid'
                         ? `Pour ${code.childName} · valable jusqu’au ${formatDayShort(guardianCodeExpiry(code))}`
                         : status === 'used'
-                          ? `Pour ${code.childName} · utilisé par ${memberName(code.usedBy || '', people)}`
+                          ? `Pour ${code.childName} · lié au compte de ${memberName(code.usedBy || '', people)}`
                           : `Pour ${code.childName} · expiré le ${formatDayShort(guardianCodeExpiry(code))}`
                     }
                     trailing={
                       <>
-                        <StatusDot tone={status === 'valid' ? 'info' : 'neutral'}>{status === 'valid' ? 'Valide' : status === 'used' ? 'Utilisé' : 'Expiré'}</StatusDot>
+                        <StatusDot tone={status === 'valid' ? 'info' : 'neutral'}>{status === 'valid' ? 'Valide' : status === 'used' ? 'Lié' : 'Expiré'}</StatusDot>
                         {status === 'valid' && (
                           <ActionMenu
                             label={`Plus d’actions pour le code de ${code.childName}`}
@@ -319,16 +323,9 @@ export function FamilyPage({
           {/* Le bandeau n'apparaît que s'il y a quelque chose à faire. */}
           {identityBanner}
 
-          {/* Mes enfants ; les codes de rattachement sont dans le menu « … » et ont leur page. */}
+          {/* Mes enfants ; les codes de rattachement ont leur page, dans le menu latéral. */}
           <div className="ui-section-title">
             <h2>Mes enfants</h2>
-            <ActionMenu
-              label="Plus d’actions sur vos enfants"
-              items={[
-                { label: 'Rattacher un enfant', icon: <KeyRound size={16} aria-hidden="true" />, disabled: !verified, onSelect: () => nav('family', 'codes/new') },
-                { label: 'Codes de rattachement', icon: <Ticket size={16} aria-hidden="true" />, onSelect: () => nav('family', 'codes') }
-              ]}
-            />
           </div>
           {children.length === 0 ? (
             <ListCard label="Mes enfants">

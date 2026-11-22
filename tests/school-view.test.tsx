@@ -117,9 +117,10 @@ test('espace famille : enfants, page des codes ; fiche d’un enfant', () => {
   const school = initialSchoolState(TODAY);
   const home = text(renderToStaticMarkup(<FamilyPage {...props('akouvi', school)} calendarOf={calendarOf} />));
   assert.match(home, /Espace famille/);
-  // Une carte par enfant : qui il est, le titre et la phrase de sa lettre, trois repères, puis « Voir le suivi ».
+  // Une carte par enfant : qui il est, le titre et la phrase de sa lettre, trois repères ; la carte entière ouvre son suivi.
   assert.match(home, /Elom Dogbé Terminale D · Les Palmiers Une semaine régulière, une séance à rattraper Elom a 1 séance de révision en retard avant « Composition · Mathématiques » \(dans 13 jours\)\./);
-  assert.match(home, /1 \/ 3 modules validés 3 jours de révision de suite J-13 Composition · Mathématiques Voir le suivi/);
+  assert.match(home, /1 \/ 3 modules validés 3 jours de révision de suite J-13 Composition · Mathématiques/);
+  assert.doesNotMatch(home, /Voir le suivi/, "la carte entière ouvre le suivi");
   // Ni codes ni achats sur la vue d'ensemble : les codes ont leur page (menu « … »), les achats sont dans la Bibliothèque.
   assert.doesNotMatch(home, /PAR-7K3Q-9M2X/);
   assert.doesNotMatch(home, /REC-DEMO-001/);

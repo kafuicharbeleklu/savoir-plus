@@ -175,9 +175,16 @@ test('moins de 12 ans : le compte attend le code d’un parent ou tuteur vérifi
   assert.equal(redeemed.guardianId, 'akouvi');
   assert.equal(needsGuardianCode(school, 'kokou', TODAY), false);
   assert.deepEqual(childrenOf(school, 'akouvi'), ['elom', 'kokou']);
-  // Le code ne ressert pas.
+  // Le code est lié à Kokou : refusé à tout autre compte…
   assert.deepEqual(redeemGuardianCode(school, 'PAR-7K3Q-9M2X', 'cm2-01', TODAY), { ok: false, reason: 'used' });
   assert.ok(REDEEM_MESSAGE.used.includes('déjà servi'));
+  // … mais Kokou peut le saisir de nouveau (autre appareil), même après les sept jours, sans rien changer.
+  const again = redeemGuardianCode(school, 'PAR-7K3Q-9M2X', 'kokou', addDays(TODAY, 30));
+  assert.ok(again.ok);
+  if (again.ok) {
+    assert.equal(again.guardianId, 'akouvi');
+    assert.deepEqual(again.school, school);
+  }
   // Même activé, un enfant de CM2 reste dans une classe « stricte » : pas de publication.
   assert.equal(restrictionFor(school, 'kokou', TODAY), 3);
   assert.equal(canPublish(school, 'kokou', TODAY), false);

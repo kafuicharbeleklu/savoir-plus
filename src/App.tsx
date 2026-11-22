@@ -29,6 +29,7 @@ import {
   Home,
   Image as ImageIcon,
   Inbox,
+  KeyRound,
   Layers,
   LayoutGrid,
   Lock,
@@ -3500,11 +3501,13 @@ export default function App() {
       const familyName = user.name.split(' ').slice(1).join(' ');
       // Les enfants s'ouvrent depuis leurs cartes de la vue d'ensemble ; le menu garde l'espace d'une page à l'autre.
       const inLibrary = page !== 'family';
+      const inCodes = page === 'family' && selectedId.startsWith('codes');
       const groups: WorkNavGroup[] = [
         {
           items: [
-            { id: 'home', label: 'Vue d’ensemble', icon: <LayoutGrid size={18} aria-hidden="true" />, active: !inLibrary, onSelect: () => nav('family') },
-            { id: 'catalog', label: 'Bibliothèque', icon: <Compass size={18} aria-hidden="true" />, active: inLibrary, onSelect: () => nav('catalog') }
+            { id: 'home', label: 'Vue d’ensemble', icon: <LayoutGrid size={18} aria-hidden="true" />, active: !inLibrary && !inCodes, onSelect: () => nav('family') },
+            { id: 'catalog', label: 'Bibliothèque', icon: <Compass size={18} aria-hidden="true" />, active: inLibrary, onSelect: () => nav('catalog') },
+            { id: 'codes', label: 'Codes de rattachement', icon: <KeyRound size={18} aria-hidden="true" />, active: inCodes, onSelect: () => nav('family', 'codes') }
           ]
         }
       ];

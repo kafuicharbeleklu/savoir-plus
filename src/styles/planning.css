@@ -363,7 +363,14 @@ button.pl-grid-slot:hover { filter: brightness(0.97); }
 
 /* -- Vue d'ensemble de la famille : une carte par enfant, toutes de la même taille ------------------- */
 .fm-kids { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-gap, 8px); align-items: stretch; }
-.fm-kid { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: var(--card-pad, 20px); border: 1px solid var(--border-hairline); border-radius: var(--angle); background: var(--bg-surface); }
+.fm-kid { position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: var(--card-pad, 20px); border: 1px solid var(--border-hairline); border-radius: var(--angle); background: var(--bg-surface); cursor: pointer; transition: border-color var(--dur-fast) var(--ease-standard); }
+.fm-kid:hover { border-color: color-mix(in srgb, var(--accent-brand) 45%, var(--border-hairline)); }
+.fm-kid:focus-within { outline: 2px solid var(--accent-brand); outline-offset: 2px; }
+/* Le nom est le bouton ; son voile couvre la carte entière. */
+.fm-kid-open { display: block; max-width: 100%; min-height: 0; padding: 0; border: 0; background: none; box-shadow: none; font: inherit; font-size: 1rem; font-weight: 600; text-align: left; color: var(--fg-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.fm-kid-open::after { content: ""; position: absolute; inset: 0; border-radius: var(--angle); }
+.fm-kid-open:focus-visible { outline: none; }
+.fm-kid:hover .fm-kid-open { text-decoration: underline; text-underline-offset: 3px; }
 .fm-kid-head { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .fm-kid-head .fm-head-initial { width: 44px; height: 44px; }
 .fm-kid-id { display: flex; flex-direction: column; min-width: 0; }
@@ -395,3 +402,6 @@ button.pl-grid-slot:hover { filter: brightness(0.97); }
   .fm-letter-body { display: flex; flex: 1; flex-direction: column; }
   .fm-letter-actions { margin-top: auto; padding-top: 18px; }
 }
+
+/* Page des codes de rattachement : une phrase d'explication sous le titre. */
+.fm-codes-intro { max-width: 640px; margin: -4px 0 4px; font-size: 0.875rem; line-height: 1.5; color: var(--fg-muted); }

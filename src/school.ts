@@ -391,18 +391,31 @@ export type RedeemResult = { ok: true; school: SchoolState; guardianId: string }
 
 export const REDEEM_MESSAGE: Record<RedeemFailure, string> = {
   unknown: 'Ce code n’existe pas. Vérifiez-le avec votre parent ou tuteur.',
-  used: 'Ce code a déjà servi pour un compte : un code n’en ouvre qu’un seul. Demandez-en un nouveau.',
+  used: 'Ce code a déjà servi pour un autre compte : un code n’en ouvre qu’un seul. Demandez-en un nouveau.',
   expired: 'Ce code a expiré. Demandez-en un nouveau.',
   unverified: 'Le parent ou tuteur qui a créé ce code n’a pas encore fait vérifier son identité.',
   limit: 'Deux parents ou tuteurs sont déjà rattachés à ce compte.',
   'already-linked': 'Ce parent ou tuteur est déjà rattaché à ce compte.'
 };
 
-/** L'enfant saisit le code : le lien avec le parent ou tuteur est créé, le code ne resservira pas. */
+/**
+ * L'enfant saisit le code : le lien avec le parent ou tuteur est créé, et le code est lié à ce compte.
+ * Aucun autre compte ne peut plus s'en servir ; le compte qui l'a utilisé peut le saisir de nouveau (sur un
+ * autre appareil, par exemple), même après les sept jours de validité, sans rien changer.
+ */
 export function redeemGuardianCode(school: SchoolState, rawCode: string, childId: string, today: Day): RedeemResult {
   const value = normalizeCode(rawCode);
   const code = school.guardianCodes.find((c) => c.code === value);
   if (!code) return { ok: false, reason: 'unknown' };
+  if (code.usedBy) {
+    if (code.usedBy !== childId) return { ok: false, reason: 'used' };
+    const linked = guardiansOf(school, childId).includes(code.guardianId);
+    return {
+      ok: true,
+      guardianId: code.guardianId,
+      school: linked ? school : { ...school, guardianLinks: [...school.guardianLinks, { guardianId: code.guardianId, childId, since: today }] }
+    };
+  }
   const status = guardianCodeStatus(code, today);
   if (status !== 'valid') return { ok: false, reason: status };
   if (accountOf(school, code.guardianId).identity !== 'verified') return { ok: false, reason: 'unverified' };

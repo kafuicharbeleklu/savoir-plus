@@ -6,7 +6,7 @@
  */
 import React, { useState } from 'react';
 import { ofName } from '../../french';
-import { ArrowRight, CalendarClock, CheckCircle2, ClipboardCheck, Flame, Send } from 'lucide-react';
+import { CalendarClock, CheckCircle2, ClipboardCheck, Flame, Send } from 'lucide-react';
 import {
   SCHOOL_CALENDAR,
   addDays,
@@ -243,9 +243,9 @@ function ChildWeek({ slots, calendar, today }: { slots: TimetableSlot[]; calenda
 /* ------------------------------------------------------------------ Carte d'un enfant (accueil) */
 
 /**
- * Carte d'un enfant sur la vue d'ensemble : qui il est, le titre et la phrase de sa lettre, trois repères
- * en tuiles, puis « Voir le suivi ». Toutes les cartes ont la même taille (titre sur deux lignes, phrase
- * sur trois au plus), quel que soit le volume de la lettre.
+ * Carte d'un enfant sur la vue d'ensemble, cliquable en entier (elle ouvre son suivi) : qui il est, le
+ * titre et la phrase de sa lettre, trois repères en tuiles. Toutes les cartes ont la même taille (titre
+ * sur deux lignes, phrase sur trois au plus), quel que soit le volume de la lettre.
  */
 export function ChildCard({
   name,
@@ -268,7 +268,10 @@ export function ChildCard({
           {name.charAt(0)}
         </span>
         <span className="fm-kid-id">
-          <b>{name}</b>
+          {/* Le nom porte le clic ; son voile couvre toute la carte. */}
+          <button type="button" className="fm-kid-open" onClick={onOpen} aria-label={`Ouvrir le suivi ${ofName(firstName)}`}>
+            {name}
+          </button>
           <small>{classLine}</small>
         </span>
       </header>
@@ -292,9 +295,6 @@ export function ChildCard({
           <span>{exam ? exam.title : 'aucun examen à venir'}</span>
         </li>
       </ul>
-      <button type="button" className="fm-kid-foot" onClick={onOpen}>
-        Voir le suivi <ArrowRight size={16} aria-hidden="true" />
-      </button>
     </article>
   );
 }
