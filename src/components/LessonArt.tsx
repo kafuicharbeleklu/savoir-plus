@@ -33,7 +33,7 @@ import {
   Wallet,
   type LucideIcon
 } from 'lucide-react';
-import type { LessonArt, LessonFlowFigure, LessonSplitFigure } from '../content';
+import type { LessonArt, LessonFlowFigure, LessonSplitFigure, LessonGeometryFigure, LessonFractionFigure, LessonImageFigure } from '../content';
 
 export const ART_ICONS: Record<LessonArt, LucideIcon> = {
   alert: ShieldAlert,
@@ -274,6 +274,146 @@ export function SplitFigure({ figure }: { figure: LessonSplitFigure }) {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ Géométrie, fractions, images */
+
+const LABEL_SHIFT: Record<string, [number, number]> = {
+  n: [0, -12],
+  s: [0, 20],
+  e: [13, 5],
+  w: [-13, 5],
+  ne: [10, -8],
+  nw: [-10, -8],
+  se: [10, 18],
+  sw: [-10, 18]
+};
+
+/** Figure de géométrie : des points nommés, des traits, et au besoin un cercle ou un angle droit. */
+export function GeometryFigure({ figure }: { figure: LessonGeometryFigure }) {
+  const at = (id: string) => figure.points.find((point) => point.id === id) || { x: 0, y: 0 };
+  const pad = 26;
+  const anchor = (side: string) => (side.includes('w') ? 'end' : side.includes('e') ? 'start' : 'middle');
+  return (
+    <svg
+      className="rd-geo"
+      viewBox={`${-pad} ${-pad} ${figure.width + 2 * pad} ${figure.height + 2 * pad}`}
+      role="img"
+      aria-label={`Figure : points ${figure.points.map((point) => point.label || point.id).join(', ')}`}
+    >
+      {(figure.polygons || []).map((poly, i) => (
+        <polygon key={`poly-${i}`} className={`rd-geo-area is-${poly.tone || 'accent'}`} points={poly.points.map((id) => `${at(id).x},${at(id).y}`).join(' ')} />
+      ))}
+      {(figure.circles || []).map((circle, i) => (
+        <circle key={`circle-${i}`} className={`rd-geo-line is-${circle.tone || 'ink'}`} cx={at(circle.center).x} cy={at(circle.center).y} r={circle.radius} />
+      ))}
+      {figure.segments.map((segment, i) => {
+        const a = at(segment.from);
+        const b = at(segment.to);
+        const length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        // Une droite dépasse ses deux points, une demi-droite le second seulement ; un segment s'arrête à ses extrémités.
+        const ux = ((b.x - a.x) / length) * 20;
+        const uy = ((b.y - a.y) / length) * 20;
+        const before = segment.line ? 1 : 0;
+        const after = segment.line || segment.ray ? 1 : 0;
+        // La légende d'un trait se place à son milieu, décalée perpendiculairement.
+        const mx = (a.x + b.x) / 2 - ((b.y - a.y) / length) * 13;
+        const my = (a.y + b.y) / 2 + ((b.x - a.x) / length) * 13;
+        return (
+          <g key={`segment-${i}`}>
+            <line
+              className={`rd-geo-line is-${segment.tone || 'ink'}${segment.dashed ? ' is-dashed' : ''}`}
+              x1={a.x - ux * before}
+              y1={a.y - uy * before}
+              x2={b.x + ux * after}
+              y2={b.y + uy * after}
+            />
+            {segment.label && (
+              <text className={`rd-geo-measure is-${segment.tone || 'ink'}`} x={mx} y={my + 4} textAnchor="middle">
+                {segment.label}
+              </text>
+            )}
+          </g>
+        );
+      })}
+      {(figure.rightAngles || []).map((angle, i) => {
+        const o = at(angle.at);
+        const unit = (id: string) => {
+          const q = at(id);
+          const d = Math.hypot(q.x - o.x, q.y - o.y) || 1;
+          return [((q.x - o.x) / d) * 11, ((q.y - o.y) / d) * 11];
+        };
+        const [ax, ay] = unit(angle.from);
+        const [bx, by] = unit(angle.to);
+        return <path key={`right-${i}`} className="rd-geo-line is-ink is-thin" d={`M ${o.x + ax} ${o.y + ay} L ${o.x + ax + bx} ${o.y + ay + by} L ${o.x + bx} ${o.y + by}`} />;
+      })}
+      {figure.points.map((point) => {
+        const side = point.labelAt || 'n';
+        const [dx, dy] = LABEL_SHIFT[side];
+        return (
+          <g key={point.id}>
+            <circle className="rd-geo-point" cx={point.x} cy={point.y} r={3.4} />
+            <text className="rd-geo-label" x={point.x + dx} y={point.y + dy} textAnchor={anchor(side)}>
+              {point.label || point.id}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/** Fractions dessinées : un disque ou une barre en parts égales, les parts prises coloriées. */
+export function FractionFigure({ figure }: { figure: LessonFractionFigure }) {
+  return (
+    <div className="rd-fractions">
+      {figure.items.map((item) => (
+        <figure key={item.label} className="rd-fraction">
+          {figure.shape === 'disc' ? (
+            <svg viewBox="-70 -70 140 140" role="img" aria-label={`${item.taken} parts coloriées sur ${item.parts}`}>
+              {Array.from({ length: item.parts }, (_, i) => {
+                const a0 = (i / item.parts) * 2 * Math.PI - Math.PI / 2;
+                const a1 = ((i + 1) / item.parts) * 2 * Math.PI - Math.PI / 2;
+                const x0 = 60 * Math.cos(a0);
+                const y0 = 60 * Math.sin(a0);
+                const x1 = 60 * Math.cos(a1);
+                const y1 = 60 * Math.sin(a1);
+                return (
+                  <path
+                    key={i}
+                    className={`rd-fraction-part${i < item.taken ? ' is-taken' : ''}`}
+                    d={`M 0 0 L ${x0.toFixed(2)} ${y0.toFixed(2)} A 60 60 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z`}
+                  />
+                );
+              })}
+            </svg>
+          ) : (
+            <svg viewBox="-4 -4 248 56" role="img" aria-label={`${item.taken} parts coloriées sur ${item.parts}`}>
+              {Array.from({ length: item.parts }, (_, i) => (
+                <rect key={i} className={`rd-fraction-part${i < item.taken ? ' is-taken' : ''}`} x={(240 / item.parts) * i} y={0} width={240 / item.parts} height={48} />
+              ))}
+            </svg>
+          )}
+          <figcaption>
+            <b className="tabular-nums">
+              {item.taken}/{item.parts}
+            </b>
+            <span>{item.label}</span>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+  );
+}
+
+/** Image : une photo ou un dessin, avec son crédit. */
+export function ImageFigure({ figure }: { figure: LessonImageFigure }) {
+  return (
+    <div className="rd-image">
+      <img src={figure.src} alt={figure.alt} loading="lazy" />
+      {figure.credit && <small>{figure.credit}</small>}
     </div>
   );
 }

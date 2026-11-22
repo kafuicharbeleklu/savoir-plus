@@ -161,13 +161,7 @@ export const SCHOOL_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
           ],
           example: {
             title: 'Le gâteau de Mme Abla',
-            figure: {
-              kind: 'split',
-              parts: [
-                { label: 'Mangé par Kossi', percent: 37.5, note: '3 parts sur 8' },
-                { label: 'Reste', percent: 62.5, note: '5 parts sur 8' }
-              ]
-            },
+            figure: { kind: 'fraction', shape: 'disc', items: [{ parts: 8, taken: 3, label: 'La part mangée par Kossi' }] },
             caption: 'Le gâteau partagé en 8 parts égales',
             notes: [
               'Kossi a mangé **3/8** du gâteau.',
@@ -373,21 +367,31 @@ export const SCHOOL_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
             }
           ],
           example: {
-            title: 'Associer les côtés correspondants',
+            title: 'La configuration, sur une figure',
             figure: {
-              kind: 'table',
-              head: ['Côté du triangle AMN', 'Côté correspondant du triangle ABC', 'Pourquoi'],
-              rows: [
-                ['AM', 'AB', 'sur la même droite (d)'],
-                ['AN', 'AC', 'sur la même droite (d′)'],
-                ['MN', 'BC', 'sur deux droites parallèles']
+              kind: 'geometry',
+              width: 320,
+              height: 215,
+              points: [
+                { id: 'A', x: 150, y: 15, labelAt: 'n' },
+                { id: 'B', x: 40, y: 200, labelAt: 'w' },
+                { id: 'C', x: 290, y: 200, labelAt: 'e' },
+                { id: 'M', x: 84, y: 126, labelAt: 'w' },
+                { id: 'N', x: 234, y: 126, labelAt: 'e' }
+              ],
+              polygons: [{ points: ['A', 'M', 'N'], tone: 'accent' }],
+              segments: [
+                { from: 'A', to: 'B', ray: true },
+                { from: 'A', to: 'C', ray: true },
+                { from: 'M', to: 'N', tone: 'accent' },
+                { from: 'B', to: 'C', tone: 'accent' }
               ]
             },
-            caption: 'Le tableau à dresser avant d’écrire les rapports',
+            caption: 'Deux droites sécantes en A, coupées par deux parallèles',
             notes: [
-              'Les côtés correspondants sont sur la **même droite** ou sur **deux droites parallèles**.',
-              'Le point A commence les deux premiers rapports.',
-              'Dresser ce tableau évite d’inverser un rapport.'
+              'Les points A, M, B sont alignés, comme les points A, N, C.',
+              'Les droites **(MN)** et **(BC)**, tracées de la même couleur, sont parallèles.',
+              'Le petit triangle AMN, teinté, et le grand triangle ABC ont alors des côtés proportionnels : AM/AB = AN/AC = MN/BC.'
             ]
           },
           question: {

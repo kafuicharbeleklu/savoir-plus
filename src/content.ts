@@ -64,7 +64,53 @@ export interface LessonSplitFigure {
   parts: { label: string; percent: number; note: string }[];
 }
 
-export type LessonFigure = LessonMessageFigure | LessonTimelineFigure | LessonTableFigure | LessonFlowFigure | LessonSplitFigure;
+/**
+ * Une figure de géométrie, décrite par ses points et ses traits. Les coordonnées sont celles du dessin :
+ * x vers la droite, y vers le bas, dans un cadre de `width` × `height` (environ 320 × 220).
+ */
+export interface LessonGeometryFigure {
+  kind: 'geometry';
+  width: number;
+  height: number;
+  /** Les points nommés ; `labelAt` dit de quel côté écrire le nom (nord, sud-est…). */
+  points: { id: string; x: number; y: number; label?: string; labelAt?: 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw' }[];
+  /**
+   * Les traits entre deux points. `line` prolonge le trait des deux côtés (une droite), `ray` seulement
+   * au-delà du second point (une demi-droite) ; `tone` le met en couleur.
+   */
+  segments: { from: string; to: string; tone?: 'ink' | 'accent' | 'warm'; dashed?: boolean; line?: boolean; ray?: boolean; label?: string }[];
+  /** Surfaces teintées (un triangle mis en avant). */
+  polygons?: { points: string[]; tone?: 'accent' | 'warm' }[];
+  /** Cercles : centre et rayon, dans les unités du dessin. */
+  circles?: { center: string; radius: number; tone?: 'ink' | 'accent' | 'warm' }[];
+  /** Angles droits à marquer : le sommet, puis un point sur chaque côté. */
+  rightAngles?: { at: string; from: string; to: string }[];
+}
+
+/** Une ou plusieurs fractions dessinées : un disque ou une barre partagés en parts égales, certaines coloriées. */
+export interface LessonFractionFigure {
+  kind: 'fraction';
+  shape: 'disc' | 'bar';
+  items: { parts: number; taken: number; label: string }[];
+}
+
+/** Une image (photo, dessin, schéma importé), avec son texte de remplacement et son crédit. */
+export interface LessonImageFigure {
+  kind: 'image';
+  src: string;
+  alt: string;
+  credit?: string;
+}
+
+export type LessonFigure =
+  | LessonMessageFigure
+  | LessonTimelineFigure
+  | LessonTableFigure
+  | LessonFlowFigure
+  | LessonSplitFigure
+  | LessonGeometryFigure
+  | LessonFractionFigure
+  | LessonImageFigure;
 
 /**
  * Une leçon rédigée est une partie du module, qui se lit d'un trait : une entrée en matière, le

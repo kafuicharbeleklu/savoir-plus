@@ -149,12 +149,43 @@ test('chaque type de figure s’affiche', () => {
       const html = render(MODULES_CONTENT[id].lessons[i], i);
       const kind = rich.example.figure.kind;
       kinds.add(kind);
-      const marker = { message: 'rd-msg ', timeline: 'rd-timeline', table: 'rd-table', flow: 'rd-flow', split: 'rd-split-bar' }[kind];
+      const marker = {
+        message: 'rd-msg ',
+        timeline: 'rd-timeline',
+        table: 'rd-table',
+        flow: 'rd-flow',
+        split: 'rd-split-bar',
+        geometry: 'rd-geo',
+        fraction: 'rd-fractions',
+        image: 'rd-image'
+      }[kind];
       assert.ok(html.includes(`class="${marker}`), `${id}, partie ${i + 1} : ${kind}`);
       assert.ok(!html.includes('**'), `${id}, partie ${i + 1} : gras non converti`);
     });
   }
-  assert.deepEqual([...kinds].sort(), ['flow', 'message', 'split', 'table', 'timeline']);
+  assert.deepEqual([...kinds].sort(), ['flow', 'fraction', 'geometry', 'message', 'split', 'table', 'timeline']);
+});
+
+test('figures dessinées : géométrie, fraction et image ont leurs règles', () => {
+  const base = LESSONS_RICH['3e-thales'][0];
+  const withFigure = (figure: LessonRich['example']['figure']): LessonRich => ({ ...base, example: { ...base.example, figure } });
+  assert.deepEqual(lessonIssues(base), []);
+  // Géométrie : un trait ne relie que des points qui existent, dans le cadre.
+  const geo = base.example.figure;
+  assert.equal(geo.kind, 'geometry');
+  if (geo.kind !== 'geometry') return;
+  assert.ok(lessonIssues(withFigure({ ...geo, segments: [{ from: 'A', to: 'Z' }] })).some((issue) => issue.includes('n’existe pas')));
+  assert.ok(lessonIssues(withFigure({ ...geo, points: [...geo.points, { id: 'P', x: 999, y: 10 }] })).some((issue) => issue.includes('sort du cadre')));
+  // Fraction : de 2 à 12 parts, pas plus de parts coloriées que de parts.
+  assert.deepEqual(lessonIssues(withFigure({ kind: 'fraction', shape: 'bar', items: [{ parts: 4, taken: 3, label: 'Trois quarts' }] })), []);
+  assert.ok(lessonIssues(withFigure({ kind: 'fraction', shape: 'disc', items: [{ parts: 4, taken: 5, label: 'Trop' }] })).some((issue) => issue.includes('ne dépassent pas')));
+  assert.ok(lessonIssues(withFigure({ kind: 'fraction', shape: 'disc', items: [{ parts: 40, taken: 1, label: 'Trop fin' }] })).some((issue) => issue.includes('2 à 12 parts')));
+  // Image : une source et un texte de remplacement.
+  assert.ok(lessonIssues(withFigure({ kind: 'image', src: 'photo.jpg', alt: '' })).some((issue) => issue.includes('texte de remplacement')));
+  // Le disque de 3/8 dessine huit parts, dont trois coloriées.
+  const disc = render(MODULES_CONTENT['cm2-fractions'].lessons[0], 0);
+  assert.equal((disc.match(/class="rd-fraction-part/g) || []).length, 8);
+  assert.equal((disc.match(/class="rd-fraction-part is-taken"/g) || []).length, 3);
 });
 
 test('une partie créée dans le Studio garde le même cadre, avec son seul paragraphe', () => {

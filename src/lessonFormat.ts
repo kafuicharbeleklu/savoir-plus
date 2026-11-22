@@ -16,7 +16,13 @@ function textsOf(rich: LessonRich): string[] {
           ? [...figure.head, ...figure.rows.flat()]
           : figure.kind === 'flow'
             ? [...figure.nodes.flatMap((n) => [n.label, n.sub || '']), ...figure.links]
-            : figure.parts.flatMap((p) => [p.label, p.note]);
+            : figure.kind === 'split'
+              ? figure.parts.flatMap((p) => [p.label, p.note])
+              : figure.kind === 'geometry'
+                ? [...figure.points.map((p) => p.label || ''), ...figure.segments.map((t) => t.label || '')]
+                : figure.kind === 'fraction'
+                  ? figure.items.map((item) => item.label)
+                  : [figure.alt, figure.credit || ''];
   return [
     rich.scene,
     ...rich.sections.flatMap((s) => [s.title, ...s.text, ...(s.items || []), s.after || '']),
@@ -79,6 +85,30 @@ export function lessonIssues(rich: LessonRich): string[] {
   if (figure.kind === 'split') {
     if (figure.parts.length < 2 || figure.parts.length > 4) issues.push('exemple : une répartition a de 2 à 4 parts');
     if (figure.parts.reduce((sum, part) => sum + part.percent, 0) !== 100) issues.push('exemple : les parts doivent faire 100 %');
+  }
+  if (figure.kind === 'geometry') {
+    const ids = new Set(figure.points.map((point) => point.id));
+    if (figure.points.length < 2) issues.push('exemple : une figure a au moins deux points');
+    if (ids.size !== figure.points.length) issues.push('exemple : deux points de la figure portent le même nom');
+    if (figure.points.some((point) => point.x < 0 || point.y < 0 || point.x > figure.width || point.y > figure.height)) issues.push('exemple : un point sort du cadre de la figure');
+    const used = [
+      ...figure.segments.flatMap((t) => [t.from, t.to]),
+      ...(figure.polygons || []).flatMap((poly) => poly.points),
+      ...(figure.circles || []).map((circle) => circle.center),
+      ...(figure.rightAngles || []).flatMap((angle) => [angle.at, angle.from, angle.to])
+    ];
+    if (used.some((id) => !ids.has(id))) issues.push('exemple : un trait de la figure relie un point qui n’existe pas');
+    if (!figure.segments.length && !(figure.circles || []).length) issues.push('exemple : une figure a au moins un trait ou un cercle');
+  }
+  if (figure.kind === 'fraction') {
+    if (figure.items.length < 1 || figure.items.length > 3) issues.push('exemple : de une à trois fractions dessinées');
+    if (figure.items.some((item) => !Number.isInteger(item.parts) || item.parts < 2 || item.parts > 12)) issues.push('exemple : une fraction se partage en 2 à 12 parts');
+    if (figure.items.some((item) => !Number.isInteger(item.taken) || item.taken < 0 || item.taken > item.parts)) issues.push('exemple : les parts coloriées ne dépassent pas le nombre de parts');
+    if (figure.items.some((item) => !item.label.trim())) issues.push('exemple : chaque fraction a sa légende');
+  }
+  if (figure.kind === 'image') {
+    if (!figure.src.trim()) issues.push('exemple : image manquante');
+    if (!figure.alt.trim()) issues.push('exemple : l’image a besoin d’un texte de remplacement');
   }
 
   if (!rich.question.ask.trim().endsWith('?')) issues.push('question de l’élève : elle se termine par « ? »');

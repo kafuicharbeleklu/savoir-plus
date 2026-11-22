@@ -621,3 +621,35 @@
 .rd-chapter-body > .rd-confirm h3 { margin: 0 0 6px; font-size: 1.0625rem; font-weight: 600; letter-spacing: 0; }
 .rd-chapter-body > .rd-nav.is-bare { margin-top: 16px; }
 .rd-chapter-body .rd-quiz-count { font-size: 0.875rem; color: var(--fg-muted); }
+
+/* -- Figure de géométrie ----------------------------------------------------------------------------- */
+.rd-geo { display: block; width: 100%; max-width: 460px; height: auto; overflow: visible; }
+.rd-geo-line { fill: none; stroke: var(--art-ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rd-geo-line.is-accent { stroke: var(--art-a); stroke-width: 2.5; }
+.rd-geo-line.is-warm { stroke: var(--art-b); stroke-width: 2.5; }
+.rd-geo-line.is-dashed { stroke-dasharray: 6 6; }
+.rd-geo-line.is-thin { stroke-width: 1.5; }
+.rd-geo-area { stroke: none; }
+.rd-geo-area.is-accent { fill: var(--art-a-soft); }
+.rd-geo-area.is-warm { fill: var(--art-b-soft); }
+.rd-geo-point { fill: var(--art-ink); }
+.rd-geo-label { font-size: 15px; font-weight: 600; font-style: italic; fill: var(--fg-primary); }
+.rd-geo-measure { font-size: 13px; font-weight: 500; fill: var(--fg-muted); }
+.rd-geo-measure.is-accent { fill: var(--art-a); }
+.rd-geo-measure.is-warm { fill: var(--art-b); }
+
+/* -- Fractions dessinées ------------------------------------------------------------------------------ */
+.rd-fractions { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px 40px; width: 100%; }
+.rd-fraction { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 0; }
+.rd-fraction svg { display: block; width: 160px; height: auto; overflow: visible; }
+.rd-fraction svg[viewBox^="-4"] { width: 260px; }
+.rd-fraction-part { fill: var(--art-paper); stroke: var(--art-ink); stroke-width: 2; stroke-linejoin: round; }
+.rd-fraction-part.is-taken { fill: var(--art-a); }
+.rd-figure .rd-fraction figcaption { display: flex; flex-direction: column; align-items: center; gap: 2px; width: auto; max-width: 220px; margin: 0; padding: 0; border: 0; text-align: center; }
+.rd-fraction figcaption b { font-size: 1.125rem; font-weight: 600; color: var(--fg-primary); }
+.rd-fraction figcaption span { font-size: 0.875rem; line-height: 1.4; color: var(--fg-muted); }
+
+/* -- Image -------------------------------------------------------------------------------------------- */
+.rd-image { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+.rd-image img { display: block; max-width: 100%; max-height: 420px; border: 1px solid var(--border-hairline); border-radius: var(--angle); }
+.rd-image small { font-size: 0.75rem; color: var(--fg-muted); }

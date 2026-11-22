@@ -8,7 +8,7 @@
 import React from 'react';
 import { Check, ClipboardCheck, Clock, Mail, MessageSquare, MousePointerClick } from 'lucide-react';
 import type { LessonArt, LessonFigure, StudyLesson } from '../content';
-import { ART_ICONS, ArtBadge, ArtScene, FlowFigure, SplitFigure } from './LessonArt';
+import { ART_ICONS, ArtBadge, ArtScene, FlowFigure, SplitFigure, GeometryFigure, FractionFigure, ImageFigure } from './LessonArt';
 import { RichText } from './RichText';
 
 /** Encadré à pastille : « i » (à savoir) ou « ? » (la question de l'élève). */
@@ -26,6 +26,9 @@ function Aside({ kind, label, children }: { kind: 'info' | 'question'; label: st
 function FigureView({ figure }: { figure: LessonFigure }) {
   if (figure.kind === 'flow') return <FlowFigure figure={figure} />;
   if (figure.kind === 'split') return <SplitFigure figure={figure} />;
+  if (figure.kind === 'geometry') return <GeometryFigure figure={figure} />;
+  if (figure.kind === 'fraction') return <FractionFigure figure={figure} />;
+  if (figure.kind === 'image') return <ImageFigure figure={figure} />;
 
   if (figure.kind === 'message') {
     return (
