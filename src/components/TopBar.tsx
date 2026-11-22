@@ -4,19 +4,15 @@ import {
   BookOpen,
   Bookmark,
   ChevronDown,
-  ClipboardList,
   CreditCard,
   Home,
-  Layers,
   LogOut,
   MessageCircle,
   MessagesSquare,
   Search,
   Route,
   Settings,
-  ShieldCheck,
   User,
-  UserCheck,
   Users,
   X
 } from 'lucide-react';
@@ -109,6 +105,8 @@ export function TopBar({
 
   const isCatalogActive = ['catalog', 'resource-detail', 'module-detail', 'path-detail'].includes(page);
   const isHomeActive = page === 'home' || page.startsWith('community');
+  // Bibliothèque et fiches de contenu : pour un parent, elles font partie de l'Espace famille.
+  const LIBRARY_PAGES = ['catalog', 'module-detail', 'resource-detail', 'path-detail'];
   const learns = caps.accountKind === 'learner' || caps.accountKind === 'educator';
   // « Apprendre » = mes apprentissages, ma progression, mon calendrier. La Bibliothèque est une autre entrée
   // (menu de gauche) : y être n'allume pas « Apprendre ».
@@ -268,7 +266,7 @@ export function TopBar({
           )}
           {/* Un parent ou tuteur : « Espace famille » à la place de « Relations ». */}
           {caps.accountKind === 'guardian' ? (
-            <button className={page === 'family' ? 'active' : ''} onClick={() => nav('family')}>
+            <button className={page === 'family' || LIBRARY_PAGES.includes(page) ? 'active' : ''} onClick={() => nav('family')}>
               <Users size={18} />
               <span>Espace famille</span>
             </button>
@@ -369,65 +367,8 @@ export function TopBar({
                   <Bookmark size={15} /> Éléments enregistrés
                 </button>
 
-                {caps.canManageFamily && (
-                  <button
-                    role="menuitem"
-                    onClick={() => {
-                      setVousOpen(false);
-                      nav('family');
-                    }}
-                  >
-                    <Users size={15} /> Espace famille
-                  </button>
-                )}
-
-                {caps.canTeach && (
-                  <button
-                    role="menuitem"
-                    onClick={() => {
-                      setVousOpen(false);
-                      nav('teaching');
-                    }}
-                  >
-                    <UserCheck size={15} /> Espace encadrant
-                  </button>
-                )}
-
-                {caps.canManageInstitution && (
-                  <button
-                    role="menuitem"
-                    onClick={() => {
-                      setVousOpen(false);
-                      nav('institution');
-                    }}
-                  >
-                    <ClipboardList size={15} /> Mon établissement
-                  </button>
-                )}
-
-                {caps.canCreate && (
-                  <button
-                    role="menuitem"
-                    onClick={() => {
-                      setVousOpen(false);
-                      nav('studio');
-                    }}
-                  >
-                    <Layers size={15} /> Studio
-                  </button>
-                )}
-
-                {(caps.canModerate || caps.canAdmin) && (
-                  <button
-                    role="menuitem"
-                    onClick={() => {
-                      setVousOpen(false);
-                      nav('admin');
-                    }}
-                  >
-                    <ShieldCheck size={15} /> Gouvernance
-                  </button>
-                )}
+                {/* Pas de lien d'espace ici (Espace famille, encadrant, établissement, Studio, Gouvernance) : ils sont déjà
+                    dans la barre du haut ou la colonne de gauche des pages. */}
 
                 <div className="vous-divider" />
 

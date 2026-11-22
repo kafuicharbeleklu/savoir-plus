@@ -6,7 +6,7 @@
  */
 import React, { useState } from 'react';
 import { ofName } from '../../french';
-import { ArrowRight, CalendarClock, CheckCircle2, ClipboardCheck, Flame, Send, Volume2 } from 'lucide-react';
+import { ArrowRight, CalendarClock, CheckCircle2, ClipboardCheck, Flame, Send } from 'lucide-react';
 import {
   SCHOOL_CALENDAR,
   addDays,
@@ -75,16 +75,6 @@ function WeeklyLetterCard({
   onWrite?: () => void;
 }) {
   const [why, setWhy] = useState(false);
-  const canSpeak = typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
-  const speak = () => {
-    const synth = window.speechSynthesis;
-    synth.cancel();
-    const spoken = [letter.headline, letter.opening, letter.text, `Ce que vous pouvez faire : ${letter.action}`].filter(Boolean).join('. ');
-    const utterance = new SpeechSynthesisUtterance(spoken);
-    utterance.lang = 'fr-FR';
-    utterance.rate = 0.95;
-    synth.speak(utterance);
-  };
   return (
     <article className={`fm-letter${letter.tone === 'warn' ? ' is-warn' : ''}`} aria-label={`Lettre de la semaine pour ${firstName}`}>
       <div className="fm-letter-photo">
@@ -104,11 +94,6 @@ function WeeklyLetterCard({
           {onWrite && (
             <button type="button" className="primary ui-btn-sm" onClick={onWrite}>
               <Send size={15} aria-hidden="true" /> {letter.gesture}
-            </button>
-          )}
-          {canSpeak && (
-            <button type="button" className="li-text-link" onClick={speak}>
-              <Volume2 size={15} aria-hidden="true" /> Écouter la lettre
             </button>
           )}
           <button type="button" className="li-text-link" aria-expanded={why} onClick={() => setWhy((v) => !v)}>

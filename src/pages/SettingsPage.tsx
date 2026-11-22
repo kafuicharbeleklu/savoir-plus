@@ -16,7 +16,7 @@ import { Avatar } from '../components/ProfileIdentityCard';
 import { ConfirmDialog, EmptyState, RadioList, SavedIndicator, StatusDot, Toggle, useIsNarrow } from '../components/ui';
 import { todayDay, type Day } from '../calendar';
 import { IDENTITY_LABEL, accountOf, ageBandOf, type SchoolState } from '../school';
-import { audienceOfKind, paidSubscription, plansFor, priceLabel, type Subscription } from '../offers';
+import { paidSubscription, type Subscription } from '../offers';
 import { IdentityPanel } from './school/IdentityPanel';
 
 type SectionId = 'account' | 'security' | 'visibility' | 'data' | 'notifications';
@@ -174,10 +174,7 @@ export function SettingsView({
   };
   // Formule payante du membre : la publicité y devient facultative. Un mineur ne souscrit pas (ses parents, si).
   const paidPlan = paidSubscription(ext.subscriptions, user.id);
-  const audience = audienceOfKind(caps?.accountKind);
-  const plans = plansFor(audience);
   const adult = !school || ageBandOf(accountOf(school, user.id), today || todayDay()) === 'adult';
-  const currentPlanId = paidPlan?.offer.id || plans.find((p) => p.price === 0)?.id || '';
   const patchSubscription = (patch: Partial<Subscription>) => {
     updateExt((prev) => {
       const current = prev.subscriptions?.[user.id];
@@ -554,18 +551,11 @@ export function SettingsView({
               <Row label="Langue" value="Français" onClick={() => go(s, 'language')} />
               <Row label="Effets sonores" value={onOff(ext.appPrefs.soundEffects !== false)} onClick={() => go(s, 'sound')} />
             </Group>
-            {/* Formule (adultes seulement) ; la carte publicitaire ne se règle qu'avec une formule payante. */}
-            {adult && plans.length > 0 && (
+            {/* La formule se gère depuis le menu Vous › Ma formule ; ici, seulement la carte publicitaire, qui ne se
+                règle qu'avec une formule payante. */}
+            {adult && paidPlan && (
               <Group title="Abonnement">
-                {/* La formule se gère sur « Ma formule » (achats, transactions), comme l'abonnement Premium de LinkedIn. */}
-                <Row
-                  label="Formule"
-                  value={paidPlan ? `${paidPlan.offer.name} · ${priceLabel(paidPlan.offer)}` : plans.find((p) => p.id === currentPlanId)?.name || 'Gratuite'}
-                  onClick={() => nav('subscription')}
-                />
-                {paidPlan && (
-                  <Row label="Carte publicitaire" value={paidPlan.subscription.showAds === false ? 'Masquée' : 'Affichée'} onClick={() => go(s, 'ads')} />
-                )}
+                <Row label="Carte publicitaire" value={paidPlan.subscription.showAds === false ? 'Masquée' : 'Affichée'} onClick={() => go(s, 'ads')} />
               </Group>
             )}
           </>

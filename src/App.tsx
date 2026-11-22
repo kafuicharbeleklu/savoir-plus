@@ -21,7 +21,6 @@ import {
   ChevronRight,
   ClipboardList,
   Compass,
-  CreditCard,
   Edit3,
   FileText,
   FileUp,
@@ -39,7 +38,6 @@ import {
   Plus,
   Search,
   Send,
-  Settings,
   ShieldCheck,
   Sliders,
   FilePen,
@@ -3388,7 +3386,8 @@ export default function App() {
       ? 'institution'
       : page === 'teaching' && caps.canTeach
         ? 'teaching'
-        : page === 'family' && caps.canManageFamily
+        : (page === 'family' || (caps.accountKind === 'guardian' && ['catalog', 'module-detail', 'resource-detail', 'path-detail'].includes(page))) &&
+            caps.canManageFamily
           ? 'family'
           : activeSpace === 'studio'
             ? 'studio'
@@ -3432,13 +3431,6 @@ export default function App() {
             { id: 'teachers', label: 'Enseignants', icon: <UserCheck size={18} aria-hidden="true" />, count: teachers, onSelect: () => go('teachers') },
             { id: 'requests', label: 'Demandes', icon: <Inbox size={18} aria-hidden="true" />, count: requests, urgent: requests > 0, onSelect: () => go('requests') }
           ].map((item) => ({ ...item, active: item.id === current }))
-        },
-        {
-          label: 'Compte',
-          items: [
-            { id: 'plan', label: 'Formule et factures', icon: <CreditCard size={18} aria-hidden="true" />, onSelect: () => nav('subscription') },
-            { id: 'settings', label: 'Paramètres', icon: <Settings size={18} aria-hidden="true" />, onSelect: () => nav('settings') }
-          ]
         }
       ];
       // Son annonce en cours, s'il en a une : la même photo que dans la colonne de droite des membres.
@@ -3505,35 +3497,16 @@ export default function App() {
       };
     }
     if (workSpaceId === 'family') {
-      const kids = childrenOf(school, uid);
       const familyName = user.name.split(' ').slice(1).join(' ');
+      // Les enfants s'ouvrent depuis leurs cartes de la vue d'ensemble ; le menu garde l'espace d'une page à l'autre.
+      const inLibrary = page !== 'family';
       const groups: WorkNavGroup[] = [
         {
           items: [
-            { id: 'home', label: 'Vue d’ensemble', icon: <LayoutGrid size={18} aria-hidden="true" />, active: !kids.includes(selectedId), onSelect: () => nav('family') },
-            { id: 'catalog', label: 'Bibliothèque', icon: <Compass size={18} aria-hidden="true" />, onSelect: () => nav('catalog') }
+            { id: 'home', label: 'Vue d’ensemble', icon: <LayoutGrid size={18} aria-hidden="true" />, active: !inLibrary, onSelect: () => nav('family') },
+            { id: 'catalog', label: 'Bibliothèque', icon: <Compass size={18} aria-hidden="true" />, active: inLibrary, onSelect: () => nav('catalog') }
           ]
-        },
-        ...(kids.length
-          ? [
-              {
-                label: 'Mes enfants',
-                items: kids.map((id) => {
-                  const firstName = memberName(id, people).split(' ')[0];
-                  const schoolClass = classesOfStudent(school, id)[0];
-                  const paused = lockApplies(school, id, today) && rulesOf(school, id).lockedNow;
-                  return {
-                    id,
-                    label: firstName,
-                    avatar: <span className="work-nav-initial" aria-hidden="true">{firstName.charAt(0)}</span>,
-                    meta: paused ? 'SAVOIR+ en pause' : schoolClass ? schoolClass.name : 'Sans classe',
-                    active: selectedId === id,
-                    onSelect: () => nav('family', id)
-                  };
-                })
-              }
-            ]
-          : [])
+        }
       ];
       return {
         label: 'Rubriques de l’espace famille',
