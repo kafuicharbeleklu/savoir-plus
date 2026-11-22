@@ -10,7 +10,7 @@ import {
 } from './seedCommunity';
 import type { CalendarUserState } from './calendar';
 import type { SchoolState } from './school';
-import type { Subscription } from './offers';
+import type { ReceiptDetails, Subscription } from './offers';
 import { hostedVideo } from './media';
 import { SEED_SCHOOL_PROGRESS } from './seedSchool';
 
@@ -22,6 +22,7 @@ export type ReviewLevel = 'Communautaire' | 'Pédagogique' | 'Renforcée';
 export type DifficultyLevel = 'Débutant' | 'Intermédiaire' | 'Avancé';
 export type AppPage =
   | 'home'
+  | 'subscription'
   | 'catalog'
   | 'learning'
   | 'calendar'
@@ -672,6 +673,8 @@ export interface ExtendedDemoState {
   hiddenPosts?: Record<string, Record<string, 'not-interested' | 'ai-slop' | 'reported'>>;
   /** Formules payantes souscrites, paiement simulé (src/offers.ts) : la publicité y devient facultative. */
   subscriptions?: Record<string, Subscription>;
+  /** Détails des reçus modifiés par le membre, par « membre:numéro de reçu ». */
+  receiptDetails?: Record<string, ReceiptDetails>;
   /** Calendrier et plan de révision de chaque membre. Absent : calendrier de démonstration du personnage. */
   calendar?: Record<string, CalendarUserState>;
   /** Profils et vie scolaire (comptes, établissements, classes, liens parentaux…). Absent : données de démonstration du jour. */

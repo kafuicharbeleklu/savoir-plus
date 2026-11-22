@@ -283,7 +283,7 @@ export function isProfileSpaceRoute(page: string): boolean {
 }
 
 export function isAccountRoute(page: string): boolean {
-  return page === 'profile' || page === 'settings';
+  return page === 'profile' || page === 'settings' || page === 'subscription';
 }
 
 export type ActiveSpace = 'learner' | 'community' | 'studio' | 'admin' | 'account';

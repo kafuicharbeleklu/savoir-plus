@@ -5,6 +5,7 @@
  * 7 000 F CFA par mois pour une famille). Tout paiement est SIMULÉ dans la démonstration.
  */
 import { AD_PLANS } from './ads';
+import { todayDay } from './calendar';
 
 export type OfferAudience = 'learner' | 'family' | 'educator' | 'institution' | 'advertiser';
 
@@ -123,27 +124,63 @@ export const offersFor = (audience: OfferAudience): Offer[] => OFFERS.filter((o)
 
 export const offerById = (id: string): Offer | undefined => OFFERS.find((o) => o.id === id);
 
+/** Fréquence de facturation d'une formule. */
+export type BillingCycle = 'monthly' | 'annual';
+
+/** Une échéance payée (simulée) : elle devient une transaction, avec son reçu. */
+export interface SubscriptionPayment {
+  id: string;
+  day: string;
+  offerId: string;
+  amount: number;
+  method: string;
+  cycle: BillingCycle;
+}
+
+/** Détails à faire figurer sur un reçu (modifiables reçu par reçu). */
+export interface ReceiptDetails {
+  name: string;
+  address?: string;
+  /** Numéro d'identification fiscale (facultatif). */
+  taxId?: string;
+}
+
 /**
  * Formule souscrite par un membre (paiement simulé). Avec l'offre gratuite, la carte publicitaire
  * est obligatoire ; avec une formule payante, le membre peut la masquer dans ses paramètres.
+ * Facturation : voir `billing.ts`.
  */
 export interface Subscription {
   offerId: string;
   since: string;
   /** Afficher la carte publicitaire. Absent : affichée. */
   showAds?: boolean;
-  /** Moyen de paiement choisi (simulé). */
+  /** Moyen de paiement des prochaines échéances (simulé). */
   method?: string;
+  /** Fréquence de facturation. Absent : mensuelle. */
+  cycle?: BillingCycle;
+  /** Échéances déjà enregistrées ; les suivantes se déduisent de `nextDue`. */
+  payments?: SubscriptionPayment[];
+  /** Prochaine échéance. Absent : la date de souscription. */
+  nextDue?: string;
+  /** Résiliation : la formule reste active jusqu'à `endsOn` (exclu), puis l'offre gratuite. */
+  cancelledOn?: string;
+  endsOn?: string;
 }
 
-/** La formule payante d'un membre, ou rien (offre gratuite, ou formule de publicité pour annonceur). */
+/**
+ * La formule payante d'un membre, ou rien (offre gratuite, formule de publicité pour annonceur, ou
+ * formule résiliée arrivée à son terme).
+ */
 export function paidSubscription(
   subscriptions: Record<string, Subscription> | undefined,
-  uid: string
+  uid: string,
+  today: string = todayDay()
 ): { subscription: Subscription; offer: Offer } | null {
   const subscription = subscriptions?.[uid];
   const offer = subscription ? offerById(subscription.offerId) : undefined;
   if (!subscription || !offer || offer.price === 0 || offer.audience === 'advertiser') return null;
+  if (subscription.endsOn && subscription.endsOn <= today) return null;
   return { subscription, offer };
 }
 

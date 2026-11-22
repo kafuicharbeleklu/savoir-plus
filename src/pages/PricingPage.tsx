@@ -140,7 +140,7 @@ export function PricingPage({ audience, nav, viewerAudience, currentOfferId }: P
                   <button
                     type="button"
                     className={plan.recommended ? 'primary' : 'secondary'}
-                    onClick={() => nav('settings', `account/plan/${plan.id}`)}
+                    onClick={() => nav('subscription', `choose/${plan.id}`)}
                   >
                     {plan.price === 0 ? 'Revenir à l’offre gratuite' : `Choisir ${plan.name}`}
                   </button>

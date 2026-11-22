@@ -161,7 +161,7 @@ import { addDays as addCalendarDays, dayFromDate } from './calendar';
 import { demoCampaigns } from './ads';
 import { OwnAdCard, SponsoredCard } from './components/SponsoredCard';
 import { NextCourseCard } from './components/NextCourseCard';
-import { audienceOfKind, contentIncluded, institutionSteering, paidSubscription } from './offers';
+import { audienceOfKind, contentIncluded, institutionSteering, paidSubscription, plansFor } from './offers';
 import { rankFeed, recommend, viewerOf } from './personalize';
 import { addUsage, lockApplies, lockState, requestOfDay, requestTime, rulesOf } from './deviceLock';
 import { initialSchoolState } from './seedSchool';
@@ -242,6 +242,7 @@ import {
   AppealView
 } from './pages/AccountAndAdminPages';
 import { SettingsView } from './pages/SettingsPage';
+import { SubscriptionPage } from './pages/SubscriptionPage';
 import { GovernanceRail } from './pages/governance/shared';
 import { AdminIdentityView } from './pages/governance/Identity';
 import { ProfilePage } from './pages/ProfilePage';
@@ -277,6 +278,7 @@ const VALID_PAGES = new Set<string>([
   'calendar',
   'info',
   'family',
+  'subscription',
   'teaching',
   'institution',
   'progression',
@@ -639,6 +641,9 @@ export default function App() {
   const user: Profile = people.find((p) => p.id === uid) || people[0] || profiles[0];
   // En mode connecté, la base ne porte pas encore ces profils : chaque membre y reste un apprenant adulte.
   const caps = resolveCapabilities(uid, mode, ext.adminUsers, cloudPreviewRole, mode === 'local' ? school : undefined, today);
+  // Les formules se souscrivent à partir de 18 ans, pour un type de compte qui en a.
+  const canSubscribe =
+    (mode !== 'local' || ageBandOf(schoolAccountOf(school, uid), today) === 'adult') && plansFor(audienceOfKind(caps.accountKind)).length > 0;
   // Un parent ou tuteur n'a pas d'Accueil : #home ouvre l'Espace famille, en remplaçant l'adresse.
   const noHome = caps.accountKind === 'guardian' && caps.canManageFamily;
   useLayoutEffect(() => {
@@ -3306,6 +3311,23 @@ export default function App() {
           }
         />
       );
+    if (page === 'subscription')
+      return (
+        <SubscriptionPage
+          user={user}
+          ext={ext}
+          updateExt={updateExt}
+          school={mode === 'local' ? school : undefined}
+          people={people}
+          catalog={dynamicCatalog}
+          audience={audienceOfKind(caps.accountKind)}
+          adult={canSubscribe}
+          nav={nav}
+          setToast={setToast}
+          today={today}
+          target={selectedId}
+        />
+      );
     if (page === 'settings')
       return (
         <SettingsView
@@ -3408,7 +3430,7 @@ export default function App() {
         {
           label: 'Compte',
           items: [
-            { id: 'plan', label: 'Formule et factures', icon: <CreditCard size={18} aria-hidden="true" />, onSelect: () => nav('settings', 'account/plan') },
+            { id: 'plan', label: 'Formule et factures', icon: <CreditCard size={18} aria-hidden="true" />, onSelect: () => nav('subscription') },
             { id: 'settings', label: 'Paramètres', icon: <Settings size={18} aria-hidden="true" />, onSelect: () => nav('settings') }
           ]
         }
@@ -3505,11 +3527,7 @@ export default function App() {
                 })
               }
             ]
-          : []),
-        {
-          label: 'Compte',
-          items: [{ id: 'plan', label: 'Formule et paiement', icon: <CreditCard size={18} aria-hidden="true" />, onSelect: () => nav('settings', 'account/plan') }]
-        }
+          : [])
       ];
       return {
         label: 'Rubriques de l’espace famille',
@@ -3550,6 +3568,7 @@ export default function App() {
       <TopBar
         page={caps.accountKind === 'institution' && page === 'institution' ? 'home' : page}
         nav={nav}
+        onOpenSubscription={canSubscribe ? () => nav('subscription') : undefined}
         user={user}
         caps={caps}
         ext={ext}

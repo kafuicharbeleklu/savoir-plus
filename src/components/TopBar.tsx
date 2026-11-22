@@ -5,6 +5,7 @@ import {
   Bookmark,
   ChevronDown,
   ClipboardList,
+  CreditCard,
   Home,
   Layers,
   LogOut,
@@ -41,6 +42,7 @@ export function TopBar({
   setTopQuery,
   onOpenAuthModal,
   onEnterVisitor,
+  onOpenSubscription,
   onOpenMessaging,
   hideMessaging = false,
   onStartTour
@@ -59,6 +61,8 @@ export function TopBar({
   setTopQuery: (q: string) => void;
   onOpenAuthModal: () => void;
   onEnterVisitor: () => void;
+  /** « Ma formule » dans le menu Vous (adulte dont le compte a des formules), comme « Premium features » sur LinkedIn. */
+  onOpenSubscription?: () => void;
   onOpenMessaging: () => void;
   /** Messagerie fermée par le parent d'un enfant de moins de 12 ans. */
   hideMessaging?: boolean;
@@ -427,6 +431,17 @@ export function TopBar({
 
                 <div className="vous-divider" />
 
+                {onOpenSubscription && (
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setVousOpen(false);
+                      onOpenSubscription();
+                    }}
+                  >
+                    <CreditCard size={15} /> Ma formule
+                  </button>
+                )}
                 {onStartTour && (
                   <button
                     role="menuitem"

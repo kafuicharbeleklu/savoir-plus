@@ -159,7 +159,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
     links: [
       { label: 'Les formules', page: 'info', id: 'pricing' },
-      { label: 'Ma formule', page: 'settings', id: 'account/plan' }
+      { label: 'Ma formule', page: 'subscription' }
     ]
   },
   {
@@ -199,7 +199,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
 /** Raccourcis du Centre d'aide : les réglages qu'on cherche le plus. */
 export const HELP_SHORTCUTS: InfoLink[] = [
   { label: 'Modifier mon profil', page: 'profile' },
-  { label: 'Choisir ma formule', page: 'settings', id: 'account/plan' },
+  { label: 'Choisir ma formule', page: 'subscription' },
   { label: 'Visibilité du profil', page: 'settings', id: 'visibility' },
   { label: 'Réduire les animations', page: 'settings', id: 'account/motion' },
   { label: 'Signaler un contenu', page: 'report' },

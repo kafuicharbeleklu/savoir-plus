@@ -137,7 +137,7 @@ export function FamilyPage({
           people={people}
           today={today}
           planIncluded={familyPlan}
-          onUpgrade={() => nav('settings', 'account/plan/family')}
+          onUpgrade={() => nav('subscription', 'choose/family')}
           onWrite={onWrite ? (draft) => onWrite(child, draft) : undefined}
         />
 
