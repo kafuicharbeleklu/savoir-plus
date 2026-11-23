@@ -235,7 +235,7 @@ function ModuleOutline({
               <span className="rd-step-text">
                 <b>Quiz final</b>
                 <small>
-                  Quiz · {moduleContent.questions.length} questions
+                  Quiz · {moduleContent.questions.length} question{moduleContent.questions.length > 1 ? 's' : ''}
                   {quizPassed && <span className="sr-only"> — réussi</span>}
                 </small>
               </span>
@@ -431,7 +431,7 @@ export function AcademyReaderView({
         <ModuleOpening
           title={moduleContent.title}
           domain={domain}
-          summary={summary}
+          summary={summary && summary.trim() !== moduleContent.lessons[0]?.intro.trim() ? summary : undefined}
           goals={moduleContent.goals}
           art={lessons[0]?.rich?.art}
           seed={moduleContent.id}
@@ -530,7 +530,7 @@ function QuizBlock({
               ? `Vous avez répondu à ${answeredCount} question${answeredCount > 1 ? 's' : ''} sur ${qLen}. ${
                   missing > 1 ? `Les ${missing} questions sans réponse compteront` : 'La question sans réponse comptera'
                 } pour 0.`
-              : `Vous avez répondu aux ${qLen} questions.`}
+              : qLen > 1 ? `Vous avez répondu aux ${qLen} questions.` : 'Vous avez répondu à la question.'}
           </p>
           <footer className="rd-nav is-bare">
             <BackLink label="Continuer à répondre" onClick={() => setReviewOpen(false)} />
@@ -611,7 +611,7 @@ export function AcademyQuizView({
         <span>Quiz final</span>
       </h1>
       <p>
-        {moduleContent.quizTitle} : {qLen} questions à choix unique, sans limite de temps. Il faut {passThreshold} bonnes réponses sur {qLen} pour valider le
+        {moduleContent.quizTitle} : {qLen} question{qLen > 1 ? 's' : ''} à choix unique, sans limite de temps. Il faut {passThreshold} bonne{passThreshold > 1 ? 's' : ''} réponse{passThreshold > 1 ? 's' : ''} sur {qLen} pour valider le
         module. La correction détaillée s’affiche après l’envoi.
       </p>
       {lastScore !== null && (

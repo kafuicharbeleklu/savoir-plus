@@ -83,7 +83,7 @@ import {
   lessonXp,
   pairId
 } from './domain.mjs';
-import { MODULES_CONTENT, resolveStudyContent } from './content';
+import { MODULES_CONTENT, lessonCountOf, resolveStudyContent } from './content';
 import {
   applyPostRepost,
   appendCommunityReply,
@@ -2050,7 +2050,7 @@ export default function App() {
   const activeLab = resolveActiveLab(dynamicCatalog, modulePct);
   // Reprendre un module là où on l'a laissé : le quiz quand toutes les parties sont lues, sinon la lecture.
   const resumeModule = (id: string) => {
-    if (getModuleProgress(id).lessons.length >= (MODULES_CONTENT[id]?.lessons.length || 3) && !isModuleValidated(id)) {
+    if (getModuleProgress(id).lessons.length >= lessonCountOf(id, dynamicCatalog) && !isModuleValidated(id)) {
       setActiveStudyModuleId(id);
       nav('quiz-intro', id);
     } else openReader(id);
@@ -2220,7 +2220,8 @@ export default function App() {
                 {/* Aujourd'hui : la séance du jour et le module à reprendre, une seule action ; seulement pour un compte qui apprend. */}
                 {learnsHere &&
                   (() => {
-                    const content = MODULES_CONTENT[resumeModuleId];
+                    // Un module du Studio a ses propres sections et son propre quiz.
+                    const content = MODULES_CONTENT[resumeModuleId] || resolveStudyContent(resumeModuleId, ext.studioContents, ext.studioQuiz);
                     const lessonCount = content?.lessons.length || 3;
                     const questionCount = content?.questions.length || 3;
                     const steps: TodayStep[] = [

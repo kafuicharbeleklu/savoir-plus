@@ -3,6 +3,7 @@
  * Une seule liste, un bouton « Créer », des onglets avec compteurs ; chaque contenu
  * s'ouvre dans son espace de travail (src/pages/studio/Workspace.tsx).
  */
+import { newRichSection } from '../studioLesson';
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { appendAuditLog, type CatalogType, type StudioContent } from '../wireframeData';
@@ -48,7 +49,8 @@ export function StudioHomeView({ ext, updateExt, nav, setToast, user }: StudioPr
       updatedAt: 'Brouillon créé à l’instant',
       updatedAtMs: Date.now(),
       authorName: user?.name,
-      sections: [{ id: 'sec-1', title: type === 'path' ? 'Présentation' : 'Introduction', body: '' }],
+      // Un module part au format complet des cours : entrée en matière, cours, exemple illustré, question, résumé.
+      sections: [type === 'module' ? newRichSection('sec-1', 'Introduction') : { id: 'sec-1', title: type === 'path' ? 'Présentation' : 'Introduction', body: '' }],
       pathModuleIds: type === 'path' ? [] : undefined
     };
     updateExt((prev) => ({ ...prev, studioContents: [item, ...prev.studioContents] }));

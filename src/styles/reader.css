@@ -665,9 +665,14 @@
 /* -- Taille du texte selon la classe du cours ------------------------------------------------------
    Plus l'élève est jeune, plus le texte est grand, l'interligne ample et la ligne courte (voir levels.ts).
    Le texte courant du site (16 px) reste celui des cours du lycée et des contenus généraux. */
-.rd-shell[data-band='early'] .rd-chapter-body { font-size: 1.3125rem; line-height: 1.65; }
-.rd-shell[data-band='early'] .rd-article.rd-chapter-main { --measure: 560px; }
-.rd-shell[data-band='junior'] .rd-chapter-body { font-size: 1.125rem; line-height: 1.6; }
-.rd-shell[data-band='teen'] .rd-chapter-body { font-size: 1.0625rem; line-height: 1.6; }
-.rd-shell[data-band='early'] .rd-chapter-body > p,
-.rd-shell[data-band='junior'] .rd-chapter-body > p { margin-bottom: 18px; }
+[data-band='early'] .rd-chapter-body { font-size: 1.3125rem; line-height: 1.65; }
+[data-band='early'] .rd-article.rd-chapter-main { --measure: 560px; }
+[data-band='junior'] .rd-chapter-body { font-size: 1.125rem; line-height: 1.6; }
+[data-band='teen'] .rd-chapter-body { font-size: 1.0625rem; line-height: 1.6; }
+[data-band='early'] .rd-chapter-body > p,
+[data-band='junior'] .rd-chapter-body > p { margin-bottom: 18px; }
+
+/* -- Aperçu d'un cours dans le Studio : la même colonne de lecture, sans la barre ni le sommaire. */
+.rd-preview { --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, sans-serif; font-family: var(--font-sans); color: var(--fg-primary); }
+.rd-preview :is(h1, h2, h3, h4) { font-family: var(--font-sans); }
+.rd-preview .rd-article.rd-chapter-main { max-width: none; padding: 0; }

@@ -4,7 +4,7 @@
  * aucune réponse individuelle n'est exposée, seulement des décomptes et des taux.
  */
 import type { Progress } from './data';
-import { MODULES_CONTENT } from './content';
+import { MODULES_CONTENT, lessonCountOf } from './content';
 import { isQuizPassed, moduleProgressPercent, scoreAnswers } from './domain.mjs';
 import type { CatalogItem } from './wireframeData';
 
@@ -52,7 +52,7 @@ const hasStarted = (p: Progress | undefined): p is Progress => Boolean(p && (p.l
 
 export function computeModuleStat(mod: CatalogItem, learners: Progress[]): ModuleStat {
   const study = MODULES_CONTENT[mod.id];
-  const lessonCount = study?.lessons.length || 3;
+  const lessonCount = lessonCountOf(mod.id, [mod]);
   const key = study ? study.questions.map((q) => q.correctIndex) : [];
   const submitted = learners.filter((p) => p.submitted);
   const validated = learners.filter((p) => isQuizPassed(p, key.length ? key : undefined)).length;

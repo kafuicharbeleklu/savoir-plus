@@ -5,7 +5,7 @@
 import React from 'react';
 import { ofName } from '../../french';
 import type { Day } from '../../calendar';
-import { MODULES_CONTENT, builtInAnswerKey } from '../../content';
+import { MODULES_CONTENT, builtInAnswerKey, lessonCountOf } from '../../content';
 import type { Profile, Progress } from '../../data';
 import { isQuizPassed, moduleProgressPercent, scoreAnswers } from '../../domain.mjs';
 import { type SchoolState, type TimetableSlot } from '../../school';
@@ -62,7 +62,7 @@ export interface ModuleFollowUp {
 export function followUp(ext: ExtendedDemoState, catalog: CatalogItem[], uid: string, moduleId: string): ModuleFollowUp {
   const progress = progressOf(ext, uid, moduleId);
   const content = MODULES_CONTENT[moduleId];
-  const lessonCount = content?.lessons.length || 3;
+  const lessonCount = lessonCountOf(moduleId, catalog);
   const key = builtInAnswerKey(moduleId);
   const passed = progress.submitted && isQuizPassed(progress, key);
   return {

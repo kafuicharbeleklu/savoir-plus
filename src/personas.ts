@@ -1,3 +1,6 @@
+import { formatGoals, isRichReady, isSectionComplete, reviewSection, sectionCountAdvice } from './studioLesson';
+import { LANGUAGE_TARGETS } from './readability';
+import { readingBandOf } from './levels';
 import type {
   AccountStatus,
   AdminUserRecord,
@@ -312,7 +315,7 @@ export function filterHomeFeed(
 }
 
 export interface StudioReadinessCheck {
-  id: 'title-sources' | 'structure' | 'quiz' | 'media' | 'duration';
+  id: 'title-sources' | 'structure' | 'format' | 'language' | 'pacing' | 'quiz' | 'media' | 'duration';
   label: string;
   ok: boolean;
   blocking: boolean;
@@ -355,8 +358,8 @@ export function evaluateStudioReadiness(
 
   // Structure : sections rédigées (ressource, module) ou modules compatibles (parcours).
   const sections = content?.sections || [];
-  const sectionsOk =
-    sections.length > 0 && sections.every((sec) => sec.title.trim().length > 0 && sec.body.trim().length > 0);
+  const incomplete = sections.findIndex((sec, i) => !isSectionComplete(sec, i));
+  const sectionsOk = sections.length > 0 && incomplete < 0;
   const moduleIds = content?.pathModuleIds || [];
   const incompatible = moduleIds.filter((id) => {
     const source = (ctx.contents || []).find((c) => c.id === id);
@@ -373,7 +376,29 @@ export function evaluateStudioReadiness(
       ? 'Aucune section'
       : sectionsOk
         ? `${sections.length} section(s) rédigée(s)`
-        : 'Une section n’a pas de titre ou de texte';
+        : sections[incomplete].format === 'rich' && sections[incomplete].title.trim() && sections[incomplete].body.trim()
+          ? `Section ${incomplete + 1} : le format complet n’est pas fini`
+          : 'Une section n’a pas de titre ou de texte';
+
+  // Tenue d'un cours : format complet, niveau de langue et découpage selon la classe (des conseils).
+  const isModule = content?.type === 'module';
+  const classLabel = content?.classLabel;
+  const reviews = sections.map((sec, i) => reviewSection(sec, i, classLabel));
+  const richReady = sections.filter((sec, i) => isRichReady(sec, i)).length;
+  const goalCount = formatGoals(content?.goals).length;
+  const goalsOk = goalCount >= 2 && goalCount <= 4;
+  const formatOk = sections.length > 0 && richReady === sections.length && goalsOk;
+  const formatDetail = formatOk
+    ? 'Toutes les sections au format des cours, objectifs rédigés'
+    : richReady < sections.length
+      ? `${richReady} section${richReady > 1 ? 's' : ''} sur ${sections.length} au format complet des cours`
+      : 'Objectifs du module : de deux à quatre';
+  const hardToRead = reviews.filter((r) => r.language.length > 0).length;
+  const languageTarget = LANGUAGE_TARGETS[readingBandOf(classLabel)].label;
+  const pacingAdvice = [
+    ...(isModule ? [sectionCountAdvice(sections.length, classLabel)] : []),
+    ...reviews.map((r, i) => (r.long ? `Section ${i + 1} trop longue pour ce niveau` : null))
+  ].filter((a): a is string => Boolean(a));
 
   // Quiz : celui du contenu. Obligatoire pour un module, facultatif pour une ressource.
   const quiz = content?.quiz || [];
@@ -423,6 +448,38 @@ export function evaluateStudioReadiness(
       detail: structureDetail,
       tab: isPath ? 'modules' : 'content'
     },
+    ...(isModule
+      ? [
+          {
+            id: 'format' as const,
+            label: 'Format des cours',
+            ok: formatOk,
+            blocking: false,
+            detail: formatDetail,
+            tab: 'content' as const
+          }
+        ]
+      : []),
+    ...(isPath
+      ? []
+      : [
+          {
+            id: 'language' as const,
+            label: 'Niveau de langue',
+            ok: hardToRead === 0,
+            blocking: false,
+            detail: hardToRead === 0 ? `Adapté au niveau « ${languageTarget} »` : `${hardToRead} section${hardToRead > 1 ? 's' : ''} à simplifier pour le niveau « ${languageTarget} »`,
+            tab: 'content' as const
+          },
+          {
+            id: 'pacing' as const,
+            label: 'Découpage',
+            ok: pacingAdvice.length === 0,
+            blocking: false,
+            detail: pacingAdvice[0] || 'Sections de bonne longueur',
+            tab: 'content' as const
+          }
+        ]),
     {
       id: 'quiz',
       label: 'Quiz',

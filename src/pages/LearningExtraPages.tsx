@@ -27,7 +27,7 @@ import {
   type ReviewLevel
 } from '../wireframeData';
 import type { Profile, Progress, Relation } from '../data';
-import { MODULES_CONTENT, builtInAnswerKey } from '../content';
+import { MODULES_CONTENT, builtInAnswerKey, lessonCountOf } from '../content';
 import { resolveProgramme } from '../programmeTogo';
 import { DIFFICULTY_LEVELS, classFit } from '../levels';
 import { isQuizPassed, moduleProgressPercent, quizPassThreshold } from '../domain.mjs';
@@ -154,14 +154,14 @@ export function CatalogExtraView({
     if (item.type === 'path' && item.pathModules?.length) {
       const total = item.pathModules.reduce((acc, pm) => {
         const p = resolveModProg(pm.id, progress, ext, userId, getModuleProgress);
-        const count = MODULES_CONTENT[pm.id]?.lessons.length || 3;
+        const count = lessonCountOf(pm.id, catalog);
         return acc + moduleProgressPercent(p, count, builtInAnswerKey(pm.id));
       }, 0);
       return Math.round(total / item.pathModules.length);
     }
     if (item.type === 'module') {
       const p = resolveModProg(item.id, progress, ext, userId, getModuleProgress);
-      const count = MODULES_CONTENT[item.id]?.lessons.length || 3;
+      const count = lessonCountOf(item.id, [item]);
       return moduleProgressPercent(p, count, builtInAnswerKey(item.id));
     }
     return 0;
@@ -556,7 +556,7 @@ export function ModuleDetailView({
       const sibling = catalog.find((c) => c.id === pm.id);
       const siblingProgress = resolveModProg(pm.id, progress, ext, userId, getModuleProgress);
       const siblingPct = sibling?.interactive
-        ? moduleProgressPercent(siblingProgress, MODULES_CONTENT[pm.id]?.lessons.length || 3, builtInAnswerKey(pm.id))
+        ? moduleProgressPercent(siblingProgress, lessonCountOf(pm.id, catalog), builtInAnswerKey(pm.id))
         : 0;
       return { id: pm.id, title: sibling?.title || pm.title.replace(/^\d+\s+/, ''), duration: sibling?.duration, pct: siblingPct };
     });

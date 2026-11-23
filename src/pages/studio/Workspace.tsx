@@ -5,17 +5,23 @@
  * Tout est enregistré automatiquement ; les apprenants ne voient que la version publiée.
  */
 import React, { useRef, useState } from 'react';
-import { ArrowDown, ArrowLeft, ArrowUp, Check, Plus, Trash2, Upload, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, Check, Plus, Target, Trash2, Upload, X } from 'lucide-react';
 import { evaluateStudioReadiness, isStudioQuestionComplete } from '../../personas';
 import { playSound } from '../../sounds';
+import { resolveStudyContent } from '../../content';
+import { moduleMaxXp } from '../../domain.mjs';
+import { CLASS_LADDER, DIFFICULTY_LEVELS, LEVEL_CRITERIA, levelRank, type DifficultyLevel } from '../../levels';
+import { formatGoals, moduleMinutes, newRichSection, reviewSection, type StudioSection } from '../../studioLesson';
 import {
   appendAuditLog,
   buildDynamicCatalog,
   hasUnpublishedChanges,
   nextStudioVersion,
+  studioLevel,
   studioSnapshot,
   type StudioContent
 } from '../../wireframeData';
+import { GoalsEditor, LessonPreview, SectionEditor } from './LessonEditor';
 import { ActionMenu, ConfirmDialog, EmptyState, IconTile, ListCard, ListRow, RadioList, RowTitle, SavedIndicator, Select, SidePanel, StateTile, StatusDot, Tabs } from '../../components/ui';
 import {
   AUDIENCE_LABEL,
@@ -65,7 +71,6 @@ function StudioWorkspace({
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [activeSec, setActiveSec] = useState(0);
   const [activeQ, setActiveQ] = useState(0);
-  const [kpDraft, setKpDraft] = useState<{ id: string; text: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   // Section ou question à supprimer, en attente de confirmation.
   const [pendingRemoval, setPendingRemoval] = useState<{ kind: 'section' | 'question'; index: number } | null>(null);
@@ -109,17 +114,25 @@ function StudioWorkspace({
 
   /* ---------------------------------------------- sections */
   const sections = content.sections;
-  const secIndex = Math.min(activeSec, Math.max(0, sections.length - 1));
+  const isModule = content.type === 'module';
+  // Les objectifs d'un module s'écrivent depuis le plan, avant la première section (rang -1).
+  const onGoals = isModule && activeSec === -1;
+  const secIndex = Math.min(Math.max(0, activeSec), Math.max(0, sections.length - 1));
   const sec = sections[secIndex];
-  const patchSection = (p: Partial<StudioContent['sections'][number]>) =>
+  // Contrôles de chaque section : forme, niveau de langue et longueur pour la classe visée.
+  const reviews = sections.map((s, i) => reviewSection(s, i, content.classLabel));
+  const goalCount = formatGoals(content.goals).length;
+  const patchSection = (p: Partial<StudioSection>) =>
     patch((c) => ({ ...c, sections: c.sections.map((s, i) => (i === secIndex ? { ...s, ...p } : s)) }));
+  const replaceSection = (next: StudioSection) => patch((c) => ({ ...c, sections: c.sections.map((s, i) => (i === secIndex ? next : s)) }));
   const addSection = () => {
-    patch((c) => ({
-      ...c,
-      sections: [...c.sections, { id: `sec-${Date.now().toString(36)}`, title: 'Nouvelle section', body: '' }]
-    }));
+    const id = `sec-${Date.now().toString(36)}`;
+    // Une nouvelle section de module part au format complet des cours.
+    patch((c) => ({ ...c, sections: [...c.sections, isModule ? newRichSection(id) : { id, title: 'Nouvelle section', body: '' }] }));
     setActiveSec(sections.length);
   };
+  const level = studioLevel(content);
+  const readMinutes = moduleMinutes(sections, (content.quiz || []).length, content.classLabel);
   const removeSection = (i: number) => {
     patch((c) => ({ ...c, sections: c.sections.filter((_, j) => j !== i) }));
     setActiveSec(Math.max(0, Math.min(secIndex, sections.length - 2)));
@@ -258,6 +271,9 @@ function StudioWorkspace({
     nav('studio');
   };
 
+  // L'aperçu d'un module montre le brouillon avec le rendu du lecteur ; il n'est calculé que panneau ouvert.
+  const draftStudy = isModule && panel === 'preview' ? resolveStudyContent(content.id, [{ ...content, published: undefined }], undefined, { draft: true }) : null;
+
   const goFix = (t: WsTab) => {
     setTab(t);
     setPanel('none');
@@ -334,11 +350,23 @@ function StudioWorkspace({
           <div className="sx-split">
             <aside className="sx-outline" aria-label="Plan des sections">
               <ol>
+                {isModule && (
+                  <li className={onGoals ? 'is-active' : ''}>
+                    <button type="button" className="sx-outline-item" aria-current={onGoals ? 'true' : undefined} onClick={() => setActiveSec(-1)}>
+                      <span className="sx-outline-num">
+                        <Target size={14} aria-hidden="true" />
+                      </span>
+                      <span className="sx-outline-label">Objectifs</span>
+                      {(goalCount < 2 || goalCount > 4) && <i className="sx-outline-dot" title="À écrire" />}
+                    </button>
+                  </li>
+                )}
                 {sections.map((s, i) => (
-                  <li key={s.id} className={i === secIndex ? 'is-active' : ''}>
-                    <button type="button" className="sx-outline-item" aria-current={i === secIndex ? 'true' : undefined} onClick={() => setActiveSec(i)}>
+                  <li key={s.id} className={!onGoals && i === secIndex ? 'is-active' : ''}>
+                    <button type="button" className="sx-outline-item" aria-current={!onGoals && i === secIndex ? 'true' : undefined} onClick={() => setActiveSec(i)}>
                       <span className="sx-outline-num tabular-nums">{String(i + 1).padStart(2, '0')}</span>
                       <span className="sx-outline-label">{stripNumbering(s.title) || 'Sans titre'}</span>
+                      {reviews[i].todo.some((item) => item.required) && <i className="sx-outline-dot" title="À finir" />}
                     </button>
                     <ActionMenu
                       label={`Actions sur la section ${i + 1}`}
@@ -357,53 +385,19 @@ function StudioWorkspace({
             </aside>
 
             <div className="sx-editor">
-              {sec ? (
-                <>
-                  <label className="ui-field">
-                    <span>Titre de la section</span>
-                    <input value={sec.title} maxLength={120} onChange={(e) => patchSection({ title: e.target.value })} />
-                  </label>
-                  <label className="ui-field">
-                    <span>Texte</span>
-                    <textarea
-                      rows={10}
-                      value={sec.body}
-                      placeholder="Expliquez la notion comme à un apprenant…"
-                      onChange={(e) => patchSection({ body: e.target.value })}
-                    />
-                  </label>
-                  {!isPath && (
-                    <>
-                      <label className="ui-field">
-                        <span>Points clés</span>
-                        <textarea
-                          rows={3}
-                          value={kpDraft?.id === sec.id ? kpDraft.text : (sec.keyPoints || []).join('\n')}
-                          placeholder="Un point par ligne"
-                          onChange={(e) => {
-                            setKpDraft({ id: sec.id, text: e.target.value });
-                            patchSection({
-                              keyPoints: e.target.value
-                                .split('\n')
-                                .map((k) => k.trim())
-                                .filter(Boolean)
-                            });
-                          }}
-                        />
-                        <small>Un point par ligne. Ils s’affichent en liste à la fin de la section.</small>
-                      </label>
-                      <label className="ui-field">
-                        <span>Réflexe clé</span>
-                        <input
-                          value={sec.tip || ''}
-                          maxLength={200}
-                          placeholder="Le conseil à retenir en une phrase"
-                          onChange={(e) => patchSection({ tip: e.target.value })}
-                        />
-                      </label>
-                    </>
-                  )}
-                </>
+              {onGoals ? (
+                <GoalsEditor key={content.id} goals={content.goals || []} onChange={(goals) => patch((c) => ({ ...c, goals: goals.length ? goals : undefined }))} />
+              ) : sec ? (
+                <SectionEditor
+                  key={sec.id}
+                  section={sec}
+                  review={reviews[secIndex]}
+                  classLabel={content.classLabel}
+                  canRich={isModule}
+                  summary={!isPath}
+                  onPatch={patchSection}
+                  onReplace={replaceSection}
+                />
               ) : (
                 <EmptyState title="Aucune section" action={{ label: 'Ajouter une section', onClick: addSection }} />
               )}
@@ -674,7 +668,14 @@ function StudioWorkspace({
             <div className="sx-form-row">
               <label className="ui-field">
                 <span>Domaine</span>
-                <Select value={content.domain} onChange={(e) => patch((c) => ({ ...c, domain: e.target.value as StudioContent['domain'] }))}>
+                <Select
+                  value={content.domain}
+                  onChange={(e) => {
+                    const domain = e.target.value as StudioContent['domain'];
+                    // La classe ne vaut que pour un cours scolaire.
+                    patch((c) => ({ ...c, domain, classLabel: domain === 'Scolaire' ? c.classLabel : undefined }));
+                  }}
+                >
                   {DOMAINS.map((d) => (
                     <option key={d} value={d}>
                       {d}
@@ -682,11 +683,58 @@ function StudioWorkspace({
                   ))}
                 </Select>
               </label>
-              <label className="ui-field">
-                <span>Durée estimée</span>
-                <input value={content.duration} placeholder="Ex. 15 min" maxLength={30} onChange={(e) => patch((c) => ({ ...c, duration: e.target.value }))} />
-              </label>
+              {content.domain === 'Scolaire' ? (
+                <label className="ui-field">
+                  <span>Classe</span>
+                  <Select value={content.classLabel || ''} onChange={(e) => patch((c) => ({ ...c, classLabel: e.target.value || undefined }))}>
+                    <option value="">Choisir une classe</option>
+                    {CLASS_LADDER.map((k) => (
+                      <option key={k} value={k}>
+                        {k}
+                      </option>
+                    ))}
+                  </Select>
+                  <small>
+                    {content.classLabel ? `Niveau ${level}, déduit de la classe. ` : ''}La classe règle le niveau, la langue attendue et la taille du texte.
+                  </small>
+                </label>
+              ) : (
+                <label className="ui-field">
+                  <span>Niveau</span>
+                  <Select value={level} onChange={(e) => patch((c) => ({ ...c, level: e.target.value as DifficultyLevel }))}>
+                    {DIFFICULTY_LEVELS.map((l) => (
+                      <option key={l} value={l}>
+                        {l}
+                      </option>
+                    ))}
+                  </Select>
+                  <small>{LEVEL_CRITERIA[level].who}</small>
+                </label>
+              )}
             </div>
+            <label className="ui-field">
+              <span>Durée estimée</span>
+              <input value={content.duration} placeholder="Ex. 15 min" maxLength={30} onChange={(e) => patch((c) => ({ ...c, duration: e.target.value }))} />
+            </label>
+            {!isPath && (
+              <p className="sx-note">
+                Lecture calculée d’après le texte et le niveau : {readMinutes} min.
+                {content.duration.trim() !== `${readMinutes} min` && (
+                  <>
+                    {' '}
+                    <button type="button" className="li-text-link" onClick={() => patch((c) => ({ ...c, duration: `${readMinutes} min` }))}>
+                      Utiliser cette durée
+                    </button>
+                  </>
+                )}
+              </p>
+            )}
+            {isModule && (
+              <p className="sx-note tabular-nums">
+                Le module rapporte jusqu’à {moduleMaxXp(Math.max(1, sections.length), levelRank(level))} XP : {sections.length} section{sections.length > 1 ? 's' : ''}, niveau {level}. Plus
+                le niveau est élevé et le module long, plus il rapporte.
+              </p>
+            )}
             <label className="ui-field">
               <span>Sources et droits</span>
               <input
@@ -769,12 +817,27 @@ function StudioWorkspace({
       </SidePanel>
 
       <SidePanel open={panel === 'preview'} title="Aperçu apprenant" onClose={() => setPanel('none')} wide>
+        {draftStudy && (
+          <LessonPreview
+            title={content.title || 'Sans titre'}
+            domain={content.domain}
+            goals={draftStudy.goals}
+            lessons={draftStudy.lessons}
+            classLabel={content.classLabel}
+            minutes={readMinutes}
+            questionCount={quiz.length}
+          />
+        )}
         <article className="sx-preview">
-          <p className="sx-preview-meta">
-            {TYPE_LABEL[content.type]} · {content.domain}
-            {content.duration ? ` · ${content.duration}` : ''}
-          </p>
-          <h3>{content.title || 'Sans titre'}</h3>
+          {!draftStudy && (
+            <>
+              <p className="sx-preview-meta">
+                {TYPE_LABEL[content.type]} · {content.domain}
+                {content.duration ? ` · ${content.duration}` : ''}
+              </p>
+              <h3>{content.title || 'Sans titre'}</h3>
+            </>
+          )}
           {isPath && pathModules.length > 0 && (
             <ol className="sx-preview-modules">
               {pathModules.map((m) => (
@@ -782,7 +845,7 @@ function StudioWorkspace({
               ))}
             </ol>
           )}
-          {sections.map((s, i) => (
+          {(draftStudy ? [] : sections).map((s, i) => (
             <section key={s.id}>
               <h4>
                 {isPath ? '' : `${String(i + 1).padStart(2, '0')} · `}

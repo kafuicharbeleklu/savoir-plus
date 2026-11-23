@@ -23,7 +23,7 @@ function Aside({ kind, label, children }: { kind: 'info' | 'question'; label: st
   );
 }
 
-function FigureView({ figure }: { figure: LessonFigure }) {
+export function FigureView({ figure }: { figure: LessonFigure }) {
   if (figure.kind === 'flow') return <FlowFigure figure={figure} />;
   if (figure.kind === 'split') return <SplitFigure figure={figure} />;
   if (figure.kind === 'geometry') return <GeometryFigure figure={figure} />;
@@ -78,7 +78,8 @@ function FigureView({ figure }: { figure: LessonFigure }) {
   }
 
   // Une colonne faite de nombres (montants, mesures, pourcentages) s'aligne à droite, chiffres en colonnes.
-  const NUMERIC = /^[−–-]?\s?\d[\d\s.,]*\s?(%|F|F CFA|FCFA|XP|cm|mm|m|km|g|kg|N|L|mL|mol|h|min|s|°C)?$/;
+  // Un nombre a au plus une virgule : une adresse (192.168.1.24) ou une date n'en est pas un.
+  const NUMERIC = /^[−–-]?\s?\d+(?:[\s\u00a0\u202f]\d{3})*(?:[.,]\d+)?\s?(%|F|F CFA|FCFA|XP|cm|mm|m|km|g|kg|N|L|mL|mol|h|min|s|°C)?$/;
   const plain = (cell: string) => cell.replace(/\*\*/g, '').trim();
   const numeric = figure.head.map((_, c) => figure.rows.length > 0 && figure.rows.every((row) => NUMERIC.test(plain(row[c] || ''))));
   return (
@@ -173,7 +174,7 @@ export function ModuleOpening({
             {questionCount > 0 && (
               <li>
                 <ClipboardCheck size={16} aria-hidden="true" />
-                Quiz de {questionCount} questions
+                Quiz de {questionCount} question{questionCount > 1 ? 's' : ''}
               </li>
             )}
             {read && (
@@ -232,11 +233,11 @@ export function LessonPart({
             <RichText text={rich.scene} />
           </p>
 
-          {rich.sections.map((section) => (
-            <React.Fragment key={section.title}>
+          {rich.sections.map((section, s) => (
+            <React.Fragment key={s}>
               <h3>{section.title}</h3>
-              {section.text.map((paragraph) => (
-                <p key={paragraph}>
+              {section.text.map((paragraph, i) => (
+                <p key={i}>
                   <RichText text={paragraph} />
                 </p>
               ))}
@@ -269,8 +270,8 @@ export function LessonPart({
               <RichText text={rich.question.ask} />
             </p>
           </Aside>
-          {rich.question.answer.map((paragraph) => (
-            <p key={paragraph}>
+          {rich.question.answer.map((paragraph, i) => (
+            <p key={i}>
               <RichText text={paragraph} />
             </p>
           ))}

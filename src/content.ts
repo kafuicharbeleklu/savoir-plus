@@ -177,7 +177,9 @@ export interface StudioStudySource {
   domain: string;
   duration?: string;
   sources?: string;
-  sections: { id: string; title: string; body: string; keyPoints?: string[]; tip?: string }[];
+  classLabel?: string;
+  goals?: string[];
+  sections: StudioSection[];
   quiz?: { prompt: string; options: string[]; correctIndex: number; explanation: string }[];
   steps?: { caption: string; imageUrl?: string }[];
   aiAssisted?: boolean;
@@ -185,6 +187,8 @@ export interface StudioStudySource {
   published?: Partial<Omit<StudioStudySource, 'id' | 'published' | 'aiAssisted'>>;
 }
 
+import { formatGoals, isSectionComplete, readingMinutes, richOfSection, sectionText, typo, type StudioSection } from './studioLesson';
+import { goalsIssues } from './lessonFormat';
 import { EXTRA_MODULES_CONTENT } from './seedCatalog';
 import { SCHOOL_MODULES_CONTENT } from './schoolCourses';
 import { LESSONS_RICH, MODULE_GOALS } from './lessonsRich';
@@ -440,11 +444,18 @@ for (const [moduleId, goals] of Object.entries(MODULE_GOALS)) {
 export const lessons = MODULES_CONTENT.phishing.lessons;
 export const questions = MODULES_CONTENT.phishing.questions;
 
-export function resolveStudyContent(moduleId: string, studioContents?: StudioStudySource[], studioQuiz?: { title: string; questions: { prompt: string; options: string[]; correctIndex: number; explanation: string }[] }): ModuleStudyContent {
-  if (MODULES_CONTENT[moduleId]) return MODULES_CONTENT[moduleId];
+/** Les objectifs d'un module du Studio, mis en forme ; rien s'il n'y en a pas de deux à quatre. */
+function studioGoals(lines: string[] | undefined): string[] | undefined {
+  const goals = formatGoals(lines);
+  return goals.length && goalsIssues(goals).length === 0 ? goals : undefined;
+}
+
+export function resolveStudyContent(moduleId: string, studioContents?: StudioStudySource[], studioQuiz?: { title: string; questions: { prompt: string; options: string[]; correctIndex: number; explanation: string }[] }, options: { draft?: boolean } = {}): ModuleStudyContent {
+  if (MODULES_CONTENT[moduleId] && !options.draft) return MODULES_CONTENT[moduleId];
   const rawStudio = studioContents?.find((s) => s.id === moduleId);
   // Les apprenants lisent la version publiée, pas le brouillon en cours de modification.
-  const fromStudio = rawStudio?.published ? { ...rawStudio, ...rawStudio.published } : rawStudio;
+  // `draft` : l'aperçu du Studio montre le brouillon, y compris une section au format complet pas encore finie.
+  const fromStudio = rawStudio?.published && !options.draft ? { ...rawStudio, ...rawStudio.published } : rawStudio;
   if (fromStudio) {
     const studioSections = (fromStudio.sections.length ? fromStudio.sections : [{ id: 's1', title: 'Introduction', body: 'Contenu publié depuis le Studio.' }]);
     const totalMinutes = parseInt(fromStudio.duration || '', 10);
@@ -452,8 +463,24 @@ export function resolveStudyContent(moduleId: string, studioContents?: StudioStu
       ? `${Math.max(2, Math.round(totalMinutes / Math.max(1, studioSections.length)))} min`
       : '5 min';
     const mappedLessons: StudyLesson[] = studioSections.map((sec, idx) => {
+      // Une section au format complet se lit comme une leçon de la Bibliothèque : entrée en matière,
+      // cours en parties, exemple illustré, question de l'élève, résumé.
+      const rich = richOfSection(sec, idx);
+      if (rich && (options.draft || isSectionComplete(sec, idx))) {
+        return {
+          title: typo(sec.title.trim()),
+          label: `Domaine ${fromStudio.domain}`,
+          minutes: `${readingMinutes(sec, fromStudio.classLabel)} min`,
+          intro: typo(sec.body.trim()),
+          body: '',
+          points: sec.keyPoints?.length ? sec.keyPoints.map(typo) : rich.sections.map((part) => part.title),
+          tip: typo(sec.tip?.trim() || 'Relisez l’exemple, puis refaites-le sans regarder.'),
+          rich
+        };
+      }
       // Introduction = première phrase ; corps = le reste (évite d'afficher deux fois le même paragraphe).
-      const text = (sec.body || '').trim();
+      // Une section au format complet encore incomplète se lit comme un texte simple.
+      const text = (rich ? sectionText(sec) : sec.body || '').replace(/\n+/g, ' ').trim();
       const cut = text.search(/[.!?…](\s|$)/);
       const intro = cut >= 0 ? text.slice(0, cut + 1) : text;
       const rest = cut >= 0 ? text.slice(cut + 1).trim() : '';
@@ -495,6 +522,7 @@ export function resolveStudyContent(moduleId: string, studioContents?: StudioStu
       title: fromStudio.title,
       quizTitle: studioQuiz?.title || `Évaluation — ${fromStudio.title}`,
       labType: 'generic',
+      goals: studioGoals(fromStudio.goals),
       lessons: mappedLessons,
       questions: mappedQuestions,
       steps: fromStudio.steps?.filter((s) => s.caption),
@@ -502,6 +530,14 @@ export function resolveStudyContent(moduleId: string, studioContents?: StudioStu
     };
   }
   return MODULES_CONTENT.phishing;
+}
+
+/**
+ * Nombre de sections d'un module : celui de son contenu intégré, sinon celui de sa fiche au catalogue
+ * (un module du Studio compte autant de sections que son auteur en a écrit).
+ */
+export function lessonCountOf(moduleId: string, catalog?: { id: string; sections?: unknown[] }[]): number {
+  return MODULES_CONTENT[moduleId]?.lessons.length || catalog?.find((item) => item.id === moduleId)?.sections?.length || 3;
 }
 
 /** Corrigé du quiz d'un module intégré (les contenus du Studio passent par resolveStudyContent). */

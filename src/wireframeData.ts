@@ -1,7 +1,8 @@
 import { EXTRA_CATALOG_MODULES, EXTRA_CATALOG_PATHS, EXTRA_CATALOG_RESOURCES } from './seedCatalog';
 import { SCHOOL_CATALOG_MODULES } from './schoolCourses';
 import type { ProgrammeRef } from './programmeTogo';
-import { levelOfClass, levelRank, type DifficultyLevel } from './levels';
+import { ladderClassOf, levelOfClass, levelRank, type DifficultyLevel } from './levels';
+import { formatGoals, type StudioSection } from './studioLesson';
 import { moduleMaxXp } from './domain.mjs';
 import {
   SEED_MEMBER_ACCOUNTS,
@@ -369,14 +370,21 @@ export interface StudioContent {
   id: string;
   type: CatalogType;
   title: string;
-  domain: 'Numérique' | 'Communication' | 'Gestion';
+  domain: 'Numérique' | 'Communication' | 'Gestion' | 'Scolaire';
+  /** Niveau choisi par l'auteur d'un contenu général ; un cours scolaire le tient de sa classe (`studioLevel`). */
+  level?: DifficultyLevel;
+  /** Classe visée par un cours scolaire (CM2, 3e…) : elle règle le niveau, la langue attendue et la taille du texte. */
+  classLabel?: string;
+  /** Objectifs du module, un par ligne : ils complètent « À la fin de ce module, vous saurez : ». */
+  goals?: string[];
   version: string;
   pubStatus: 'Brouillon' | 'Publié';
   reviewStatus: 'Non soumise' | 'En revue' | 'À corriger' | 'Validée';
   audience: 'Membres autorisés' | 'Public' | 'Privé';
   duration: string;
   sources: string;
-  sections: { id: string; title: string; body: string; keyPoints?: string[]; tip?: string }[];
+  /** Les sections ; au format complet, chacune suit le déroulé des cours de la Bibliothèque (voir studioLesson.ts). */
+  sections: StudioSection[];
   updatedAt: string;
   /** Quiz propre au contenu (chaque contenu porte son quiz). */
   quiz?: { prompt: string; options: string[]; correctIndex: number; explanation: string }[];
@@ -398,8 +406,13 @@ export interface StudioContent {
 
 export type StudioPublishedSnapshot = Pick<
   StudioContent,
-  'title' | 'domain' | 'duration' | 'sources' | 'sections' | 'quiz' | 'steps' | 'version' | 'audience' | 'mediaIds' | 'pathModuleIds'
+  'title' | 'domain' | 'level' | 'classLabel' | 'goals' | 'duration' | 'sources' | 'sections' | 'quiz' | 'steps' | 'version' | 'audience' | 'mediaIds' | 'pathModuleIds'
 >;
+
+/** Le niveau d'un contenu du Studio : celui de sa classe pour un cours scolaire, sinon celui que l'auteur a choisi. */
+export function studioLevel(c: Pick<StudioContent, 'level' | 'classLabel'>): DifficultyLevel {
+  return c.classLabel && ladderClassOf(c.classLabel) ? levelOfClass(c.classLabel) : c.level || 'Débutant';
+}
 
 export interface StudioQuizQuestion {
   id: string;
@@ -570,7 +583,7 @@ export interface ValidationRequestRecord {
   title: string;
   contentType: 'Ressource' | 'Module' | 'Parcours' | 'Fiche' | 'Quiz';
   author: string;
-  domain: 'Numérique' | 'Communication' | 'Gestion';
+  domain: 'Numérique' | 'Communication' | 'Gestion' | 'Scolaire';
   version: string;
   level: 'Revue communautaire' | 'Validation pédagogique' | 'Validation renforcée';
   validator: string;
@@ -1626,6 +1639,9 @@ export function promoteDuePosts(state: ExtendedDemoState, now: number = Date.now
 const SNAPSHOT_KEYS = [
   'title',
   'domain',
+  'level',
+  'classLabel',
+  'goals',
   'duration',
   'sources',
   'sections',
@@ -1642,6 +1658,9 @@ export function studioSnapshot(c: StudioContent): StudioPublishedSnapshot {
     JSON.stringify({
       title: c.title,
       domain: c.domain,
+      level: c.level,
+      classLabel: c.classLabel,
+      goals: c.goals,
       duration: c.duration,
       sources: c.sources,
       sections: c.sections,
@@ -1663,6 +1682,9 @@ export function publishedView(c: StudioContent): StudioContent {
     ...c,
     title: p.title,
     domain: p.domain,
+    level: p.level,
+    classLabel: p.classLabel,
+    goals: p.goals,
     duration: p.duration,
     sources: p.sources,
     sections: p.sections,
@@ -1718,18 +1740,21 @@ export function buildDynamicCatalog(ext: ExtendedDemoState): CatalogItem[] {
       type: s.type,
       title: s.title,
       domain: s.domain,
-      level: 'Débutant',
+      level: studioLevel(s),
+      classLabel: s.classLabel && ladderClassOf(s.classLabel) ? s.classLabel : undefined,
       duration: s.duration || '5 min',
       author: s.authorName || 'Kossi Agbo',
       authorRole: 'Créateur & Mentor · Studio pédagogique',
       version: s.version || 'v1',
       review: reviewLevel,
       interactive: s.type === 'module',
-      xpReward: s.type === 'module' ? moduleMaxXp(Math.max(1, s.sections.length), levelRank('Débutant')) : undefined,
+      xpReward: s.type === 'module' ? moduleMaxXp(Math.max(1, s.sections.length), levelRank(studioLevel(s))) : undefined,
       summary: s.sections[0]?.body || 'Contenu publié depuis le Studio SAVOIR+.',
-      objectives: s.sections.some((sec) => sec.keyPoints?.length)
-        ? s.sections.map((sec) => sec.keyPoints?.[0]).filter((k): k is string => Boolean(k)).slice(0, 3)
-        : ['Comprendre et appliquer les notions clés présentées dans ce contenu.'],
+      objectives: formatGoals(s.goals).length
+        ? formatGoals(s.goals).map((goal) => goal.charAt(0).toUpperCase() + goal.slice(1).replace(/\s*[;.]$/, '.'))
+        : s.sections.some((sec) => sec.keyPoints?.length)
+          ? s.sections.map((sec) => sec.keyPoints?.[0]).filter((k): k is string => Boolean(k)).slice(0, 3)
+          : ['Comprendre et appliquer les notions clés présentées dans ce contenu.'],
       prerequisites: s.sources ? `Source déclarée : ${s.sources}` : 'Aucun prérequis bloquant.',
       resourceFormat: s.type === 'resource' ? 'Fiche' : undefined,
       resourceBody:

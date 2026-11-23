@@ -26,7 +26,7 @@ export const AUDIENCE_LABEL: Record<StudioContent['audience'], string> = {
   Privé: 'Moi uniquement',
   Public: 'Public'
 };
-export const DOMAINS: StudioContent['domain'][] = ['Numérique', 'Communication', 'Gestion'];
+export const DOMAINS: StudioContent['domain'][] = ['Numérique', 'Communication', 'Gestion', 'Scolaire'];
 
 export function TypeIcon({ type, size = 20 }: { type: CatalogType; size?: number }) {
   if (type === 'path') return <Layers size={size} aria-hidden="true" />;
