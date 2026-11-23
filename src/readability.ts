@@ -45,9 +45,10 @@ export interface TextStats {
 
 const WORD = /[\p{L}\p{N}]+(?:[’'-][\p{L}\p{N}]+)*/gu;
 
-/** Mesure un texte de cours (le gras `**…**` et les sauts de ligne ne comptent pas). */
+/** Mesure un texte de cours (les marques de gras `**…**` ne comptent pas). */
 export function textStats(text: string): TextStats {
-  const clean = text.replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
+  // Un retour à la ligne termine une phrase : une ligne qui annonce une liste (« … : ») ne s'ajoute pas à la suivante.
+  const clean = text.replace(/\*\*/g, '').replace(/[ \t]+/g, ' ').trim();
   const sentences = clean
     .split(/(?<=[.!?…])\s+|\s*[\n;]\s*/)
     .map((s) => s.trim())

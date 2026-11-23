@@ -200,13 +200,13 @@ export const SCHOOL_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
             {
               title: 'Comparer à 1',
               text: [
-                'Une fraction est **plus petite que 1** quand son numérateur est plus petit que son dénominateur (3/4 < 1), **plus grande que 1** dans le cas contraire (7/4 > 1).'
+                'Une fraction est **plus petite que 1** quand son numérateur est plus petit que son dénominateur : 3/4 < 1. Elle est **plus grande que 1** quand son numérateur est plus grand : 7/4 > 1.'
               ]
             },
             {
               title: 'Des fractions égales',
               text: [
-                'On obtient une fraction égale en **multipliant** (ou en divisant) le numérateur et le dénominateur **par le même nombre** : 1/2 = 2/4 = 4/8.',
+                'On obtient une fraction égale en **multipliant** le numérateur et le dénominateur **par le même nombre** : 1/2 = 2/4 = 4/8. On peut aussi les diviser par le même nombre.',
                 'C’est ce qui permet de comparer deux fractions de dénominateurs différents : on les écrit d’abord avec le même.'
               ]
             }
@@ -232,7 +232,7 @@ export const SCHOOL_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
           question: {
             ask: 'Entre 1/3 et 1/4, laquelle est la plus grande ?',
             answer: [
-              '1/3. À numérateur égal, plus on partage en beaucoup de parts, plus chaque part est petite : un tiers de gâteau est plus gros qu’un quart.'
+              '1/3. À numérateur égal, plus on partage en beaucoup de parts, plus chaque part est petite. Un tiers de gâteau est plus gros qu’un quart.'
             ]
           }
         }
@@ -290,7 +290,7 @@ export const SCHOOL_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
           question: {
             ask: 'Peut-on additionner 1/2 et 1/3 de la même façon ?',
             answer: [
-              'Pas directement : les parts n’ont pas la même taille. On écrit d’abord les deux fractions avec le même dénominateur : 1/2 = 3/6 et 1/3 = 2/6, donc 1/2 + 1/3 = 5/6.'
+              'Pas directement : les parts n’ont pas la même taille. On écrit d’abord les deux fractions avec le même dénominateur : 1/2 = 3/6 et 1/3 = 2/6. Alors 1/2 + 1/3 = 3/6 + 2/6 = 5/6.'
             ]
           }
         }
@@ -481,13 +481,13 @@ export const SCHOOL_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
             {
               title: 'L’énoncé de la réciproque',
               text: [
-                'Si A, M, B d’une part et A, N, C d’autre part sont **alignés dans le même ordre**, et si **AM/AB = AN/AC**, alors les droites **(MN) et (BC) sont parallèles**.'
+                'Les points A, M, B sont alignés ; les points A, N, C aussi, **dans le même ordre**. Si **AM/AB = AN/AC**, alors les droites **(MN) et (BC) sont parallèles**.'
               ]
             },
             {
               title: 'Attention à l’ordre des points',
               text: [
-                'La condition « dans le même ordre » est indispensable : M doit être du même côté de A que B, et N du même côté de A que C (ou bien tous deux de l’autre côté).'
+                'La condition « dans le même ordre » est indispensable. M doit être du même côté de A que B, et N du même côté de A que C. Ou bien M et N sont tous deux de l’autre côté de A.'
               ]
             },
             {

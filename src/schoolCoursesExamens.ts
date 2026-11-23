@@ -404,9 +404,9 @@ const CM2_EAU_POTABLE: CourseDef = {
             text: ['Deux méthodes simples tuent les microbes :'],
             items: [
               '**l’ébullition** : faire bouillir l’eau à gros bouillons, puis la laisser refroidir dans un récipient couvert ;',
-              '**la désinfection** : ajouter un produit comme l’eau de Javel ou un comprimé désinfectant, à la dose indiquée par l’agent de santé ou sur l’emballage, puis attendre une demi-heure.'
+              '**la désinfection** : ajouter un produit comme l’eau de Javel ou un comprimé désinfectant, puis attendre une demi-heure.'
             ],
-            after: 'La désinfection avec un produit se fait toujours avec un adulte.'
+            after: 'On respecte la dose indiquée par l’agent de santé ou sur l’emballage. La désinfection avec un produit se fait toujours avec un adulte.'
           },
           {
             title: 'L’ordre compte',
@@ -456,7 +456,7 @@ const CM2_EAU_POTABLE: CourseDef = {
           {
             title: 'Un récipient propre et fermé',
             text: [
-              'L’eau de boisson se garde dans un récipient **lavé au savon**, **couvert**, posé en hauteur, hors de portée des animaux et de la poussière.'
+              'L’eau de boisson se garde dans un récipient **lavé au savon** et **couvert**. On le pose en hauteur, hors de portée des animaux et de la poussière.'
             ]
           },
           {
@@ -467,7 +467,7 @@ const CM2_EAU_POTABLE: CourseDef = {
           {
             title: 'Se laver les mains',
             text: [
-              'On se lave les mains **à l’eau et au savon** avant de manger, avant de toucher l’eau de boisson et après être allé aux toilettes. C’est l’un des gestes qui évitent le plus de maladies.'
+              'On se lave les mains **à l’eau et au savon** avant de manger et avant de toucher l’eau de boisson. On les lave aussi après être allé aux toilettes. C’est l’un des gestes qui évitent le plus de maladies.'
             ]
           }
         ],
@@ -811,7 +811,7 @@ const TROISIEME_POIDS_MASSE: CourseDef = {
         question: {
           ask: 'Pourquoi la balance du marché affiche-t-elle des kilogrammes, alors qu’elle subit le poids ?',
           answer: [
-            'La balance réagit bien au poids, mais elle est graduée en kilogrammes : en un même lieu, le poids et la masse sont proportionnels, on peut donc passer de l’un à l’autre.'
+            'La balance réagit bien au poids, mais elle est graduée en kilogrammes. En un même lieu, le poids et la masse sont proportionnels : on peut donc passer de l’un à l’autre.'
           ]
         }
       }

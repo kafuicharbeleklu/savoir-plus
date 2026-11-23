@@ -79,7 +79,7 @@ const RESEAUX: LessonRich[] = [
       {
         title: 'Passez par la passerelle pour sortir',
         text: [
-          'Pour joindre une adresse qui n’est pas dans son réseau, un poste confie le paquet à la **passerelle par défaut** : l’adresse du routeur sur le réseau local, souvent 192.168.1.1. Le routeur se charge de la suite.'
+          'Pour joindre une adresse qui n’est pas dans son réseau, un poste confie le paquet à la **passerelle par défaut**. C’est l’adresse du routeur sur le réseau local, souvent 192.168.1.1. Le routeur se charge de la suite.'
         ]
       }
     ],

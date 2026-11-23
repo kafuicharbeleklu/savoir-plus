@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { lessonCountOf, resolveStudyContent } from '../src/content';
+import { MODULES_CONTENT, lessonCountOf, resolveStudyContent } from '../src/content';
 import { moduleMaxXp } from '../src/domain.mjs';
 import { lessonIssues } from '../src/lessonFormat';
 import { levelRank } from '../src/levels';
@@ -25,7 +25,7 @@ import {
   toSimpleSection,
   type StudioSection
 } from '../src/studioLesson';
-import { buildDynamicCatalog, initialExtendedState, studioLevel, type StudioContent } from '../src/wireframeData';
+import { CATALOG_ITEMS, buildDynamicCatalog, initialExtendedState, studioLevel, type StudioContent } from '../src/wireframeData';
 
 /** Une section de CM2 écrite au clavier : apostrophes droites, phrases courtes. */
 const fractions: StudioSection = {
@@ -188,4 +188,28 @@ test('Studio : le module publié se lit comme un cours, avec le niveau, la duré
   const halfDone = { ...draft, sections: [{ ...newRichSection('s-h', 'En cours'), body: 'Une phrase.', scene: 'Une situation.' }] };
   assert.equal(resolveStudyContent('st-fractions', [halfDone]).lessons[0].rich, undefined);
   assert.ok(resolveStudyContent('st-fractions', [halfDone], undefined, { draft: true }).lessons[0].rich);
+});
+
+test('niveau de langue : chaque cours de la Bibliothèque respecte le repère de sa classe', () => {
+  const offenders: string[] = [];
+  let checked = 0;
+  for (const item of CATALOG_ITEMS.filter((c) => c.type === 'module')) {
+    const content = MODULES_CONTENT[item.id];
+    if (!content) continue;
+    content.lessons.forEach((lesson, i) => {
+      const rich = lesson.rich;
+      // Tout ce que l'élève lit dans la leçon ; un élément de liste ou une remarque compte pour une phrase.
+      const text = rich
+        ? [lesson.intro, rich.scene, ...rich.sections.flatMap((s) => [...s.text, ...(s.items || []).map((x) => `${x}.`), s.after || '']), ...rich.example.notes.map((n) => `${n}.`), ...rich.question.answer]
+            .filter(Boolean)
+            .join('\n')
+        : [lesson.intro, lesson.body].join('\n');
+      checked += 1;
+      for (const issue of languageIssues(text, item.classLabel)) offenders.push(`${item.id} (${item.classLabel || 'général'}), leçon ${i + 1} : ${issue}`);
+    });
+  }
+  assert.ok(checked >= 45);
+  assert.deepEqual(offenders, []);
+  // Une ligne qui annonce une liste ne s'ajoute pas à l'élément qui la suit.
+  assert.equal(textStats('On cherche un produit remarquable :\nx² − 9 = (x + 3)(x − 3).').sentences, 2);
 });
