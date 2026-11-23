@@ -225,6 +225,31 @@ function FigureEditor({ figure, caption, onChange }: { figure: LessonFigure; cap
   );
 }
 
+/* ------------------------------------------------------------------ les mesures du texte */
+
+/** Mots, longueur des phrases et durée de lecture d'une section, comparés au repère de la classe visée. */
+export function SectionMeasure({ review, classLabel }: { review: SectionReview; classLabel?: string }) {
+  if (review.words === 0) return null;
+  const target = LANGUAGE_TARGETS[readingBandOf(classLabel)];
+  return (
+    <div className="sx-measure">
+      <p className="sx-measure-stats tabular-nums">
+        {review.words} mots · {fr(review.avgWords)} mots par phrase · environ {review.minutes} min de lecture
+      </p>
+      <p className="sx-note">
+        Niveau visé : {target.label}. Phrases de {target.avgWords} mots en moyenne, {target.maxWords} au plus.
+      </p>
+      {(review.language.length > 0 || review.long) && (
+        <ul className="sx-measure-list">
+          {[...review.language, ...(review.long ? [review.long] : [])].map((advice) => (
+            <li key={advice}>{advice}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ une section */
 
 export function SectionEditor({
@@ -261,7 +286,6 @@ export function SectionEditor({
     }
   });
   const todoOf = (block: LessonBlock) => review.todo.filter((item) => item.block === block);
-  const target = LANGUAGE_TARGETS[readingBandOf(classLabel)];
 
   const parts = section.parts || [];
   const patchPart = (i: number, patch: Partial<(typeof parts)[number]>) => onPatch({ parts: parts.map((part, j) => (j === i ? { ...part, ...patch } : part)) });
@@ -280,24 +304,6 @@ export function SectionEditor({
     setDrafts({});
   };
 
-  const measures = review.words > 0 && (
-    <div className="sx-review">
-      <p className="sx-review-stats tabular-nums">
-        {review.words} mots · {fr(review.avgWords)} mots par phrase · environ {review.minutes} min de lecture
-      </p>
-      <p className="sx-note">
-        Niveau visé : {target.label}. Phrases de {target.avgWords} mots en moyenne, {target.maxWords} au plus.
-      </p>
-      {(review.language.length > 0 || review.long) && (
-        <ul className="sx-review-list">
-          {[...review.language, ...(review.long ? [review.long] : [])].map((advice) => (
-            <li key={advice}>{advice}</li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-
   return (
     <>
       {canRich && (
@@ -308,7 +314,7 @@ export function SectionEditor({
           description="Entrée en matière, cours en parties, exemple illustré, question de l’élève, résumé : le déroulé des cours de la Bibliothèque."
         />
       )}
-      {measures}
+      <SectionMeasure review={review} classLabel={classLabel} />
 
       <label className="ui-field">
         <span>Titre de la section</span>

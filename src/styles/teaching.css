@@ -235,3 +235,36 @@
 .next-course-title { margin: 0; font-size: 0.875rem; font-weight: 600; line-height: 1.35; color: var(--fg-primary); }
 .next-course-meta { margin: 0 0 4px; font-size: 0.8125rem; line-height: 1.4; color: var(--fg-muted); }
 .next-course .li-text-link { font-size: 0.8125rem; }
+
+/* -- Créer avec l'IA : le texte et ce que l'IA prépare, côte à côte ------------------------------ */
+.sx-ai-compose { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.sx-ai-brief { display: flex; flex-direction: column; gap: 12px; }
+.sx-ai-brief h2 { margin: 0; font-size: 1rem; line-height: 1.5; font-weight: 600; color: var(--fg-primary); }
+.sx-ai-brief ol,
+.sx-ai-brief ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 0.875rem; line-height: 1.5; color: var(--fg-primary); }
+.sx-ai-brief b { font-weight: 600; }
+.sx-ai-brief .sx-note { padding-top: 12px; border-top: 1px solid var(--border-hairline); font-size: 0.8125rem; line-height: 1.5; }
+
+/* Le plan : une ligne par section, que l'encadreur renomme, déplace ou retire avant la rédaction. */
+.sx-plan { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.sx-plan li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--border-hairline); }
+.sx-plan li:last-child { border-bottom: 0; }
+.sx-plan-n { padding-top: 10px; font-size: 0.75rem; font-weight: 500; color: var(--fg-muted); }
+.sx-plan-fields { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.sx-plan-fields input,
+.sx-plan-fields textarea { width: 100%; }
+.sx-plan-fields input { font-weight: 600; }
+.sx-plan-fields textarea { resize: vertical; }
+.sx-plan-actions { display: inline-flex; align-items: center; padding-top: 4px; }
+
+/* Relecture : une section se lit comme dans le cours, puis se corrige au besoin. */
+.sx-ai-lesson { padding: 4px 20px 8px; border: 1px solid var(--border-hairline); border-radius: var(--angle); background: var(--bg-surface); }
+.sx-ai-lesson .rd-chapter-body > h2:first-child { margin-top: 20px; padding-top: 0; border-top: 0; }
+.sx-review-row .sx-review-actions { display: inline-flex; gap: 8px; flex: none; }
+.sx-review-title.is-static { cursor: default; }
+.sx-review-state.is-busy { color: var(--fg-muted); }
+
+@media (max-width: 960px) {
+  .sx-ai-compose { grid-template-columns: minmax(0, 1fr); }
+}
+.sx-ai-brief ol { list-style: decimal; }

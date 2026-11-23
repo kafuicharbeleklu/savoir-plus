@@ -10,13 +10,6 @@ const ENDPOINT = `${SUPABASE_URL}/functions/v1/ai-studio`;
 export const AI_SOURCE_MIN = 80;
 export const AI_SOURCE_MAX = 6000;
 
-export interface AiSection {
-  title: string;
-  body: string;
-  keyPoints: string[];
-  tip: string;
-}
-
 export interface AiQuestion {
   prompt: string;
   options: string[];
@@ -29,18 +22,46 @@ export interface AiStep {
   illustrationPrompt: string;
 }
 
-export interface AiModuleProposal {
+/** Le public visé : la classe ou le niveau, et les repères de langue et de découpage qui en découlent. */
+export interface AiAudience {
+  classLabel?: string;
+  level?: string;
+  /** Mots par phrase, en moyenne. */
+  avgWords: number;
+  /** Longueur de phrase à ne pas dépasser. */
+  maxWords: number;
+  /** Nombre de sections à ne pas dépasser. */
+  maxSections: number;
+}
+
+/** Le plan proposé : un titre, des objectifs, une ligne par section. L'encadreur le corrige avant la rédaction. */
+export interface AiPlan {
   title: string;
-  summary: string;
-  sections: AiSection[];
-  questions: AiQuestion[];
-  steps: AiStep[];
+  goals: string[];
+  sections: { title: string; idea: string }[];
+  /** Ce que la source ne précise pas. */
   gaps: string[];
+}
+
+export type AiPlanInput = Pick<AiPlan, 'title' | 'goals' | 'sections'>;
+
+/** Une section rédigée au format des cours ; la figure de l'exemple est décrite en texte (voir studioLesson.ts). */
+export interface AiRichSection {
+  title: string;
+  lead: string;
+  scene: string;
+  parts: { title: string; text: string; items: string[] }[];
+  example: { title: string; figureKind: 'table' | 'timeline' | 'flow' | 'split' | 'fraction' | 'none'; figureText: string; caption: string; notes: string[] };
+  question: { ask: string; answer: string };
+  keyPoints: string[];
+  tip: string;
 }
 
 export interface AiStatus {
   text: boolean;
   images: boolean;
+  /** Le service sait proposer un plan et rédiger section par section. */
+  plan: boolean;
 }
 
 async function call<T>(init: RequestInit, timeoutMs: number): Promise<T> {
@@ -67,17 +88,38 @@ async function call<T>(init: RequestInit, timeoutMs: number): Promise<T> {
 export async function aiStatus(): Promise<AiStatus> {
   try {
     const data = await call<any>({ method: 'GET' }, 10_000);
-    return { text: Boolean(data?.text?.available), images: Boolean(data?.images?.available) };
+    const formats: unknown = data?.text?.formats;
+    return {
+      text: Boolean(data?.text?.available),
+      images: Boolean(data?.images?.available),
+      plan: Array.isArray(formats) && formats.includes('section')
+    };
   } catch {
-    return { text: false, images: false };
+    return { text: false, images: false, plan: false };
   }
 }
 
-export async function generateModuleProposal(
+const post = <T>(body: Record<string, unknown>, timeoutMs: number) => call<T>({ method: 'POST', body: JSON.stringify(body) }, timeoutMs);
+
+/** Le plan du module, d'après le texte de l'encadreur. */
+export function proposePlan(source: string, titleHint: string, audience: AiAudience): Promise<{ model: string; plan: AiPlan }> {
+  return post({ action: 'plan', source, titleHint, ...audience }, 85_000);
+}
+
+/** Une section du plan, rédigée au format des cours. */
+export function writeSection(
   source: string,
-  titleHint: string
-): Promise<{ model: string; module: AiModuleProposal }> {
-  return call({ method: 'POST', body: JSON.stringify({ action: 'module', source, titleHint }) }, 90_000);
+  titleHint: string,
+  audience: AiAudience,
+  plan: AiPlanInput,
+  index: number
+): Promise<{ model: string; index: number; section: AiRichSection; gaps: string[] }> {
+  return post({ action: 'section', source, titleHint, plan, index, ...audience }, 115_000);
+}
+
+/** Le quiz et la fiche pas à pas du module, d'après le plan. */
+export function writeQuiz(source: string, titleHint: string, audience: AiAudience, plan: AiPlanInput): Promise<{ model: string; questions: AiQuestion[]; steps: AiStep[] }> {
+  return post({ action: 'quiz', source, titleHint, plan, ...audience }, 105_000);
 }
 
 /** Résolutions proposées : 1024 px (standard) ou 1536 px (haute résolution, plus lente et plus coûteuse en quota). */

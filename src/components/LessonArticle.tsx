@@ -89,7 +89,7 @@ export function FigureView({ figure }: { figure: LessonFigure }) {
         <thead>
           <tr>
             {figure.head.map((cell, c) => (
-              <th key={cell} scope="col" className={numeric[c] ? 'is-num' : undefined}>
+              <th key={c} scope="col" className={numeric[c] ? 'is-num' : undefined}>
                 {cell}
               </th>
             ))}
