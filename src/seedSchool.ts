@@ -123,7 +123,7 @@ export const SEED_SCHOOL_PROGRESS: Record<string, Record<string, Progress>> = ((
   fill(TRO_IDS, 'cl-3e-a');
   // Elom : un module validé, un en cours, un pas encore commencé.
   out.elom = {
-    comptes: { lessons: [0, 1, 2], answers: MODULES_CONTENT.comptes.questions.map((q) => q.correctIndex), submitted: true },
+    comptes: { lessons: MODULES_CONTENT.comptes.lessons.map((_, i) => i), answers: MODULES_CONTENT.comptes.questions.map((q) => q.correctIndex), submitted: true },
     sauvegarde: { lessons: [0, 1], answers: [], submitted: false },
     'email-pro': { lessons: [], answers: [], submitted: false }
   };

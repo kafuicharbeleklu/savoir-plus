@@ -238,6 +238,19 @@ export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
           'Activez un facteur supplémentaire quand le service le permet.'
         ],
         tip: 'Vous avez un doute ? Demander de l’aide est un bon réflexe, pas un aveu de faiblesse.'
+      },
+      {
+        title: 'Déjouer l’appel et la messagerie',
+        label: 'Quand le piège change de canal',
+        minutes: '4 min',
+        intro: 'Le piège ne passe pas toujours par un e-mail. Un appel, un SMS ou le message d’un proche peuvent porter la même demande.',
+        body: 'Un fraudeur peut vous appeler en se présentant comme votre banque ou votre opérateur, ou écrire depuis le compte volé d’un ami. La règle ne change pas : aucun service ne vous demande un code par téléphone ou par message. Raccrochez, puis rappelez vous-même le numéro officiel.',
+        points: [
+          'Un appel ou un message peut porter le même piège qu’un e-mail.',
+          'Un code reçu par SMS ne se dicte et ne se transfère jamais.',
+          'On vérifie en rappelant soi-même le numéro officiel, ou en appelant son proche.'
+        ],
+        tip: 'Raccrocher n’est pas impoli : c’est le moyen le plus sûr de vérifier qui appelle.'
       }
     ],
     questions: [
@@ -270,6 +283,12 @@ export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
         ],
         correctIndex: 0,
         explanation: 'Agissez rapidement par les canaux officiels et suivez la procédure de récupération du service.'
+      },
+      {
+        text: 'Un « conseiller » vous appelle et demande le code que vous venez de recevoir par SMS. Que faites-vous ?',
+        answers: ['Vous le donnez, puisqu’il connaît votre nom.', 'Vous lui demandez de rappeler plus tard.', 'Vous raccrochez et rappelez vous-même le numéro officiel.'],
+        correctIndex: 2,
+        explanation: 'Un code ne se dicte jamais. Seul un appel que vous lancez vous-même vers le numéro officiel permet de vérifier.'
       }
     ]
   },
@@ -317,6 +336,32 @@ export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
           'Connaître ces étapes aide à isoler une panne DNS d’une coupure physique.'
         ],
         tip: 'Si un site par nom échoue alors que votre réseau local répond, pensez à vérifier la résolution DNS.'
+      },
+      {
+        title: 'Recevoir une adresse automatiquement',
+        label: 'Le service DHCP',
+        minutes: '10 min',
+        intro: 'Personne ne règle son adresse IP à la main en se connectant au Wi-Fi. Un service la distribue : le DHCP.',
+        body: 'À la connexion, votre appareil demande une configuration. Le serveur DHCP, souvent intégré à la box, lui prête une adresse IP, le masque, la passerelle et l’adresse d’un serveur DNS, pour une durée limitée appelée bail. Sans réponse du DHCP, l’appareil n’a pas d’adresse utilisable.',
+        points: [
+          'Le DHCP distribue l’adresse IP, le masque, la passerelle et le serveur DNS.',
+          'L’adresse est prêtée pour une durée limitée : le bail.',
+          'Une adresse en 169.254 signale que le DHCP n’a pas répondu.'
+        ],
+        tip: 'Connecté au Wi-Fi mais sans accès à rien ? Regardez d’abord si votre appareil a bien reçu une adresse.'
+      },
+      {
+        title: 'Trouver une panne pas à pas',
+        label: 'Du plus proche au plus lointain',
+        minutes: '10 min',
+        intro: 'Devant une panne, on ne devine pas : on teste, du plus proche au plus lointain, jusqu’au premier test qui échoue.',
+        body: 'Quatre vérifications suffisent le plus souvent : le lien (câble ou Wi-Fi), l’adresse reçue, la passerelle, puis un site par son nom. Le premier test qui échoue désigne l’endroit de la panne. Tout ce qui précède fonctionne ; inutile d’y toucher.',
+        points: [
+          'On teste dans l’ordre : le lien, l’adresse, la passerelle, puis le nom.',
+          'Le premier test qui échoue désigne l’endroit de la panne.',
+          'La commande ping vérifie qu’un appareil répond.'
+        ],
+        tip: 'Notez ce que vous avez testé et le résultat : vous gagnerez du temps si vous devez demander de l’aide.'
       }
     ],
     questions: [
@@ -345,6 +390,18 @@ export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
         ],
         correctIndex: 2,
         explanation: 'Sur un même sous-réseau local, les interfaces dialoguent directement via le commutateur.'
+      },
+      {
+        text: 'Votre ordinateur affiche une adresse qui commence par 169.254. Que s’est-il passé ?',
+        answers: ['Le DHCP n’a pas répondu : l’appareil s’est donné une adresse lui-même.', 'Le site demandé est en panne.', 'Le mot de passe du Wi-Fi a expiré.'],
+        correctIndex: 0,
+        explanation: 'Sans réponse du DHCP, l’appareil prend une adresse en 169.254, qui ne permet de joindre ni la passerelle ni Internet.'
+      },
+      {
+        text: 'Le Wi-Fi est connecté, l’adresse est reçue, la passerelle répond, mais aucun site ne s’ouvre par son nom. Où chercher ?',
+        answers: ['Dans le câble de l’ordinateur.', 'Après la passerelle : l’accès à Internet ou le DNS.', 'Dans le navigateur, qu’il faut réinstaller.'],
+        correctIndex: 1,
+        explanation: 'Les trois premiers tests réussissent : la panne se trouve après la passerelle.'
       }
     ]
   },
@@ -392,6 +449,19 @@ export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
           'Contrôlez les adresses et appareils rattachés à votre compte.'
         ],
         tip: 'La révocation d’une session coupe l’accès sur les appareils oubliés sans fermer votre session en cours.'
+      },
+      {
+        title: 'Reprendre un compte piraté',
+        label: 'Récupérer et nettoyer',
+        minutes: '7 min',
+        intro: 'Un compte piraté se reprend, à condition d’agir vite et dans le bon ordre.',
+        body: 'Passez par la page officielle de récupération du service, changez le mot de passe, puis coupez toutes les sessions. Vérifiez ensuite ce que l’intrus a pu modifier : l’adresse de récupération, le numéro de téléphone, les règles de transfert. Prévenez enfin vos contacts.',
+        points: [
+          'On récupère le compte par la page officielle du service, jamais par un lien reçu.',
+          'Nouveau mot de passe, puis déconnexion de toutes les sessions.',
+          'On vérifie l’adresse et le numéro de récupération, que l’intrus a pu changer.'
+        ],
+        tip: 'Mettez à jour dès aujourd’hui votre adresse et votre numéro de récupération : ce sont eux qui vous rendront le compte.'
       }
     ],
     questions: [
@@ -424,6 +494,12 @@ export const MODULES_CONTENT: Record<string, ModuleStudyContent> = {
         ],
         correctIndex: 2,
         explanation: 'Déconnectez-vous explicitement et révoquez la session côté serveur depuis votre appareil habituel.'
+      },
+      {
+        text: 'Vous venez de récupérer un compte piraté. Que vérifier après avoir changé le mot de passe ?',
+        answers: ['Rien : le nouveau mot de passe suffit.', 'L’adresse et le numéro de récupération, et les sessions ouvertes.', 'La vitesse de la connexion.'],
+        correctIndex: 1,
+        explanation: 'L’intrus a pu ajouter sa propre adresse de récupération ou garder une session ouverte : sans ce contrôle, il reviendrait.'
       }
     ]
   },

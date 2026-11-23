@@ -159,6 +159,118 @@ const RESEAUX: LessonRich[] = [
         'Votre connexion n’est pas en cause, puisqu’un autre service répond. Deux pistes restent : le site lui-même est en panne, ou son nom n’est pas traduit. Essayez un autre site : s’il s’ouvre, le problème vient du site visé.'
       ]
     }
+  },
+  {
+    art: 'server',
+    scene:
+      'Au cybercafé, Mawuli ouvre son ordinateur et choisit le réseau Wi-Fi. Dix secondes plus tard, il navigue. Il n’a saisi ni adresse IP, ni masque, ni passerelle : quelqu’un l’a fait pour lui.',
+    sections: [
+      {
+        title: 'Laissez le DHCP configurer l’appareil',
+        text: [
+          'Le **DHCP** est le service qui distribue les configurations sur un réseau. À la maison, il est intégré à la box ; dans une entreprise, c’est souvent un serveur.',
+          'À chaque connexion, votre appareil lui demande de quoi communiquer. Le DHCP lui envoie quatre informations :'
+        ],
+        items: ['une **adresse IP** libre sur le réseau ;', 'le **masque** ;', 'l’adresse de la **passerelle** ;', 'l’adresse d’un **serveur DNS**.']
+      },
+      {
+        title: 'Comprenez le bail',
+        text: [
+          'L’adresse n’est pas donnée, elle est **prêtée** pour une durée limitée : le bail. Tant que l’appareil reste connecté, il renouvelle son bail sans que vous le voyiez.',
+          'Quand il quitte le réseau, l’adresse redevient libre et peut servir à un autre appareil. C’est pourquoi votre adresse peut changer d’un jour à l’autre.'
+        ]
+      },
+      {
+        title: 'Repérez un DHCP qui ne répond pas',
+        text: [
+          'Si le DHCP ne répond pas, l’appareil se donne lui-même une adresse qui commence par **169.254**. Avec elle, il ne peut joindre ni la passerelle ni Internet.',
+          'Le signe est net : vous êtes « connecté », mais rien ne fonctionne.'
+        ]
+      }
+    ],
+    example: {
+      title: 'Suivez la connexion de Mawuli',
+      figure: {
+        kind: 'timeline',
+        steps: [
+          'L’ordinateur rejoint le Wi-Fi et demande : « Y a-t-il un serveur DHCP ? »',
+          'La box répond et propose l’adresse **192.168.1.37**.',
+          'L’ordinateur accepte l’adresse, avec le masque, la passerelle et le serveur DNS.',
+          'Le bail commence : l’ordinateur peut joindre la passerelle, puis Internet.'
+        ]
+      },
+      caption: 'Dix secondes entre le choix du réseau et la première page',
+      notes: [
+        'L’ordinateur ne connaît rien du réseau en arrivant : il demande.',
+        'Une seule réponse lui donne **les quatre réglages** dont il a besoin.',
+        'Sans cette réponse, il ne pourrait joindre aucun autre appareil.'
+      ]
+    },
+    question: {
+      ask: 'Peut-on quand même régler une adresse à la main ?',
+      answer: [
+        'Oui : c’est une adresse **fixe**. On la réserve aux appareils que les autres doivent toujours retrouver au même endroit, comme une imprimante ou un serveur.',
+        'Pour un téléphone ou un ordinateur portable, laissez le DHCP faire : une adresse saisie à la main peut entrer en conflit avec celle d’un autre appareil.'
+      ]
+    }
+  },
+  {
+    art: 'search',
+    scene:
+      'Lundi matin, Akossiwa n’arrive plus à ouvrir aucun site. Son collègue redémarre tout au hasard : la box, l’ordinateur, puis encore la box. Vingt minutes plus tard, rien n’a changé, et personne ne sait où est la panne.',
+    sections: [
+      {
+        title: 'Testez du plus proche au plus lointain',
+        text: [
+          'Un échange traverse des étapes : votre appareil, le réseau local, la passerelle, Internet, puis le service de noms. Une panne bloque **une** de ces étapes.',
+          'En testant dans l’ordre, vous trouvez la première étape qui ne répond pas. Tout ce qui se trouve avant elle fonctionne.'
+        ]
+      },
+      {
+        title: 'Posez quatre questions',
+        text: ['Chaque question se vérifie en moins d’une minute :'],
+        items: [
+          '**Le lien** : le câble est-il branché, le Wi-Fi est-il connecté au bon réseau ?',
+          '**L’adresse** : l’appareil a-t-il reçu une adresse, autre qu’une adresse en 169.254 ?',
+          '**La passerelle** : répond-elle quand on la sollicite ?',
+          '**Le nom** : un site s’ouvre-t-il par son nom ?'
+        ],
+        ordered: true
+      },
+      {
+        title: 'Sollicitez un appareil avec ping',
+        text: [
+          'La commande **ping** envoie un petit message à une adresse et attend sa réponse. Une réponse prouve que le chemin fonctionne jusqu’à cet appareil.',
+          'On lance d’abord un ping vers la passerelle, par exemple 192.168.1.1. Si elle répond, le réseau local est hors de cause.'
+        ]
+      }
+    ],
+    example: {
+      title: 'Reprenez la panne d’Akossiwa',
+      figure: {
+        kind: 'table',
+        head: ['Test', 'Résultat', 'Ce que l’on en conclut'],
+        rows: [
+          ['Le Wi-Fi est-il connecté ?', 'Oui', 'Le lien fonctionne'],
+          ['Une adresse a-t-elle été reçue ?', '192.168.1.24', 'Le DHCP a répondu'],
+          ['La passerelle répond-elle au ping ?', 'Oui', 'Le réseau local fonctionne'],
+          ['Un site s’ouvre-t-il par son nom ?', '**Non**', 'La panne est après la passerelle : accès à Internet ou DNS']
+        ]
+      },
+      caption: 'Quatre tests, moins de cinq minutes',
+      notes: [
+        'Les trois premiers tests réussissent : inutile de redémarrer l’ordinateur.',
+        'Le premier échec arrive au quatrième test : c’est là qu’il faut chercher.',
+        'Akossiwa peut maintenant appeler son fournisseur d’accès avec des faits précis.'
+      ]
+    },
+    question: {
+      ask: 'La passerelle ne répond pas au ping : est-elle forcément en panne ?',
+      answer: [
+        'Pas forcément. Certains appareils sont réglés pour ne pas répondre au ping.',
+        'Un ping qui réussit est une preuve. Un ping qui échoue est seulement un indice : confirmez-le par un autre test, par exemple l’ouverture de la page de réglages de la box.'
+      ]
+    }
   }
 ];
 
@@ -317,6 +429,70 @@ const COMPTES: LessonRich[] = [
       ask: 'Changer mon mot de passe déconnecte-t-il les autres appareils ?',
       answer: [
         'Pas toujours. Certains services le font d’office, d’autres le proposent, d’autres encore laissent les sessions ouvertes. Ne le supposez pas : après un changement de mot de passe, ouvrez la liste des appareils et révoquez ceux qui n’ont rien à y faire.'
+      ]
+    }
+  },
+  {
+    art: 'restore',
+    scene:
+      'Un matin, Fatou ne peut plus ouvrir sa messagerie : « mot de passe incorrect ». Dans la journée, trois amis l’appellent. Ils ont reçu, de sa part, une demande d’argent qu’elle n’a jamais écrite.',
+    sections: [
+      {
+        title: 'Reprenez la main par le chemin officiel',
+        text: [
+          'Ouvrez vous-même le site ou l’application du service, puis choisissez « mot de passe oublié » ou « compte piraté ». Le service vous identifie grâce à votre **adresse ou votre numéro de récupération**.',
+          'N’utilisez aucun lien reçu par message : un fraudeur peut se faire passer pour l’assistance.'
+        ]
+      },
+      {
+        title: 'Fermez la porte derrière vous',
+        text: ['Dès que vous avez retrouvé l’accès, faites trois choses, dans cet ordre :'],
+        items: [
+          'choisissez un **nouveau mot de passe**, long et jamais utilisé ailleurs ;',
+          '**déconnectez toutes les sessions** depuis les paramètres ;',
+          'activez la **double authentification** si elle ne l’était pas.'
+        ],
+        ordered: true
+      },
+      {
+        title: 'Cherchez ce que l’intrus a laissé',
+        text: [
+          'Un intrus prépare souvent son retour. Dans les paramètres, contrôlez l’adresse et le numéro de récupération : ce sont peut-être les siens.',
+          'Dans une messagerie, regardez aussi les **règles de transfert** : elles peuvent envoyer une copie de vos messages vers une autre adresse.'
+        ]
+      },
+      {
+        title: 'Prévenez vos contacts',
+        text: [
+          'Écrivez à vos contacts que votre compte a été utilisé sans vous, et qu’ils ne doivent répondre à aucune demande reçue pendant cette période.',
+          'Si le même mot de passe servait ailleurs, changez-le aussi sur ces services.'
+        ]
+      }
+    ],
+    example: {
+      title: 'Suivez Fatou pendant une heure',
+      figure: {
+        kind: 'timeline',
+        steps: [
+          'Elle ouvre le site de sa messagerie et choisit « compte piraté ».',
+          'Elle reçoit un code sur son numéro de récupération et retrouve l’accès.',
+          'Elle change le mot de passe, déconnecte toutes les sessions et active la double authentification.',
+          'Elle supprime une adresse de récupération inconnue et une règle de transfert.',
+          'Elle prévient ses contacts : « Ne répondez pas au message d’hier. »'
+        ]
+      },
+      caption: 'Une heure pour reprendre un compte et le nettoyer',
+      notes: [
+        'Sans numéro de récupération à jour, la première étape aurait pris des jours.',
+        'Changer le mot de passe ne suffit pas : l’adresse inconnue aurait rendu le compte à l’intrus.',
+        'Le message aux contacts **protège les autres** : c’est eux que l’intrus visait ensuite.'
+      ]
+    },
+    question: {
+      ask: 'Et si l’intrus a déjà changé l’adresse et le numéro de récupération ?',
+      answer: [
+        'Utilisez le formulaire d’assistance du service. Il pose des questions que seul le propriétaire connaît, comme d’anciens mots de passe ou la date de création du compte.',
+        'La démarche est plus longue. C’est une raison de plus pour ranger vos **codes de secours** dès maintenant.'
       ]
     }
   }

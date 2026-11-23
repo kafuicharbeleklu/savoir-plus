@@ -193,7 +193,7 @@ test('Dynamic catalog reflects live Studio publications and resolves study conte
 
   const coreReseaux = resolveStudyContent('reseaux');
   assert.equal(coreReseaux.labType, 'reseaux');
-  assert.equal(coreReseaux.lessons.length, 3);
+  assert.equal(coreReseaux.lessons.length, 5);
 });
 
 test('Notifications include responsible actor metadata and explicit timestamps', () => {
@@ -781,16 +781,36 @@ test('publication programmée : seule la contribution arrivée à échéance rej
 test('catalogue étendu : chaque module interactif a ses leçons, son quiz et son emblème de parcours', async () => {
   const { CATALOG_ITEMS } = await import('../src/wireframeData');
   const { MODULES_CONTENT } = await import('../src/content');
+  const { moduleMaxXp } = await import('../src/domain.mjs');
+  const { levelRank } = await import('../src/levels');
   const modules = CATALOG_ITEMS.filter((c) => c.type === 'module' && c.interactive);
   // Sept modules, plus huit cours scolaires (CM2, 3e, Seconde, Terminale).
   assert.equal(modules.length, 15);
   for (const mod of modules) {
     const study = MODULES_CONTENT[mod.id];
     assert.ok(study, `contenu manquant : ${mod.id}`);
-    assert.equal(study.lessons.length, 3);
-    assert.equal(study.questions.length, 3);
+    // Le nombre de sections suit le sujet : trois au moins ; la fiche du catalogue en liste autant, plus le quiz.
+    assert.ok(study.lessons.length >= 3 && study.lessons.length <= 8, mod.id);
+    assert.equal(mod.sections?.length, study.lessons.length + 1, `sections du catalogue : ${mod.id}`);
+    assert.ok(study.questions.length >= 3 && study.questions.length <= study.lessons.length + 1, mod.id);
+    assert.equal(mod.xpReward, moduleMaxXp(study.lessons.length, levelRank(mod.level)), `XP : ${mod.id}`);
     for (const q of study.questions) assert.ok(q.correctIndex >= 0 && q.correctIndex < q.answers.length);
   }
+  // Les modules généraux ne font plus tous trois sections ; le quiz pose une question par section ajoutée.
+  const general = ['phishing', 'reseaux', 'comptes', 'email-pro', 'budget', 'sauvegarde', 'reunion'];
+  assert.deepEqual(general.map((id) => MODULES_CONTENT[id].lessons.length), [4, 5, 4, 4, 4, 4, 4]);
+  assert.deepEqual(general.map((id) => MODULES_CONTENT[id].questions.length), [4, 5, 4, 4, 4, 4, 4]);
+  assert.deepEqual(MODULES_CONTENT.reunion.lessons.map((l) => l.title), ['Faut-il vraiment une réunion ?', 'Un ordre du jour qui cadre', 'Animer sans déborder', 'Décisions et compte rendu']);
+  // Progressions de démonstration : un module « terminé » l'est avec toutes ses sections et le corrigé complet.
+  const { FINISHED_MODULES } = await import('../src/seedCommunity');
+  for (const [id, done] of Object.entries(FINISHED_MODULES)) {
+    assert.equal(done.lessons, MODULES_CONTENT[id].lessons.length, `sections : ${id}`);
+    assert.deepEqual(done.key, MODULES_CONTENT[id].questions.map((q) => q.correctIndex), `corrigé : ${id}`);
+  }
+  const { initialExtendedState } = await import('../src/wireframeData');
+  const kossi = initialExtendedState().moduleProgress.kossi.reseaux;
+  assert.deepEqual(kossi.lessons, MODULES_CONTENT.reseaux.lessons.map((_, i) => i));
+  assert.deepEqual(kossi.answers, MODULES_CONTENT.reseaux.questions.map((q) => q.correctIndex));
   for (const path of CATALOG_ITEMS.filter((c) => c.type === 'path')) {
     for (const pm of path.pathModules || []) assert.ok(CATALOG_ITEMS.some((c) => c.id === pm.id), `module de parcours inconnu : ${pm.id}`);
   }
@@ -865,8 +885,8 @@ test('statistiques du créateur : décomptes, taux et étapes calculés sur les 
   const { computeCreatorStats, computeModuleStat, hasQuestionGap, hasStepLoss, moduleInsights } = await import('../src/studioStats');
   const { CATALOG_ITEMS } = await import('../src/wireframeData');
   const mod = CATALOG_ITEMS.find((c) => c.id === 'phishing')!;
-  const done = { lessons: [0, 1, 2], answers: [1, 2, 0], submitted: true };
-  const failed = { lessons: [0, 1, 2], answers: [0, 2, 1], submitted: true };
+  const done = { lessons: [0, 1, 2, 3], answers: [1, 2, 0, 2], submitted: true };
+  const failed = { lessons: [0, 1, 2, 3], answers: [0, 2, 1, 0], submitted: true };
   const started = { lessons: [0], answers: [], submitted: false };
   const untouched = { lessons: [], answers: [], submitted: false };
   const stats = computeCreatorStats({
@@ -882,10 +902,11 @@ test('statistiques du créateur : décomptes, taux et étapes calculés sur les 
   assert.equal(s.submitted, 2);
   assert.equal(s.passRate, 50);
   assert.equal(s.reachRate, 67);
-  assert.deepEqual(s.steps.map((f) => f.count), [3, 2, 2, 1]);
-  assert.deepEqual(s.steps.map((f) => f.rate), [100, 67, 67, 33]);
-  assert.deepEqual(s.questions.map((q) => q.correctRate), [50, 100, 50]);
-  assert.deepEqual(s.questions.map((q) => q.correct), [1, 2, 1]);
+  // Quatre sections, puis le quiz validé.
+  assert.deepEqual(s.steps.map((f) => f.count), [3, 2, 2, 2, 1]);
+  assert.deepEqual(s.steps.map((f) => f.rate), [100, 67, 67, 67, 33]);
+  assert.deepEqual(s.questions.map((q) => q.correctRate), [50, 100, 50, 50]);
+  assert.deepEqual(s.questions.map((q) => q.correct), [1, 2, 1, 1]);
   assert.equal(stats.totals.learners, 3);
   assert.equal(stats.totals.passRate, 50);
   // Points à retenir : la plus forte perte, puis la question la moins réussie.

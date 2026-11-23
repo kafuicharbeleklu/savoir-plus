@@ -393,18 +393,28 @@ export const SEED_MEMBER_FOLLOWING: Record<string, string[]> = {
   ines: ['nadege', 'ama', 'edem']
 };
 
-const done = (answers: number[]) => ({ lessons: [0, 1, 2], answers, submitted: true });
+/** Nombre de sections et corrigé du quiz de chaque module terminé par un membre (un test les compare aux modules). */
+export const FINISHED_MODULES: Record<string, { lessons: number; key: number[] }> = {
+  phishing: { lessons: 4, key: [1, 2, 0, 2] },
+  reseaux: { lessons: 5, key: [0, 1, 2, 0, 1] },
+  comptes: { lessons: 4, key: [0, 1, 2, 1] },
+  'email-pro': { lessons: 4, key: [1, 2, 0, 0] },
+  budget: { lessons: 4, key: [1, 0, 2, 1] },
+  sauvegarde: { lessons: 4, key: [1, 2, 0, 2] },
+  reunion: { lessons: 4, key: [1, 0, 2, 0] }
+};
+const done = (id: string) => ({ lessons: Array.from({ length: FINISHED_MODULES[id].lessons }, (_, i) => i), answers: FINISHED_MODULES[id].key, submitted: true });
 const started = (lessons: number[]) => ({ lessons, answers: [], submitted: false });
 
 /** Progressions des membres : elles alimentent leur niveau, leurs badges et leurs compétences. */
 export const SEED_MEMBER_PROGRESS = {
-  maya: { phishing: done([1, 2, 0]), reseaux: started([0, 1]) },
-  sam: { budget: done([1, 0, 2]), 'email-pro': started([0]) },
-  ama: { 'email-pro': done([1, 2, 0]), reunion: done([1, 0, 2]), phishing: done([1, 2, 0]) },
-  edem: { budget: done([1, 0, 2]), 'email-pro': started([0, 1]) },
-  fatou: { phishing: done([1, 2, 0]), comptes: started([0]) },
-  kodjo: { reseaux: done([0, 1, 2]), comptes: done([0, 1, 2]), sauvegarde: done([1, 2, 0]) },
-  ines: { reunion: done([1, 0, 2]), 'email-pro': done([1, 2, 0]), budget: started([0]) }
+  maya: { phishing: done('phishing'), reseaux: started([0, 1]) },
+  sam: { budget: done('budget'), 'email-pro': started([0]) },
+  ama: { 'email-pro': done('email-pro'), reunion: done('reunion'), phishing: done('phishing') },
+  edem: { budget: done('budget'), 'email-pro': started([0, 1]) },
+  fatou: { phishing: done('phishing'), comptes: started([0]) },
+  kodjo: { reseaux: done('reseaux'), comptes: done('comptes'), sauvegarde: done('sauvegarde') },
+  ines: { reunion: done('reunion'), 'email-pro': done('email-pro'), budget: started([0]) }
 };
 
 /** Comptes ajoutés à la liste de la gouvernance. */

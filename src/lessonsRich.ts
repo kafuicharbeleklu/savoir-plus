@@ -172,18 +172,79 @@ const PHISHING: LessonRich[] = [
         'Rien n’est perdu tant que vous agissez vite. Se taire est la seule vraie erreur : c’est ce qui laisse du temps au fraudeur, et ce qui expose vos collègues ou vos camarades au même message.'
       ]
     }
+  },
+  {
+    art: 'phone',
+    scene:
+      'Kodjo reçoit un appel. « Service client de votre opérateur : votre compte de mobile money va être bloqué. Donnez-moi le code que vous venez de recevoir. » La voix est polie et pressée. Le code vient vraiment d’arriver par SMS.',
+    sections: [
+      {
+        title: 'Reconnaissez le même piège, sur un autre canal',
+        text: [
+          'Au téléphone, par SMS ou sur une messagerie, le fraudeur cherche la même chose que par e-mail : vous faire agir **avant de vérifier**. Vous retrouvez les trois signaux : la pression, la demande sensible, l’action inattendue.',
+          'Le numéro affiché ne prouve rien. Il peut être masqué, ou imiter celui d’un vrai service.'
+        ]
+      },
+      {
+        title: 'Ne dictez jamais un code',
+        text: [
+          'Un code reçu par SMS sert à valider **une opération que vous avez lancée vous-même**. Si quelqu’un vous le demande, c’est lui qui a lancé l’opération.',
+          'Votre banque, votre opérateur ou une plateforme ne vous demandent jamais ce code, ni votre code secret, par téléphone ou par message.'
+        ]
+      },
+      {
+        title: 'Méfiez-vous aussi du message d’un proche',
+        text: [
+          'Un compte de messagerie volé sert à écrire à tous ses contacts. Le message vient bien du numéro de votre ami, mais ce n’est pas lui qui écrit.',
+          'Deux demandes doivent vous arrêter : de l’argent en urgence, ou un code « envoyé par erreur » sur votre téléphone.'
+        ]
+      },
+      {
+        title: 'Vérifiez par un autre chemin',
+        text: ['Raccrochez, puis reprenez contact par un chemin que vous choisissez vous-même :'],
+        items: [
+          'appel d’un « conseiller » : rappelez le service client par son **numéro officiel**, celui de votre carte ou de l’application ;',
+          'message d’un proche : appelez-le, ou posez-lui une question que lui seul connaît.'
+        ]
+      }
+    ],
+    example: {
+      title: 'Comparez trois demandes reçues dans la journée',
+      figure: {
+        kind: 'table',
+        head: ['Ce que vous recevez', 'Ce qui doit vous arrêter', 'Ce que vous faites'],
+        rows: [
+          ['Un appel de « votre opérateur » qui demande le code reçu par SMS', 'Un code ne se dicte jamais', 'Vous raccrochez et rappelez le numéro officiel'],
+          ['Un message d’une amie : « Envoie-moi 20 000 F, je t’explique après »', 'L’urgence, et l’argent demandé par écrit', 'Vous l’appelez avant tout envoi'],
+          ['Un SMS : « Vous avez gagné, cliquez ici pour recevoir votre lot »', 'Un gain à un jeu auquel vous n’avez pas joué', 'Vous ne cliquez pas et vous supprimez le message']
+        ]
+      },
+      caption: 'Trois canaux, la même méthode',
+      notes: [
+        'Dans les trois cas, on vous presse d’agir **tout de suite**.',
+        'La vérification passe toujours par un chemin que vous choisissez vous-même.',
+        'Aucune de ces réponses ne demande de connaissance technique.'
+      ]
+    },
+    question: {
+      ask: 'L’appelant connaît mon nom et mon numéro de compte : n’est-ce pas la preuve qu’il est sérieux ?',
+      answer: [
+        'Non. Ces informations circulent : une facture, un reçu ou une ancienne fuite de données suffisent à les obtenir.',
+        'Un vrai conseiller acceptera toujours que vous raccrochiez pour rappeler le numéro officiel. Un fraudeur insistera pour que vous restiez en ligne.'
+      ]
+    }
   }
 ];
 
 /** « À la fin de ce module, vous saurez : » — les objectifs de chaque module, en tête de page. */
 export const MODULE_GOALS: Record<string, string[]> = {
-  phishing: ['repérer les signaux d’un message frauduleux ;', 'vérifier l’adresse d’un expéditeur et la destination d’un lien ;', 'réagir, et limiter les dégâts si vous avez déjà répondu.'],
-  reseaux: ['nommer les équipements d’un réseau et leur rôle ;', 'lire une adresse IP et dire par où passe un paquet ;', 'décrire l’ouverture d’une page web, du nom de domaine à la réponse.'],
-  comptes: ['créer des mots de passe longs et uniques ;', 'ajouter un second facteur à vos comptes importants ;', 'surveiller et couper les sessions ouvertes.'],
-  'email-pro': ['écrire un objet qui dit le sujet et l’action attendue ;', 'construire un message autour d’une seule demande ;', 'relire le ton, la pièce jointe et les destinataires avant d’envoyer.'],
-  budget: ['relever vos dépenses et les regrouper par postes ;', 'répartir un revenu entre besoins, envies et épargne ;', 'tenir votre budget avec un point de dix minutes par semaine.'],
-  sauvegarde: ['dire ce qui menace un fichier gardé en un seul endroit ;', 'appliquer la règle 3-2-1 ;', 'vérifier qu’une sauvegarde se restaure vraiment.'],
-  reunion: ['décider si une réunion est le bon format ;', 'préparer un ordre du jour qui cadre ;', 'conclure par des décisions, des responsables et un compte rendu.'],
+  phishing: ['repérer les signaux d’un message frauduleux ;', 'vérifier l’adresse d’un expéditeur et la destination d’un lien ;', 'réagir, et limiter les dégâts si vous avez déjà répondu ;', 'déjouer la même fraude au téléphone et en messagerie.'],
+  reseaux: ['nommer les équipements d’un réseau et leur rôle ;', 'lire une adresse IP et dire par où passe un paquet ;', 'décrire l’ouverture d’une page web, du nom de domaine à la réponse ;', 'trouver une panne en testant du plus proche au plus lointain.'],
+  comptes: ['créer des mots de passe longs et uniques ;', 'ajouter un second facteur à vos comptes importants ;', 'surveiller et couper les sessions ouvertes ;', 'reprendre un compte piraté et le nettoyer.'],
+  'email-pro': ['écrire un objet qui dit le sujet et l’action attendue ;', 'construire un message autour d’une seule demande ;', 'relire le ton, la pièce jointe et les destinataires avant d’envoyer ;', 'répondre dans le fil et relancer sans froisser.'],
+  budget: ['relever vos dépenses et les regrouper par postes ;', 'répartir un revenu entre besoins, envies et épargne ;', 'tenir votre budget avec un point de dix minutes par semaine ;', 'financer un projet avec un montant, une date et une somme par mois.'],
+  sauvegarde: ['dire ce qui menace un fichier gardé en un seul endroit ;', 'appliquer la règle 3-2-1 ;', 'vérifier qu’une sauvegarde se restaure vraiment ;', 'sauvegarder aussi votre téléphone.'],
+  reunion: ['décider si une réunion est le bon format ;', 'préparer un ordre du jour qui cadre ;', 'animer la réunion sans déborder ;', 'conclure par des décisions, des responsables et un compte rendu.'],
   ...SCHOOL_MODULE_GOALS
 };
 

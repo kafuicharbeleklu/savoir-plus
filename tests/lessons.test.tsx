@@ -28,7 +28,8 @@ test('chaque partie de chaque module a sa leçon rédigée', () => {
 test('chaque module a ses objectifs, bien formés', () => {
   for (const id of moduleIds) {
     assert.deepEqual(MODULES_CONTENT[id].goals, MODULE_GOALS[id], `module ${id}`);
-    assert.equal(MODULE_GOALS[id].length, 3, `module ${id}`);
+    // De deux à quatre objectifs : un par section importante, jamais plus de quatre.
+    assert.ok(MODULE_GOALS[id].length >= 2 && MODULE_GOALS[id].length <= 4, `module ${id}`);
     assert.deepEqual(goalsIssues(MODULE_GOALS[id]), [], `module ${id}`);
   }
   const issues = goalsIssues(['Dire ce que cherche le message ;', 'repérer les signaux']);
@@ -108,7 +109,7 @@ test('le module s’ouvre par son en-tête, sa présentation et ses objectifs', 
   const afterHero = html.slice(html.indexOf('</header>'));
   assert.match(afterHero, /Apprenez à reconnaître un e-mail de phishing\./);
   assert.match(afterHero, /À la fin de ce module, vous saurez :/);
-  assert.equal(afterHero.match(/<li>/g)?.length, 3);
+  assert.equal(afterHero.match(/<li>/g)?.length, MODULE_GOALS.phishing.length);
   assert.ok(!afterHero.includes('rd-aside'));
 
   // Un contenu du Studio : pas d'illustration ni d'objectifs, seulement l'en-tête.
@@ -265,22 +266,24 @@ test('le cours se lit section par section ; le quiz et le résultat ont chacun l
 
   const result = (answers: number[]) =>
     renderToStaticMarkup(
-      <AcademyResultView moduleContent={m} progress={{ lessons: [0, 1, 2], answers, submitted: true }} onRetryQuiz={noop} onReviewLessons={noop} onOpenLearning={noop} onExit={noop} totalXP={150} />
+      <AcademyResultView moduleContent={m} progress={{ lessons: m.lessons.map((_, i) => i), answers, submitted: true }} onRetryQuiz={noop} onReviewLessons={noop} onOpenLearning={noop} onExit={noop} totalXP={150} />
     );
 
   const passed = result(m.questions.map((q) => q.correctIndex));
   assert.ok(inCourseFrame(passed), 'même cadre que la page du cours');
-  assert.match(text(passed), /Résultat du quiz .* Module validé .* Correction Question 1 sur 3/);
+  const total = m.questions.length;
+  assert.match(text(passed), new RegExp(`Résultat du quiz .* Module validé .* Correction Question 1 sur ${total}`));
   // Le quiz final est la partie en cours du sommaire.
   assert.match(passed, /<li class="rd-step is-done is-current"><button type="button" aria-current="location">.*?Quiz final/);
 
   // La correction reprend les cartes du quiz : la réponse donnée (✕ si fausse) et la bonne réponse sont nommées.
-  const failed = result([(m.questions[0].correctIndex + 1) % 3, m.questions[1].correctIndex, -1]);
+  // Une réponse fausse, une juste, les autres questions laissées sans réponse.
+  const failed = result([(m.questions[0].correctIndex + 1) % 3, m.questions[1].correctIndex, ...m.questions.slice(2).map(() => -1)]);
   assert.match(text(failed), /Révision conseillée/);
-  assert.equal(failed.match(/rd-card rd-question-card rd-correction/g)?.length, 3);
+  assert.equal(failed.match(/rd-card rd-question-card rd-correction/g)?.length, total);
   assert.equal(failed.match(/rd-option is-static is-wrong/g)?.length, 1);
-  assert.equal(failed.match(/Bonne réponse<\/small>/g)?.length, 2);
-  assert.match(text(failed), /Question 3 sur 3 · sans réponse/);
+  assert.equal(failed.match(/Bonne réponse<\/small>/g)?.length, total - 1);
+  assert.match(text(failed), new RegExp(`Question 3 sur ${total} · sans réponse`));
 });
 
 test('lecture : la taille du texte suit la classe du cours ; un tableau aligne ses nombres', async () => {

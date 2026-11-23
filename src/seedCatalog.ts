@@ -6,7 +6,8 @@ import type { CatalogItem } from './wireframeData';
 import type { ModuleStudyContent } from './content';
 
 const READER = 'Section consultable depuis le lecteur';
-const QUIZ_SECTION = { title: '04 Vérifier mes acquis', subtitle: 'Activité à réaliser dans le lecteur · 3 questions' };
+/** La ligne du quiz, à la suite des sections : son rang et son nombre de questions suivent le module. */
+const quizSection = (rank: number, questions: number) => ({ title: `${String(rank).padStart(2, '0')} Vérifier mes acquis`, subtitle: `Activité à réaliser dans le lecteur · ${questions} questions` });
 const NO_PREREQ = 'Aucun prérequis bloquant.';
 
 /* ============================================================================ modules */
@@ -18,16 +19,17 @@ export const EXTRA_CATALOG_MODULES: CatalogItem[] = [
     title: 'Écrire un e-mail professionnel clair',
     domain: 'Communication',
     level: 'Débutant',
-    duration: '15 min',
+    duration: '20 min',
     author: 'Ama Dossou',
     authorRole: 'Formatrice en communication',
     version: 'Version 1',
     review: 'Pédagogique',
-    summary: 'Un objet précis, une demande lisible, un ton juste : trois réflexes pour être lu et obtenir une réponse.',
+    summary: 'Un objet précis, une demande lisible, un ton juste, un suivi courtois : quatre réflexes pour être lu et obtenir une réponse.',
     objectives: [
       'Rédiger un objet qui annonce la demande.',
       'Structurer un message court autour d’une seule demande.',
-      'Relire le ton, les destinataires et les pièces jointes avant l’envoi.'
+      'Relire le ton, les destinataires et les pièces jointes avant l’envoi.',
+      'Répondre dans le fil et relancer avec courtoisie.'
     ],
     prerequisites: `Savoir envoyer un e-mail. ${NO_PREREQ}`,
     interactive: true,
@@ -37,7 +39,8 @@ export const EXTRA_CATALOG_MODULES: CatalogItem[] = [
       { title: '01 Un objet qui dit tout', subtitle: `${READER} · 4 min` },
       { title: '02 Une demande, une structure', subtitle: `${READER} · 6 min` },
       { title: '03 Relire avant d’envoyer', subtitle: `${READER} · 5 min` },
-      QUIZ_SECTION
+      { title: '04 Répondre et relancer', subtitle: `${READER} · 5 min` },
+      quizSection(5, 4)
     ]
   },
   {
@@ -46,16 +49,17 @@ export const EXTRA_CATALOG_MODULES: CatalogItem[] = [
     title: 'Tenir un budget simple',
     domain: 'Gestion',
     level: 'Débutant',
-    duration: '20 min',
+    duration: '26 min',
     author: 'Edem Lawson',
     authorRole: 'Entrepreneur · Gestion au quotidien',
     version: 'Version 1',
     review: 'Pédagogique',
-    summary: 'Noter, prévoir, ajuster : une méthode en trois temps pour savoir où va l’argent et garder une marge.',
+    summary: 'Noter, prévoir, ajuster, puis épargner pour un projet : une méthode pour savoir où va l’argent et garder une marge.',
     objectives: [
       'Relever ses dépenses pendant un mois sans rien oublier.',
       'Répartir un revenu entre besoins, envies et épargne.',
-      'Faire un point régulier pour corriger le tir.'
+      'Faire un point régulier pour corriger le tir.',
+      'Calculer la somme à mettre de côté chaque mois pour un projet.'
     ],
     prerequisites: `Savoir additionner des montants. ${NO_PREREQ}`,
     interactive: true,
@@ -65,7 +69,8 @@ export const EXTRA_CATALOG_MODULES: CatalogItem[] = [
       { title: '01 Savoir où va l’argent', subtitle: `${READER} · 6 min` },
       { title: '02 Prévoir avant de dépenser', subtitle: `${READER} · 8 min` },
       { title: '03 Tenir dans la durée', subtitle: `${READER} · 6 min` },
-      QUIZ_SECTION
+      { title: '04 Financer un projet', subtitle: `${READER} · 6 min` },
+      quizSection(5, 4)
     ]
   },
   {
@@ -74,7 +79,7 @@ export const EXTRA_CATALOG_MODULES: CatalogItem[] = [
     title: 'Sauvegarder ses fichiers : la règle 3-2-1',
     domain: 'Numérique',
     level: 'Débutant',
-    duration: '15 min',
+    duration: '20 min',
     author: 'Kossi Agbo',
     authorRole: 'Créateur & Mentor · Réseaux & Sécurité',
     version: 'Version 1',
@@ -83,7 +88,8 @@ export const EXTRA_CATALOG_MODULES: CatalogItem[] = [
     objectives: [
       'Expliquer pourquoi une seule copie ne protège pas.',
       'Mettre en place la règle 3-2-1 avec des moyens courants.',
-      'Vérifier qu’une sauvegarde peut vraiment être restaurée.'
+      'Vérifier qu’une sauvegarde peut vraiment être restaurée.',
+      'Régler et contrôler la sauvegarde de son téléphone.'
     ],
     prerequisites: `Savoir copier un fichier. ${NO_PREREQ}`,
     interactive: true,
@@ -93,7 +99,8 @@ export const EXTRA_CATALOG_MODULES: CatalogItem[] = [
       { title: '01 Une copie ne suffit pas', subtitle: `${READER} · 4 min` },
       { title: '02 Appliquer la règle 3-2-1', subtitle: `${READER} · 6 min` },
       { title: '03 Vérifier la restauration', subtitle: `${READER} · 5 min` },
-      QUIZ_SECTION
+      { title: '04 Sauvegarder son téléphone', subtitle: `${READER} · 5 min` },
+      quizSection(5, 4)
     ]
   },
   {
@@ -102,15 +109,16 @@ export const EXTRA_CATALOG_MODULES: CatalogItem[] = [
     title: 'Préparer une réunion utile',
     domain: 'Communication',
     level: 'Intermédiaire',
-    duration: '18 min',
+    duration: '24 min',
     author: 'Inès Adjovi',
     authorRole: 'Conceptrice pédagogique · Gestion de projet',
     version: 'Version 1',
     review: 'Pédagogique',
-    summary: 'Décider si la réunion est nécessaire, la cadrer avec un ordre du jour, repartir avec des décisions écrites.',
+    summary: 'Décider si la réunion est nécessaire, la cadrer avec un ordre du jour, l’animer sans déborder, repartir avec des décisions écrites.',
     objectives: [
       'Choisir entre une réunion, un message ou un document partagé.',
       'Rédiger un ordre du jour avec un objectif par point.',
+      'Tenir le temps et faire circuler la parole pendant la réunion.',
       'Conclure par des décisions, des responsables et des échéances.'
     ],
     prerequisites: 'Avoir déjà participé à une réunion de travail.',
@@ -120,8 +128,9 @@ export const EXTRA_CATALOG_MODULES: CatalogItem[] = [
     sections: [
       { title: '01 Faut-il vraiment une réunion ?', subtitle: `${READER} · 5 min` },
       { title: '02 Un ordre du jour qui cadre', subtitle: `${READER} · 7 min` },
-      { title: '03 Décisions et compte rendu', subtitle: `${READER} · 6 min` },
-      QUIZ_SECTION
+      { title: '03 Animer sans déborder', subtitle: `${READER} · 6 min` },
+      { title: '04 Décisions et compte rendu', subtitle: `${READER} · 6 min` },
+      quizSection(5, 4)
     ]
   }
 ];
@@ -171,6 +180,19 @@ export const EXTRA_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
           'En copie : seulement les personnes qui doivent être informées.'
         ],
         tip: 'Ajoutez les destinataires en dernier : un message inachevé ne partira jamais par erreur.'
+      },
+      {
+        title: 'Répondre et relancer',
+        label: 'Garder le fil',
+        minutes: '5 min',
+        intro: 'Un échange par e-mail ne s’arrête pas à l’envoi. Bien répondre et relancer sans froisser font avancer un dossier.',
+        body: 'Répondez dans la journée, ou dites quand vous répondrez. Placez la réponse en tête du message et gardez l’objet d’origine pour conserver le fil. Sans réponse après quelques jours, relancez en répondant à votre propre message, avec la demande rappelée en une phrase.',
+        points: [
+          'Une réponse rapide, même brève : « Bien reçu, je reviens vers vous jeudi. »',
+          'La réponse en tête du message, dans le même fil.',
+          'Une relance courtoise après quelques jours, avec la demande rappelée en une phrase.'
+        ],
+        tip: 'Relancez en répondant à votre propre message : votre destinataire retrouve la demande sans chercher.'
       }
     ],
     questions: [
@@ -195,6 +217,12 @@ export const EXTRA_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
         ],
         correctIndex: 0,
         explanation: 'Sinon, vous encombrez des boîtes de réception et diluez l’information utile.'
+      },
+      {
+        text: 'Votre message est resté sans réponse depuis cinq jours. Comment relancer ?',
+        answers: ['En répondant à votre propre message, avec la demande rappelée en une phrase.', 'En renvoyant le même message, avec « URGENT » dans l’objet.', 'En écrivant au responsable de votre correspondant.'],
+        correctIndex: 0,
+        explanation: 'La relance dans le même fil garde la demande d’origine sous les yeux du destinataire, sans reproche.'
       }
     ]
   },
@@ -242,6 +270,19 @@ export const EXTRA_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
           'On ajuste la prévision plutôt que d’abandonner le budget.'
         ],
         tip: 'Fixez-vous un seul objectif par mois, par exemple réduire un poste précis : il sera tenu.'
+      },
+      {
+        title: 'Financer un projet',
+        label: 'Un montant, une date',
+        minutes: '6 min',
+        intro: 'Épargner « quand on pourra » ne mène nulle part. Un projet se finance avec un montant, une date et une somme mise de côté chaque mois.',
+        body: 'Chiffrez le projet, fixez la date, puis divisez : vous obtenez la somme à mettre de côté chaque mois. Rangez cet argent à part, dans une tirelire, un compte ou un portefeuille mobile réservé à cet usage. Si la somme est trop élevée, repoussez la date plutôt que d’abandonner le projet.',
+        points: [
+          'Un projet se chiffre : un montant et une date.',
+          'Le montant divisé par le nombre de mois donne l’effort mensuel.',
+          'L’argent du projet se range à part de l’argent du mois.'
+        ],
+        tip: 'Donnez un nom à votre épargne, « machine à coudre » par exemple : on puise moins facilement dans un projet que dans une réserve.'
       }
     ],
     questions: [
@@ -266,6 +307,12 @@ export const EXTRA_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
         ],
         correctIndex: 2,
         explanation: 'L’écart est une information : soit la prévision était irréaliste, soit le poste doit baisser.'
+      },
+      {
+        text: 'Un projet coûte 60 000 F et vous voulez le réaliser dans 6 mois. Combien mettre de côté chaque mois ?',
+        answers: ['6 000 F', '10 000 F', '12 000 F'],
+        correctIndex: 1,
+        explanation: 'Le montant divisé par le nombre de mois : 60 000 F ÷ 6 = 10 000 F par mois.'
       }
     ]
   },
@@ -313,6 +360,19 @@ export const EXTRA_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
           'Protéger l’accès à la sauvegarde comme un compte sensible.'
         ],
         tip: 'Débranchez le disque externe après la sauvegarde : un rançongiciel ne chiffre pas ce qui n’est pas connecté.'
+      },
+      {
+        title: 'Sauvegarder son téléphone',
+        label: 'Photos, contacts, messages',
+        minutes: '5 min',
+        intro: 'Le téléphone contient souvent ce que l’on a de plus précieux, et c’est l’appareil qui se perd, se casse ou se vole le plus facilement.',
+        body: 'Activez la sauvegarde automatique de votre téléphone vers votre compte en ligne, de préférence en Wi-Fi. Vérifiez sa date de temps en temps. Copiez aussi vos photos sur un ordinateur ou un disque : vous aurez ainsi un second support, comme le veut la règle 3-2-1.',
+        points: [
+          'La sauvegarde automatique du téléphone couvre les contacts, les photos et les messages.',
+          'Elle se règle une fois, puis se vérifie : regardez sa date.',
+          'Une copie des photos sur un ordinateur ou un disque donne un second support.'
+        ],
+        tip: 'Avant de confier votre téléphone à un réparateur, vérifiez que la sauvegarde date du jour.'
       }
     ],
     questions: [
@@ -337,6 +397,12 @@ export const EXTRA_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
         answers: ['En restaurant un fichier et en l’ouvrant.', 'En vérifiant que le disque s’allume.', 'En regardant sa taille.'],
         correctIndex: 0,
         explanation: 'Seule une restauration réussie prouve que la copie est complète et lisible.'
+      },
+      {
+        text: 'Votre téléphone se sauvegarde automatiquement en ligne. Que faire de plus pour vos photos ?',
+        answers: ['Rien : une copie en ligne suffit toujours.', 'Les envoyer à un ami par message.', 'Les copier aussi sur un ordinateur ou un disque, de temps en temps.'],
+        correctIndex: 2,
+        explanation: 'La sauvegarde en ligne est une seule copie. Un second support respecte la règle 3-2-1.'
       }
     ]
   },
@@ -371,6 +437,19 @@ export const EXTRA_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
           'Le point principal en premier, les sujets divers à la fin.'
         ],
         tip: 'Prévoyez quarante-cinq minutes plutôt qu’une heure : la contrainte aide à conclure.'
+      },
+      {
+        title: 'Animer sans déborder',
+        label: 'Tenir le temps et la parole',
+        minutes: '6 min',
+        intro: 'Un bon ordre du jour ne suffit pas : pendant la réunion, quelqu’un doit tenir le cap, le temps et la parole.',
+        body: 'Ouvrez en rappelant l’objectif et l’heure de fin. Traitez un point à la fois, dans le temps prévu, et donnez la parole à ceux qui ne la prennent pas. Chaque point se termine par une phrase de conclusion, dite à voix haute.',
+        points: [
+          'On commence à l’heure, par l’objectif et l’heure de fin.',
+          'Chaque point a une durée : on l’annonce et on la tient.',
+          'Chaque point se conclut à voix haute avant de passer au suivant.'
+        ],
+        tip: 'Annoncez l’heure de fin en ouvrant la réunion : tout le monde vous aidera à la tenir.'
       },
       {
         title: 'Décisions et compte rendu',
@@ -412,6 +491,12 @@ export const EXTRA_MODULES_CONTENT: Record<string, ModuleStudyContent> = {
         answers: ['Le temps passé à en discuter.', 'L’avis de chaque participant.', 'Qui s’en charge et pour quelle date.'],
         correctIndex: 2,
         explanation: 'Sans responsable ni échéance, une décision reste une intention.'
+      },
+      {
+        text: 'La discussion sur le premier point dépasse le temps prévu. Que fait l’animateur ?',
+        answers: ['Il annonce le temps restant, conclut le point à voix haute et passe au suivant.', 'Il laisse continuer : le sujet est intéressant.', 'Il supprime les points suivants de l’ordre du jour.'],
+        correctIndex: 0,
+        explanation: 'Tenir la durée de chaque point protège les sujets placés plus loin ; la conclusion à voix haute fixe ce qui est décidé.'
       }
     ]
   }
@@ -586,7 +671,7 @@ export const EXTRA_CATALOG_PATHS: CatalogItem[] = [
     title: 'Autonomie numérique',
     domain: 'Numérique',
     level: 'Débutant',
-    duration: '42 min',
+    duration: '58 min',
     author: 'Kossi Agbo',
     authorRole: 'Créateur & Mentor · Réseaux & Sécurité',
     version: 'Version 1',
@@ -601,9 +686,9 @@ export const EXTRA_CATALOG_PATHS: CatalogItem[] = [
     ],
     prerequisites: 'Utilisation courante d’un téléphone ou d’un ordinateur. L’ordre proposé guide la progression ; il ne crée pas de verrouillage.',
     pathModules: [
-      { id: 'phishing', title: '01 Ne tombez plus dans le piège', version: 'v2', note: '12 min · Initiation', status: 'En cours' },
-      { id: 'comptes', title: '02 Protéger ses comptes', version: 'v1', note: '25 min · Débutant', status: 'À commencer' },
-      { id: 'sauvegarde', title: '03 Sauvegarder ses fichiers : la règle 3-2-1', version: 'v1', note: '15 min · Débutant', status: 'À commencer' }
+      { id: 'phishing', title: '01 Ne tombez plus dans le piège', version: 'v2', note: '16 min · Initiation', status: 'En cours' },
+      { id: 'comptes', title: '02 Protéger ses comptes', version: 'v1', note: '32 min · Débutant', status: 'À commencer' },
+      { id: 'sauvegarde', title: '03 Sauvegarder ses fichiers : la règle 3-2-1', version: 'v1', note: '20 min · Débutant', status: 'À commencer' }
     ]
   },
   {
@@ -612,7 +697,7 @@ export const EXTRA_CATALOG_PATHS: CatalogItem[] = [
     title: 'Communication professionnelle',
     domain: 'Communication',
     level: 'Intermédiaire',
-    duration: '33 min',
+    duration: '44 min',
     author: 'Ama Dossou',
     authorRole: 'Formatrice en communication',
     version: 'Version 1',
@@ -626,8 +711,8 @@ export const EXTRA_CATALOG_PATHS: CatalogItem[] = [
     ],
     prerequisites: 'Aucun prérequis bloquant. L’ordre proposé guide la progression ; il ne crée pas de verrouillage.',
     pathModules: [
-      { id: 'email-pro', title: '01 Écrire un e-mail professionnel clair', version: 'v1', note: '15 min · Débutant', status: 'À commencer' },
-      { id: 'reunion', title: '02 Préparer une réunion utile', version: 'v1', note: '18 min · Intermédiaire', status: 'À commencer' }
+      { id: 'email-pro', title: '01 Écrire un e-mail professionnel clair', version: 'v1', note: '20 min · Débutant', status: 'À commencer' },
+      { id: 'reunion', title: '02 Préparer une réunion utile', version: 'v1', note: '24 min · Intermédiaire', status: 'À commencer' }
     ]
   }
 ];

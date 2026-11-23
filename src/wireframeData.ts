@@ -117,7 +117,7 @@ const RAW_CATALOG_ITEMS: CatalogItem[] = [
     title: 'Ne tombez plus dans le piège',
     domain: 'Numérique',
     level: 'Initiation',
-    duration: '12 min',
+    duration: '16 min',
     author: 'Kossi Agbo',
     authorRole: 'Apprendre. Puis transmettre.',
     version: 'Version 2',
@@ -126,7 +126,8 @@ const RAW_CATALOG_ITEMS: CatalogItem[] = [
     objectives: [
       'Repérer les signaux d’urgence ou de menace dans un message.',
       'Vérifier l’adresse de l’expéditeur et la destination d’un lien.',
-      'Réagir calmement et signaler une tentative suspecte.'
+      'Réagir calmement et signaler une tentative suspecte.',
+      'Reconnaître la même fraude au téléphone, par SMS ou en messagerie.'
     ],
     prerequisites: 'Savoir utiliser un ordinateur, un smartphone ou une messagerie. Aucun prérequis bloquant.',
     interactive: true,
@@ -136,7 +137,8 @@ const RAW_CATALOG_ITEMS: CatalogItem[] = [
       { title: '01 Reconnaître les signaux', subtitle: 'Section consultable depuis le lecteur · 3 min' },
       { title: '02 Vérifier la source', subtitle: 'Section consultable depuis le lecteur · 4 min' },
       { title: '03 Adopter les bons réflexes', subtitle: 'Section consultable depuis le lecteur · 3 min' },
-      { title: '04 Vérifier mes acquis', subtitle: 'Activité à réaliser dans le lecteur · 3 questions' }
+      { title: '04 Déjouer l’appel et la messagerie', subtitle: 'Section consultable depuis le lecteur · 4 min' },
+      { title: '05 Vérifier mes acquis', subtitle: 'Activité à réaliser dans le lecteur · 4 questions' }
     ]
   },
   {
@@ -145,7 +147,7 @@ const RAW_CATALOG_ITEMS: CatalogItem[] = [
     title: 'Comprendre les réseaux',
     domain: 'Numérique',
     level: 'Intermédiaire',
-    duration: '45 min',
+    duration: '65 min',
     author: 'Kossi Agbo',
     authorRole: 'Créateur & Mentor · Réseaux & Sécurité',
     version: 'Version 2',
@@ -157,14 +159,17 @@ const RAW_CATALOG_ITEMS: CatalogItem[] = [
     objectives: [
       'Identifier les équipements courants d’un réseau local.',
       'Expliquer le rôle d’une adresse IP et d’un routeur.',
-      'Décrire un échange simple entre deux appareils.'
+      'Décrire un échange simple entre deux appareils.',
+      'Trouver une panne simple en testant étape par étape.'
     ],
     prerequisites: 'Savoir utiliser un ordinateur et un navigateur. Pas de prérequis bloquant défini.',
     sections: [
       { title: '01 Les équipements réseau', subtitle: 'Section consultable · 15 min', status: 'Terminé' },
       { title: '02 Les adresses IP et la passerelle', subtitle: 'Dernière section sauvegardée · 15 min', status: 'En cours' },
       { title: '03 Décrire un échange simple', subtitle: 'Section consultable · 15 min', status: 'À commencer' },
-      { title: '04 Vérifier ses acquis', subtitle: 'Quiz de 3 questions · Sans limite de temps', status: 'À commencer' }
+      { title: '04 Recevoir une adresse automatiquement', subtitle: 'Section consultable · 10 min', status: 'À commencer' },
+      { title: '05 Trouver une panne pas à pas', subtitle: 'Section consultable · 10 min', status: 'À commencer' },
+      { title: '06 Vérifier ses acquis', subtitle: 'Quiz de 5 questions · Sans limite de temps', status: 'À commencer' }
     ]
   },
   {
@@ -173,7 +178,7 @@ const RAW_CATALOG_ITEMS: CatalogItem[] = [
     title: 'Protéger ses comptes',
     domain: 'Numérique',
     level: 'Débutant',
-    duration: '25 min',
+    duration: '32 min',
     author: 'Kossi Agbo',
     authorRole: 'Curieuse, chaque jour.',
     version: 'Version 1',
@@ -185,14 +190,16 @@ const RAW_CATALOG_ITEMS: CatalogItem[] = [
     objectives: [
       'Choisir un mot de passe unique par service important.',
       'Activer un second facteur de vérification.',
-      'Révoquer une session ouverte sur un appareil inconnu.'
+      'Révoquer une session ouverte sur un appareil inconnu.',
+      'Reprendre un compte piraté et vérifier ce que l’intrus a modifié.'
     ],
     prerequisites: 'Aucun prérequis obligatoire.',
     sections: [
       { title: '01 Mots de passe robustes', subtitle: 'Section consultable · 8 min', status: 'À commencer' },
       { title: '02 Double authentification (2FA)', subtitle: 'Section consultable · 10 min', status: 'À commencer' },
       { title: '03 Sessions actives et révocation', subtitle: 'Section consultable · 7 min', status: 'À commencer' },
-      { title: '04 Vérifier ses acquis', subtitle: 'Quiz de 3 questions · Sans limite de temps', status: 'À commencer' }
+      { title: '04 Reprendre un compte piraté', subtitle: 'Section consultable · 7 min', status: 'À commencer' },
+      { title: '05 Vérifier ses acquis', subtitle: 'Quiz de 4 questions · Sans limite de temps', status: 'À commencer' }
     ]
   },
   {
@@ -269,9 +276,9 @@ const RAW_CATALOG_ITEMS: CatalogItem[] = [
     ],
     prerequisites: 'Utilisation courante d’un ordinateur conseillée. L’ordre proposé guide la progression ; il ne crée pas de verrouillage.',
     pathModules: [
-      { id: 'phishing', title: '01 Ne tombez plus dans le piège', version: 'v2', note: '12 min · Initiation', status: 'Terminé' },
-      { id: 'reseaux', title: '02 Comprendre les réseaux', version: 'v2', note: '45 min · Intermédiaire', status: 'En cours' },
-      { id: 'comptes', title: '03 Protéger ses comptes', version: 'v1', note: '25 min · Débutant', status: 'À commencer' }
+      { id: 'phishing', title: '01 Ne tombez plus dans le piège', version: 'v2', note: '16 min · Initiation', status: 'Terminé' },
+      { id: 'reseaux', title: '02 Comprendre les réseaux', version: 'v2', note: '65 min · Intermédiaire', status: 'En cours' },
+      { id: 'comptes', title: '03 Protéger ses comptes', version: 'v1', note: '32 min · Débutant', status: 'À commencer' }
     ]
   },
   {
@@ -294,8 +301,8 @@ const RAW_CATALOG_ITEMS: CatalogItem[] = [
     ],
     prerequisites: 'Connaissances de base en environnement bureautique et réseau.',
     pathModules: [
-      { id: 'reseaux', title: '01 Comprendre les réseaux', version: 'v2', note: '45 min · Intermédiaire', status: 'En cours' },
-      { id: 'comptes', title: '02 Protéger ses comptes', version: 'v1', note: '25 min · Débutant', status: 'À commencer' }
+      { id: 'reseaux', title: '01 Comprendre les réseaux', version: 'v2', note: '65 min · Intermédiaire', status: 'En cours' },
+      { id: 'comptes', title: '02 Protéger ses comptes', version: 'v1', note: '32 min · Débutant', status: 'À commencer' }
     ]
   },
   ...EXTRA_CATALOG_MODULES,
@@ -875,7 +882,7 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       pubStatus: 'Publié',
       reviewStatus: 'Validée',
       audience: 'Membres autorisés',
-      duration: '45 min',
+      duration: '65 min',
       sources: 'Support original de Kossi Agbo',
       updatedAt: 'Publié · v2',
       sections: [
@@ -1159,7 +1166,7 @@ export const initialExtendedState = (): ExtendedDemoState => ({
       comptes: { lessons: [], answers: [], submitted: false }
     },
     kossi: {
-      reseaux: { lessons: [0, 1, 2], answers: [0, 1, 2], submitted: true },
+      reseaux: { lessons: [0, 1, 2, 3, 4], answers: [0, 1, 2, 0, 1], submitted: true },
       comptes: { lessons: [], answers: [], submitted: false }
     },
     nadege: {

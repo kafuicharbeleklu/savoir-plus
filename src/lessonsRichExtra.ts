@@ -155,6 +155,63 @@ const EMAIL_PRO: LessonRich[] = [
         'Corrigez vite et simplement. Renvoyez un court message dans le même fil : « Avec la pièce jointe, cette fois », ou la correction en une phrase. Inutile de vous excuser longuement : une rectification rapide inspire plus confiance qu’un silence.'
       ]
     }
+  },
+  {
+    art: 'calendar',
+    scene:
+      'Lundi, Kossi demande un devis à un fournisseur. Jeudi, toujours rien. A-t-il été oublié ? Doit-il attendre encore, appeler, ou écrire de nouveau au risque de paraître insistant ?',
+    sections: [
+      {
+        title: 'Répondez vite, même brièvement',
+        text: [
+          'Répondez **dans la journée**. Si la réponse complète demande du temps, écrivez-le : « Bien reçu, je reviens vers vous jeudi. »',
+          'Votre correspondant sait alors que son message est arrivé, et quand il aura sa réponse. Il n’aura pas à relancer.'
+        ]
+      },
+      {
+        title: 'Répondez dans le fil',
+        text: [
+          'Utilisez « Répondre » plutôt qu’un nouveau message, et gardez l’**objet d’origine** : tout l’échange reste au même endroit.',
+          'Placez votre réponse en tête, avant le message reçu. S’il y avait plusieurs questions, reprenez-les une à une, dans l’ordre.'
+        ]
+      },
+      {
+        title: 'Relancez sans froisser',
+        text: ['Sans réponse après trois à cinq jours ouvrés, relancez. Répondez à **votre propre message** : votre demande d’origine reste visible juste en dessous.'],
+        items: ['rappelez la demande en une phrase ;', 'donnez la date qui compte pour vous ;', 'proposez un autre moyen de répondre, un appel par exemple.'],
+        after: 'Aucun reproche : votre correspondant a peut-être simplement été débordé.'
+      }
+    ],
+    example: {
+      title: 'Lisez la relance de Kossi',
+      figure: {
+        kind: 'message',
+        channel: 'email',
+        from: 'Kossi Agbo',
+        details: [{ label: 'Objet', value: 'RE: Demande de devis – 20 chaises pour la salle de formation' }],
+        body: [
+          'Bonjour Madame Lawson,',
+          'Je reviens vers vous au sujet du **devis demandé lundi** pour vingt chaises.',
+          'Nous devons passer commande **avant le 15**. Pouvez-vous me l’envoyer d’ici mercredi ?',
+          'Je reste joignable par téléphone si c’est plus simple pour vous.',
+          'Bien cordialement,',
+          'Kossi Agbo'
+        ]
+      },
+      caption: 'Une relance : quatre phrases, aucun reproche',
+      notes: [
+        'L’objet garde le fil : « RE », suivi de l’objet d’origine.',
+        'La demande est rappelée en une phrase, avec la **date qui compte**.',
+        'La dernière phrase propose un autre moyen de répondre.'
+      ]
+    },
+    question: {
+      ask: 'Combien de fois peut-on relancer ?',
+      answer: [
+        'Deux relances écrites suffisent, espacées de quelques jours. Au-delà, changez de moyen : un appel, ou une autre personne du même service.',
+        'Si l’échéance est proche, dites-le dès la première relance au lieu d’attendre.'
+      ]
+    }
   }
 ];
 
@@ -308,6 +365,66 @@ const BUDGET: LessonRich[] = [
       ask: 'J’ai dépassé mon budget dès la deuxième semaine : est-ce raté ?',
       answer: [
         'Non. Le premier budget est toujours faux, parce qu’il repose sur des estimations. C’est le point de chaque semaine qui le rend juste. Corrigez la prévision, et continuez.'
+      ]
+    }
+  },
+  {
+    art: 'route',
+    scene:
+      'Afi veut acheter une machine à coudre pour lancer son atelier. Elle coûte 90 000 F. Depuis un an, elle se promet d’épargner « ce qui restera à la fin du mois ». Il ne reste jamais rien.',
+    sections: [
+      {
+        title: 'Chiffrez le projet et fixez une date',
+        text: [
+          'Un projet flou ne se finance pas. Écrivez **le montant** et **la date** : « 90 000 F dans six mois ».',
+          'Divisez le montant par le nombre de mois : 90 000 F en six mois, c’est **15 000 F par mois**. Vous savez maintenant ce que le projet vous demande.'
+        ]
+      },
+      {
+        title: 'Ajustez la date, pas le projet',
+        text: [
+          'Si la somme mensuelle dépasse ce que votre budget permet, **allongez le délai**. En neuf mois, le même projet demande 10 000 F par mois.',
+          'Un projet repoussé de trois mois reste un projet. Un projet abandonné ne se réalise jamais.'
+        ]
+      },
+      {
+        title: 'Rangez cet argent à part',
+        text: [
+          'L’argent du projet ne doit pas se mélanger à celui du mois. Utilisez une tirelire, un compte d’épargne ou un portefeuille mobile réservé à cet usage.',
+          'Mettez la somme de côté **dès la réception du revenu**, comme pour l’épargne de précaution.'
+        ]
+      },
+      {
+        title: 'Épargnez à plusieurs avec prudence',
+        text: [
+          'Dans une **tontine**, chaque membre verse la même somme à date fixe, et chacun reçoit la cagnotte à son tour. Le groupe aide à tenir l’engagement.',
+          'Choisissez des personnes de confiance, et écrivez les règles : le montant, les dates et l’ordre des tours.'
+        ]
+      }
+    ],
+    example: {
+      title: 'Calculez l’effort de trois projets',
+      figure: {
+        kind: 'table',
+        head: ['Projet', 'Montant', 'Délai', 'Par mois'],
+        rows: [
+          ['Machine à coudre', '90 000 F', '6 mois', '**15 000 F**'],
+          ['Téléphone', '60 000 F', '4 mois', '**15 000 F**'],
+          ['Fournitures de la rentrée', '45 000 F', '9 mois', '**5 000 F**']
+        ]
+      },
+      caption: 'Le montant divisé par le délai',
+      notes: [
+        'Le téléphone coûte moins cher que la machine, mais demande **le même effort** : son délai est plus court.',
+        'Les fournitures, préparées neuf mois à l’avance, ne pèsent que 5 000 F par mois.',
+        'Mener les trois projets ensemble demanderait 35 000 F par mois : il faut choisir un ordre.'
+      ]
+    },
+    question: {
+      ask: 'Faut-il épargner pour un projet avant d’avoir une réserve d’imprévus ?',
+      answer: [
+        'Commencez par une petite réserve d’imprévus, même modeste. Sans elle, le premier souci viderait l’argent du projet.',
+        'Vous pouvez ensuite mener les deux de front : une petite part pour la réserve, le reste pour le projet.'
       ]
     }
   }
@@ -467,6 +584,64 @@ const SAUVEGARDE: LessonRich[] = [
         'Parce qu’un automatisme s’arrête sans prévenir : le disque est plein, un réglage a changé, le service a expiré. Le voyant qui clignote ne dit pas ce qui a été copié. Seule une restauration le dit.'
       ]
     }
+  },
+  {
+    art: 'phone',
+    scene:
+      'Le téléphone d’Essi tombe dans l’eau un samedi. Le réparateur ne peut rien faire. Trois ans de photos, tous ses contacts et les messages de son groupe d’étude étaient sur cet appareil, et nulle part ailleurs.',
+    sections: [
+      {
+        title: 'Activez la sauvegarde automatique',
+        text: [
+          'Votre téléphone sait se sauvegarder seul vers votre **compte en ligne** : un compte Google sur Android, iCloud sur iPhone. Le réglage se trouve dans les paramètres, à la rubrique « Sauvegarde ».',
+          'Réglez-la pour qu’elle se lance en **Wi-Fi** : elle ne consommera pas votre forfait.'
+        ]
+      },
+      {
+        title: 'Sachez ce qui est sauvegardé',
+        text: ['Vérifiez que la sauvegarde couvre bien ce qui compte pour vous :'],
+        items: ['les **contacts** ;', 'les **photos et vidéos** ;', 'les **messages**, y compris ceux de votre messagerie instantanée, qui a souvent son propre réglage.']
+      },
+      {
+        title: 'Ajoutez un second support',
+        text: [
+          'Une sauvegarde en ligne est **une** copie. Pour respecter la règle 3-2-1, copiez de temps en temps vos photos sur un ordinateur ou un disque externe.',
+          'Un câble suffit : l’ordinateur affiche le téléphone, et vous copiez le dossier des photos.'
+        ]
+      },
+      {
+        title: 'Contrôlez la date',
+        text: [
+          'Une sauvegarde automatique peut s’arrêter sans prévenir : espace en ligne plein, Wi-Fi absent, compte déconnecté.',
+          'Une fois par mois, ouvrez le réglage et lisez la **date de la dernière sauvegarde**.'
+        ]
+      }
+    ],
+    example: {
+      title: 'Comparez le téléphone d’Essi, avant et après',
+      figure: {
+        kind: 'table',
+        head: ['Ce qui compte', 'Avant', 'Après'],
+        rows: [
+          ['Contacts', 'Dans le téléphone seulement', 'Sauvegardés sur son compte en ligne'],
+          ['Photos', 'Dans le téléphone seulement', 'Sur son compte en ligne **et** sur un disque'],
+          ['Messages du groupe d’étude', 'Dans le téléphone seulement', 'Sauvegardés chaque nuit, en Wi-Fi']
+        ]
+      },
+      caption: 'Le même téléphone, une fois la sauvegarde réglée',
+      notes: [
+        'Avant, **un seul accident** suffisait à tout perdre.',
+        'Les photos ont maintenant deux copies, sur deux supports.',
+        'Rien de tout cela ne demande un geste quotidien : le réglage se fait une fois.'
+      ]
+    },
+    question: {
+      ask: 'Mon espace en ligne gratuit est plein : que faire ?',
+      answer: [
+        'Faites de la place. Copiez vos anciennes photos sur un ordinateur ou un disque, vérifiez qu’elles s’ouvrent, puis retirez-les de l’espace en ligne.',
+        'Gardez toujours deux copies de ce qui compte. Ne supprimez jamais la seule copie d’une photo.'
+      ]
+    }
   }
 ];
 
@@ -572,6 +747,67 @@ const REUNION: LessonRich[] = [
       ask: 'Et si un sujet imprévu surgit pendant la réunion ?',
       answer: [
         'Notez-le, et décidez tout de suite de son sort : il attend les points divers, ou il fera l’objet d’un échange à part. Le traiter sur-le-champ, c’est sacrifier un point que chacun avait préparé.'
+      ]
+    }
+  },
+  {
+    art: 'route',
+    scene:
+      'La réunion de l’association doit durer quarante-cinq minutes. Au bout de vingt, on discute encore du premier point. Deux personnes parlent, six écoutent. Le sujet le plus attendu ne sera pas traité.',
+    sections: [
+      {
+        title: 'Ouvrez en deux phrases',
+        text: [
+          'Commencez **à l’heure**, même si tout le monde n’est pas arrivé. Attendre les retardataires punit ceux qui sont ponctuels.',
+          'Rappelez l’objectif et l’heure de fin : « Nous devons choisir la date de la fête. Nous terminons à 18 h 45. »'
+        ]
+      },
+      {
+        title: 'Tenez le temps, point par point',
+        text: [
+          'Chaque point a une durée dans l’ordre du jour. Annoncez-la, et prévenez quand il reste deux minutes.',
+          'Si la discussion n’aboutit pas dans le temps prévu, dites-le et proposez une suite : un échange à part, ou un point à la prochaine réunion.'
+        ]
+      },
+      {
+        title: 'Faites circuler la parole',
+        text: [
+          'Ceux qui parlent le plus n’ont pas toujours le plus à dire. Demandez l’avis de ceux qui se taisent : « Afi, qu’en penses-tu ? »',
+          'Pour une question importante, faites un **tour de table** : chacun répond en une phrase, sans être interrompu.'
+        ]
+      },
+      {
+        title: 'Concluez chaque point à voix haute',
+        text: [
+          'Avant de passer au point suivant, dites ce qui est décidé : « Nous retenons le 14 décembre. Kodjo réserve la salle. »',
+          'Si rien n’est décidé, dites-le aussi, avec la suite prévue. Un point resté flou reviendra à la prochaine réunion.'
+        ]
+      }
+    ],
+    example: {
+      title: 'Comparez deux façons de mener la même réunion',
+      figure: {
+        kind: 'table',
+        head: ['Moment', 'Réunion qui déborde', 'Réunion animée'],
+        rows: [
+          ['Ouverture', 'On attend dix minutes les retardataires', 'On commence à l’heure, objectif rappelé'],
+          ['Durée d’un point', 'Personne ne regarde l’heure', 'La durée est annoncée, puis tenue'],
+          ['La parole', 'Deux personnes parlent', 'Un tour de table, une phrase chacun'],
+          ['Fin du point', 'On passe au suivant sans conclure', '**La décision est dite à voix haute**']
+        ]
+      },
+      caption: 'Le même ordre du jour, deux réunions',
+      notes: [
+        'Aucune de ces différences ne demande plus de temps : elles en font gagner.',
+        'Le tour de table donne la parole à ceux qui ne la prennent pas.',
+        'La conclusion à voix haute prépare le compte rendu : il n’y a plus qu’à l’écrire.'
+      ]
+    },
+    question: {
+      ask: 'Je ne suis pas le chef : puis-je quand même tenir le temps ?',
+      answer: [
+        'Oui. Animer est un rôle, pas un grade. Proposez-le en début de réunion : « Je surveille l’heure, si vous voulez bien. »',
+        'Le responsable peut alors participer au débat, et le groupe sait vers qui se tourner quand la discussion s’égare.'
       ]
     }
   },
