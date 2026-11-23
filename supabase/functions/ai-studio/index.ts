@@ -29,7 +29,9 @@ const ALLOWED_ORIGINS = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
 const SITE_ORIGIN = 'https://savoir-plus.pages.dev';
 const PREVIEW_ORIGIN = /^https:\/\/[a-z0-9-]+\.savoir-plus\.pages\.dev$/;
 
-const TEXT_MODELS = ['gemini-4-hydrogen', 'gemini-3.5-flash'];
+// Dans l'ordre d'essai. Le 23 novembre 2026, « gemini-3.5-flash » a répondu plus souvent et plus vite que
+// « gemini-4-hydrogen », qui expirait une fois sur deux : il passe en premier, l'autre sert de repli.
+const TEXT_MODELS = ['gemini-3.5-flash', 'gemini-4-hydrogen'];
 const IMAGE_MODEL = '@cf/black-forest-labs/flux-2-klein-9b';
 const BUCKET = 'ai-illustrations';
 const MAX_SOURCE_CHARS = 6000;
@@ -113,38 +115,59 @@ function clampInt(value: unknown, min: number, max: number, fallback: number): n
 // ---------------------------------------------------------------------------------------------
 // Appel du modèle de texte : le premier modèle disponible répond, en JSON conforme au schéma.
 // ---------------------------------------------------------------------------------------------
+/** Le quota du service de texte est atteint : inutile d'insister, l'encadreur relancera dans une minute. */
+class QuotaError extends Error {}
+
+// Modèles qui ont refusé le réglage de réflexion : on ne le leur renvoie plus (mémoire de l'instance).
+const noThinkingLevel = new Set<string>();
+
 async function askGemini<T>(system: string, userText: string, schema: unknown, budgetMs: number, sanitize: (raw: unknown) => T): Promise<{ model: string; data: T }> {
-  // Un budget de temps pour l'ensemble. Le premier modèle a une part limitée : s'il traîne ou échoue, le
-  // suivant garde l'essentiel du délai. Une surcharge passagère du dernier modèle vaut un second essai.
+  // Un budget de temps pour l'ensemble, en trois essais : le premier modèle, le repli, puis de nouveau le
+  // premier. Mesuré le 23 novembre 2026 : une réponse arrive en moins de 40 s ou n'arrive pas ; attendre plus
+  // longtemps le même appel ne sert à rien, le relancer si.
   const started = Date.now();
   const errors: string[] = [];
-  const queue = [...TEXT_MODELS];
-  let retried = false;
-  while (queue.length > 0) {
-    const model = queue.shift()!;
+  const overQuota = new Set<string>();
+  const attempts = [TEXT_MODELS[0], TEXT_MODELS[1] ?? TEXT_MODELS[0], TEXT_MODELS[0]];
+  for (let i = 0; i < attempts.length; i += 1) {
+    const model = attempts[i];
+    // Un modèle qui vient de refuser pour quota ne se relance pas dans la même demande.
+    if (overQuota.has(model)) continue;
     const remaining = budgetMs - (Date.now() - started);
     if (remaining < 8_000) break;
-    const isLast = queue.length === 0;
+    const isLast = i === attempts.length - 1;
+    // Réflexion basse : ces textes suivent une consigne précise, et la documentation de Gemini l'indique pour
+    // réduire la latence (generationConfig.thinkingConfig.thinkingLevel, modèles Gemini 3 et suivants).
+    const useThinkingLevel = !noThinkingLevel.has(model);
     try {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
         headers: { 'x-goog-api-key': GEMINI_KEY, 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(isLast ? remaining : Math.max(8_000, Math.min(35_000, Math.round(remaining * 0.4)))),
+        signal: AbortSignal.timeout(isLast ? remaining : Math.max(8_000, Math.min(45_000, Math.round(remaining * 0.45)))),
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
           contents: [{ role: 'user', parts: [{ text: userText }] }],
-          generationConfig: { responseMimeType: 'application/json', responseJsonSchema: schema }
+          generationConfig: {
+            responseMimeType: 'application/json',
+            responseJsonSchema: schema,
+            ...(useThinkingLevel ? { thinkingConfig: { thinkingLevel: 'low' } } : {})
+          }
         })
       });
       const data = await res.json();
       if (!res.ok) {
         const status = String(data?.error?.status ?? res.status);
-        // Une requête refusée (schéma, paramètre) dit pourquoi : utile au diagnostic, sans rien de secret.
-        errors.push(`${model}: ${status}${status === 'INVALID_ARGUMENT' ? ` — ${clip(data?.error?.message, 180)}` : ''}`);
-        if (isLast && !retried && (status === 'UNAVAILABLE' || status === 'INTERNAL')) {
-          retried = true;
-          await new Promise((resolve) => setTimeout(resolve, 2_500));
-          queue.push(model);
+        // Pour un quota, la partie utile du message est la limite touchée (« Quota exceeded for metric… »).
+        const raw = String(data?.error?.message ?? '');
+        const message = clip(raw.includes('Quota exceeded') ? raw.slice(raw.indexOf('Quota exceeded')) : raw, 260);
+        // Une requête refusée (schéma, paramètre) ou un quota atteint disent pourquoi : utile au diagnostic,
+        // sans rien de secret (la limite touchée et le modèle, jamais la clé).
+        errors.push(`${model}: ${status}${status === 'INVALID_ARGUMENT' || status === 'RESOURCE_EXHAUSTED' ? ` — ${message}` : ''}`);
+        if (status === 'RESOURCE_EXHAUSTED' || res.status === 429) overQuota.add(model);
+        if (status === 'INVALID_ARGUMENT' && useThinkingLevel && /thinking/i.test(message)) {
+          // Ce modèle ne connaît pas ce réglage : même essai, sans lui.
+          noThinkingLevel.add(model);
+          i -= 1;
         }
         continue;
       }
@@ -155,6 +178,7 @@ async function askGemini<T>(system: string, userText: string, schema: unknown, b
       errors.push(`${model}: ${(e as Error).name === 'Error' ? (e as Error).message : (e as Error).name}`);
     }
   }
+  if (overQuota.has(TEXT_MODELS[0])) throw new QuotaError(errors.join(' ; '));
   throw new Error(errors.join(' ; ') || 'Génération indisponible');
 }
 
@@ -599,6 +623,9 @@ Deno.serve(async (req) => {
       const { model, data } = await askGemini(SYSTEM_PROMPT, sourceBlock(source, titleHint), MODULE_SCHEMA, 110_000, sanitizeModule);
       return json({ model, module: data }, 200, origin);
     } catch (e) {
+      if (e instanceof QuotaError) {
+        return json({ error: 'Le service de rédaction a atteint sa limite d’usage. Réessayez dans quelques minutes ; si le message revient, le quota du jour est épuisé.', detail: e.message }, 429, origin);
+      }
       return json({ error: `La génération a échoué (${(e as Error).message}). Réessayez.` }, 502, origin);
     }
   }

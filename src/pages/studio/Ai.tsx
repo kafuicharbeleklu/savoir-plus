@@ -41,8 +41,9 @@ const AI_EXAMPLE_SOURCE =
   'Enfin, une fois par mois, on vérifie qu’on peut réellement ouvrir un fichier restauré : une sauvegarde jamais testée peut être inutilisable.';
 
 type AiPhase = 'compose' | 'plan' | 'review';
-/** Une section en cours de rédaction, rédigée, ou qui n'a pas pu l'être. */
-type SectionDraft = { status: 'writing' | 'ready' | 'error'; section?: StudioSection; error?: string; gaps?: string[] };
+/** Une section qui attend son tour, en cours de rédaction, rédigée, ou qui n'a pas pu l'être. */
+type SectionDraft = { status: 'queued' | 'writing' | 'ready' | 'error'; section?: StudioSection; error?: string; gaps?: string[] };
+const QUOTA_NOTE = 'Le service a atteint sa limite d’usage : relancez cette section dans quelques minutes.';
 type QuizState = 'writing' | 'ready' | 'error';
 
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`;
@@ -235,38 +236,51 @@ export function StudioAiView({ updateExt, nav, setToast, user }: StudioProps) {
   /* ---------------------------------------------------------------- la rédaction */
   const setDraft = (i: number, draft: SectionDraft) => setDrafts((list) => list.map((x, j) => (j === i ? draft : x)));
 
-  /** Rédige une section ; un échec passager du service vaut un second essai avant de le signaler. */
-  const writeOne = async (id: number, i: number) => {
+  /**
+   * Rédige une section ; un échec passager du service vaut un second essai avant de le signaler.
+   * Renvoie `false` quand le service refuse pour limite d'usage : inutile alors d'enchaîner les suivantes.
+   */
+  const writeOne = async (id: number, i: number): Promise<boolean> => {
     const sent = frozen.current;
-    if (!sent) return;
+    if (!sent) return true;
     setDraft(i, { status: 'writing' });
     // Une section relancée redevient à relire, même si elle avait été retirée.
     setKeepSections((prev) => prev.map((v, j) => (j === i ? null : v)));
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
         const res = await writeSection(sent.source, sent.titleHint, sent.audience, sent.plan, i);
-        if (run.current !== id) return;
+        if (run.current !== id) return true;
         setDraft(i, { status: 'ready', section: sectionFromAi(res.section, `sec-${i + 1}`), gaps: res.gaps });
         setModel(res.model);
-        return;
+        return true;
       } catch (e: any) {
-        if (run.current !== id) return;
-        if (attempt === 1) setDraft(i, { status: 'error', error: e?.message || 'La section n’a pas pu être rédigée.' });
+        if (run.current !== id) return true;
+        // Limite d'usage du service : relancer aussitôt ne ferait qu'ajouter des demandes refusées.
+        if (attempt === 1 || e?.status === 429) {
+          setDraft(i, { status: 'error', error: e?.message || 'La section n’a pas pu être rédigée.' });
+          return e?.status !== 429;
+        }
       }
     }
+    return true;
   };
 
-  /** Deux sections à la fois : le module s'écrit sous les yeux de l'encadreur, sans saturer le service. */
-  const writeSections = async (id: number, indexes: number[]) => {
-    let cursor = 0;
-    const worker = async () => {
-      while (cursor < indexes.length && run.current === id) {
-        const i = indexes[cursor];
-        cursor += 1;
-        await writeOne(id, i);
+  /**
+   * Une section à la fois, dans l'ordre : le module s'écrit sous les yeux de l'encadreur, et le service, dont
+   * le débit est limité, ne reçoit jamais deux demandes ensemble (mesuré le 23 novembre 2026 : des demandes
+   * rapprochées déclenchent sa limite d'usage pour plusieurs minutes).
+   */
+  const writeSections = async (id: number, indexes: number[]): Promise<boolean> => {
+    for (const [n, i] of indexes.entries()) {
+      if (run.current !== id) return false;
+      if (!(await writeOne(id, i))) {
+        // Limite d'usage : les sections qui attendaient ne sont pas demandées, l'encadreur les relancera.
+        const waiting = new Set(indexes.slice(n + 1));
+        if (run.current === id) setDrafts((list) => list.map((x, j) => (waiting.has(j) ? { status: 'error', error: QUOTA_NOTE } : x)));
+        return false;
       }
-    };
-    await Promise.all([worker(), worker()]);
+    }
+    return true;
   };
 
   const fetchQuiz = async (id: number) => {
@@ -300,7 +314,7 @@ export function StudioAiView({ updateExt, nav, setToast, user }: StudioProps) {
     run.current += 1;
     const id = run.current;
     setError('');
-    setDrafts(rows.map(() => ({ status: 'writing' })));
+    setDrafts(rows.map(() => ({ status: 'queued' })));
     setKeepSections(rows.map(() => null));
     setQuestions([]);
     setSteps([]);
@@ -312,11 +326,19 @@ export function StudioAiView({ updateExt, nav, setToast, user }: StudioProps) {
     setEditing(null);
     setOpenItem('sec-0');
     setPhase('review');
-    void writeSections(
-      id,
-      rows.map((_, i) => i)
-    );
-    void fetchQuiz(id);
+    // Les sections d'abord, le quiz ensuite : jamais deux demandes en même temps.
+    void (async () => {
+      const complete = await writeSections(
+        id,
+        rows.map((_, i) => i)
+      );
+      if (run.current !== id) return;
+      if (complete) await fetchQuiz(id);
+      else {
+        setQuizError('Le quiz n’a pas été demandé : le service a atteint sa limite d’usage.');
+        setQuizState('error');
+      }
+    })();
   };
 
   const backToPlan = () => {
@@ -358,7 +380,7 @@ export function StudioAiView({ updateExt, nav, setToast, user }: StudioProps) {
   // Une section non rédigée attend d'être relancée ou retirée ; une section en cours de rédaction attend.
   const sectionDecisions: BlockDecision[] = drafts.map((draft, i) => (draft.status === 'ready' || keepSections[i] === false ? (keepSections[i] ?? null) : null));
   const pending = pendingCount(sectionDecisions, keepQuestions, keepSteps);
-  const writing = drafts.filter((d) => d.status === 'writing').length;
+  const writing = drafts.filter((d) => d.status === 'writing' || d.status === 'queued').length;
   const ready = pending === 0 && quizState !== 'writing' && drafts.length > 0;
 
   const createDraft = () => {
@@ -780,8 +802,8 @@ export function StudioAiView({ updateExt, nav, setToast, user }: StudioProps) {
               {drafts.map((draft, i) => {
                 const label = `Section ${i + 1}`;
                 const planned = frozen.current?.plan.sections[i]?.title || '';
-                if (draft.status === 'writing') {
-                  return <ReviewItem key={i} decision={null} label={label} title={planned} state="Rédaction en cours…" busy open={false} />;
+                if (draft.status === 'writing' || draft.status === 'queued') {
+                  return <ReviewItem key={i} decision={null} label={label} title={planned} state={draft.status === 'queued' ? 'En attente' : 'Rédaction en cours…'} busy open={false} />;
                 }
                 if (draft.status === 'error' || !draft.section) {
                   const dropped = keepSections[i] === false;
@@ -795,7 +817,7 @@ export function StudioAiView({ updateExt, nav, setToast, user }: StudioProps) {
                       open={!dropped}
                       actions={
                         <>
-                          <button type="button" className="secondary ui-btn-sm" onClick={() => void writeOne(run.current, i)}>
+                          <button type="button" className="secondary ui-btn-sm" disabled={writing > 0} title={writing > 0 ? 'Une section est déjà en cours de rédaction' : undefined} onClick={() => void writeOne(run.current, i)}>
                             Réessayer
                           </button>
                           {!dropped && (
@@ -870,7 +892,7 @@ export function StudioAiView({ updateExt, nav, setToast, user }: StudioProps) {
                 </span>
               )}
             </h2>
-            {quizState === 'writing' && <p className="sx-note">Préparation du quiz et de la fiche pas à pas…</p>}
+            {quizState === 'writing' && <p className="sx-note">{writing > 0 ? 'Le quiz et la fiche pas à pas se préparent après les sections.' : 'Préparation du quiz et de la fiche pas à pas…'}</p>}
             {quizState === 'error' && (
               <p className="sx-inline-status" role="alert">
                 <StatusDot tone="warn">{quizError}</StatusDot>

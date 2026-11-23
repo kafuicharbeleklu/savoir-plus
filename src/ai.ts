@@ -80,7 +80,10 @@ async function call<T>(init: RequestInit, timeoutMs: number): Promise<T> {
     );
   }
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error || `Service IA indisponible (${res.status}).`);
+  if (!res.ok) {
+    // Le code HTTP accompagne l'erreur : 429 dit « limite d'usage atteinte », à ne pas relancer aussitôt.
+    throw Object.assign(new Error(data?.error || `Service IA indisponible (${res.status}).`), { status: res.status });
+  }
   return data as T;
 }
 
